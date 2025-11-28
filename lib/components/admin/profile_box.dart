@@ -1,17 +1,28 @@
-
+// components/profile/profile_box.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/adaptive_utils.dart';
 
 class ProfileBox extends StatelessWidget {
   const ProfileBox({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 420;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // All sizes now come from our shared AdaptiveUtils
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8 / 12 / 16
+    final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2; // 13 / 15 / 16
+    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth); // 13–16
+    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth); // 14–18
+    final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 13–15
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11–13
+    final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1; // 14–16
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
+    final double largeSpacing = padding; // 8–16
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+      padding: EdgeInsets.all(padding + 8), // slightly larger than others for hierarchy
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
@@ -26,91 +37,111 @@ class ProfileBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-  children: [
-    CircleAvatar(
-      backgroundColor: Colors.black,
-      radius: isSmallScreen ? 24 : 30,
-      child: Text(
-        "MS",
-        style: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: isSmallScreen ? 13 : 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-    const SizedBox(width: 12),
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // Top row: Avatar + Name + Status
           Row(
             children: [
-              Flexible(
+              // Avatar
+              CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: Colors.black,
                 child: Text(
-                  "Muhammad Sani",
-                  style: GoogleFonts.inter(
-                    fontSize: isSmallScreen ? 14 : 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "Admin",
+                  "MS",
                   style: GoogleFonts.inter(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: avatarFontSize,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
                   ),
                 ),
+              ),
+
+              SizedBox(width: largeSpacing),
+
+              // Name & badges
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            "Muhammad Sani",
+                            style: GoogleFonts.inter(
+                              fontSize: nameFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: spacing),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: spacing + 4,
+                            vertical: spacing - 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "Admin",
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: badgeFontSize,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: spacing / 2),
+                    Text(
+                      "@danmasana",
+                      style: GoogleFonts.inter(
+                        fontSize: usernameFontSize,
+                        color: Colors.black.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(width: largeSpacing),
+
+              // Status switch
+              Column(
+                children: [
+                  Switch(
+                    value: true,
+                    onChanged: (value) {},
+                    activeColor: Colors.black,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  Text(
+                    "Status",
+                    style: GoogleFonts.inter(
+                      fontSize: badgeFontSize,
+                      color: Colors.black.withOpacity(0.6),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            "@danmasana",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.black.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    ),
-    const SizedBox(width: 12),
-    Column(
-      children: [
-        Switch(
-          value: true,
-          onChanged: (value) {},
-          activeColor: Colors.black,
-        ),
-        Text(
-          "Status",
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Colors.black.withOpacity(0.6),
-          ),
-        ),
-      ],
-    ),
-  ],
-),
 
-          const SizedBox(height: 16),
+          SizedBox(height: largeSpacing + 4),
+
+          // Status badges
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -118,14 +149,18 @@ class ProfileBox extends StatelessWidget {
                 child: Text(
                   "Active",
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: badgeFontSize,
                     color: Colors.green[800],
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing + 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(20),
@@ -133,39 +168,43 @@ class ProfileBox extends StatelessWidget {
                 child: Text(
                   "Email Verified",
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: badgeFontSize,
                     color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+
+          SizedBox(height: largeSpacing + 8),
+
+          // Action buttons
           Row(
             children: [
               Expanded(
                 child: Container(
-                  height: 48,
+                  height: 30,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(color: Colors.black, width: 1.5),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Center(
                     child: Text(
                       "Edit Profile",
                       style: GoogleFonts.inter(
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: buttonFontSize,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing + 4),
               Expanded(
                 child: Container(
-                  height: 48,
+                  height: 30,
                   decoration: BoxDecoration(
                     color: Colors.black,
                     borderRadius: BorderRadius.circular(24),
@@ -174,8 +213,8 @@ class ProfileBox extends StatelessWidget {
                     child: Text(
                       "Update Password",
                       style: GoogleFonts.inter(
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w500,
+                        fontSize: buttonFontSize,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),
@@ -189,4 +228,3 @@ class ProfileBox extends StatelessWidget {
     );
   }
 }
-

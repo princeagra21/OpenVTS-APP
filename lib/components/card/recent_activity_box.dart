@@ -1,5 +1,7 @@
+// components/activity/recent_activity_box.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/adaptive_utils.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -17,16 +19,17 @@ class SmallTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSmallScreen = MediaQuery.of(context).size.width < 420;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4–12
+    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4–8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);         // 11–13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 10 : 14,
-          vertical: isSmallScreen ? 5 : 6,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
         decoration: BoxDecoration(
           color: selected ? (selectedBackground ?? Colors.black) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -35,7 +38,7 @@ class SmallTab extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: isSmallScreen ? 10.58 : 11.96,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? Colors.white : Colors.black,
           ),
@@ -57,10 +60,10 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
   final Map<String, Color> statusColors = {
     "Active": Colors.black,
-    "Idle": Colors.black,
+    "Idle": Colors.black.withOpacity(0.7),
     "Completed": Colors.black,
-    "Pending": Colors.black,
-    "Failed": Colors.black,
+    "Pending": Colors.black.withOpacity(0.7),
+    "Failed": Colors.red.shade900,
   };
 
   late final List<Map<String, dynamic>> vehicleActivities;
@@ -76,12 +79,14 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           "status": ["Active", "Idle"][i % 2],
           "time": "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${10 + i % 12}:${(i * 3 % 60).toString().padLeft(2, '0')}",
         });
+
     transactionActivities = List.generate(10, (i) => {
           "id": "TXN-2024-11-${100 + i}",
           "value": "₹${10000 + i * 1000}",
           "description": "${["Aarav Sharma", "Vihaan Patel", "Aditya Singh"][i % 3]} • ${["License Purchase", "Payment Received", "Refund Issued"][i % 3]}",
           "status": ["Completed", "Pending", "Failed"][i % 3],
         });
+
     userActivities = List.generate(10, (i) => {
           "name": ["Aarav Sharma", "Vihaan Patel", "Aditya Singh", "Reyansh Kumar", "Arjun Reddy"][i % 5],
           "email": "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
@@ -98,148 +103,129 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
   }
 
   Widget buildActivityItem(Map<String, dynamic> activity) {
-    final bool isSmallScreen = MediaQuery.of(context).size.width < 420;
-    final textStyle = GoogleFonts.inter(
-      fontSize: isSmallScreen ? 12 : 14,
-      color: Colors.black,
-    );
-    final subTextStyle = GoogleFonts.inter(
-      fontSize: isSmallScreen ? 10 : 12,
-      color: Colors.black54,
-    );
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    final double mainFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12–16
+    final double subFontSize    = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11–13
+    final double badgeFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11–13
+    final double itemPadding    = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
 
     Widget avatar;
     Widget content;
-    Widget right;
+    Widget right = const SizedBox.shrink();
 
     switch (activityTab) {
       case "Vehicles":
         avatar = CircleAvatar(
+          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
           backgroundColor: Colors.grey[200],
           child: const Icon(Icons.directions_car, color: Colors.black),
         );
+
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity["id"], style: textStyle),
-            Text(activity["name"], style: subTextStyle),
-            Text(activity["time"], style: subTextStyle),
+            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
+            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
+            Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
           ],
         );
+
         right = Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: itemPadding + 2, vertical: itemPadding - 2),
           decoration: BoxDecoration(
             color: statusColors[activity["status"]],
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             activity["status"],
-            style: GoogleFonts.inter(color: Colors.white, fontSize: isSmallScreen ? 10 : 12),
+            style: GoogleFonts.inter(color: Colors.white, fontSize: badgeFontSize),
           ),
         );
+
       case "Transactions":
-  avatar = CircleAvatar(
-    backgroundColor: Colors.grey[200],
-    child: const Icon(Icons.receipt_long, color: Colors.black),
-  );
-
-  content = Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // TOP ROW — ID + PRICE
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            activity["id"],
-            style: textStyle,
-          ),
-          Text(
-            activity["value"],
-            style: GoogleFonts.inter(
-              fontSize: isSmallScreen ? 12 : 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-        ],
-      ),
-
-      const SizedBox(height: 4),
-
-      // BOTTOM ROW — DESCRIPTION + STATUS BADGE
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              activity["description"],
-              style: subTextStyle,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: statusColors[activity["status"]],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              activity["status"],
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: isSmallScreen ? 10 : 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-
-  // Transactions does not need a right widget
-  right = const SizedBox.shrink();
-  break;
-
-      default: // Users
-        final name = activity["name"] as String;
-        final initials = name.split(" ").map((e) => e[0]).join();
-        avatar = Container(
-  padding: const EdgeInsets.all(2), // Thickness of border
-  decoration: BoxDecoration(
-    shape: BoxShape.circle,
-    border: Border.all(color: Colors.black.withOpacity(0.8), width: 2), // Black border
-  ),
-  child: CircleAvatar(
-    backgroundColor: Colors.transparent,
-    child: Text(
-      initials,
-      style: const TextStyle(color: Colors.black),
-    ),
-  ),
-);
+        avatar = CircleAvatar(
+          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+          backgroundColor: Colors.grey[200],
+          child: const Icon(Icons.receipt_long, color: Colors.black),
+        );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: textStyle),
-            Text(activity["email"], style: subTextStyle),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
+                Text(activity["value"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    activity["description"],
+                    style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: itemPadding, vertical: itemPadding - 3),
+                  decoration: BoxDecoration(
+                    color: statusColors[activity["status"]],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    activity["status"],
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: badgeFontSize),
+                  ),
+                ),
+              ],
+            ),
           ],
         );
-        right = Text(activity["time"], style: subTextStyle);
+
+      default: // Users
+        final name = activity["name"] as String;
+        final initials = name.split(" ").map((e) => e.isNotEmpty ? e[0] : '').take(2).join();
+
+        avatar = Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.black.withOpacity(0.8), width: 2),
+          ),
+          child: CircleAvatar(
+            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+            backgroundColor: Colors.transparent,
+            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold)),
+          ),
+        );
+
+        content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
+            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
+          ],
+        );
+
+        right = Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54));
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
+      padding: EdgeInsets.symmetric(vertical: itemPadding),
       child: Row(
         children: [
           avatar,
-          const SizedBox(width: 12),
+          SizedBox(width: itemPadding + 2),
           Expanded(child: content),
-          const SizedBox(width: 12),
-          right,
+          if (right is! SizedBox) ...[
+            SizedBox(width: itemPadding + 2),
+            right,
+          ],
         ],
       ),
     );
@@ -247,18 +233,14 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 420;
-    final bool isVerySmallScreen = screenWidth < 360;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
-    final titleStyle = GoogleFonts.inter(
-      fontSize: isVerySmallScreen ? 14.72 : 16.56,
-      fontWeight: FontWeight.bold,
-      color: Colors.black,
-    );
+    final double padding       = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double linkFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
@@ -276,27 +258,20 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Recent Activity",
-                style: titleStyle,
-              ),
+              Text("Recent Activity", style: GoogleFonts.inter(fontSize: titleFontSize, fontWeight: FontWeight.bold)),
               InkWell(
-                onTap: () {}, // Add navigation if needed
-                child: Text(
-                  "View all",
-                  style: GoogleFonts.inter(
-                    fontSize: isSmallScreen ? 12 : 14,
-                    color: Colors.black,
-                  ),
-                ),
+                onTap: () {},
+                child: Text("View all", style: GoogleFonts.inter(fontSize: linkFontSize, color: Colors.black)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+
+          SizedBox(height: padding),
+
           Center(
             child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
+              runSpacing: 8,
               alignment: WrapAlignment.center,
               children: ["Vehicles", "Transactions", "Users"].map((tab) {
                 return SmallTab(
@@ -307,13 +282,16 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               }).toList(),
             ),
           ),
-          const SizedBox(height: 10),
+
+          SizedBox(height: padding - 2),
+
           SizedBox(
-            height: 300,
+            height: 320,
             child: ListView.separated(
+              padding: EdgeInsets.zero,
               itemCount: currentActivities.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) => buildActivityItem(currentActivities[index]),
+              separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.08)),
+              itemBuilder: (_, index) => buildActivityItem(currentActivities[index]),
             ),
           ),
         ],

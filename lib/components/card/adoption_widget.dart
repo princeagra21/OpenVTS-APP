@@ -1,6 +1,8 @@
+// components/charts/adoption_growth_box.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../utils/adaptive_utils.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -18,15 +20,19 @@ class SmallTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSmallScreen = MediaQuery.of(context).size.width < 420;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4–12
+    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4–8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11–13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 10 : 14,
-          vertical: isSmallScreen ? 5 : 6,
+          horizontal: hPadding,
+          vertical: vPadding,
         ),
         decoration: BoxDecoration(
           color: selected ? (selectedBackground ?? Colors.black) : Colors.transparent,
@@ -36,7 +42,7 @@ class SmallTab extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: isSmallScreen ? 10.58 : 11.96,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? Colors.white : Colors.black,
           ),
@@ -62,14 +68,13 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   final List<double> licenses = [5, 10, 15, 14, 16, 18, 20, 22, 24, 26, 29, 30];
 
   final Map<String, Color> statColors = {
-  "Vehicles": Colors.black.withOpacity(1),     // Full black
-  "Users": Colors.black.withOpacity(0.7),      // Dark grey
-  "Licenses": Colors.black.withOpacity(0.5),   // Lighter grey
-};
-
+    "Vehicles": Colors.black,
+    "Users": Colors.black.withOpacity(0.7),
+    "Licenses": Colors.black.withOpacity(0.5),
+  };
 
   List<double> getDataFor(String stat) {
-    List<double> base = switch (stat) {
+    final base = switch (stat) {
       "Vehicles" => vehicles,
       "Users" => users,
       _ => licenses,
@@ -82,29 +87,36 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     };
   }
 
-  int get numMonths {
-    return switch (monthTab) {
-      "3M" => 3,
-      "6M" => 6,
-      _ => 12,
-    };
-  }
+  int get numMonths => switch (monthTab) { "3M" => 3, "6M" => 6, _ => 12 };
 
   double get yMax {
     if (selectedStats.isEmpty) return 10;
-    final allValues = selectedStats.map((stat) => getDataFor(stat)).expand((d) => d).toList();
+    final allValues = selectedStats.expand((s) => getDataFor(s));
     final maxVal = allValues.reduce((a, b) => a > b ? a : b);
-    return (maxVal / 10).ceil() * 10 + 5; // little headroom
+    return (maxVal / 10).ceil() * 10 + 5;
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 420;
-    final bool isVerySmallScreen = screenWidth < 360;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // All sizes from AdaptiveUtils — pure and clean
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double subheaderFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double chartHeight = AdaptiveUtils.isVerySmallScreen(screenWidth)
+    ? 180
+    : AdaptiveUtils.isSmallScreen(screenWidth)
+        ? 200
+        : 220;
+
+    final double leftTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3; // ~8–10
+    final double bottomTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9–11
+    final double lineWidth = AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7–3.3
+    final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4–5
 
     final titleStyle = GoogleFonts.inter(
-      fontSize: isVerySmallScreen ? 14.72 : 16.56,
+      fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
       color: Colors.black,
     );
@@ -116,7 +128,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         border: Border.all(color: Colors.black),
       ),
       child: Wrap(
-        spacing: 6,
+        spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
         runSpacing: 4,
         children: ["12M", "6M", "3M"].map((tab) {
           return SmallTab(
@@ -128,36 +140,25 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       ),
     );
 
-    final header = isSmallScreen
+    final header = screenWidth < 420
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Adoption and growth",
-                style: titleStyle,
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: monthTabs,
-              ),
+              Text("Adoption and growth", style: titleStyle),
+              SizedBox(height: padding / 2),
+              Align(alignment: Alignment.centerRight, child: monthTabs),
             ],
           )
         : Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Adoption and growth",
-                style: titleStyle,
-              ),
-              const Spacer(),
+              Text("Adoption and growth", style: titleStyle),
               monthTabs,
             ],
           );
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
@@ -173,48 +174,38 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           header,
-          const SizedBox(height: 12),
-          // Subheader + Stat Tabs
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Last $monthTab months",
-                style: GoogleFonts.inter(
-                  fontSize: isSmallScreen ? 11.96 : 12.88,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Stat Tabs – Wrap on small screens
-              Center(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  alignment: WrapAlignment.center,
-                  children: ["Vehicles", "Users", "Licenses"].map((tab) {
-                    return SmallTab(
-                      label: tab,
-                      selected: selectedStats.contains(tab),
-                      onTap: () => setState(() {
-                        if (selectedStats.contains(tab)) {
-                          selectedStats.remove(tab);
-                        } else {
-                          selectedStats.add(tab);
-                        }
-                      }),
-                      selectedBackground: statColors[tab],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
+          SizedBox(height: padding),
+          Text(
+            "Last $monthTab months",
+            style: GoogleFonts.inter(
+              fontSize: subheaderFontSize,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          const SizedBox(height: 20),
-          // Chart – Responsive height & font sizes
+          SizedBox(height: padding),
+          Center(
+            child: Wrap(
+              spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: ["Vehicles", "Users", "Licenses"].map((tab) {
+                return SmallTab(
+                  label: tab,
+                  selected: selectedStats.contains(tab),
+                  selectedBackground: statColors[tab],
+                  onTap: () => setState(() {
+                    selectedStats.contains(tab)
+                        ? selectedStats.remove(tab)
+                        : selectedStats.add(tab);
+                  }),
+                );
+              }).toList(),
+            ),
+          ),
+          SizedBox(height: padding + 4),
           SizedBox(
-            height: isVerySmallScreen ? 180 : isSmallScreen ? 200 : 220,
+            height: chartHeight,
             child: LineChart(
               LineChartData(
                 minY: 0,
@@ -225,13 +216,13 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       interval: yMax / 3,
-                      reservedSize: isSmallScreen ? 32 : 40,
+                      reservedSize: screenWidth < 420 ? 32 : 40,
                        getTitlesWidget: (value, meta) => SideTitleWidget(
   meta: meta, // pass the required argument
   child: Text(
     "${value.toInt()}K",
     style: GoogleFonts.inter(
-      fontSize: isVerySmallScreen ? 7.2 : 8.8,
+      fontSize: leftTitleFontSize,
       color: Colors.black87,
     ),
   ),
@@ -251,7 +242,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                           child: Text(
                             "M${index + 1}",
                             style: GoogleFonts.inter(
-                              fontSize: isVerySmallScreen ? 7.82 : 9.2,
+                              fontSize: bottomTitleFontSize,
                               color: Colors.black54,
                             ),
                           ),
@@ -273,14 +264,18 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                   final data = getDataFor(stat);
                   final color = statColors[stat]!;
                   return LineChartBarData(
-                    spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+                    spots: data
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value))
+                        .toList(),
                     isCurved: true,
-                    barWidth: isSmallScreen ? 2.875 : 3.45,
+                    barWidth: lineWidth,
                     color: color,
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                        radius: isSmallScreen ? 4.025 : 4.6,
+                        radius: dotRadius,
                         color: color,
                         strokeColor: Colors.white,
                         strokeWidth: 2,
