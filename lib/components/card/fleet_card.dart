@@ -1,7 +1,8 @@
+// components/fleet/fleet_overview_box.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/adaptive_utils.dart';
 
-// Reusable CustomBox widget
 class CustomBox extends StatelessWidget {
   final Widget child;
   final double? width;
@@ -13,24 +14,27 @@ class CustomBox extends StatelessWidget {
     required this.child,
     this.width,
     this.height,
-    this.radius = 12.0,
+    this.radius = 25.0, // default to 25 to match your design
   });
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+
     return Container(
       width: width ?? double.infinity,
       height: height,
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          )
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: child,
@@ -38,40 +42,51 @@ class CustomBox extends StatelessWidget {
   }
 }
 
-// Fleet Overview Box
 class FleetOverviewBox extends StatelessWidget {
   const FleetOverviewBox({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // Adaptive values from our design system
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;     // 14–18
+    final double bigNumberFontSize = titleFontSize * 2.4; // ~34–43, scales perfectly
+    final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) ; // 13–15
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);     // 12–14
+    final double capsuleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) ;   // 13–15
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);         // 6–10
+
     return CustomBox(
       radius: 25.0,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Top Row ---
+          // Top Row: Title + Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 "Your fleet Today",
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
               ),
-
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black, width: 1),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   "Today 12M",
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
@@ -80,42 +95,43 @@ class FleetOverviewBox extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          SizedBox(height: spacing + 4),
 
-          // --- Big number ---
+          // Big Number
           Text(
             "3579",
             style: GoogleFonts.inter(
-              fontSize: 34,
+              fontSize: bigNumberFontSize,
               fontWeight: FontWeight.bold,
               color: Colors.black,
               height: 1.1,
+              letterSpacing: -1.5,
             ),
           ),
 
-          const SizedBox(height: 6),
+          SizedBox(height: spacing),
 
-          // --- Description ---
+          // Description
           Text(
             "Total Vehicles across all admins",
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: descriptionFontSize,
               fontWeight: FontWeight.w400,
-              color: Colors.black,
+              color: Colors.black.withOpacity(0.8),
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: spacing + 6),
 
-          // --- Capsules ---
+          // Capsules
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: spacing + 4,
+            runSpacing: spacing + 2,
             children: [
-              _capsule(context, "Active 2300"),
-              _capsule(context, "Users 2097"),
-              _capsule(context, "Admins 234"),
-              _capsule(context, "Licenses used 34298"),
+              _capsule(context, "Active 2300", capsuleFontSize, spacing),
+              _capsule(context, "Users 2097", capsuleFontSize, spacing),
+              _capsule(context, "Admins 234", capsuleFontSize, spacing),
+              _capsule(context, "Licenses used 34298", capsuleFontSize, spacing),
             ],
           ),
         ],
@@ -123,24 +139,27 @@ class FleetOverviewBox extends StatelessWidget {
     );
   }
 
-  Widget _capsule(BuildContext context, String text) {
+  Widget _capsule(BuildContext context, String text, double fontSize, double spacing) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: spacing + 6,
+        vertical: spacing,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Text(
         text,
         style: GoogleFonts.inter(
-          fontSize: 14,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
           color: Colors.black,
         ),

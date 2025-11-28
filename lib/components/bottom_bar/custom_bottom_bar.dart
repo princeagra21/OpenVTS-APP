@@ -1,18 +1,26 @@
+// components/bottom_bar/custom_bottom_bar.dart
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_utils.dart';
+import '../../utils/adaptive_utils.dart'; // Import the shared utils
 
 class CustomBottomBar extends StatelessWidget {
-  const CustomBottomBar({
-    super.key,
-  });
+  const CustomBottomBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final String currentPath = GoRouterState.of(context).uri.path;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // Adaptive values from our utils
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth); // 16–20
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth); // 28–36
+    final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1; // 12–14 (slightly bigger than title)
+    final double topPadding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8–16
+    final double verticalSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
 
     final List<IconData> icons = [
       CupertinoIcons.house_fill,
@@ -32,15 +40,14 @@ class CustomBottomBar extends StatelessWidget {
 
     int? currentIndex;
     for (int i = 0; i < routes.length; i++) {
-      if (currentPath == routes[i]) {
+      if (currentPath.startsWith(routes[i])) { // use startsWith for nested routes
         currentIndex = i;
         break;
       }
     }
 
-    if (currentIndex == null) {
-      return const SizedBox.shrink();
-    }
+    // Hide bottom bar if no match (optional)
+    if (currentIndex == null) return const SizedBox.shrink();
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(38)),
@@ -63,14 +70,23 @@ class CustomBottomBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(icons.length, (index) {
               final bool isSelected = index == currentIndex;
-              return GestureDetector(
-                onTap: () => context.go(routes[index]),
+
+              return CupertinoButton(
+  padding: EdgeInsets.zero,
+  onPressed: () {
+    if (routes[index] != currentPath) {
+      context.go(routes[index]);
+    }
+  },
+
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 14),
+                    SizedBox(height: topPadding), // Adaptive top spacing
+
+                    // Selected indicator + icon
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(buttonSize * 0.28), // scales with buttonSize
                       decoration: isSelected
                           ? const BoxDecoration(
                               color: Colors.black,
@@ -79,23 +95,29 @@ class CustomBottomBar extends StatelessWidget {
                           : null,
                       child: Icon(
                         icons[index],
-                        size: 22,
+                        size: iconSize,
                         color: isSelected
                             ? Colors.white
                             : (isDark ? Colors.grey[500] : Colors.grey[600]),
                       ),
                     ),
-                    const SizedBox(height: 6),
+
+                    SizedBox(height: verticalSpacing),
+
+                    // Label
                     Text(
                       labels[index],
                       style: AppUtils.bodySmallBase.copyWith(
-                        fontSize: 10,
+                        fontSize: labelFontSize,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: isSelected
+                            ? (isDark ? Colors.white : Colors.black)
+                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
                         letterSpacing: 0.6,
                       ),
                     ),
-                    const SizedBox(height: 8),
+
+                    SizedBox(height: verticalSpacing + 2), // bottom padding
                   ],
                 ),
               );
