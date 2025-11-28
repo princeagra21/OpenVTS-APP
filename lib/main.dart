@@ -1,4 +1,3 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/screens/admin/administrator_details_screen.dart';
 import 'package:fleet_stack/screens/admin/admins_screen.dart';
 import 'package:flutter/material.dart';
@@ -15,39 +14,24 @@ final GoRouter router = GoRouter(
       path: '/home',
       builder: (_, __) => const HomeScreen(),
     ),
-
     GoRoute(
-  path: '/admins',
-  builder: (_, __) => const AdminScreen(),
-),
-
-GoRoute(
-  path: '/admins/details/:id',
-  name: 'adminDetails',
-  builder: (context, state) {
-    final id = state.pathParameters['id']; // <-- Correct
-    return AdministratorDetailsScreen(id: id!);
-  },
-),
-
-
-
-
+      path: '/admins',
+      builder: (_, __) => const AdminScreen(),
+    ),
+    GoRoute(
+      path: '/admins/details/:id',
+      name: 'adminDetails',
+      builder: (context, state) {
+        final id = state.pathParameters['id']; 
+        return AdministratorDetailsScreen(id: id!);
+      },
+    ),
     // ADD OTHERS LATER
-    // GoRoute(path: '/map', builder: (_, __) => const MapScreen()),
-    // GoRoute(path: '/admins', builder: (_, __) => const AdminsScreen()),
-    // GoRoute(path: '/vehicles', builder: (_, __) => const VehiclesScreen()),
-    // GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
   ],
 );
 
 void main() {
-  runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -62,11 +46,6 @@ class MyApp extends StatelessWidget {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
 
-          /// 👇 Required for DevicePreview
-          useInheritedMediaQuery: true,
-          locale: DevicePreview.locale(context),
-          builder: DevicePreview.appBuilder,
-
           /// 👇 GoRouter integration
           routerConfig: router,
 
@@ -75,8 +54,6 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-
-      /// ❌ Removed child: HomeScreen() — router decides this
     );
   }
 }
