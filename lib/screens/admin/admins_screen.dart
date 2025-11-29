@@ -86,6 +86,7 @@ class _AdminScreenState extends State<AdminScreen> {
       actionIcons: const [
         CupertinoIcons.add,
       ],
+      leftAvatarText: 'SA',
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,10 +102,10 @@ class _AdminScreenState extends State<AdminScreen> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: "Search name, email, role, department...",
-                  hintStyle: GoogleFonts.inter(color: Colors.black.withOpacity(0.5)),
+                  hintStyle: GoogleFonts.inter(color: Colors.black.withOpacity(0.5), fontSize: isSmallScreen ? 12 : 14,),
                   prefixIcon: const Icon(CupertinoIcons.search),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
             ),
@@ -403,11 +404,15 @@ Row(
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(CupertinoIcons.location),
+                          const Icon(CupertinoIcons.location, size: 16),
                           const SizedBox(width: 8),
-                          Text(
-                            admin["location"],
-                            style: GoogleFonts.inter(fontSize: 14, color: Colors.black.withOpacity(0.87)),
+                          Expanded(
+                            child: Text(
+                              admin["location"],
+                              style: GoogleFonts.inter(fontSize: 14, color: Colors.black.withOpacity(0.87)),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -415,15 +420,21 @@ Row(
                       const Divider(),
                       const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "Joined: ${admin["joined"]}",
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
+                          Expanded(
+                            child: Text(
+                              "Joined: ${admin["joined"]}",
+                              style: GoogleFonts.inter(fontSize: 12, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          Text(
-                            admin["role"],
-                            style: GoogleFonts.inter(fontSize: 10, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
+                          Expanded(
+                            child: Text(
+                              admin["role"],
+                              style: GoogleFonts.inter(fontSize: 10, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
+                              textAlign: TextAlign.right,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),

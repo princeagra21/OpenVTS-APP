@@ -12,6 +12,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<IconData> icons;
   final bool showLeftAvatar;
   final bool showRightAvatar;
+  final String leftAvatarText;
 
   CustomAppBar({
     super.key,
@@ -20,6 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.icons,
     this.showLeftAvatar = true,   // FS avatar default true
     this.showRightAvatar = false, // AV avatar default false
+    required this.leftAvatarText,
   }) : subtitle = subtitle.length > 18
             ? '${subtitle.substring(0, 15)}...'
             : subtitle;
@@ -86,7 +88,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               child: CircleAvatar(
                                 backgroundColor: Colors.black,
                                 child: Text(
-                                  "FS",
+                                  leftAvatarText,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,

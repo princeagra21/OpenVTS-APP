@@ -22,6 +22,7 @@ class HomeScreen extends StatelessWidget {
 
 
       /// ❌ Removed onBottomTap — GoRouter handles navigation
+      leftAvatarText: 'FS',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [

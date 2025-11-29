@@ -12,6 +12,7 @@ class AppLayout extends StatelessWidget {
   /// NEW CONTROLS
   final bool showLeftAvatar;   // FS avatar
   final bool showRightAvatar;  // AV avatar
+  final String leftAvatarText;
 
   const AppLayout({
     super.key,
@@ -23,6 +24,7 @@ class AppLayout extends StatelessWidget {
     /// defaults
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
+    required this.leftAvatarText,
   });
 
   @override
@@ -63,6 +65,7 @@ class AppLayout extends StatelessWidget {
                 /// NEW AVATAR SETTINGS
                 showLeftAvatar: showLeftAvatar,
                 showRightAvatar: showRightAvatar,
+                leftAvatarText: leftAvatarText,
               ),
             ),
           ),

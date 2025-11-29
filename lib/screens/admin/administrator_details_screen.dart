@@ -19,6 +19,7 @@ class AdministratorDetailsScreen extends StatelessWidget {
       subtitle: "Muhammad Sani",
       actionIcons: const [Icons.more_horiz],
       showLeftAvatar: false,
+      leftAvatarText: 'AM',
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -15,12 +15,12 @@ class CustomBottomBar extends StatelessWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    // Adaptive values from our utils
-    final double iconSize = AdaptiveUtils.getIconSize(screenWidth); // 16–20
-    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth); // 28–36
-    final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1; // 12–14 (slightly bigger than title)
-    final double topPadding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8–16
-    final double verticalSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
+    // Adaptive values from our utils - scaled down for reduced size
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85; // Reduced: ~13.6–17
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85; // Reduced: ~23.8–30.6
+    final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 1; // Reduced: ~11–13 for better fit
+    final double topPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) * 0.75; // Reduced: ~6–12
+    final double verticalSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth) * 0.75; // Reduced: ~4.5–7.5
 
     final List<IconData> icons = [
       CupertinoIcons.house_fill,
@@ -50,11 +50,11 @@ class CustomBottomBar extends StatelessWidget {
     if (currentIndex == null) return const SizedBox.shrink();
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(38)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), // Reduced radius for smaller height
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: 88,
+          height: 70, // Reduced overall height from 88 to 70
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withOpacity(0.10)
@@ -72,21 +72,20 @@ class CustomBottomBar extends StatelessWidget {
               final bool isSelected = index == currentIndex;
 
               return CupertinoButton(
-  padding: EdgeInsets.zero,
-  onPressed: () {
-    if (routes[index] != currentPath) {
-      context.go(routes[index]);
-    }
-  },
-
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  if (routes[index] != currentPath) {
+                    context.go(routes[index]);
+                  }
+                },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: topPadding), // Adaptive top spacing
+                    SizedBox(height: topPadding), // Reduced top spacing
 
                     // Selected indicator + icon
                     Container(
-                      padding: EdgeInsets.all(buttonSize * 0.28), // scales with buttonSize
+                      padding: EdgeInsets.all(buttonSize * 0.28), // Scales with reduced buttonSize
                       decoration: isSelected
                           ? const BoxDecoration(
                               color: Colors.black,
@@ -117,7 +116,7 @@ class CustomBottomBar extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(height: verticalSpacing + 2), // bottom padding
+                    SizedBox(height: verticalSpacing + 1), // Slightly reduced bottom padding
                   ],
                 ),
               );
