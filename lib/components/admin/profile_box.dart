@@ -14,9 +14,9 @@ class ProfileBox extends StatelessWidget {
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8 / 12 / 16
     final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2; // 13 / 15 / 16
     final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth); // 13–16
-    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth); // 14–18
+    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth)- 4; // 14–18
     final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 13–15
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11–13
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth)- 4; // 11–13
     final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1; // 14–16
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
     final double largeSpacing = padding; // 8–16
@@ -112,23 +112,27 @@ class ProfileBox extends StatelessWidget {
               SizedBox(width: largeSpacing),
 
               // Status switch
-              Column(
-                children: [
-                  Switch(
-                    value: true,
-                    onChanged: (value) {},
-                    activeColor: Colors.black,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  Text(
-                    "Status",
-                    style: GoogleFonts.inter(
-                      fontSize: badgeFontSize,
-                      color: Colors.black.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
+             Column(
+  children: [
+    Transform.scale(
+      scale: 0.75, // 🔥 decrease size (0.6, 0.7, 0.8…)
+      child: Switch(
+        value: true,
+        onChanged: (value) {},
+        activeColor: Colors.black,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    ),
+    Text(
+      "Status",
+      style: GoogleFonts.inter(
+        fontSize: badgeFontSize,
+        color: Colors.black.withOpacity(0.6),
+      ),
+    ),
+  ],
+),
+
             ],
           ),
 

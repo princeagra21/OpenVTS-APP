@@ -1,5 +1,5 @@
 import 'package:fleet_stack/components/admin/info_grids.dart';
-import 'package:fleet_stack/components/admin/navigate%20.dart';
+import 'package:fleet_stack/components/admin/navigate.dart';
 import 'package:fleet_stack/components/admin/profile_box.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ class AdministratorDetailsScreen extends StatelessWidget {
             ProfileBox(),
             const SizedBox(height: 24),
             NavigateBox(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
             AdminInfoBoxes(),
             const SizedBox(height: 24),
             

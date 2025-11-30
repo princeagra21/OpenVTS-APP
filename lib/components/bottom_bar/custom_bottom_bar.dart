@@ -15,12 +15,24 @@ class CustomBottomBar extends StatelessWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final double screenWidth = MediaQuery.of(context).size.width;
 
+    // 🔥 ROUTES WHERE BOTTOM BAR MUST BE HIDDEN
+    const List<String> hiddenRoutes = [
+      '/admins/details', // hide all nested: /admins/details/:id
+    ];
+
+    // 🔥 AUTO-HIDE LOGIC
+    for (final r in hiddenRoutes) {
+      if (currentPath.startsWith(r)) {
+        return const SizedBox.shrink();
+      }
+    }
+
     // Adaptive values from our utils - scaled down for reduced size
-    final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85; // Reduced: ~13.6–17
-    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85; // Reduced: ~23.8–30.6
-    final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 1; // Reduced: ~11–13 for better fit
-    final double topPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) * 0.75; // Reduced: ~6–12
-    final double verticalSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth) * 0.75; // Reduced: ~4.5–7.5
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85;
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
+    final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
+    final double topPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) * 0.75;
+    final double verticalSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth) * 0.75;
 
     final List<IconData> icons = [
       CupertinoIcons.house_fill,
@@ -29,7 +41,15 @@ class CustomBottomBar extends StatelessWidget {
       CupertinoIcons.car_detailed,
       CupertinoIcons.ellipsis_circle_fill,
     ];
-    final List<String> labels = ['Home', 'Map', 'Admins', 'Vehicles', 'More'];
+
+    final List<String> labels = [
+      'Home',
+      'Map',
+      'Admins',
+      'Vehicles',
+      'More',
+    ];
+
     final List<String> routes = [
       '/home',
       '/map',
@@ -40,21 +60,21 @@ class CustomBottomBar extends StatelessWidget {
 
     int? currentIndex;
     for (int i = 0; i < routes.length; i++) {
-      if (currentPath.startsWith(routes[i])) { // use startsWith for nested routes
+      if (currentPath.startsWith(routes[i])) {
         currentIndex = i;
         break;
       }
     }
 
-    // Hide bottom bar if no match (optional)
+    // Hide bottom bar if no match
     if (currentIndex == null) return const SizedBox.shrink();
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), // Reduced radius for smaller height
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: 70, // Reduced overall height from 88 to 70
+          height: AdaptiveUtils.getBottomBarHeight(screenWidth),
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withOpacity(0.10)
@@ -81,11 +101,11 @@ class CustomBottomBar extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: topPadding), // Reduced top spacing
+                    SizedBox(height: topPadding),
 
                     // Selected indicator + icon
                     Container(
-                      padding: EdgeInsets.all(buttonSize * 0.28), // Scales with reduced buttonSize
+                      padding: EdgeInsets.all(buttonSize * 0.28),
                       decoration: isSelected
                           ? const BoxDecoration(
                               color: Colors.black,
@@ -116,7 +136,7 @@ class CustomBottomBar extends StatelessWidget {
                       ),
                     ),
 
-                    SizedBox(height: verticalSpacing + 1), // Slightly reduced bottom padding
+                    SizedBox(height: verticalSpacing + 1),
                   ],
                 ),
               );

@@ -1,50 +1,10 @@
+import 'package:fleet_stack/components/small_box/small_box.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-class SmallTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const SmallTab({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isSmallScreen = MediaQuery.of(context).size.width < 420;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 10 : 14,
-          vertical: isSmallScreen ? 5 : 6,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? Colors.black : Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-       //   border: Border.all(color: Colors.black, width: 1),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: isSmallScreen ? 10.58 : 11.96,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-}
+import '../../utils/adaptive_utils.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -58,6 +18,7 @@ class _AdminScreenState extends State<AdminScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, dynamic>> admins = List.generate(5, (i) => {
+        "id": i,
         "initials": "MS",
         "name": "Muhammad Sani",
         "phone": "+2349018980920",
@@ -76,9 +37,17 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 420;
 
-    final filteredAdmins = admins; // For now, no filtering, all shown
+    // --- ADAPTIVE VALUES ---
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8–16
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
+    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth); // 13–15
+    final bodyFs = titleFs - 1; // general text
+    final smallFs = titleFs - 3;
+    final iconSize = titleFs + 2;
+    final cardPadding = padding + 4; // slightly bigger for cards
+
+    final filteredAdmins = admins;
 
     return AppLayout(
       title: "SUPER ADMIN",
@@ -91,29 +60,42 @@ class _AdminScreenState extends State<AdminScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search TextField
+            // --------------------------------------------
+            // SEARCH FIELD
+            // --------------------------------------------
             Container(
-              height: 48,
+              height: padding * 3.5,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
                 controller: _searchController,
+                style: GoogleFonts.inter(fontSize: bodyFs),
                 decoration: InputDecoration(
                   hintText: "Search name, email, role, department...",
-                  hintStyle: GoogleFonts.inter(color: Colors.black.withOpacity(0.5), fontSize: isSmallScreen ? 12 : 14,),
-                  prefixIcon: const Icon(CupertinoIcons.search),
+                  hintStyle: GoogleFonts.inter(
+                    color: Colors.black.withOpacity(0.5),
+                    fontSize: bodyFs,
+                  ),
+                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: padding,
+                    vertical: padding,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Tabs
+
+            SizedBox(height: padding),
+
+            // --------------------------------------------
+            // TABS
+            // --------------------------------------------
             Wrap(
-              spacing: 6,
-              runSpacing: 4,
+              spacing: spacing,
+              runSpacing: spacing,
               children: ["All", "Active", "Disabled", "Pending"].map((tab) {
                 return SmallTab(
                   label: tab,
@@ -122,37 +104,50 @@ class _AdminScreenState extends State<AdminScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
-           Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    // Showing text
-    Text(
-      "Showing ${filteredAdmins.length} of ${admins.length} admins",
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        color: Colors.black.withOpacity(0.87),
-      ),
-    ),
 
-    // Export button
-    Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.transparent),
-      ),
-      child: Text(
-        "Export",
-        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-      ),
-    ),
-  ],
-),
+            SizedBox(height: padding),
 
-            const SizedBox(height: 10),
-            // Admin list
+            // --------------------------------------------
+            // TOP ROW: showing count + export
+            // --------------------------------------------
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Showing ${filteredAdmins.length} of ${admins.length} admins",
+                  style: GoogleFonts.inter(
+                    fontSize: bodyFs,
+                    color: Colors.black.withOpacity(0.87),
+                  ),
+                ),
+
+                // EXPORT BUTTON
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padding * 1.5,
+                    vertical: spacing,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.transparent),
+                  ),
+                  child: Text(
+                    "Export",
+                    style: GoogleFonts.inter(
+                      fontSize: bodyFs,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: spacing),
+
+            // --------------------------------------------
+            // ADMIN LIST
+            // --------------------------------------------
             ListView.builder(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -160,9 +155,10 @@ class _AdminScreenState extends State<AdminScreen> {
               itemCount: filteredAdmins.length,
               itemBuilder: (context, index) {
                 final admin = filteredAdmins[index];
+
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  margin: EdgeInsets.only(bottom: padding),
+                  padding: EdgeInsets.all(cardPadding),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(25),
@@ -174,266 +170,254 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                     ],
                   ),
+
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                     Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Avatar
-    CircleAvatar(
-      backgroundColor: Colors.black,
-      child: Text(
-        admin["initials"],
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
+                      Row(
+                        children: [
+                          // AVATAR
+                          CircleAvatar(
+                            backgroundColor: Colors.black,
+                            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                            child: Text(
+                              admin["initials"],
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
 
-    const SizedBox(width: 12),
+                          SizedBox(width: spacing * 2),
 
-    // Right side expanded area
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+                          // RIGHT SIDE
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // NAME + STATUS + LOGIN
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        context.push("/admins/details/${admin['id']}");
+                                      },
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            admin["name"],
+                                            style: GoogleFonts.inter(
+                                              fontSize: bodyFs,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(width: spacing),
 
-          // -------------------------------------
-          //  NAME + STATUS + LOGIN (same row)
-          // -------------------------------------
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+                                          // STATUS BADGE
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: spacing + 2,
+                                              vertical: spacing - 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: admin["status"] == "Verified"
+                                                  ? Colors.green.withOpacity(0.2)
+                                                  : Colors.orange.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Text(
+                                              admin["status"],
+                                              style: GoogleFonts.inter(
+                                                fontSize: smallFs,
+                                                fontWeight: FontWeight.w600,
+                                                color: admin["status"] == "Verified"
+                                                    ? Colors.green
+                                                    : Colors.orange,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
 
-              // Name + Status together
-            GestureDetector(
-  onTap: () {
-    context.push("/admins/details/${admin['id']}");
-  },
-  child: Row(
-    children: [
-      Text(
-        admin["name"],
-        style: GoogleFonts.inter(
-          fontSize: isSmallScreen ? 10 : 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(width: 8),
+                                    // LOGIN BUTTON
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: padding + 4,
+                                        vertical: spacing - 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.black.withOpacity(0.5),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "Login",
+                                        style: GoogleFonts.inter(
+                                          fontSize: smallFs + 1,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
 
-      // STATUS BADGE
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: admin["status"] == "Verified"
-              ? Colors.green.withOpacity(0.2)
-              : admin["status"] == "Pending"
-                  ? Colors.orange.withOpacity(0.2)
-                  : admin["status"] == "Rejected"
-                      ? Colors.red.withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          admin["status"],
-          style: GoogleFonts.inter(
-            color: admin["status"] == "Verified"
-                ? Colors.green
-                : admin["status"] == "Pending"
-                    ? Colors.orange
-                    : admin["status"] == "Rejected"
-                        ? Colors.red
-                        : Colors.grey,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    ],
-  ),
-),
+                                SizedBox(height: spacing),
 
-              // LOGIN BUTTON
-             Container(
-  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  decoration: BoxDecoration(
-    color: Colors.white, // background color
-    borderRadius: BorderRadius.circular(20), // rounded corners
-    border: Border.all(
-      color: Colors.black.withOpacity(0.5), // border color
-      width: 1, // border width
-    ),
-  ),
-  child: Text(
-    "Login",
-    style: GoogleFonts.inter(
-      color: Colors.black,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-    ),
-  ),
-),
+                                // PHONE
+                                Row(
+                                  children: [
+                                    Icon(CupertinoIcons.phone, size: iconSize),
+                                    SizedBox(width: spacing),
+                                    Text(
+                                      admin["phone"],
+                                      style: GoogleFonts.inter(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
 
-            ],
-          ),
+                                SizedBox(height: spacing / 2),
 
-          const SizedBox(height: 6),
+                                // EMAIL
+                                Row(
+                                  children: [
+                                    Icon(CupertinoIcons.mail, size: iconSize),
+                                    SizedBox(width: spacing),
+                                    Text(
+                                      admin["email"],
+                                      style: GoogleFonts.inter(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
 
-         // PHONE ROW
-Row(
-  children: [
-    const Icon(CupertinoIcons.phone, size: 16, color: Colors.black),
-    const SizedBox(width: 6), // horizontal gap between icon and text
-    Text(
-      admin["phone"],
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black.withOpacity(0.87),
-      ),
-    ),
-  ],
-),
+                      SizedBox(height: spacing * 2),
 
-const SizedBox(height: 4), // vertical gap before email row
+                      // VEHICLES + CREDITS
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: padding,
+                              vertical: spacing - 2,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.black.withOpacity(0.7)),
+                            ),
+                            child: Text(
+                              "${admin["vehicles"]} Vehicles",
+                              style: GoogleFonts.inter(fontSize: smallFs),
+                            ),
+                          ),
 
-// EMAIL ROW
-Row(
-  children: [
-    const Icon(CupertinoIcons.mail, size: 16, color: Colors.black),
-    const SizedBox(width: 6), // horizontal gap between icon and text
-    Text(
-      admin["email"],
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black.withOpacity(0.87),
-      ),
-    ),
-  ],
-),
+                          SizedBox(width: spacing * 2),
 
-        ],
-      ),
-    ),
-  ],
-),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: padding,
+                              vertical: spacing - 2,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.red),
+                            ),
+                            child: Text(
+                              "${admin["credits"]} LOW Credits",
+                              style: GoogleFonts.inter(
+                                fontSize: smallFs,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
 
-                      const SizedBox(height: 12),
-                     Row(
-  children: [
-    // Vehicles Badge (normal)
-    Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-      color: Colors.black.withOpacity(0.7), 
-      width: 1,
-    ),
-      ),
-      child: Text(
-        "${admin["vehicles"]} Vehicles",
-        style: GoogleFonts.inter(fontSize: 12, color: Colors.black.withOpacity(0.7)),
-      ),
-    ),
+                      SizedBox(height: spacing * 2),
 
-    const SizedBox(width: 12),
-
-    // LOW Credits Badge (warning)
-    Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  decoration: BoxDecoration(
-    color: Colors.red.withOpacity(0.05), // very subtle background (optional)
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(
-      color: Colors.red, // red border
-      width: 1,
-    ),
-  ),
-  child: RichText(
-    text: TextSpan(
-      children: [
-        TextSpan(
-          text: "${admin["credits"]} LOW ",
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600, // bold
-            color: Colors.red, // warning color
-          ),
-        ),
-        TextSpan(
-          text: "Credits",
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.normal,
-            color: Colors.black.withOpacity(0.7), // credit number color
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-
-  ],
-),
-
-                      const SizedBox(height: 12),
+                      // RECENT LOGIN + SWITCH
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             "Recent login: ${admin["recentLogin"]}",
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.black.withOpacity(0.87), fontWeight: FontWeight.bold),
+                            style: GoogleFonts.inter(
+                              fontSize: smallFs + 1,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          Switch(
-                            value: admin["active"],
-                            onChanged: (value) {
-                              setState(() {
-                                admin["active"] = value;
-                              });
-                            },
-                            activeColor: Colors.black,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(CupertinoIcons.location, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              admin["location"],
-                              style: GoogleFonts.inter(fontSize: 14, color: Colors.black.withOpacity(0.87)),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+
+                          Transform.scale(
+                            scale: 0.75,
+                            child: Switch(
+                              value: admin["active"],
+                              onChanged: (v) {
+                                setState(() => admin["active"] = v);
+                              },
+                              activeColor: Colors.black,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 12),
+
+                      SizedBox(height: spacing),
+
+                      Row(
+                        children: [
+                          Icon(CupertinoIcons.location, size: iconSize),
+                          SizedBox(width: spacing),
+                          Expanded(
+                            child: Text(
+                              admin["location"],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(fontSize: bodyFs),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: spacing),
+
+                      Divider(),
+
+                      SizedBox(height: spacing),
+
                       Row(
                         children: [
                           Expanded(
                             child: Text(
                               "Joined: ${admin["joined"]}",
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
-                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: smallFs,
+                                color: Colors.black.withOpacity(0.6),
+                              ),
                             ),
                           ),
                           Expanded(
                             child: Text(
                               admin["role"],
-                              style: GoogleFonts.inter(fontSize: 10, color: Colors.black.withOpacity(0.5), fontWeight: FontWeight.w500),
                               textAlign: TextAlign.right,
-                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: smallFs - 1,
+                                color: Colors.black.withOpacity(0.6),
+                              ),
                             ),
                           ),
                         ],
@@ -443,7 +427,8 @@ Row(
                 );
               },
             ),
-            const SizedBox(height: 24),
+
+            SizedBox(height: padding * 2),
           ],
         ),
       ),
