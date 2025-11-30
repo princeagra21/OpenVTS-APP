@@ -102,8 +102,8 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
 
     // All sizes from AdaptiveUtils — pure and clean
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double subheaderFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2 ;
+    final double subheaderFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
     final double chartHeight = AdaptiveUtils.isVerySmallScreen(screenWidth)
     ? 180
     : AdaptiveUtils.isSmallScreen(screenWidth)
@@ -114,6 +114,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     final double bottomTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9–11
     final double lineWidth = AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7–3.3
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4–5
+    final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
     final titleStyle = GoogleFonts.inter(
       fontSize: titleFontSize,
@@ -125,18 +126,29 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black),
+       // border: Border.all(color: Colors.black),
       ),
-      child: Wrap(
-        spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
-        runSpacing: 4,
-        children: ["12M", "6M", "3M"].map((tab) {
-          return SmallTab(
-            label: tab,
-            selected: monthTab == tab,
-            onTap: () => setState(() => monthTab = tab),
-          );
-        }).toList(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SmallTab(
+            label: "12M",
+            selected: monthTab == "12M",
+            onTap: () => setState(() => monthTab = "12M"),
+          ),
+          SizedBox(width: spacing),
+          SmallTab(
+            label: "6M",
+            selected: monthTab == "6M",
+            onTap: () => setState(() => monthTab = "6M"),
+          ),
+          SizedBox(width: spacing),
+          SmallTab(
+            label: "3M",
+            selected: monthTab == "3M",
+            onTap: () => setState(() => monthTab = "3M"),
+          ),
+        ],
       ),
     );
 
@@ -184,24 +196,42 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
             ),
           ),
           SizedBox(height: padding),
-          Center(
-            child: Wrap(
-              spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: ["Vehicles", "Users", "Licenses"].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedStats.contains(tab),
-                  selectedBackground: statColors[tab],
-                  onTap: () => setState(() {
-                    selectedStats.contains(tab)
-                        ? selectedStats.remove(tab)
-                        : selectedStats.add(tab);
-                  }),
-                );
-              }).toList(),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SmallTab(
+                label: "Vehicles",
+                selected: selectedStats.contains("Vehicles"),
+                selectedBackground: statColors["Vehicles"],
+                onTap: () => setState(() {
+                  selectedStats.contains("Vehicles")
+                      ? selectedStats.remove("Vehicles")
+                      : selectedStats.add("Vehicles");
+                }),
+              ),
+              SizedBox(width: spacing),
+              SmallTab(
+                label: "Users",
+                selected: selectedStats.contains("Users"),
+                selectedBackground: statColors["Users"],
+                onTap: () => setState(() {
+                  selectedStats.contains("Users")
+                      ? selectedStats.remove("Users")
+                      : selectedStats.add("Users");
+                }),
+              ),
+              SizedBox(width: spacing),
+              SmallTab(
+                label: "Licenses",
+                selected: selectedStats.contains("Licenses"),
+                selectedBackground: statColors["Licenses"],
+                onTap: () => setState(() {
+                  selectedStats.contains("Licenses")
+                      ? selectedStats.remove("Licenses")
+                      : selectedStats.add("Licenses");
+                }),
+              ),
+            ],
           ),
           SizedBox(height: padding + 4),
           SizedBox(
@@ -217,7 +247,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                       showTitles: true,
                       interval: yMax / 3,
                       reservedSize: screenWidth < 420 ? 32 : 40,
-                       getTitlesWidget: (value, meta) => SideTitleWidget(
+                        getTitlesWidget: (value, meta) => SideTitleWidget(
   meta: meta, // pass the required argument
   child: Text(
     "${value.toInt()}K",
