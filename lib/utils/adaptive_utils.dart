@@ -9,6 +9,14 @@ class AdaptiveUtils {
   static bool isVerySmallScreen(double screenWidth) => _isVerySmallScreen(screenWidth);
   static bool isSmallScreen(double screenWidth) => _isSmallScreen(screenWidth);
 
+  static double getBottomBarHeight(double screenWidth) {
+    return _isVerySmallScreen(screenWidth)
+        ? 60
+        : _isSmallScreen(screenWidth)
+            ? 70
+            : 80;
+  }
+
   static double getHorizontalPadding(double screenWidth) {
     return _isVerySmallScreen(screenWidth)
         ? 8
