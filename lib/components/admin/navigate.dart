@@ -3,24 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
-class NavigateBox extends StatefulWidget {
-  const NavigateBox({super.key});
+class NavigateBox extends StatelessWidget {  // Made stateless since state is lifted up
+  final String selectedTab;
+  final List<String> tabs;
+  final ValueChanged<String> onTabSelected;
 
-  @override
-  State<NavigateBox> createState() => _NavigateBoxState();
-}
-
-class _NavigateBoxState extends State<NavigateBox> {
-  String selectedTab = "Profile";
-
-  final List<String> tabs = [
-    "Profile",
-    "Credit History",
-    "Documents",
-    "Vehicles",
-    "Setting",
-    "Roles"
-  ];
+  const NavigateBox({
+    super.key,
+    required this.selectedTab,
+    required this.tabs,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +61,7 @@ class _NavigateBoxState extends State<NavigateBox> {
                   child: SmallTab(
                     label: tab,
                     selected: selectedTab == tab,
-                    onTap: () => setState(() => selectedTab = tab),
+                    onTap: () => onTabSelected(tab),
                   ),
                 );
               }).toList(),

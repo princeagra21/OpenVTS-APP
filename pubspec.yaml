@@ -51,6 +51,12 @@ dependencies:
   # 🎨 Advanced animations and motion widgets
   animations: ^2.1.1
 
+  # 📅 Advanced date picker with range selection support
+  calendar_date_picker2: ^2.0.1
+  
+  # 🌍 Country code picker for phone number inputs
+  country_picker: ^2.0.27
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
