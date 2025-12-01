@@ -1,4 +1,6 @@
 // components/profile/profile_box.dart
+import 'package:fleet_stack/components/admin/profile_tab/edit_admin_profile_screen.dart';
+import 'package:fleet_stack/components/admin/profile_tab/update_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
@@ -183,50 +185,73 @@ class ProfileBox extends StatelessWidget {
 
           SizedBox(height: largeSpacing + 8),
 
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 30,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 1.5),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Edit Profile",
-                      style: GoogleFonts.inter(
-                        fontSize: buttonFontSize,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: spacing + 4),
-              Expanded(
-                child: Container(
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Update Password",
-                      style: GoogleFonts.inter(
-                        fontSize: buttonFontSize,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+         // Action buttons
+Row(
+  children: [
+    Expanded(
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to Edit Admin Profile Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const EditAdminProfileScreen(),
+            ),
+          );
+        },
+        child: Container(
+          height: 30,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 1.5),
+            borderRadius: BorderRadius.circular(24),
           ),
+          child: Center(
+            child: Text(
+              "Edit Profile",
+              style: GoogleFonts.inter(
+                fontSize: buttonFontSize,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+    SizedBox(width: spacing + 4),
+    Expanded(
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to Update Password Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const UpdatePasswordScreen(),
+            ),
+          );
+        },
+        child: Container(
+          height: 30,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Center(
+            child: Text(
+              "Update Password",
+              style: GoogleFonts.inter(
+                fontSize: buttonFontSize,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
         ],
       ),
     );
