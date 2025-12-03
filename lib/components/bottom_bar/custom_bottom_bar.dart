@@ -18,6 +18,7 @@ class CustomBottomBar extends StatelessWidget {
     // 🔥 ROUTES WHERE BOTTOM BAR MUST BE HIDDEN
     const List<String> hiddenRoutes = [
       '/admins/details', // hide all nested: /admins/details/:id
+      '/vehicles/details/'
     ];
 
     // 🔥 AUTO-HIDE LOGIC

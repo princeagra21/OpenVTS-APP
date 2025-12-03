@@ -9,7 +9,7 @@ import '../../utils/adaptive_utils.dart'; // New import for adaptive sizes
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String subtitle;
-  final List<IconData> icons;
+  final List<IconData>? icons; // make icons optional
   final bool showLeftAvatar;
   final bool showRightAvatar;
   final String leftAvatarText;
@@ -18,24 +18,22 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.title,
     required String subtitle,
-    required this.icons,
-    this.showLeftAvatar = true,   // FS avatar default true
-    this.showRightAvatar = false, // AV avatar default false
+    this.icons, // optional now
+    this.showLeftAvatar = true,
+    this.showRightAvatar = false,
     required this.leftAvatarText,
   }) : subtitle = subtitle.length > 18
             ? '${subtitle.substring(0, 15)}...'
             : subtitle;
 
-  /// 🔥 FIX: Remove big gap between AppBar & body by enforcing smaller height
   @override
-  Size get preferredSize => const Size.fromHeight(56); // compact height
+  Size get preferredSize => const Size.fromHeight(56);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Use adaptive utils for all sizes
     final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double iconSize = AdaptiveUtils.getIconSize(screenWidth);
     final double avatarSize = AdaptiveUtils.getAvatarSize(screenWidth);
@@ -58,31 +56,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: Container(
         color: const Color(0xFFF5F5F7),
-
-        /// 🔥 FIX: SafeArea bottom removed to eliminate white gap
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 6, // 🔥 compact height
-            ),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 6),
             child: Row(
               children: [
                 // LEFT SIDE
                 Expanded(
                   child: Row(
                     children: [
-                      /// FS AVATAR or BACK BUTTON
                       showLeftAvatar
                           ? Container(
                               height: avatarSize,
                               width: avatarSize,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [Colors.black, Colors.black],
-                                ),
+                                gradient: LinearGradient(colors: [Colors.black, Colors.black]),
                               ),
                               padding: const EdgeInsets.all(2),
                               child: CircleAvatar(
@@ -98,7 +88,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               ),
                             )
                           : GestureDetector(
-                              onTap: () => context.pop(), // go_router BACK
+                              onTap: () => context.pop(),
                               child: Container(
                                 height: avatarSize,
                                 width: avatarSize,
@@ -120,9 +110,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                             ),
-
                       SizedBox(width: leftSectionSpacing),
-
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
@@ -160,83 +148,83 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
 
                 // RIGHT SIDE
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...icons.map((icon) {
-                      final isBell = icon == CupertinoIcons.bell;
+                if ((icons != null && icons!.isNotEmpty) || showRightAvatar)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icons != null)
+                        ...icons!.map((icon) {
+                          final isBell = icon == CupertinoIcons.bell;
 
-                      return Padding(
-                        padding: EdgeInsets.only(left: iconPaddingLeft),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              height: buttonSize,
-                              width: buttonSize,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: Icon(
-                                icon,
-                                size: iconSize,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            if (isBell)
-                              Positioned(
-                                top: -2,
-                                right: -2,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
+                          return Padding(
+                            padding: EdgeInsets.only(left: iconPaddingLeft),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  height: buttonSize,
+                                  width: buttonSize,
                                   decoration: const BoxDecoration(
-                                    color: Colors.black,
+                                    color: Colors.white,
                                     shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
-                                  child: Text(
-                                    "3",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: bellNotificationFontSize,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    icon,
+                                    size: iconSize,
+                                    color: Colors.black87,
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                                if (isBell)
+                                  Positioned(
+                                    top: -2,
+                                    right: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Text(
+                                        "3",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: bellNotificationFontSize,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
 
-                    // Optional avatar
-                    // RIGHT SIDE AVATAR (ONLY IF true)
-                    if (showRightAvatar)
-                      Padding(
-                        padding: EdgeInsets.only(left: rightAvatarPaddingLeft),
-                        child: CircleAvatar(
-                          radius: rightAvatarRadius,
-                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
-                          child: Text(
-                            "AV",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: rightAvatarFontSize,
-                              color: isDark ? Colors.white : Colors.black87,
+                      if (showRightAvatar)
+                        Padding(
+                          padding: EdgeInsets.only(left: rightAvatarPaddingLeft),
+                          child: CircleAvatar(
+                            radius: rightAvatarRadius,
+                            backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+                            child: Text(
+                              "AV",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: rightAvatarFontSize,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),

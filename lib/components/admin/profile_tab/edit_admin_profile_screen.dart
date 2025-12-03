@@ -75,75 +75,86 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               const SizedBox(height: 20),
 
               // ---------- Full Name ----------
-              _buildTextField(controller: _nameController, hint: "Full Name"),
+              _buildTextField(
+                controller: _nameController,
+                hint: "Full Name",
+                prefixIcon: const Icon(Icons.person, color: Colors.black),
+              ),
 
               const SizedBox(height: 12),
 
               // ---------- Email ----------
-              _buildTextField(controller: _emailController, hint: "Email"),
+              _buildTextField(
+                controller: _emailController,
+                hint: "Email",
+                prefixIcon: const Icon(Icons.email, color: Colors.black),
+              ),
 
               const SizedBox(height: 12),
 
               // ---------- Phone with country picker ----------
               Row(
                 children: [
-                 GestureDetector(
-  onTap: () {
-    showCountryPicker(
-      context: context,
-      showPhoneCode: true,
-      onSelect: (Country country) {
-        setState(() {
-          _selectedCountry = country;
-        });
-      },
-      countryListTheme: CountryListThemeData(
-        flagSize: 25,
-        backgroundColor: Colors.white,
-        textStyle: GoogleFonts.inter(fontSize: 16, color: Colors.black),
-        bottomSheetHeight: 500, // optional, adjust height
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        inputDecoration: InputDecoration(
-          hintText: 'Search country',
-          hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          filled: true,
-          fillColor: Colors.grey.shade200,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  },
-  child: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.grey.shade400),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      children: [
-        Text(
-          _selectedCountry != null ? "+${_selectedCountry!.phoneCode}" : "+234",
-          style: GoogleFonts.inter(fontSize: 16),
-        ),
-        const SizedBox(width: 4),
-        if (_selectedCountry != null)
-          Text(_selectedCountry!.flagEmoji, style: const TextStyle(fontSize: 18)),
-        const Icon(Icons.arrow_drop_down),
-      ],
-    ),
-  ),
-),
-
+                  GestureDetector(
+                    onTap: () {
+                      showCountryPicker(
+                        context: context,
+                        showPhoneCode: true,
+                        onSelect: (Country country) {
+                          setState(() {
+                            _selectedCountry = country;
+                          });
+                        },
+                        countryListTheme: CountryListThemeData(
+                          flagSize: 25,
+                          backgroundColor: Colors.white,
+                          textStyle: GoogleFonts.inter(fontSize: 16, color: Colors.black),
+                          bottomSheetHeight: 500,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                          inputDecoration: InputDecoration(
+                            hintText: 'Search country',
+                            hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            filled: true,
+                            fillColor: Colors.grey.shade200,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            _selectedCountry != null ? "+${_selectedCountry!.phoneCode}" : "+234",
+                            style: GoogleFonts.inter(fontSize: 16),
+                          ),
+                          const SizedBox(width: 4),
+                          if (_selectedCountry != null)
+                            Text(_selectedCountry!.flagEmoji, style: const TextStyle(fontSize: 18)),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildTextField(controller: _phoneController, hint: "Phone Number"),
+                    child: _buildTextField(
+                      controller: _phoneController,
+                      hint: "Phone Number",
+                      prefixIcon: const Icon(Icons.phone, color: Colors.black),
+                    ),
                   ),
                 ],
               ),
@@ -151,7 +162,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               const SizedBox(height: 12),
 
               // ---------- Address ----------
-              _buildTextField(controller: _addressController, hint: "Address"),
+              _buildTextField(
+                controller: _addressController,
+                hint: "Address",
+                prefixIcon: const Icon(Icons.location_on, color: Colors.black),
+              ),
 
               const SizedBox(height: 12),
 
@@ -159,11 +174,19 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(controller: _countryController, hint: "Country Code"),
+                    child: _buildTextField(
+                      controller: _countryController,
+                      hint: "Country Code",
+                      prefixIcon: const Icon(Icons.map, color: Colors.black),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildTextField(controller: _stateController, hint: "State Code"),
+                    child: _buildTextField(
+                      controller: _stateController,
+                      hint: "State Code",
+                      prefixIcon: const Icon(Icons.flag, color: Colors.black),
+                    ),
                   ),
                 ],
               ),
@@ -174,11 +197,19 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(controller: _cityController, hint: "City Name"),
+                    child: _buildTextField(
+                      controller: _cityController,
+                      hint: "City Name",
+                      prefixIcon: const Icon(Icons.location_city, color: Colors.black),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildTextField(controller: _pincodeController, hint: "Pincode"),
+                    child: _buildTextField(
+                      controller: _pincodeController,
+                      hint: "Pincode",
+                      prefixIcon: const Icon(Icons.local_post_office, color: Colors.black),
+                    ),
                   ),
                 ],
               ),
@@ -201,21 +232,39 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     );
   }
 
-  // Reusable textfield
-  Widget _buildTextField({required TextEditingController controller, required String hint}) {
+  // Reusable textfield with black borders and optional icon
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    Widget? prefixIcon,
+  }) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         hintText: hint,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        prefixIcon: prefixIcon != null
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8),
+                child: prefixIcon,
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black, width: 2),
         ),
       ),
     );
   }
 
-  // Reusable full-width button
+  // Full-width button
   Widget _infinityButton({required String text, required VoidCallback onTap, required double fontSize}) {
     return GestureDetector(
       onTap: onTap,
