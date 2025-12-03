@@ -69,6 +69,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 controller: _newPasswordController,
                 hint: "New Password",
                 obscureText: _obscureNew,
+                prefixIcon: const Icon(Icons.lock, color: Colors.black),
                 suffixIcon: IconButton(
                   icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
                   onPressed: () => setState(() => _obscureNew = !_obscureNew),
@@ -82,6 +83,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 controller: _confirmPasswordController,
                 hint: "Confirm Password",
                 obscureText: _obscureConfirm,
+                prefixIcon: const Icon(Icons.lock, color: Colors.black),
                 suffixIcon: IconButton(
                   icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
                   onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -106,11 +108,12 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     );
   }
 
-  // Reusable textfield
+  // Reusable textfield with prefix icon support
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     bool obscureText = false,
+    Widget? prefixIcon,
     Widget? suffixIcon,
   }) {
     return TextField(
@@ -119,10 +122,29 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       decoration: InputDecoration(
         hintText: hint,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        prefixIcon: prefixIcon != null
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8),
+                child: prefixIcon,
+              )
+            : null,
+        suffixIcon: suffixIcon != null
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8),
+                child: suffixIcon,
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        suffixIcon: suffixIcon,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.black, width: 2),
+        ),
       ),
     );
   }

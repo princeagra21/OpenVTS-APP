@@ -158,9 +158,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
                 return Container(
                   margin: EdgeInsets.only(bottom: padding),
-                  padding: EdgeInsets.all(cardPadding),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
@@ -170,259 +168,266 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                     ],
                   ),
-
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // AVATAR
-                          CircleAvatar(
-                            backgroundColor: Colors.black,
-                            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
-                            child: Text(
-                              admin["initials"],
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(width: spacing * 2),
-
-                          // RIGHT SIDE
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(25),
+                    child: InkWell(
+                      onTap: () {
+                        context.push("/admins/details/${admin['id']}");
+                      },
+                      borderRadius: BorderRadius.circular(25),
+                      child: Padding(
+                        padding: EdgeInsets.all(cardPadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                // NAME + STATUS + LOGIN
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        context.push("/admins/details/${admin['id']}");
-                                      },
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            admin["name"],
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          SizedBox(width: spacing),
+                                // AVATAR
+                                CircleAvatar(
+                                  backgroundColor: Colors.black,
+                                  radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                                  child: Text(
+                                    admin["initials"],
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
 
-                                          // STATUS BADGE
+                                SizedBox(width: spacing * 2),
+
+                                // RIGHT SIDE
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // NAME + STATUS + LOGIN
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                admin["name"],
+                                                style: GoogleFonts.inter(
+                                                  fontSize: bodyFs,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              SizedBox(width: spacing),
+
+                                              // STATUS BADGE
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: spacing + 2,
+                                                  vertical: spacing - 3,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: admin["status"] == "Verified"
+                                                      ? Colors.green.withOpacity(0.2)
+                                                      : Colors.orange.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(16),
+                                                ),
+                                                child: Text(
+                                                  admin["status"],
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: smallFs,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: admin["status"] == "Verified"
+                                                        ? Colors.green
+                                                        : Colors.orange,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          // LOGIN BUTTON
                                           Container(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: spacing + 2,
-                                              vertical: spacing - 3,
+                                              horizontal: padding + 4,
+                                              vertical: spacing - 2,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: admin["status"] == "Verified"
-                                                  ? Colors.green.withOpacity(0.2)
-                                                  : Colors.orange.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(16),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: Colors.black.withOpacity(0.5),
+                                                width: 1.2,
+                                              ),
                                             ),
                                             child: Text(
-                                              admin["status"],
+                                              "Login",
                                               style: GoogleFonts.inter(
-                                                fontSize: smallFs,
+                                                fontSize: smallFs + 1,
                                                 fontWeight: FontWeight.w600,
-                                                color: admin["status"] == "Verified"
-                                                    ? Colors.green
-                                                    : Colors.orange,
                                               ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
 
-                                    // LOGIN BUTTON
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: padding + 4,
-                                        vertical: spacing - 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.black.withOpacity(0.5),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Login",
-                                        style: GoogleFonts.inter(
-                                          fontSize: smallFs + 1,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                      SizedBox(height: spacing),
 
-                                SizedBox(height: spacing),
-
-                                // PHONE
-                                Row(
-                                  children: [
-                                    Icon(CupertinoIcons.phone, size: iconSize),
-                                    SizedBox(width: spacing),
-                                    Text(
-                                      admin["phone"],
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        fontWeight: FontWeight.w600,
+                                      // PHONE
+                                      Row(
+                                        children: [
+                                          Icon(CupertinoIcons.phone, size: iconSize),
+                                          SizedBox(width: spacing),
+                                          Text(
+                                            admin["phone"],
+                                            style: GoogleFonts.inter(
+                                              fontSize: bodyFs,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
-                                ),
 
-                                SizedBox(height: spacing / 2),
+                                      SizedBox(height: spacing / 2),
 
-                                // EMAIL
-                                Row(
-                                  children: [
-                                    Icon(CupertinoIcons.mail, size: iconSize),
-                                    SizedBox(width: spacing),
-                                    Text(
-                                      admin["email"],
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        fontWeight: FontWeight.w600,
+                                      // EMAIL
+                                      Row(
+                                        children: [
+                                          Icon(CupertinoIcons.mail, size: iconSize),
+                                          SizedBox(width: spacing),
+                                          Text(
+                                            admin["email"],
+                                            style: GoogleFonts.inter(
+                                              fontSize: bodyFs,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+
+                            SizedBox(height: spacing * 2),
+
+                            // VEHICLES + CREDITS
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: padding,
+                                    vertical: spacing - 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.black.withOpacity(0.7)),
+                                  ),
+                                  child: Text(
+                                    "${admin["vehicles"]} Vehicles",
+                                    style: GoogleFonts.inter(fontSize: smallFs),
+                                  ),
+                                ),
+
+                                SizedBox(width: spacing * 2),
+
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: padding,
+                                    vertical: spacing - 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.red),
+                                  ),
+                                  child: Text(
+                                    "${admin["credits"]} LOW Credits",
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: spacing * 2),
+
+                            // RECENT LOGIN + SWITCH
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Recent login: ${admin["recentLogin"]}",
+                                  style: GoogleFonts.inter(
+                                    fontSize: smallFs + 1,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: Switch(
+                                    value: admin["active"],
+                                    onChanged: (v) {
+                                      setState(() => admin["active"] = v);
+                                    },
+                                    activeColor: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: spacing),
+
+                            Row(
+                              children: [
+                                Icon(CupertinoIcons.location, size: iconSize),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    admin["location"],
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(fontSize: bodyFs),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: spacing),
+
+                            Divider(),
+
+                            SizedBox(height: spacing),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    "Joined: ${admin["joined"]}",
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs,
+                                      color: Colors.black.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    admin["role"],
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs - 1,
+                                      color: Colors.black.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-
-                      SizedBox(height: spacing * 2),
-
-                      // VEHICLES + CREDITS
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: padding,
-                              vertical: spacing - 2,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.black.withOpacity(0.7)),
-                            ),
-                            child: Text(
-                              "${admin["vehicles"]} Vehicles",
-                              style: GoogleFonts.inter(fontSize: smallFs),
-                            ),
-                          ),
-
-                          SizedBox(width: spacing * 2),
-
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: padding,
-                              vertical: spacing - 2,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.red),
-                            ),
-                            child: Text(
-                              "${admin["credits"]} LOW Credits",
-                              style: GoogleFonts.inter(
-                                fontSize: smallFs,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: spacing * 2),
-
-                      // RECENT LOGIN + SWITCH
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Recent login: ${admin["recentLogin"]}",
-                            style: GoogleFonts.inter(
-                              fontSize: smallFs + 1,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-
-                          Transform.scale(
-                            scale: 0.75,
-                            child: Switch(
-                              value: admin["active"],
-                              onChanged: (v) {
-                                setState(() => admin["active"] = v);
-                              },
-                              activeColor: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: spacing),
-
-                      Row(
-                        children: [
-                          Icon(CupertinoIcons.location, size: iconSize),
-                          SizedBox(width: spacing),
-                          Expanded(
-                            child: Text(
-                              admin["location"],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(fontSize: bodyFs),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: spacing),
-
-                      Divider(),
-
-                      SizedBox(height: spacing),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "Joined: ${admin["joined"]}",
-                              style: GoogleFonts.inter(
-                                fontSize: smallFs,
-                                color: Colors.black.withOpacity(0.6),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              admin["role"],
-                              textAlign: TextAlign.right,
-                              style: GoogleFonts.inter(
-                                fontSize: smallFs - 1,
-                                color: Colors.black.withOpacity(0.6),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },

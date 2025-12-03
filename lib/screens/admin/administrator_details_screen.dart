@@ -1,9 +1,14 @@
 import 'package:fleet_stack/components/admin/credit_history/credit_history_tab.dart';
 import 'package:fleet_stack/components/admin/profile_tab/profile_tab.dart';
+import 'package:fleet_stack/components/admin/documents_tab/documents_tab.dart';
 import 'package:fleet_stack/components/admin/navigate.dart';
 import 'package:fleet_stack/components/admin/profile_box.dart';
+import 'package:fleet_stack/components/admin/role_tab.dart';
+import 'package:fleet_stack/components/admin/setting_tab/setting.dart';
+import 'package:fleet_stack/components/admin/vehicles_tab/vehicles_tab.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdministratorDetailsScreen extends StatefulWidget {  // Made stateful to manage tab state
   final String id;
@@ -34,7 +39,6 @@ class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen>
     return AppLayout(
       title: "ADMINISTRATOR",
       subtitle: "Muhammad Sani",
-      actionIcons: const [Icons.more_horiz],
       showLeftAvatar: false,
       leftAvatarText: 'AM',
       child: SingleChildScrollView(
@@ -82,25 +86,27 @@ Widget _buildTabContent() {
       return Column(
         children: const [
           SizedBox(height: 24),
-          PlaceholderContent(label: "Documents Content"),
+          DocumentsTab(),
           SizedBox(height: 24),
         ],
       );
 
-    case "Vehicles":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          PlaceholderContent(label: "Vehicles Content"),
-          SizedBox(height: 24),
-        ],
-      );
+   case "Vehicles":
+  return
+   Column(
+     children: [
+       SizedBox(height: 24),
+        VehiclesTab(),
+        SizedBox(height: 24),
+     ],
+   );
+
 
     case "Setting":
       return Column(
         children: const [
           SizedBox(height: 24),
-          PlaceholderContent(label: "Settings Content"),
+          AdminSettingsTab(),
           SizedBox(height: 24),
         ],
       );
@@ -109,7 +115,7 @@ Widget _buildTabContent() {
       return Column(
         children: const [
           SizedBox(height: 24),
-          PlaceholderContent(label: "Roles Content"),
+          RolesTab(),
           SizedBox(height: 24),
         ],
       );
@@ -142,3 +148,4 @@ class PlaceholderContent extends StatelessWidget {
     );
   }
 }
+

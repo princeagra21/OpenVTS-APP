@@ -6,7 +6,7 @@ import '../components/bottom_bar/custom_bottom_bar.dart';
 class AppLayout extends StatelessWidget {
   final String title;
   final String subtitle;
-  final List<IconData> actionIcons;
+  final List<IconData>? actionIcons; // make optional
   final Widget child;
 
   /// NEW CONTROLS
@@ -18,7 +18,7 @@ class AppLayout extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.actionIcons,
+    this.actionIcons, // optional now
     required this.child,
 
     /// defaults
@@ -34,8 +34,7 @@ class AppLayout extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
       extendBody: true,
       extendBodyBehindAppBar: true,
       body: Stack(
@@ -60,7 +59,7 @@ class AppLayout extends StatelessWidget {
               child: CustomAppBar(
                 title: title,
                 subtitle: subtitle,
-                icons: actionIcons,
+                icons: actionIcons ?? [], // pass empty list if null
 
                 /// NEW AVATAR SETTINGS
                 showLeftAvatar: showLeftAvatar,

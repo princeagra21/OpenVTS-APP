@@ -53,9 +53,15 @@ dependencies:
 
   # 📅 Advanced date picker with range selection support
   calendar_date_picker2: ^2.0.1
-  
+
   # 🌍 Country code picker for phone number inputs
   country_picker: ^2.0.27
+  
+  # 📂 File picker for selecting files from device storage
+  file_picker: ^10.3.7
+
+  # 📋 Enhanced DataTable with more features and better performance
+  data_table_2: ^2.7.2
 
 dev_dependencies:
   flutter_test:

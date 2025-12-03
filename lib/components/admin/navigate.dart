@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
-class NavigateBox extends StatelessWidget {  // Made stateless since state is lifted up
+class NavigateBox extends StatelessWidget {
   final String selectedTab;
   final List<String> tabs;
   final ValueChanged<String> onTabSelected;
@@ -18,8 +18,7 @@ class NavigateBox extends StatelessWidget {  // Made stateless since state is li
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8 /12/16
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -37,6 +36,8 @@ class NavigateBox extends StatelessWidget {  // Made stateless since state is li
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
+          /// NAVIGATE title
           Text(
             "NAVIGATE",
             style: GoogleFonts.inter(
@@ -49,24 +50,29 @@ class NavigateBox extends StatelessWidget {  // Made stateless since state is li
 
           const SizedBox(height: 12),
 
-          // -------------------------
-          //   USE SMALLTAB HERE
-          // -------------------------
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: tabs.map((tab) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: SmallTab(
-                    label: tab,
-                    selected: selectedTab == tab,
-                    onTap: () => onTabSelected(tab),
-                  ),
-                );
-              }).toList(),
+          /// -----------------------------------------
+          ///   CUSTOM HORIZONTAL TAB SCROLL (NO SCROLLBAR)
+          /// -----------------------------------------
+          SizedBox(
+            height: 48,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: tabs.map((tab) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: SmallTab(
+                      label: tab,
+                      selected: selectedTab == tab,
+                      onTap: () => onTabSelected(tab),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
+
         ],
       ),
     );
