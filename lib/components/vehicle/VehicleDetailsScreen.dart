@@ -1,5 +1,8 @@
 import 'package:fleet_stack/components/vehicle/widget/send_command.dart';
+import 'package:fleet_stack/components/vehicle/widget/vehicle_config_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_details_tab.dart';
+import 'package:fleet_stack/components/vehicle/widget/vehicle_documents_tab.dart';
+import 'package:fleet_stack/components/vehicle/widget/vehicle_logs_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_users_tab.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -58,16 +61,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         ),
 
         // NAVIGATE TABS (Stable position)
-        Container(
-          padding: const EdgeInsets.only(bottom: 12), // keep distance stable
-          child: NavigateBox(
-            selectedTab: selectedTab,
-            tabs: tabs,
-            onTabSelected: (newTab) {
-              setState(() => selectedTab = newTab);
-            },
-          ),
+        NavigateBox(
+          selectedTab: selectedTab,
+          tabs: tabs,
+          onTabSelected: (newTab) {
+            setState(() => selectedTab = newTab);
+          },
         ),
+        const SizedBox(height: 24),
 
         // TAB SCREEN CONTENT
         _buildTabContent(),
@@ -146,13 +147,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       case "Send Commands":
         return const SendCommandsTab();
       case "Logs":
-      //  return const VehicleLogsTab();
+        return const VehicleLogsTab();
       case "Maps":
       //  return const VehicleMapsTab();
       case "Documents":
-      //  return const VehicleDocumentsTab();
+        return const VehicleDocumentsTab();
       case "Vehicle Config":
-      //  return const VehicleConfigTab();
+        return const VehicleConfigTab();
       default:
         return const SizedBox.shrink();
     }

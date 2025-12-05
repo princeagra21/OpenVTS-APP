@@ -6,7 +6,7 @@ import '../components/bottom_bar/custom_bottom_bar.dart';
 class AppLayout extends StatelessWidget {
   final String title;
   final String subtitle;
-  final List<IconData>? actionIcons; // make optional
+  final List<IconData>? actionIcons; // optional
   final Widget child;
 
   /// NEW CONTROLS
@@ -14,17 +14,21 @@ class AppLayout extends StatelessWidget {
   final bool showRightAvatar;  // AV avatar
   final String leftAvatarText;
 
+  /// NEW OPTIONS
+  final double horizontalPadding; // default 20
+  final bool showAppBar;          // default true
+
   const AppLayout({
     super.key,
     required this.title,
     required this.subtitle,
-    this.actionIcons, // optional now
+    this.actionIcons,
     required this.child,
-
-    /// defaults
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
     required this.leftAvatarText,
+    this.horizontalPadding = 20.0, // default horizontal padding
+    this.showAppBar = true,        // default show app bar
   });
 
   @override
@@ -40,11 +44,11 @@ class AppLayout extends StatelessWidget {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                SizedBox(height: topPadding + AppUtils.appBarHeightCustom + 32),
+                SizedBox(height: topPadding + (showAppBar ? AppUtils.appBarHeightCustom + 32 : 16)),
                 child,
                 SizedBox(height: 68 + 16 + bottomPadding),
               ],
@@ -52,22 +56,23 @@ class AppLayout extends StatelessWidget {
           ),
 
           /// ---- CUSTOM APP BAR WITH AVATAR CONTROLS ----
-          Positioned(
-            left: 0, right: 0, top: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              child: CustomAppBar(
-                title: title,
-                subtitle: subtitle,
-                icons: actionIcons ?? [], // pass empty list if null
-
-                /// NEW AVATAR SETTINGS
-                showLeftAvatar: showLeftAvatar,
-                showRightAvatar: showRightAvatar,
-                leftAvatarText: leftAvatarText,
+          if (showAppBar)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                child: CustomAppBar(
+                  title: title,
+                  subtitle: subtitle,
+                  icons: actionIcons ?? [],
+                  showLeftAvatar: showLeftAvatar,
+                  showRightAvatar: showRightAvatar,
+                  leftAvatarText: leftAvatarText,
+                ),
               ),
             ),
-          ),
         ],
       ),
       bottomNavigationBar: const CustomBottomBar(),
