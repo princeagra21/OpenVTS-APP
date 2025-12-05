@@ -51,9 +51,9 @@ class AdaptiveUtils {
 
   static double getTitleFontSize(double screenWidth) {
     return _isVerySmallScreen(screenWidth)
-        ? 11
+        ? 8
         : _isSmallScreen(screenWidth)
-            ? 12
+            ? 11
             : 13;
   }
 

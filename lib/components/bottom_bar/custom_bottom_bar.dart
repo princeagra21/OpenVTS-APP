@@ -57,7 +57,7 @@ class CustomBottomBar extends StatelessWidget {
       '/admins',
       '/vehicles',
       '/more',
-      '/home'
+      '/'
     ];
 
     int? currentIndex;

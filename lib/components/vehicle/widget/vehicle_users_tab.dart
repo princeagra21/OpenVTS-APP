@@ -61,79 +61,139 @@ class VehicleUsersTab extends StatelessWidget {
       children: users.map((user) => _buildUserCard(user)).toList(),
     );
   }
+Widget _buildUserCard(Map<String, String> user) {
+  final String initials = _getInitials(user["name"]!);
 
-  Widget _buildUserCard(Map<String, String> user) {
-    final String initials = _getInitials(user["name"]!);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.black.withOpacity(0.7),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.grey[50],
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.03),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
+        )
+      ],
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// AVATAR
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: Colors.black.withOpacity(0.7),
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user["name"]!,
-                  style: GoogleFonts.inter(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  user["username"]! + " • " + user["lastSeen"]!,
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  user["email"]!,
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
-                ),
-                Text(
-                  user["phone"]!,
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(user["status"]!, style: const TextStyle(fontSize: 12, color: Colors.white),),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
 
+        const SizedBox(width: 16),
+
+        /// MAIN CONTENT
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// NAME + USERNAME
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      user["name"]!,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    user["username"]!,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              /// email & phone
+              Text(
+                user["email"]!,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Text(
+                user["phone"]!,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              /// BOTTOM ROW (Last Seen + Status Button)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  /// Last seen text
+                  Text(
+                    "Last: ${user["lastSeen"]}",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+
+                  /// Status button
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    child: Text(
+                      user["status"]!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+  // <-- private helper method IS INSIDE THE CLASS
   String _getInitials(String name) {
-    final parts = name.split(" ");
+    final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.length >= 2) {
       return "${parts[0][0]}${parts[1][0]}".toUpperCase();
     } else if (parts.isNotEmpty) {

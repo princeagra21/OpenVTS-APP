@@ -63,6 +63,12 @@ dependencies:
   # 📋 Enhanced DataTable with more features and better performance
   data_table_2: ^2.7.2
 
+  # 🗺️ Interactive maps for Flutter applications 
+  flutter_map: ^8.2.2
+  
+  # 📐 Geospatial calculations and utilities
+  latlong2: ^0.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

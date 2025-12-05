@@ -513,49 +513,106 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               ],
                             ),
                             SizedBox(height: spacing * 2),
-                            // PRIMARY USER + ADDED BY
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: padding,
-                                      vertical: spacing - 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.black.withOpacity(0.7)),
-                                    ),
-                                    child: Text(
-                                      "${vehicle["primary_user_initials"]} ${vehicle["primary_user_name"]} ${vehicle["primary_user_username"]}",
-                                      style: GoogleFonts.inter(fontSize: smallFs),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: spacing * 2),
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: padding,
-                                      vertical: spacing - 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.black.withOpacity(0.7)),
-                                    ),
-                                    child: Text(
-                                      "${vehicle["added_by_initials"]} ${vehicle["added_by_name"]} ${vehicle["added_by_username"]}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                     // PRIMARY USER + ADDED BY
+Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    // PRIMARY USER
+    Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: Colors.black,
+          child: Text(
+            vehicle["primary_user_initials"] ?? "",
+            style: GoogleFonts.inter(
+              fontSize: smallFs,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(width: spacing * 2),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Label
+            Text(
+              "Primary User",
+              style: GoogleFonts.inter(
+                fontSize: smallFs - 1,
+                color: Colors.black.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              vehicle["primary_user_name"] ?? "",
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              vehicle["primary_user_username"] ?? "",
+              style: GoogleFonts.inter(
+                fontSize: smallFs,
+                color: Colors.black.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+    SizedBox(height: spacing),
+    // ADDED BY
+    Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: Colors.black,
+          child: Text(
+            vehicle["added_by_initials"] ?? "",
+            style: GoogleFonts.inter(
+              fontSize: smallFs,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(width: spacing * 2),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Label
+            Text(
+              "Added By",
+              style: GoogleFonts.inter(
+                fontSize: smallFs - 1,
+                color: Colors.black.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              vehicle["added_by_name"] ?? "",
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              vehicle["added_by_username"] ?? "",
+              style: GoogleFonts.inter(
+                fontSize: smallFs,
+                color: Colors.black.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ],
+),
+
                             SizedBox(height: spacing * 2),
                             // LAST ACTIVITY + SWITCH
                             Row(
@@ -585,19 +642,34 @@ class _VehicleScreenState extends State<VehicleScreen> {
                             ),
                             SizedBox(height: spacing),
                             Row(
-                              children: [
-                                Icon(CupertinoIcons.doc_checkmark, size: iconSize),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    "Pri ${vehicle["license_pri"]} ✓ • Sec ${vehicle["license_sec"]} ✓",
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(fontSize: bodyFs),
-                                  ),
-                                ),
-                              ],
-                            ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Row(
+      children: [
+        Icon(CupertinoIcons.doc_checkmark, size: iconSize),
+        SizedBox(width: spacing),
+        Text(
+          "Primary: ${vehicle["license_pri"]} ✓",
+          style: GoogleFonts.inter(
+            fontSize: bodyFs,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+    
+    // Secondary license on the right
+    Text(
+      "Secondary: ${vehicle["license_sec"]} ✓",
+      style: GoogleFonts.inter(
+        fontSize: bodyFs,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ],
+),
+
                             SizedBox(height: spacing),
                             Divider(),
                             SizedBox(height: spacing),
