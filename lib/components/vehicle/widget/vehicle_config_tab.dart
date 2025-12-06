@@ -141,7 +141,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
               Expanded(
                 child: RadioListTile<String>(
                   activeColor: Colors.black,
-                  title:  Text("Ignition Wire", style: GoogleFonts.inter(fontSize: 12, color: Colors.black),),
+                  title: Text("Ignition Wire", style: GoogleFonts.inter(fontSize: 12, color: Colors.black),),
                   value: "Ignition Wire",
                   groupValue: ignitionSource,
                   onChanged: (value) {
@@ -154,7 +154,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
               Expanded(
                 child: RadioListTile<String>(
                   activeColor: Colors.black,
-                  title:  Text("Motion-Based", style:  GoogleFonts.inter(fontSize: 12, color: Colors.black),),
+                  title: Text("Motion-Based", style: GoogleFonts.inter(fontSize: 12, color: Colors.black),),
                   value: "Motion-Based",
                   groupValue: ignitionSource,
                   onChanged: (value) {
@@ -182,10 +182,70 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Vehicle Setting Configuration",
-              style: GoogleFonts.inter(
-                  fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black.withOpacity(0.7))),
-          const SizedBox(height: 16),
+         Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    // Buttons at top-right
+    Align(
+      alignment: Alignment.topRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // RESET BUTTON
+          OutlinedButton(
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
+              side: MaterialStateProperty.all<BorderSide>(
+                BorderSide(color: Colors.black.withOpacity(0.5)),
+              ),
+              padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0)),
+              minimumSize: MaterialStateProperty.all(const Size(0, 32)),
+            ),
+            onPressed: () {
+              setState(() {
+                ignitionSource = "Ignition Wire";
+              });
+            },
+            child: const Text(
+              "Reset",
+              style: TextStyle(fontSize: 12, color: Colors.black),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // SAVE BUTTON
+          ElevatedButton(
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.black),
+              padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0)),
+              minimumSize: MaterialStateProperty.all(const Size(0, 32)),
+            ),
+            onPressed: () {
+              // Save logic here
+            },
+            child: const Text(
+              "Save",
+              style: TextStyle(fontSize: 12, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(height: 24),
+    // Title under buttons, aligned left
+    Text(
+      "Vehicle Setting Configuration",
+      style: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black.withOpacity(0.7),
+      ),
+    ),
+    const SizedBox(height: 20),
+  ],
+),
+
 
           configBox(
             title: "Speed Multiplier (×)",
@@ -220,43 +280,6 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
           ),
 
           ignitionSourceBox(),
-
-          const SizedBox(height: 16),
-
-          // Save and Reset buttons outside ignition box, aligned to bottom-right
-          Row(
-  mainAxisAlignment: MainAxisAlignment.end,
-  children: [
-    ElevatedButton(
-      style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(Colors.black),
-      ),
-      onPressed: () {
-        // Save logic here
-      },
-      child: const Text(
-        "Save",
-        style: TextStyle(color: Colors.white),
-      ),
-    ),
-    const SizedBox(width: 12),
-    OutlinedButton(
-      style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
-        side: MaterialStateProperty.all<BorderSide>(
-          BorderSide(color: Colors.black.withOpacity(0.5)),
-        ),
-      ),
-      onPressed: () {
-        setState(() {
-          ignitionSource = "Ignition Wire";
-        });
-      },
-      child: const Text("Reset", style: TextStyle(color: Colors.black),),
-    ),
-  ],
-)
-
         ],
       ),
     );
