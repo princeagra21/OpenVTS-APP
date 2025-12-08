@@ -75,4 +75,3 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
-  android_disable_fullscreen: true
