@@ -395,7 +395,7 @@ Column(
         children: [
           Text(
             "$label: ",
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
           ),
           Text(
             value,
@@ -445,8 +445,8 @@ Column(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                Text("since $since", style: GoogleFonts.inter(fontSize: 12, color: Colors.black54)),
+                Text(name, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+                Text("since $since", style: GoogleFonts.inter(fontSize: 11, color: Colors.black54)),
               ],
             ),
           ),
@@ -462,10 +462,10 @@ Column(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Text("$name ", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          Text(state, style: GoogleFonts.inter(color: state == "paused" ? Colors.orange : Colors.green)),
+          Text("$name ", style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(state, style: GoogleFonts.inter(color: state == "paused" ? Colors.orange : Colors.green, fontSize: 11)),
           const Spacer(),
-          Text("wait:$wait act:$act delay:$delay fail:$fail", style: GoogleFonts.inter(fontSize: 12)),
+          Text("wait:$wait act:$act delay:$delay fail:$fail", style: GoogleFonts.inter(fontSize: 9)),
         ],
       ),
     );
