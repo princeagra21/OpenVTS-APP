@@ -1,4 +1,3 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/components/admin/api_config/api_config.dart';
 import 'package:fleet_stack/components/admin/application_setting/application_setting.dart';
 import 'package:fleet_stack/components/admin/branding/branding_screen.dart';
@@ -175,12 +174,7 @@ GoRoute(
 
 
 void main() {
-  runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -194,15 +188,7 @@ class MyApp extends StatelessWidget {
       builder: (_, child) {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
-
-          /// 👇 Required for DevicePreview
-          useInheritedMediaQuery: true,
-          locale: DevicePreview.locale(context),
-          builder: DevicePreview.appBuilder,
-
-          /// 👇 GoRouter integration
           routerConfig: router,
-
           theme: ThemeData(
             scaffoldBackgroundColor: const Color(0xFFF7F7F7),
           ),
