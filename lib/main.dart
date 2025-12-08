@@ -1,3 +1,17 @@
+import 'package:device_preview/device_preview.dart';
+import 'package:fleet_stack/components/admin/api_config/api_config.dart';
+import 'package:fleet_stack/components/admin/application_setting/application_setting.dart';
+import 'package:fleet_stack/components/admin/branding/branding_screen.dart';
+import 'package:fleet_stack/components/admin/calender/calender_screen.dart';
+import 'package:fleet_stack/components/admin/email_template_setting/email_template.dart';
+import 'package:fleet_stack/components/admin/localization/localization.dart';
+import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gateway_details.dart';
+import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gateway_setting.dart';
+import 'package:fleet_stack/components/admin/policy_edit/policy_edit.dart';
+import 'package:fleet_stack/components/admin/push_notification_template/push_notification_template.dart';
+import 'package:fleet_stack/components/admin/server_status/server_status.dart';
+import 'package:fleet_stack/components/admin/smpt_configuration_setting/smpt_configuration_setting.dart';
+import 'package:fleet_stack/components/branding/branding_settings_screen.dart';
 import 'package:fleet_stack/components/profile/profile_screen.dart';
 import 'package:fleet_stack/components/vehicle/VehicleDetailsScreen.dart';
 import 'package:fleet_stack/components/vehicle/vehicle_screen.dart';
@@ -42,9 +56,69 @@ final GoRouter router = GoRouter(
       },
     ),
 
+    GoRoute(path: '/branding',
+    builder: (context, state) {
+      return const BrandingScreen();
+    }
+    ),
+
     GoRoute(
+      path: '/white-label',
+      builder: (_, __) => const BrandingSettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/white-label',
+      builder: (_, __) => const BrandingSettingsScreen(),
+    ),
+
+     GoRoute(
       path: '/',
       builder: (_, __) => const HomeScreen(),
+    ),
+
+    GoRoute(
+      path: '/api-config',
+      builder: (_, __) => const ApiConfigSettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/smtp-settings',
+      builder: (_, __) => const SmtpConfigSettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/localization',
+      builder: (_, __) => const LocalizationSettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/application-settings',
+      builder: (_, __) => const ApplicationSettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/email-settings',
+      builder: (_, __) => const EmailTemplateSettingsScreen(),
+    ),
+
+  GoRoute(
+  path: '/payment-gateway/:id',
+  builder: (context, state) {
+    final gatewayId = state.pathParameters['id']!;
+    return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
+  },
+),
+
+
+    GoRoute(
+      path: '/payment-gateway',
+      builder: (_, __) => const PaymentGatewaySettingsScreen(),
+    ),
+
+    GoRoute(
+      path: '/notification-settings',
+      builder: (_, __) => const PushNotificationTemplateSettingsScreen(),
     ),
 
     /// 🚗 Vehicle list screen
@@ -52,11 +126,26 @@ final GoRouter router = GoRouter(
       path: '/vehicles',
       builder: (_, __) => const VehicleScreen(),
     ),
-
+    
     /// 🚗 Add new vehicle screen
     GoRoute(
-      path: '/vehicles/add',
-      builder: (_, __) => const AddVehicleScreen(),
+  path: '/vehicles/add',
+  builder: (_, __) => const AddVehicleScreen(), 
+),
+
+GoRoute(
+      path: '/calendar',
+      builder: (_, __) => const EventCalendarScreen(),
+    ),
+
+    GoRoute(
+      path: '/server',
+      builder: (_, __) => const ServerStatusScreen(),
+    ),
+
+    GoRoute(
+      path: '/user-policy',
+      builder: (_, __) => const PolicyEditScreen(),
     ),
 
     GoRoute(
@@ -64,12 +153,15 @@ final GoRouter router = GoRouter(
       builder: (_, __) => const MoreScreen(),
     ),
 
-    GoRoute(
-      path: '/map',
-      builder: (_, __) => const MapScreen(),
-    ),
 
-    /// 🚗 Vehicle details screen
+GoRoute(
+  path: '/map',
+  builder: (_, __) => const MapScreen(),
+),
+
+
+
+    /// 🚗 Vehicle details screen — added now
     GoRoute(
       path: '/vehicles/details/:id',
       name: 'vehicleDetails',
@@ -81,8 +173,14 @@ final GoRouter router = GoRouter(
   ],
 );
 
+
 void main() {
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      enabled: true,
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -97,8 +195,10 @@ class MyApp extends StatelessWidget {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
 
-          /// 👇 No DevicePreview here anymore
-          builder: (context, widget) => widget!,
+          /// 👇 Required for DevicePreview
+          useInheritedMediaQuery: true,
+          locale: DevicePreview.locale(context),
+          builder: DevicePreview.appBuilder,
 
           /// 👇 GoRouter integration
           routerConfig: router,
