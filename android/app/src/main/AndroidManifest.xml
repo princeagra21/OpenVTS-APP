@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:label="fleek_stack_mobile"
+        android:label="Fleet Stack"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
