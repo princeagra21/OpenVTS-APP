@@ -19,9 +19,9 @@ class SettingsScreen extends StatelessWidget {
       {'title': 'API Config', 'subtitle': 'Configure APIs', 'icon': CupertinoIcons.cloud, 'route': '/api-config'},
       {'title': 'SMTP Settings', 'subtitle': 'Email settings', 'icon': CupertinoIcons.mail, 'route': '/smtp-settings'},
       {'title': 'Localization', 'subtitle': 'Language & region', 'icon': CupertinoIcons.globe, 'route': '/localization'},
-      {'title': 'Settings', 'subtitle': 'App preferences', 'icon': CupertinoIcons.settings, 'route': '/settings'},
-      {'title': 'Email Templates', 'subtitle': 'Manage emails', 'icon': CupertinoIcons.doc, 'route': '/email-templates'},
-      {'title': 'Push Notification Templates', 'subtitle': 'Manage push', 'icon': CupertinoIcons.bell, 'route': '/push-templates'},
+      {'title': 'Settings', 'subtitle': 'App preferences', 'icon': CupertinoIcons.settings, 'route': '/application-settings'},
+      {'title': 'Email Templates', 'subtitle': 'Manage emails', 'icon': CupertinoIcons.doc, 'route': '/email-settings'},
+      {'title': 'Push Notification Templates', 'subtitle': 'Manage push', 'icon': CupertinoIcons.bell, 'route': '/notification-settings'},
       {'title': 'Payment Gateway', 'subtitle': 'Configure payments', 'icon': CupertinoIcons.creditcard, 'route': '/payment-gateway'},
       {'title': 'Update User Policy', 'subtitle': 'User policy', 'icon': CupertinoIcons.doc_text, 'route': '/user-policy'},
     ];

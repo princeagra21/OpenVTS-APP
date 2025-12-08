@@ -17,10 +17,24 @@ class CustomBottomBar extends StatelessWidget {
 
     // 🔥 ROUTES WHERE BOTTOM BAR MUST BE HIDDEN
     const List<String> hiddenRoutes = [
-      '/admins/details', // hide all nested: /admins/details/:id
+      '/admins/details', 
       '/vehicles/details/',
       '/profile',
       '/settings',
+      '/white-label',
+      '/branding',
+      '/api-config',
+      '/localization',
+      '/application-settings',
+      '/notification-settings',
+      '/email-settings',
+      '/smtp-settings',
+      '/user-policy',
+      '/notification-settings',
+      '/payment-gateway',
+      '/server',
+      '/calendar',
+
     ];
 
     // 🔥 AUTO-HIDE LOGIC
