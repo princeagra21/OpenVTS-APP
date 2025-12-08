@@ -1,8 +1,6 @@
 name: fleet_stack
 description: "A new Flutter project."
-
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
@@ -14,81 +12,39 @@ dependencies:
 
   # iOS-style Cupertino icons
   cupertino_icons: ^1.0.8
-
-  # 📱 Responsive UI utilities (scales sizes based on screen dimensions)
   flutter_screenutil: ^5.9.3
-
-  # 🧪 Preview your app on different devices inside your editor
-  device_preview: ^1.2.0
-
-  # 📊 Beautiful charts/graphs for dashboards (bar, line, pie charts, etc.)
   fl_chart: ^1.1.1
-
-  # 🔀 Routing package (Navigation 2.0) – best for multipage apps
   go_router: ^17.0.0
-
-  # 🌐 Make HTTP API calls (GET, POST, etc.)
   http: ^1.6.0
-
-  # 🖼 Efficient image loading with caching (reduces network usage)
   cached_network_image: ^3.4.1
-
-  # 🧩 State management – lightweight, modern, powerful (recommended)
   flutter_riverpod: ^3.0.3
-
-  # 🖍 Render SVG icons and illustrations
   flutter_svg: ^2.2.3
-
-  # 🔗 Open browser links, phone calls, email, apps etc.
   url_launcher: ^6.3.2
-
-  # 💾 Local key-value storage (small data like tokens, onboarding flags)
   shared_preferences: ^2.5.3
-
-  # 🔤 Use custom fonts from Google Fonts
   google_fonts: ^6.3.2
-  
-  # 🎨 Advanced animations and motion widgets
   animations: ^2.1.1
-
-  # 📅 Advanced date picker with range selection support
   calendar_date_picker2: ^2.0.1
-
-  # 🌍 Country code picker for phone number inputs
   country_picker: ^2.0.27
-  
-  # 📂 File picker for selecting files from device storage
   file_picker: ^10.3.7
-
-  # 📋 Enhanced DataTable with more features and better performance
   data_table_2: ^2.7.2
-
-  # 🗺️ Interactive maps for Flutter applications 
   flutter_map: ^8.2.2
-  
-  # 📐 Geospatial calculations and utilities
   latlong2: ^0.9.1
+  font_awesome_flutter: ^10.12.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # 🧹 Recommended lint rules for clean code
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 flutter:
   uses-material-design: true
 
- # assets:
-  #  - assets/images/
+  assets:
+    - assets/image/logo.png
 
-
-  # Add assets here:
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
-
-  # Add custom fonts here:
+  # Fonts
   fonts:
     - family: Satoshi
       fonts:
@@ -102,3 +58,21 @@ flutter:
           weight: 700
         - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Black.otf
           weight: 900
+
+# Launcher icons - MUST be top-level, not under flutter:
+flutter_icons:
+  android: true
+  ios: true
+  image_path_android: "assets/image/logo.png"
+  image_path_ios: "assets/image/logo.png"
+  adaptive_icon_background: "#194EE5"
+  adaptive_icon_foreground: "assets/image/logo.png"
+
+# Native splash screen - top-level
+flutter_native_splash:
+  color: "#194EE5"
+  image: assets/image/logo.png
+  android: true
+  ios: true
+  web: false
+  android_disable_fullscreen: true

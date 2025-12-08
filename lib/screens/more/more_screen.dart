@@ -2,7 +2,7 @@ import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Added import for GoRouter
+import 'package:go_router/go_router.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -11,6 +11,7 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
 
+    /// Updated menu items — Added SSL & Roles
     final List<Map<String, dynamic>> menuItems = [
       {
         'title': 'Server',
@@ -33,8 +34,22 @@ class MoreScreen extends StatelessWidget {
       {
         'title': 'Setting',
         'subtitle': 'App and account',
-        'icon': CupertinoIcons.settings,
+        'icon': CupertinoIcons.settings_solid,
         'route': '/settings',
+      },
+
+      /// NEW ITEMS
+      {
+        'title': 'SSL',
+        'subtitle': 'Certificate & HTTPS',
+        'icon': CupertinoIcons.lock_shield,
+        'route': '/ssl',
+      },
+      {
+        'title': 'Roles',
+        'subtitle': 'Admin & permissions',
+        'icon': CupertinoIcons.person_2_fill,
+        'route': '/roles',
       },
     ];
 
@@ -46,9 +61,8 @@ class MoreScreen extends StatelessWidget {
       actionIcons: const [CupertinoIcons.search, CupertinoIcons.bell],
       leftAvatarText: 'FS',
 
-      /// MAIN BODY CONTAINER WITH DECORATION
       child: Container(
-        padding: EdgeInsets.fromLTRB(hp, hp, hp, hp * 2), // extra bottom padding
+        padding: EdgeInsets.fromLTRB(hp, hp, hp, hp * 2),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
@@ -68,8 +82,6 @@ class MoreScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            /// TITLE
             Text(
               "Tools & Settings",
               style: TextStyle(
@@ -82,17 +94,29 @@ class MoreScreen extends StatelessWidget {
 
             SizedBox(height: hp * 1.2),
 
-            /// ROWS OF CARDS
+            /// FIRST ROW (Server, Calendar)
             _buildRow(menuItems[0], menuItems[1], width, hp, context),
             SizedBox(height: hp),
+
+            /// SECOND ROW (Support, Setting)
             _buildRow(menuItems[2], menuItems[3], width, hp, context),
+            SizedBox(height: hp),
+
+            /// THIRD ROW (SSL, Roles)
+            _buildRow(menuItems[4], menuItems[5], width, hp, context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRow(Map<String, dynamic> left, Map<String, dynamic> right, double width, double hp, BuildContext context) {
+  Widget _buildRow(
+    Map<String, dynamic> left,
+    Map<String, dynamic> right,
+    double width,
+    double hp,
+    BuildContext context,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -146,7 +170,7 @@ class _MoreMenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: () {
           if (route.isNotEmpty) {
-             context.push(route);
+            context.push(route);
           }
         },
         child: Container(
@@ -166,10 +190,11 @@ class _MoreMenuCard extends StatelessWidget {
               ),
             ],
           ),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// ICON AVATAR
+              /// ICON
               Container(
                 height: AdaptiveUtils.getAvatarSize(width) * 1.5,
                 width: AdaptiveUtils.getAvatarSize(width) * 1.5,
@@ -185,8 +210,10 @@ class _MoreMenuCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 12),
-              /// CARD TITLE
+
+              const SizedBox(height: 12),
+
+              /// TITLE
               Text(
                 title,
                 style: TextStyle(
@@ -196,8 +223,10 @@ class _MoreMenuCard extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
+
               SizedBox(height: AdaptiveUtils.isVerySmallScreen(width) ? 4 : 6),
-              /// CARD SUBTITLE
+
+              /// SUBTITLE
               Text(
                 subtitle,
                 style: TextStyle(

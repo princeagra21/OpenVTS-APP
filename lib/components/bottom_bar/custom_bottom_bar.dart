@@ -34,6 +34,8 @@ class CustomBottomBar extends StatelessWidget {
       '/payment-gateway',
       '/server',
       '/calendar',
+      '/roles',
+      '/ssl',
 
     ];
 

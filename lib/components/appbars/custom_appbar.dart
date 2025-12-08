@@ -43,7 +43,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final double leftSectionSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double iconPaddingLeft = AdaptiveUtils.getIconPaddingLeft(screenWidth);
     final double rightAvatarPaddingLeft = AdaptiveUtils.getRightAvatarPaddingLeft(screenWidth);
-    final double fsAvatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
+   // final double fsAvatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
     final double bellNotificationFontSize = AdaptiveUtils.getBellNotificationFontSize(screenWidth);
     final double rightAvatarRadius = AdaptiveUtils.getRightAvatarRadius(screenWidth);
     final double rightAvatarFontSize = AdaptiveUtils.getRightAvatarFontSize(screenWidth);
@@ -67,49 +67,45 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   child: Row(
                     children: [
                       showLeftAvatar
-                          ? Container(
-                              height: avatarSize,
-                              width: avatarSize,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(colors: [Colors.black, Colors.black]),
-                              ),
-                              padding: const EdgeInsets.all(2),
-                              child: CircleAvatar(
-                                backgroundColor: Colors.black,
-                                child: Text(
-                                  leftAvatarText,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: fsAvatarFontSize,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : GestureDetector(
-                              onTap: () => context.pop(),
-                              child: Container(
-                                height: avatarSize,
-                                width: avatarSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    )
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.arrow_back,
-                                  size: iconSize,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
+    ? Container(
+        height: avatarSize,
+        width: avatarSize,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          // Remove gradient since logo will cover it
+        ),
+        padding: const EdgeInsets.all(2),
+        child: ClipOval(
+          child: Image.asset(
+            'assets/image/logo.png',
+            fit: BoxFit.cover,
+          ),
+        ),
+      )
+    : GestureDetector(
+        onTap: () => context.pop(),
+        child: Container(
+          height: avatarSize,
+          width: avatarSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              )
+            ],
+          ),
+          child: Icon(
+            Icons.arrow_back,
+            size: iconSize,
+            color: Colors.black,
+          ),
+        ),
+      ),
+
                       SizedBox(width: leftSectionSpacing),
                       Expanded(
                         child: FittedBox(

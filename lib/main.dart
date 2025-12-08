@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:fleet_stack/components/admin/api_config/api_config.dart';
 import 'package:fleet_stack/components/admin/application_setting/application_setting.dart';
 import 'package:fleet_stack/components/admin/branding/branding_screen.dart';
@@ -8,8 +12,11 @@ import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gat
 import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gateway_setting.dart';
 import 'package:fleet_stack/components/admin/policy_edit/policy_edit.dart';
 import 'package:fleet_stack/components/admin/push_notification_template/push_notification_template.dart';
+import 'package:fleet_stack/components/admin/role/role.dart';
 import 'package:fleet_stack/components/admin/server_status/server_status.dart';
 import 'package:fleet_stack/components/admin/smpt_configuration_setting/smpt_configuration_setting.dart';
+import 'package:fleet_stack/components/admin/ssl/ssl.dart';
+import 'package:fleet_stack/components/admin/support/support.dart';
 import 'package:fleet_stack/components/branding/branding_settings_screen.dart';
 import 'package:fleet_stack/components/profile/profile_screen.dart';
 import 'package:fleet_stack/components/vehicle/VehicleDetailsScreen.dart';
@@ -20,32 +27,17 @@ import 'package:fleet_stack/screens/admin/admins_screen.dart';
 import 'package:fleet_stack/screens/map/map_screen.dart';
 import 'package:fleet_stack/screens/more/more_screen.dart';
 import 'package:fleet_stack/screens/setting/setting_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-
-import 'screens/home/home_screen.dart';
+import 'package:fleet_stack/screens/home/home_screen.dart';
 
 /// 👇 Define router here
 final GoRouter router = GoRouter(
   initialLocation: '/home',
   routes: [
-    GoRoute(
-      path: '/home',
-      builder: (_, __) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/admins',
-      builder: (_, __) => const AdminScreen(),
-    ),
-    GoRoute(
-      path: '/settings',
-      builder: (_, __) => const SettingsScreen(),
-    ),
-    GoRoute(
-      path: '/profile',
-      builder: (_, __) => const ProfileScreen(),
-    ),
+    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+    GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+    GoRoute(path: '/admins', builder: (_, __) => const AdminScreen()),
+    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+    GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
     GoRoute(
       path: '/admins/details/:id',
       name: 'adminDetails',
@@ -54,113 +46,25 @@ final GoRouter router = GoRouter(
         return AdministratorDetailsScreen(id: id!);
       },
     ),
-
-    GoRoute(path: '/branding',
-    builder: (context, state) {
-      return const BrandingScreen();
-    }
-    ),
-
+    GoRoute(path: '/branding', builder: (_, __) => const BrandingScreen()),
+    GoRoute(path: '/white-label', builder: (_, __) => const BrandingSettingsScreen()),
+    GoRoute(path: '/api-config', builder: (_, __) => const ApiConfigSettingsScreen()),
+    GoRoute(path: '/support', builder: (_, __) => const SupportScreen()),
+    GoRoute(path: '/smtp-settings', builder: (_, __) => const SmtpConfigSettingsScreen()),
+    GoRoute(path: '/localization', builder: (_, __) => const LocalizationSettingsScreen()),
+    GoRoute(path: '/application-settings', builder: (_, __) => const ApplicationSettingsScreen()),
+    GoRoute(path: '/email-settings', builder: (_, __) => const EmailTemplateSettingsScreen()),
     GoRoute(
-      path: '/white-label',
-      builder: (_, __) => const BrandingSettingsScreen(),
+      path: '/payment-gateway/:id',
+      builder: (context, state) {
+        final gatewayId = state.pathParameters['id']!;
+        return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
+      },
     ),
-
-    GoRoute(
-      path: '/white-label',
-      builder: (_, __) => const BrandingSettingsScreen(),
-    ),
-
-     GoRoute(
-      path: '/',
-      builder: (_, __) => const HomeScreen(),
-    ),
-
-    GoRoute(
-      path: '/api-config',
-      builder: (_, __) => const ApiConfigSettingsScreen(),
-    ),
-
-    GoRoute(
-      path: '/smtp-settings',
-      builder: (_, __) => const SmtpConfigSettingsScreen(),
-    ),
-
-    GoRoute(
-      path: '/localization',
-      builder: (_, __) => const LocalizationSettingsScreen(),
-    ),
-
-    GoRoute(
-      path: '/application-settings',
-      builder: (_, __) => const ApplicationSettingsScreen(),
-    ),
-
-    GoRoute(
-      path: '/email-settings',
-      builder: (_, __) => const EmailTemplateSettingsScreen(),
-    ),
-
-  GoRoute(
-  path: '/payment-gateway/:id',
-  builder: (context, state) {
-    final gatewayId = state.pathParameters['id']!;
-    return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
-  },
-),
-
-
-    GoRoute(
-      path: '/payment-gateway',
-      builder: (_, __) => const PaymentGatewaySettingsScreen(),
-    ),
-
-    GoRoute(
-      path: '/notification-settings',
-      builder: (_, __) => const PushNotificationTemplateSettingsScreen(),
-    ),
-
-    /// 🚗 Vehicle list screen
-    GoRoute(
-      path: '/vehicles',
-      builder: (_, __) => const VehicleScreen(),
-    ),
-    
-    /// 🚗 Add new vehicle screen
-    GoRoute(
-  path: '/vehicles/add',
-  builder: (_, __) => const AddVehicleScreen(), 
-),
-
-GoRoute(
-      path: '/calendar',
-      builder: (_, __) => const EventCalendarScreen(),
-    ),
-
-    GoRoute(
-      path: '/server',
-      builder: (_, __) => const ServerStatusScreen(),
-    ),
-
-    GoRoute(
-      path: '/user-policy',
-      builder: (_, __) => const PolicyEditScreen(),
-    ),
-
-    GoRoute(
-      path: '/more',
-      builder: (_, __) => const MoreScreen(),
-    ),
-
-
-GoRoute(
-  path: '/map',
-  builder: (_, __) => const MapScreen(),
-),
-
-
-
-    /// 🚗 Vehicle details screen — added now
+    GoRoute(path: '/payment-gateway', builder: (_, __) => const PaymentGatewaySettingsScreen()),
+    GoRoute(path: '/notification-settings', builder: (_, __) => const PushNotificationTemplateSettingsScreen()),
+    GoRoute(path: '/vehicles', builder: (_, __) => const VehicleScreen()),
+    GoRoute(path: '/vehicles/add', builder: (_, __) => const AddVehicleScreen()),
     GoRoute(
       path: '/vehicles/details/:id',
       name: 'vehicleDetails',
@@ -169,9 +73,15 @@ GoRoute(
         return VehicleDetailsScreen(id: id!);
       },
     ),
+    GoRoute(path: '/calendar', builder: (_, __) => const EventCalendarScreen()),
+    GoRoute(path: '/server', builder: (_, __) => const ServerStatusScreen()),
+    GoRoute(path: '/ssl', builder: (_, __) => const SSLManagementScreen()),
+    GoRoute(path: '/roles', builder: (_, __) => const RolesScreen()),
+    GoRoute(path: '/user-policy', builder: (_, __) => const PolicyEditScreen()),
+    GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
+    GoRoute(path: '/map', builder: (_, __) => const MapScreen()),
   ],
 );
-
 
 void main() {
   runApp(const MyApp());
