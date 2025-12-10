@@ -1,27 +1,28 @@
-// components/appbars/custom_appbar.dart
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_utils.dart';
-import '../../utils/adaptive_utils.dart'; // New import for adaptive sizes
+import '../../utils/adaptive_utils.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String subtitle;
-  final List<IconData>? icons; // make icons optional
+  final List<IconData>? icons;
   final bool showLeftAvatar;
   final bool showRightAvatar;
   final String leftAvatarText;
+  final bool showLogo; // New property for controlling logo display
 
   CustomAppBar({
     super.key,
     required this.title,
     required String subtitle,
-    this.icons, // optional now
+    this.icons,
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
     required this.leftAvatarText,
+    this.showLogo = false, // Default value for the new property
   }) : subtitle = subtitle.length > 18
             ? '${subtitle.substring(0, 15)}...'
             : subtitle;
@@ -31,7 +32,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
     final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
@@ -43,19 +46,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final double leftSectionSpacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double iconPaddingLeft = AdaptiveUtils.getIconPaddingLeft(screenWidth);
     final double rightAvatarPaddingLeft = AdaptiveUtils.getRightAvatarPaddingLeft(screenWidth);
-   // final double fsAvatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
     final double bellNotificationFontSize = AdaptiveUtils.getBellNotificationFontSize(screenWidth);
     final double rightAvatarRadius = AdaptiveUtils.getRightAvatarRadius(screenWidth);
     final double rightAvatarFontSize = AdaptiveUtils.getRightAvatarFontSize(screenWidth);
 
+    // Determines if the title/subtitle should be shown
+    final bool showTitleAndSubtitle = !showLogo && !showLeftAvatar;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFFF5F5F7),
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
+      value: isDark
+          ? SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: cs.background,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: cs.background,
+              statusBarIconBrightness: Brightness.dark,
+            ),
       child: Container(
-        color: const Color(0xFFF5F5F7),
+        color: Colors.transparent,
         child: SafeArea(
           bottom: false,
           child: Padding(
@@ -66,84 +75,98 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      showLeftAvatar
-    ? Container(
-        height: avatarSize,
-        width: avatarSize,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          // Remove gradient since logo will cover it
-        ),
-        padding: const EdgeInsets.all(2),
-        child: ClipOval(
-          child: Image.asset(
-            'assets/image/logo.png',
-            fit: BoxFit.cover,
-          ),
-        ),
-      )
-    : GestureDetector(
-        onTap: () => context.pop(),
-        child: Container(
-          height: avatarSize,
-          width: avatarSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              )
-            ],
-          ),
-          child: Icon(
-            Icons.arrow_back,
-            size: iconSize,
-            color: Colors.black,
-          ),
-        ),
-      ),
-
-                      SizedBox(width: leftSectionSpacing),
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                title,
-                                style: AppUtils.subtitleBase.copyWith(
-                                  fontSize: titleFontSize,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                subtitle,
-                                style: AppUtils.headlineSmallBase.copyWith(
-                                  fontSize: subtitleFontSize,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : Colors.black,
-                                  letterSpacing: -0.5,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.visible,
-                              ),
-                            ],
+                      // --- LOGO (New requirement: Replaces avatar/back button when needed) ---
+                      if (showLogo)
+                        // Logo container with fixed dimensions (45x230)
+                        SizedBox(
+                          height: 45,
+                          width: 230,
+                          child: Image.asset(
+                            'assets/image/logo.jpeg', // Assuming logo is at this path
+                            fit: BoxFit.contain, // Use contain to respect aspect ratio within bounds
+                          ),
+                        )
+                      // --- LEFT AVATAR (Requirement: Image only, no title/subtitle) ---
+                      else if (showLeftAvatar)
+                        Container(
+                          height: avatarSize,
+                          width: avatarSize,
+                          padding: const EdgeInsets.all(2),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/image/logo.png', // Assuming this is the avatar image path
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      // --- BACK BUTTON (Default when no logo/avatar is shown) ---
+                      else
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            height: avatarSize,
+                            width: avatarSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: cs.surface,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: cs.shadow.withOpacity(0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                )
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.arrow_back,
+                              size: iconSize,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
-                      ),
+
+                      // --- TITLE AND SUBTITLE (Only show if neither logo nor left avatar is active) ---
+                      if (showTitleAndSubtitle)
+                        SizedBox(width: leftSectionSpacing),
+
+                      if (showTitleAndSubtitle)
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  title,
+                                  style: AppUtils.subtitleBase.copyWith(
+                                    fontSize: titleFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface.withOpacity(0.6),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: AppUtils.headlineSmallBase.copyWith(
+                                    fontSize: subtitleFontSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: cs.onBackground,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.visible,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
 
-                // RIGHT SIDE
+                // RIGHT SIDE (remains unchanged)
                 if ((icons != null && icons!.isNotEmpty) || showRightAvatar)
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -160,14 +183,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 Container(
                                   height: buttonSize,
                                   width: buttonSize,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
+                                  decoration: BoxDecoration(
+                                    color: cs.surface,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black12,
+                                        color: cs.shadow.withOpacity(0.1),
                                         blurRadius: 8,
-                                        offset: Offset(0, 3),
+                                        offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
@@ -175,7 +198,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   child: Icon(
                                     icon,
                                     size: iconSize,
-                                    color: Colors.black87,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                                 if (isBell)
@@ -184,14 +207,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                     right: -2,
                                     child: Container(
                                       padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black,
+                                      decoration: BoxDecoration(
+                                        color: cs.primary,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Text(
                                         "3",
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: cs.onPrimary,
                                           fontSize: bellNotificationFontSize,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -208,13 +231,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                           padding: EdgeInsets.only(left: rightAvatarPaddingLeft),
                           child: CircleAvatar(
                             radius: rightAvatarRadius,
-                            backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+                            backgroundColor: cs.primaryContainer,
                             child: Text(
                               "AV",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: rightAvatarFontSize,
-                                color: isDark ? Colors.white : Colors.black87,
+                                color: cs.onPrimaryContainer,
                               ),
                             ),
                           ),

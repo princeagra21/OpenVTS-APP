@@ -8,6 +8,7 @@ class ProfileInfoBoxes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
@@ -24,6 +25,7 @@ class ProfileInfoBoxes extends StatelessWidget {
             titleFontSize: titleFontSize,
             contentFontSize: contentFontSize,
             padding: horizontalPadding,
+            colorScheme: colorScheme,
           ),
         ),
         SizedBox(width: horizontalPadding),
@@ -35,6 +37,7 @@ class ProfileInfoBoxes extends StatelessWidget {
             titleFontSize: titleFontSize,
             contentFontSize: contentFontSize,
             padding: horizontalPadding,
+            colorScheme: colorScheme,
           ),
         ),
       ],
@@ -48,11 +51,12 @@ class ProfileInfoBoxes extends StatelessWidget {
     required double titleFontSize,
     required double contentFontSize,
     required double padding,
+    required ColorScheme colorScheme,
   }) {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -71,7 +75,7 @@ class ProfileInfoBoxes extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -80,7 +84,7 @@ class ProfileInfoBoxes extends StatelessWidget {
               content,
               style: GoogleFonts.inter(
                 fontSize: contentFontSize,
-                color: Colors.black.withOpacity(0.6),
+                color: colorScheme.onSurface.withOpacity(0.6),
                 height: 1.3,
               ),
               maxLines: 3,

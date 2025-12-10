@@ -48,6 +48,7 @@ class FleetOverviewBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
 
     // Adaptive values from our design system
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;     // 14–18
@@ -71,7 +72,7 @@ class FleetOverviewBox extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
               Container(
@@ -80,7 +81,7 @@ class FleetOverviewBox extends StatelessWidget {
                   vertical: spacing - 2,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black, width: 1),
+                  border: Border.all(color: colorScheme.onSurface, width: 1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -88,7 +89,7 @@ class FleetOverviewBox extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: badgeFontSize,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -103,7 +104,7 @@ class FleetOverviewBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: bigNumberFontSize,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: colorScheme.onSurface,
               height: 1.1,
               letterSpacing: -1.5,
             ),
@@ -117,7 +118,7 @@ class FleetOverviewBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: descriptionFontSize,
               fontWeight: FontWeight.w400,
-              color: Colors.black.withOpacity(0.8),
+              color: colorScheme.onSurface.withOpacity(0.8),
             ),
           ),
 
@@ -140,13 +141,14 @@ class FleetOverviewBox extends StatelessWidget {
   }
 
   Widget _capsule(BuildContext context, String text, double fontSize, double spacing) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: spacing + 6,
         vertical: spacing,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
+        color: colorScheme.surfaceVariant.withOpacity(0.6),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -161,7 +163,7 @@ class FleetOverviewBox extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
-          color: Colors.black,
+          color: colorScheme.onSurface,
         ),
       ),
     );

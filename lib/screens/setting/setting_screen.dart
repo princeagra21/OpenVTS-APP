@@ -4,12 +4,14 @@ import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
 
     final List<Map<String, dynamic>> settingsItems = [
@@ -20,9 +22,9 @@ class SettingsScreen extends StatelessWidget {
       {'title': 'SMTP Settings', 'subtitle': 'Email settings', 'icon': CupertinoIcons.mail, 'route': '/smtp-settings'},
       {'title': 'Localization', 'subtitle': 'Language & region', 'icon': CupertinoIcons.globe, 'route': '/localization'},
       {'title': 'Settings', 'subtitle': 'App preferences', 'icon': CupertinoIcons.settings, 'route': '/application-settings'},
-      {'title': 'Email Templates', 'subtitle': 'Manage emails', 'icon': CupertinoIcons.doc, 'route': '/email-settings'},
-      {'title': 'Push Notification Templates', 'subtitle': 'Manage push', 'icon': CupertinoIcons.bell, 'route': '/notification-settings'},
-      {'title': 'Payment Gateway', 'subtitle': 'Configure payments', 'icon': CupertinoIcons.creditcard, 'route': '/payment-gateway'},
+    //  {'title': 'Email Templates', 'subtitle': 'Manage emails', 'icon': CupertinoIcons.doc, 'route': '/email-settings'},
+    //  {'title': 'Push Notification Templates', 'subtitle': 'Manage push', 'icon': CupertinoIcons.bell, 'route': '/notification-settings'},
+    //  {'title': 'Payment Gateway', 'subtitle': 'Configure payments', 'icon': CupertinoIcons.creditcard, 'route': '/payment-gateway'},
       {'title': 'Update User Policy', 'subtitle': 'User policy', 'icon': CupertinoIcons.doc_text, 'route': '/user-policy'},
     ];
 
@@ -47,13 +49,13 @@ class SettingsScreen extends StatelessWidget {
       style: TextStyle(
         fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
         fontWeight: FontWeight.w700,
-        color: Colors.black.withOpacity(0.85),
+        color: colorScheme.onSurface.withOpacity(0.85),
         letterSpacing: -0.3,
       ),
     ),
 
     SmallTab(
-      label: "11 items",
+      label: "8 items",
       selected: true,
       onTap: () {},
     ),
@@ -125,6 +127,7 @@ class _SettingsMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
 
@@ -140,9 +143,9 @@ class _SettingsMenuCard extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(hp),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withOpacity(0.05), width: 1),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05), width: 1),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
             ],
@@ -156,10 +159,10 @@ class _SettingsMenuCard extends StatelessWidget {
                 width: AdaptiveUtils.getAvatarSize(width) * 1.5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.black.withOpacity(0.05),
+                  color: colorScheme.primary.withOpacity(0.05),
                 ),
                 child: Center(
-                  child: Icon(icon, size: AdaptiveUtils.getIconSize(width) * 1.2, color: Colors.black.withOpacity(0.8)),
+                  child: Icon(icon, size: AdaptiveUtils.getIconSize(width) * 1.2, color: colorScheme.primary.withOpacity(0.8)),
                 ),
               ),
               SizedBox(height: 12),
@@ -170,7 +173,7 @@ class _SettingsMenuCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width),
                   fontWeight: FontWeight.bold,
-                  color: Colors.black.withOpacity(0.9),
+                  color: colorScheme.onSurface.withOpacity(0.9),
                   letterSpacing: -0.5,
                 ),
               ),
@@ -183,7 +186,7 @@ class _SettingsMenuCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.5),
+                  color: colorScheme.onSurface.withOpacity(0.5),
                   height: 1.2,
                 ),
               ),

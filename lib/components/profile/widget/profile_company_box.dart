@@ -9,6 +9,7 @@ class ProfileCompanyBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
@@ -17,7 +18,7 @@ class ProfileCompanyBox extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -32,11 +33,11 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           // Company Section
           Text(
-            "COMPANY",
+            "Company",
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
@@ -49,12 +50,13 @@ class ProfileCompanyBox extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
               CircleAvatar(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                radius: 20,
                 child: const Text("FS"),
               ),
             ],
@@ -64,7 +66,7 @@ class ProfileCompanyBox extends StatelessWidget {
             "fleetstackglobal.com",
             style: GoogleFonts.inter(
               fontSize: subheaderFontSize,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
 
@@ -76,7 +78,7 @@ class ProfileCompanyBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
@@ -84,8 +86,8 @@ class ProfileCompanyBox extends StatelessWidget {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children:  [
-              SmallTab(label: "LinkedIn", selected: false, onTap: () {}, ),
+            children: [
+              SmallTab(label: "LinkedIn", selected: false, onTap: () {}),
               SmallTab(label: "Twitter", selected: false, onTap: () {}),
               SmallTab(label: "Facebook", selected: false, onTap: () {}),
               SmallTab(label: "Instagram", selected: false, onTap: () {}),
@@ -102,18 +104,18 @@ class ProfileCompanyBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: 12),
           Column(
             children: [
-              _buildAddressRow("Line", "42, Indus Tech Park", subheaderFontSize),
-              _buildAddressRow("City", "Bengaluru", subheaderFontSize),
-              _buildAddressRow("State", "Karnataka", subheaderFontSize),
-              _buildAddressRow("Postal", "560001", subheaderFontSize),
-              _buildAddressRow("Country", "India (IN)", subheaderFontSize),
+              _buildAddressRow("Line", "42, Indus Tech Park", subheaderFontSize, colorScheme),
+              _buildAddressRow("City", "Bengaluru", subheaderFontSize, colorScheme),
+              _buildAddressRow("State", "Karnataka", subheaderFontSize, colorScheme),
+              _buildAddressRow("Postal", "560001", subheaderFontSize, colorScheme),
+              _buildAddressRow("Country", "India (IN)", subheaderFontSize, colorScheme),
             ],
           ),
 
@@ -125,7 +127,7 @@ class ProfileCompanyBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
@@ -135,17 +137,26 @@ class ProfileCompanyBox extends StatelessWidget {
             children: [
               Text(
                 "aarav.sharma@fleetstackglobal.com",
-                style: GoogleFonts.inter(fontSize: subheaderFontSize, color: Colors.black87),
+                style: GoogleFonts.inter(
+                  fontSize: subheaderFontSize,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 "+91 8987675654",
-                style: GoogleFonts.inter(fontSize: subheaderFontSize, color: Colors.black87),
+                style: GoogleFonts.inter(
+                  fontSize: subheaderFontSize,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 "fleetstackglobal.com",
-                style: GoogleFonts.inter(fontSize: subheaderFontSize, color: Colors.black.withOpacity(0.7)),
+                style: GoogleFonts.inter(
+                  fontSize: subheaderFontSize,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
               ),
             ],
           ),
@@ -154,14 +165,26 @@ class ProfileCompanyBox extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressRow(String label, String value, double fontSize) {
+  Widget _buildAddressRow(String label, String value, double fontSize, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: fontSize, color: Colors.black87)),
-          Text(value, style: GoogleFonts.inter(fontSize: fontSize, color: Colors.black87)),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: fontSize,
+              color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: fontSize,
+              color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+          ),
         ],
       ),
     );

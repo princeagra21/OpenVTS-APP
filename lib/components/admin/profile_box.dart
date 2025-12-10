@@ -10,23 +10,23 @@ class ProfileBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    // All sizes now come from our shared AdaptiveUtils
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8 / 12 / 16
-    final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2; // 13 / 15 / 16
-    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth); // 13–16
-    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth)- 4; // 14–18
-    final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 13–15
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth)- 4; // 11–13
-    final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1; // 14–16
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
-    final double largeSpacing = padding; // 8–16
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
+    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
+    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
+    final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
+    final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final double largeSpacing = padding;
 
     return Container(
-      padding: EdgeInsets.all(padding + 8), // slightly larger than others for hierarchy
+      padding: EdgeInsets.all(padding + 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -45,11 +45,11 @@ class ProfileBox extends StatelessWidget {
               // Avatar
               CircleAvatar(
                 radius: avatarRadius,
-                backgroundColor: Colors.black,
+                backgroundColor: colorScheme.primary,
                 child: Text(
                   "MS",
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontSize: avatarFontSize,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -72,7 +72,7 @@ class ProfileBox extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: nameFontSize,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: colorScheme.onSurface,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -84,13 +84,13 @@ class ProfileBox extends StatelessWidget {
                             vertical: spacing - 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: colorScheme.primary,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             "Admin",
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: colorScheme.onPrimary,
                               fontSize: badgeFontSize,
                               fontWeight: FontWeight.w600,
                             ),
@@ -103,7 +103,7 @@ class ProfileBox extends StatelessWidget {
                       "@danmasana",
                       style: GoogleFonts.inter(
                         fontSize: usernameFontSize,
-                        color: Colors.black.withOpacity(0.6),
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -114,27 +114,28 @@ class ProfileBox extends StatelessWidget {
               SizedBox(width: largeSpacing),
 
               // Status switch
-             Column(
-  children: [
-    Transform.scale(
-      scale: 0.75, // 🔥 decrease size (0.6, 0.7, 0.8…)
-      child: Switch(
-        value: true,
-        onChanged: (value) {},
-        activeColor: Colors.black,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    ),
-    Text(
-      "Status",
-      style: GoogleFonts.inter(
-        fontSize: badgeFontSize,
-        color: Colors.black.withOpacity(0.6),
-      ),
-    ),
-  ],
-),
-
+              Column(
+                children: [
+                  Transform.scale(
+                    scale: 0.75,
+                    child: Switch(
+                      value: true,
+                      onChanged: (value) {},
+                      activeColor: colorScheme.onPrimary,
+                      activeTrackColor: colorScheme.primary,
+                      inactiveThumbColor: colorScheme.onPrimary,
+                      inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
+                    ),
+                  ),
+                  Text(
+                    "Status",
+                    style: GoogleFonts.inter(
+                      fontSize: badgeFontSize,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
 
@@ -168,14 +169,14 @@ class ProfileBox extends StatelessWidget {
                   vertical: spacing - 2,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   "Email Verified",
                   style: GoogleFonts.inter(
+                    color: colorScheme.onPrimary,
                     fontSize: badgeFontSize,
-                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -185,73 +186,70 @@ class ProfileBox extends StatelessWidget {
 
           SizedBox(height: largeSpacing + 8),
 
-         // Action buttons
-Row(
-  children: [
-    Expanded(
-      child: GestureDetector(
-        onTap: () {
-          // Navigate to Edit Admin Profile Screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const EditAdminProfileScreen(),
-            ),
-          );
-        },
-        child: Container(
-          height: 30,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black, width: 1.5),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Text(
-              "Edit Profile",
-              style: GoogleFonts.inter(
-                fontSize: buttonFontSize,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EditAdminProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    height: 30,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: colorScheme.primary, width: 1.5),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Edit Profile",
+                        style: GoogleFonts.inter(
+                          fontSize: buttonFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
-    ),
-    SizedBox(width: spacing + 4),
-    Expanded(
-      child: GestureDetector(
-        onTap: () {
-          // Navigate to Update Password Screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const UpdatePasswordScreen(),
-            ),
-          );
-        },
-        child: Container(
-          height: 30,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Text(
-              "Update Password",
-              style: GoogleFonts.inter(
-                fontSize: buttonFontSize,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+              SizedBox(width: spacing + 4),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const UpdatePasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Update Password",
+                        style: GoogleFonts.inter(
+                          fontSize: buttonFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ),
-      ),
-    ),
-  ],
-),
-
         ],
       ),
     );

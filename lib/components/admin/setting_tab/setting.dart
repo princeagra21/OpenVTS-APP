@@ -1,5 +1,7 @@
+// components/admin/admin_settings_tab.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 
 class AdminSettingsTab extends StatefulWidget {
   const AdminSettingsTab({super.key});
@@ -18,19 +20,22 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     required String hint,
     required List<DropdownMenuItem<String>> items,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: Colors.black),
+            Icon(icon, size: 18, color: colorScheme.primary),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: colorScheme.onSurface,
                 letterSpacing: 0.8,
               ),
             ),
@@ -41,28 +46,28 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.black),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             filled: true,
-            fillColor: Colors.grey[200],
+            fillColor: colorScheme.surfaceVariant,
           ),
           style: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: fontSize,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
+            color: colorScheme.onSurface,
           ),
-          dropdownColor: Colors.grey[200],
+          dropdownColor: colorScheme.surface,
           hint: Text(
             hint,
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: fontSize,
               fontWeight: FontWeight.w500,
-              color: Colors.black.withOpacity(0.6),
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           items: items,
@@ -79,55 +84,42 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     required String label,
     required bool textOnTop,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+    final bool isSelected = _selectedTheme == value;
+
     return Expanded(
       child: InkWell(
         onTap: () {
-          setState(() {
-            _selectedTheme = value;
-          });
+          setState(() => _selectedTheme = value);
           print("Selected theme: $value");
         },
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              height: 20,
-              alignment: Alignment.center,
-              child: textOnTop
-                  ? Text(
-                      label,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    )
-                  : null,
-            ),
+            if (textOnTop)
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                ),
+              ),
             Radio<String>(
               value: value,
               groupValue: _selectedTheme,
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedTheme = newValue;
-                });
-                print("Selected theme: $newValue");
-              },
+              activeColor: colorScheme.primary,
+              onChanged: (v) => setState(() => _selectedTheme = v),
             ),
-            Container(
-              height: 20,
-              alignment: Alignment.center,
-              child: !textOnTop
-                  ? Text(
-                      label,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    )
-                  : null,
-            ),
+            if (!textOnTop)
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                ),
+              ),
           ],
         ),
       ),
@@ -136,6 +128,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(4),
       child: Column(
@@ -145,7 +138,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             width: double.infinity,
             constraints: const BoxConstraints(minHeight: 400),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -160,25 +153,22 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Admin Settings Header
                   Row(
                     children: [
-                      const Icon(Icons.settings, size: 24),
+                      Icon(Icons.settings, size: 24, color: colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
                         "Admin Settings",
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black.withOpacity(0.7),
+                          color: colorScheme.onSurface.withOpacity(0.7),
                           letterSpacing: 0.8,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 30),
-
-                  // Existing fields...
                   _buildSettingField(
                     icon: Icons.language,
                     label: "Language",
@@ -237,15 +227,13 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-
           // Theme Selection Container
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -258,57 +246,40 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with icon
                 Row(
                   children: [
-                    const Icon(Icons.brightness_6, size: 18, color: Colors.black),
+                    Icon(Icons.brightness_6, size: 18, color: colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       "Theme",
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
+                        color: colorScheme.onSurface,
                         letterSpacing: 0.8,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-
-                // Radio buttons for theme selection in a row with aligned radios
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildThemeOption(
-                      value: "light",
-                      label: "Light",
-                      textOnTop: true,
-                    ),
-                    _buildThemeOption(
-                      value: "dark",
-                      label: "Dark",
-                      textOnTop: false,
-                    ),
-                    _buildThemeOption(
-                      value: "system",
-                      label: "System",
-                      textOnTop: true,
-                    ),
+                    _buildThemeOption(value: "light", label: "Light", textOnTop: true),
+                    _buildThemeOption(value: "dark", label: "Dark", textOnTop: false),
+                    _buildThemeOption(value: "system", label: "System", textOnTop: true),
                   ],
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           // Units Selection Container
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -321,55 +292,42 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with icon
                 Row(
                   children: [
-                    const Icon(Icons.straighten, size: 18, color: Colors.black),
+                    Icon(Icons.straighten, size: 18, color: colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       "Units",
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
+                        color: colorScheme.onSurface,
                         letterSpacing: 0.8,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-
-                // Radio buttons for units selection in a row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedUnit = 'KM';
-                          });
-                          print("Selected unit: KM");
-                        },
+                        onTap: () => setState(() => _selectedUnit = 'KM'),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Radio<String>(
                               value: "KM",
                               groupValue: _selectedUnit,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedUnit = value;
-                                });
-                                print("Selected unit: $value");
-                              },
+                              activeColor: colorScheme.primary,
+                              onChanged: (v) => setState(() => _selectedUnit = v),
                             ),
                             Text(
                               "KM",
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black,
+                                color: _selectedUnit == 'KM' ? colorScheme.primary : colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -378,31 +336,22 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                     ),
                     Expanded(
                       child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedUnit = 'MILES';
-                          });
-                          print("Selected unit: MILES");
-                        },
+                        onTap: () => setState(() => _selectedUnit = 'MILES'),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Radio<String>(
                               value: "MILES",
                               groupValue: _selectedUnit,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedUnit = value;
-                                });
-                                print("Selected unit: $value");
-                              },
+                              activeColor: colorScheme.primary,
+                              onChanged: (v) => setState(() => _selectedUnit = v),
                             ),
                             Text(
                               "MILES",
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black,
+                                color: _selectedUnit == 'MILES' ? colorScheme.primary : colorScheme.onSurface,
                               ),
                             ),
                           ],

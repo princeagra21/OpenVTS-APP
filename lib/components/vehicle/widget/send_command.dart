@@ -1,3 +1,4 @@
+// components/vehicle/send_commands_tab.dart
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,256 +31,168 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
+    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
+    final double bodyFs = titleFs - 1;
+    final double smallFs = titleFs - 3;
 
-    // Adaptive values from our design system
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);     // 12–14
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);         
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          )
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Heading
-          Text(
-            "Send Command",
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          // HEADING
+          Text("Send Command", style: GoogleFonts.inter(fontSize: titleFs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
           const SizedBox(height: 4),
-          Text(
-            "DL01 AB 1287 • IMEI 358920108765431 • GT06",
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
-          ),
-          const SizedBox(height: 16),
+          Text("DL01 AB 1287 • IMEI 358920108765431 • GT06", style: GoogleFonts.inter(fontSize: smallFs + 1, color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 20),
 
-          // Command Dropdown
+          // COMMAND DROPDOWN
           DropdownButtonFormField<String>(
             value: selectedCommand,
-            items: commandOptions
-                .map((cmd) => DropdownMenuItem(value: cmd, child: Text(cmd)))
-                .toList(),
-            onChanged: (val) {
-              setState(() {
-                selectedCommand = val!;
-              });
-            },
             decoration: InputDecoration(
               labelText: "Select Command",
-              border: const OutlineInputBorder(),
-               enabledBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.black),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.black),
-    ),
-              isDense: true,
+              labelStyle: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface.withOpacity(0.8)),
+              filled: true,
+              fillColor: colorScheme.surfaceVariant,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+            dropdownColor: colorScheme.surface,
+            items: commandOptions.map((cmd) => DropdownMenuItem(value: cmd, child: Text(cmd))).toList(),
+            onChanged: (val) => val != null ? setState(() => selectedCommand = val) : null,
+          ),
+          const SizedBox(height: 20),
+
+          // PAYLOAD SECTION
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: spacing - 2),
+                decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(10)),
+                child: Text("Payload", style: GoogleFonts.inter(fontSize: smallFs + 2, fontWeight: FontWeight.w600, color: colorScheme.onPrimary)),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: payload1Controller.text));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payload copied")));
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: spacing + 8, vertical: spacing - 2),
+                  decoration: BoxDecoration(color: colorScheme.surfaceVariant, borderRadius: BorderRadius.circular(10), border: Border.all(color: colorScheme.outline.withOpacity(0.5))),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.copy, size: 16, color: colorScheme.onSurface),
+                      const SizedBox(width: 6),
+                      Text("Copy", style: GoogleFonts.inter(fontSize: smallFs + 2, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: payload1Controller,
+            minLines: 3,
+            maxLines: 5,
+            style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+            decoration: InputDecoration(
+              hintText: "Enter payload here...",
+              hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6)),
+              filled: true,
+              fillColor: colorScheme.surfaceVariant,
+              contentPadding: const EdgeInsets.all(14),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
             ),
           ),
-          const SizedBox(height: 24),
 
-          // Three textareas with copy buttons
-          Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Row with "Payload" text and copy icon
-    Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-          Container(
-  padding: EdgeInsets.symmetric(
-    horizontal: spacing + 2,
-    vertical: spacing - 2,
-  ),
-  decoration: BoxDecoration(
-    color: Colors.black, // <- set background here
-    border: Border.all(color: Colors.black, width: 1),
-    borderRadius: BorderRadius.circular(8),
-  ),
-  child: Text(
-    "Payload",
-    style: GoogleFonts.inter(
-      fontSize: badgeFontSize,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    ),
-  ),
-),
+          const SizedBox(height: 20),
 
-       Container(
-  padding: EdgeInsets.symmetric(
-    horizontal: spacing + 8,
-    vertical: spacing - 2,
-  ),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    border: Border.all(color: Colors.black.withOpacity(0.5), width: 1),
-    borderRadius: BorderRadius.circular(8),
-  ),
-  child: InkWell(
-    onTap: () {
-      Clipboard.setData(ClipboardData(text: payload1Controller.text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Payload copied")),
-      );
-    },
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.copy, color: Colors.black, size: 18),
-        const SizedBox(width: 4),
-        Text(
-          "Copy",
-          style: GoogleFonts.inter(
-            fontSize: badgeFontSize,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
+          // REQUEST JSON TOGGLE
+          GestureDetector(
+            onTap: () => setState(() => showJson = !showJson),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(showJson ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: colorScheme.onSurface.withOpacity(0.7)),
+                const SizedBox(width: 6),
+                Text("Request JSON", style: GoogleFonts.inter(fontSize: smallFs + 2, color: colorScheme.onSurface.withOpacity(0.8))),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  ),
-),
-
-      ],
-    ),
-
-    const SizedBox(height: 10), // tiny spacing
-
-    // TextField
-    TextField(
-      controller: payload1Controller,
-      minLines: 3,
-      maxLines: 3,
-      decoration: InputDecoration(
-    labelText: "",
-    labelStyle: const TextStyle(color: Colors.black),
-    enabledBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.black),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.black),
-    ),
-    border: const OutlineInputBorder(),
-    isDense: true,
-    contentPadding: const EdgeInsets.all(12),
-  ),
-  style: const TextStyle(color: Colors.black), // text color
-),
-  ],
-),
-
-
-          const SizedBox(height: 24),
-
-          // JSON toggle container
-         GestureDetector(
-  onTap: () => setState(() => showJson = !showJson),
-  child: Row(
-    mainAxisSize: MainAxisSize.min, // wrap tightly around content
-    children: [
-      Icon(
-        showJson ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-        size: 18,
-      ),
-      const SizedBox(width: 4),
-      Text(
-        "Request JSON",
-        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
-      ),
-    ],
-  ),
-),
-
-          if (showJson)
+          if (showJson) ...[
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: colorScheme.surfaceVariant, borderRadius: BorderRadius.circular(12)),
               child: Text(
                 '{\n  "imei": "358920108765431",\n  "transport": "SMS",\n  "command": "REBOOT",\n  "payload": "REBOOT#"\n}',
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[800]),
+                style: GoogleFonts.jetBrainsMono(fontSize: smallFs + 1, color: colorScheme.onSurface.withOpacity(0.9)),
               ),
             ),
+          ],
 
           const SizedBox(height: 24),
 
-          // Confirm + Send row
+          // CONFIRM + SEND
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   Checkbox(
-                    checkColor: Colors.white,
-                    focusColor:   Colors.black,
-                    activeColor: Colors.black,
-
-                      value: confirmBeforeSend,
-                      onChanged: (val) {
-                        setState(() {
-                          confirmBeforeSend = val!;
-                        });
-                      }),
-                  Text("Confirm Before Send",
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.black)),
+                    value: confirmBeforeSend,
+                    activeColor: colorScheme.primary,
+                    onChanged: (v) => v != null ? setState(() => confirmBeforeSend = v) : null,
+                  ),
+                  Text("Confirm Before Send", style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface)),
                 ],
               ),
               ElevatedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.send, size: 18, color: Colors.white,),
-                label: const Text("Send", style: TextStyle(fontSize: 14, color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: Colors.black
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                icon: Icon(Icons.send, size: 18, color: colorScheme.onPrimary),
+                label: Text("Send", style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onPrimary, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // Recent Commands (empty)
-
-          Text("Recent commands", style: TextStyle(fontSize: 16, color: Colors.black.withOpacity(0.7)),),
-          SizedBox(height: 12),
+          // RECENT COMMANDS
+          Text("Recent commands", style: GoogleFonts.inter(fontSize: titleFs, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
             height: 120,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: colorScheme.surfaceVariant, borderRadius: BorderRadius.circular(12)),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 36, color: Colors.grey[400]),
+                  Icon(Icons.history, size: 36, color: colorScheme.onSurface.withOpacity(0.4)),
                   const SizedBox(height: 8),
-                  Text(
-                    "No recent commands",
-                    style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text("No recent commands", style: GoogleFonts.inter(fontSize: smallFs + 2, color: colorScheme.onSurface.withOpacity(0.6))),
                 ],
               ),
             ),
@@ -288,6 +201,4 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
       ),
     );
   }
-
- 
 }

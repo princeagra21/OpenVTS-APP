@@ -17,157 +17,165 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
+  // Shared InputDecoration - same as your ApiConfigSettingsScreen
+  InputDecoration _minimalInputDecoration(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      hintText: '',
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      prefixIcon: const SizedBox(width: 12), // spacing for icon alignment
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5), // subtle focus
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.withOpacity(0.6)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Row: Title + Cancel
+              // Top Row: Title + Close
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Update Password",
                     style: GoogleFonts.inter(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
-                    ),
+                      fontSize: titleSize + 2, fontWeight: FontWeight.w800),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close, size: 26),
+                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
                   ),
                 ],
               ),
 
               const SizedBox(height: 12),
 
-              // Center text
-              Center(
-                child: Text(
-                  "Securely update your account password",
-                  style: GoogleFonts.inter(
-                    fontSize: labelSize,
-                    fontWeight: FontWeight.w500,
+              Text(
+                "Securely update your account password",
+                style: GoogleFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // New Password Field
+              TextField(
+                controller: _newPasswordController,
+                obscureText: _obscureNew,
+                style: GoogleFonts.inter(
+                  color: colorScheme.onSurface,
+                  fontSize: AdaptiveUtils.getTitleFontSize(w), // matches API screen
+                ),
+                decoration: _minimalInputDecoration(context).copyWith(
+                  hintText: "New Password",
+                  hintStyle: GoogleFonts.inter(
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: AdaptiveUtils.getTitleFontSize(w),
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 12),
+                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // ---------- New Password ----------
-              _buildTextField(
-                controller: _newPasswordController,
-                hint: "New Password",
-                obscureText: _obscureNew,
-                prefixIcon: const Icon(Icons.lock, color: Colors.black),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // ---------- Confirm Password ----------
-              _buildTextField(
+              // Confirm Password Field
+              TextField(
                 controller: _confirmPasswordController,
-                hint: "Confirm Password",
                 obscureText: _obscureConfirm,
-                prefixIcon: const Icon(Icons.lock, color: Colors.black),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                style: GoogleFonts.inter(
+                  color: colorScheme.onSurface,
+                  fontSize: AdaptiveUtils.getTitleFontSize(w),
+                ),
+                decoration: _minimalInputDecoration(context).copyWith(
+                  hintText: "Confirm Password",
+                  hintStyle: GoogleFonts.inter(
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: AdaptiveUtils.getTitleFontSize(w),
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 12),
+                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
-              // ---------- Save Changes ----------
-              _infinityButton(
-                text: "Update Password",
+              // Update Button - matches your API screen style
+              GestureDetector(
                 onTap: () {
-                  // TODO: implement password update logic
+                  // TODO: Add validation & update logic
                   Navigator.pop(context);
                 },
-                fontSize: labelSize,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Update Password",
+                      style: GoogleFonts.inter(
+                        fontSize: labelSize,
+                        color: colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Reusable textfield with prefix icon support
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    bool obscureText = false,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        prefixIcon: prefixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8),
-                child: prefixIcon,
-              )
-            : null,
-        suffixIcon: suffixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8),
-                child: suffixIcon,
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.black, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.black, width: 2),
-        ),
-      ),
-    );
-  }
-
-  // Full-width button
-  Widget _infinityButton({required String text, required VoidCallback onTap, required double fontSize}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: GoogleFonts.inter(
-              fontSize: fontSize,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ),
       ),

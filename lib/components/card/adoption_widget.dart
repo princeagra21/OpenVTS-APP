@@ -20,11 +20,12 @@ class SmallTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4–12
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4–8
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11–13
+    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
+    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11-13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -35,16 +36,16 @@ class SmallTab extends StatelessWidget {
           vertical: vPadding,
         ),
         decoration: BoxDecoration(
-          color: selected ? (selectedBackground ?? Colors.black) : Colors.transparent,
+          color: selected ? (selectedBackground ?? colorScheme.primary) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black, width: 1),
+          border: Border.all(color: colorScheme.onSurface, width: 1),
         ),
         child: Text(
           label,
           style: GoogleFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : Colors.black,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
       ),
@@ -67,11 +68,14 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   final List<double> users = [10, 15, 12, 21, 25, 19, 22, 27, 30, 35, 37, 39];
   final List<double> licenses = [5, 10, 15, 14, 16, 18, 20, 22, 24, 26, 29, 30];
 
-  final Map<String, Color> statColors = {
-    "Vehicles": Colors.black,
-    "Users": Colors.black.withOpacity(0.7),
-    "Licenses": Colors.black.withOpacity(0.5),
-  };
+  Map<String, Color> getStatColors(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return {
+      "Vehicles": colorScheme.primary,
+      "Users": colorScheme.primary.withOpacity(0.7),
+      "Licenses": colorScheme.primary.withOpacity(0.5),
+    };
+  }
 
   List<double> getDataFor(String stat) {
     final base = switch (stat) {
@@ -98,6 +102,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     // All sizes from AdaptiveUtils — pure and clean
@@ -110,17 +115,19 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         ? 200
         : 220;
 
-    final double leftTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3; // ~8–10
-    final double bottomTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9–11
-    final double lineWidth = AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7–3.3
-    final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4–5
+    final double leftTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3; // ~8-10
+    final double bottomTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9-11
+    final double lineWidth = AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7-3.3
+    final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4-5
     final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
     final titleStyle = GoogleFonts.inter(
       fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
-      color: Colors.black,
+      color: colorScheme.onSurface,
     );
+
+    final statColors = getStatColors(context);
 
     final monthTabs = Container(
       padding: const EdgeInsets.all(4),
@@ -172,7 +179,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -191,7 +198,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
             "Last $monthTab months",
             style: GoogleFonts.inter(
               fontSize: subheaderFontSize,
-              color: Colors.black87,
+              color: colorScheme.onSurface.withOpacity(0.87),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -253,7 +260,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     "${value.toInt()}K",
     style: GoogleFonts.inter(
       fontSize: leftTitleFontSize,
-      color: Colors.black87,
+      color: colorScheme.onSurface.withOpacity(0.87),
     ),
   ),
 ),
@@ -273,7 +280,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                             "M${index + 1}",
                             style: GoogleFonts.inter(
                               fontSize: bottomTitleFontSize,
-                              color: Colors.black54,
+                              color: colorScheme.onSurface.withOpacity(0.54),
                             ),
                           ),
                         );
@@ -287,7 +294,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                   show: true,
                   horizontalInterval: yMax / 3,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => const FlLine(color: Colors.black12, strokeWidth: 1),
+                  getDrawingHorizontalLine: (_) => FlLine(color: colorScheme.onSurface.withOpacity(0.12), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: selectedStats.map((stat) {
@@ -307,7 +314,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                       getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
                         radius: dotRadius,
                         color: color,
-                        strokeColor: Colors.white,
+                        strokeColor: colorScheme.surface,
                         strokeWidth: 2,
                       ),
                     ),

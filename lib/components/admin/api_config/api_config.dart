@@ -59,14 +59,15 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -85,7 +86,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -94,7 +95,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black.withOpacity(0.9),
+                      color: colorScheme.onSurface.withOpacity(0.9),
                     ),
                   ),
                 ],
@@ -106,7 +107,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
               ElevatedButton.icon(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: colorScheme.primary,
                   padding: EdgeInsets.symmetric(
                     horizontal: hp + 2,
                     vertical: hp - 4,
@@ -117,14 +118,14 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                 ),
                 icon: Icon(
                   Icons.save_outlined,
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   size: AdaptiveUtils.getIconSize(width),
                 ),
                 label: Text(
                   "Save All Changes",
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -137,7 +138,7 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(12), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -146,7 +147,7 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +161,7 @@ Container(
                Icon(
                 Icons.fireplace_rounded,
                 size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                color: Colors.black87,
+                color: colorScheme.onSurface.withOpacity(0.87),
               ),
               const SizedBox(width: 8),
               Text(
@@ -168,7 +169,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
             ],
@@ -177,10 +178,10 @@ Container(
             scale: 0.7,
             child: Switch(
               value: firebaseEnabled,
-              activeColor: Colors.white,
-              activeTrackColor: Colors.black,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.black.withOpacity(0.3),
+              activeColor: colorScheme.onPrimary,
+              activeTrackColor: colorScheme.primary,
+              inactiveThumbColor: colorScheme.onPrimary,
+              inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
               onChanged: (v) => setState(() => firebaseEnabled = v),
             ),
           ),
@@ -194,7 +195,7 @@ Container(
          width: double.infinity,
   padding: const EdgeInsets.all(16), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -203,17 +204,17 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.integration_instructions,
                   size: 22,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -221,7 +222,7 @@ Container(
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
               ],
@@ -232,7 +233,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 4),
@@ -248,9 +249,9 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w600, // a bit bolder so it feels clickable
-                  color: Colors.black,
+                  color: colorScheme.primary,
                   //decoration: TextDecoration.underline,
-                  decorationColor: Colors.black,
+                  decorationColor: colorScheme.primary,
                 ),
               ),
             ),
@@ -260,7 +261,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ],
@@ -277,14 +278,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "fleetstack-project.firebaseapp.com"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -294,14 +295,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "fleetstack-project.firebaseapp.com"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -311,14 +312,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "fleetstack-project"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -328,14 +329,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "fleetstack-project.appspot.com"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -345,14 +346,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "123456789012", ),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -362,14 +363,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "1:123456789012:web:abcdef1234567890"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -379,14 +380,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "G-XXXXXXXXXX"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
       ],
     ),
@@ -396,7 +397,7 @@ Container(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: Colors.black.withOpacity(0.1),
+        color: colorScheme.onSurface.withOpacity(0.1),
         width: 1,
       ),
     ),
@@ -410,13 +411,13 @@ Container(
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.primary.withOpacity(0.7),
               borderRadius: BorderRadius.circular(50),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check,
               size: 16,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
             ),
           ),
 
@@ -426,7 +427,7 @@ Container(
           Text(
             "Test Connection",
             style: TextStyle(
-              color: Colors.black.withOpacity(0.9),
+              color: colorScheme.onSurface.withOpacity(0.9),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -443,7 +444,7 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(12), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -452,7 +453,7 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +467,7 @@ Container(
                Icon(
                 Icons.location_on_rounded,
                 size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                color: Colors.black87,
+                color: colorScheme.onSurface.withOpacity(0.87),
               ),
               const SizedBox(width: 8),
               Text(
@@ -474,7 +475,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
             ],
@@ -483,10 +484,10 @@ Container(
             scale: 0.7,
             child: Switch(
               value: geoEnabled,
-              activeColor: Colors.white,
-              activeTrackColor: Colors.black,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.black.withOpacity(0.3),
+              activeColor: colorScheme.onPrimary,
+              activeTrackColor: colorScheme.primary,
+              inactiveThumbColor: colorScheme.onPrimary,
+              inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
               onChanged: (v) => setState(() => geoEnabled = v),
             ),
           ),
@@ -500,7 +501,7 @@ Container(
          width: double.infinity,
   padding: const EdgeInsets.all(16), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -509,25 +510,27 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.integration_instructions,
                   size: 22,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   "Configure Your Geocoding Provider",
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                   style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
+                    fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
               ],
@@ -538,7 +541,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ],
@@ -555,21 +558,22 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         Container(
+          height: 48,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black.withOpacity(0.1)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
           ),
           child: DropdownButton<String>(
             value: selectedProvider,
             isExpanded: true,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             underline: const SizedBox(),
-            style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+            style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() => selectedProvider = newValue);
@@ -596,7 +600,7 @@ Container(
           style: GoogleFonts.inter(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.8),
+            color: colorScheme.onSurface.withOpacity(0.8),
           ),
         ),
         const SizedBox(height: 24),
@@ -605,7 +609,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16), // a bit more breathing room
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -614,7 +618,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -627,17 +631,17 @@ Container(
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
                   ),
                   Transform.scale(
                     scale: 0.7,
                     child: Switch(
                       value: providerActive,
-                      activeColor: Colors.white,
-                      activeTrackColor: Colors.black,
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.black.withOpacity(0.3),
+                      activeColor: colorScheme.onPrimary,
+                      activeTrackColor: colorScheme.primary,
+                      inactiveThumbColor: colorScheme.onPrimary,
+                      inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
                       onChanged: (v) => setState(() => providerActive = v),
                     ),
                   ),
@@ -651,7 +655,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -663,7 +667,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16), // a bit more breathing room
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -672,17 +676,17 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.integration_instructions,
                     size: 22,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -690,7 +694,7 @@ Container(
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
                   ),
                 ],
@@ -700,12 +704,12 @@ Container(
   spacing: 8, // space between items
   runSpacing: 6, // space between lines
   children: [
-    _buildLink("→ Google Cloud Console", "https://console.cloud.google.com/"),
-    _buildLink("→ HERE Developer", "https://developer.here.com/"),
-    _buildLink("→ TomTom Developer", "https://developer.tomtom.com/"),
-    _buildLink("→ Mapbox Account", "https://account.mapbox.com/"),
-    _buildLink("→ LocationIQ", "https://locationiq.com/"),
-    _buildLink("→ OSM Nominatim", "https://nominatim.org/"),
+    _buildLink(context, "→ Google Cloud Console", "https://console.cloud.google.com/"),
+    _buildLink(context, "→ HERE Developer", "https://developer.here.com/"),
+    _buildLink(context, "→ TomTom Developer", "https://developer.tomtom.com/"),
+    _buildLink(context, "→ Mapbox Account", "https://account.mapbox.com/"),
+    _buildLink(context, "→ LocationIQ", "https://locationiq.com/"),
+    _buildLink(context, "→ OSM Nominatim", "https://nominatim.org/"),
   ],
 )
 
@@ -723,14 +727,14 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+                style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
                 controller: TextEditingController(),
-                decoration: _inputDecoration(),
+                decoration: _inputDecoration(context),
               ),
             ],
           )
@@ -742,7 +746,7 @@ Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -751,7 +755,7 @@ Container(
                       offset: const Offset(0, 3),
                     ),
                   ],
-                  border: Border.all(color: Colors.black.withOpacity(0.05)),
+                  border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -761,7 +765,7 @@ Container(
                       style: GoogleFonts.inter(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface.withOpacity(0.87),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -770,7 +774,7 @@ Container(
                       style: GoogleFonts.inter(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black.withOpacity(0.8),
+                        color: colorScheme.onSurface.withOpacity(0.8),
                       ),
                     ),
                   ],
@@ -782,14 +786,14 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+                style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
                 controller: TextEditingController(),
-                decoration: _inputDecoration(),
+                decoration: _inputDecoration(context),
               ),
               const SizedBox(height: 8),
               Text(
@@ -797,7 +801,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -810,7 +814,7 @@ Container(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: Colors.black.withOpacity(0.1),
+        color: colorScheme.onSurface.withOpacity(0.1),
         width: 1,
       ),
     ),
@@ -824,13 +828,13 @@ Container(
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.primary.withOpacity(0.7),
               borderRadius: BorderRadius.circular(50),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check,
               size: 16,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
             ),
           ),
 
@@ -840,7 +844,7 @@ Container(
           Text(
             "Test Geocoding",
             style: TextStyle(
-              color: Colors.black.withOpacity(0.9),
+              color: colorScheme.onSurface.withOpacity(0.9),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -857,7 +861,7 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(12), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -866,7 +870,7 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -880,7 +884,7 @@ Container(
                Icon(
                 Icons.security_rounded,
                 size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                color: Colors.black87,
+                color: colorScheme.onSurface.withOpacity(0.87),
               ),
               const SizedBox(width: 8),
               Text(
@@ -888,7 +892,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
             ],
@@ -897,10 +901,10 @@ Container(
             scale: 0.7,
             child: Switch(
               value: ssoEnabled,
-              activeColor: Colors.white,
-              activeTrackColor: Colors.black,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.black.withOpacity(0.3),
+              activeColor: colorScheme.onPrimary,
+              activeTrackColor: colorScheme.primary,
+              inactiveThumbColor: colorScheme.onPrimary,
+              inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
               onChanged: (v) => setState(() => ssoEnabled = v),
             ),
           ),
@@ -914,7 +918,7 @@ Container(
          width: double.infinity,
   padding: const EdgeInsets.all(16), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -923,17 +927,17 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.integration_instructions,
                   size: 22,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -941,7 +945,7 @@ Container(
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
               ],
@@ -954,7 +958,7 @@ Container(
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
+                    color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
                 GestureDetector(
@@ -969,7 +973,7 @@ Container(
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: colorScheme.primary,
                     ),
                   ),
                 ),
@@ -981,7 +985,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -990,7 +994,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -999,7 +1003,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ],
@@ -1016,14 +1020,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "123456789012-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -1033,14 +1037,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "GOCSPX-xxxxxxxxxxxxxxxxxxxx"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -1050,14 +1054,14 @@ Container(
            style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "https://app.fleetstack.com/auth/google/callback"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 8),
         Text(
@@ -1065,7 +1069,7 @@ Container(
           style: GoogleFonts.inter(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.8),
+            color: colorScheme.onSurface.withOpacity(0.8),
           ),
         ),
       ],
@@ -1076,7 +1080,7 @@ Container(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: Colors.black.withOpacity(0.1),
+        color: colorScheme.onSurface.withOpacity(0.1),
         width: 1,
       ),
     ),
@@ -1090,13 +1094,13 @@ Container(
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.primary.withOpacity(0.7),
               borderRadius: BorderRadius.circular(50),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check,
               size: 16,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
             ),
           ),
 
@@ -1106,7 +1110,7 @@ Container(
           Text(
             "Test SSO Connection",
             style: TextStyle(
-              color: Colors.black.withOpacity(0.9),
+              color: colorScheme.onSurface.withOpacity(0.9),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -1123,7 +1127,7 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(12), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -1132,7 +1136,7 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1146,7 +1150,7 @@ Container(
                Icon(
                 Icons.auto_awesome_rounded,
                 size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                color: Colors.black87,
+                color: colorScheme.onSurface.withOpacity(0.87),
               ),
               const SizedBox(width: 8),
               Text(
@@ -1154,7 +1158,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
             ],
@@ -1163,10 +1167,10 @@ Container(
             scale: 0.7,
             child: Switch(
               value: openAiEnabled,
-              activeColor: Colors.white,
-              activeTrackColor: Colors.black,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.black.withOpacity(0.3),
+              activeColor: colorScheme.onPrimary,
+              activeTrackColor: colorScheme.primary,
+              inactiveThumbColor: colorScheme.onPrimary,
+              inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
               onChanged: (v) => setState(() => openAiEnabled = v),
             ),
           ),
@@ -1180,7 +1184,7 @@ Container(
          width: double.infinity,
   padding: const EdgeInsets.all(16), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -1189,17 +1193,17 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.integration_instructions,
                   size: 22,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -1207,7 +1211,7 @@ Container(
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
               ],
@@ -1220,7 +1224,7 @@ Container(
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                     fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
+                    color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
                 GestureDetector(
@@ -1235,7 +1239,7 @@ Container(
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: colorScheme.primary,
                     ),
                   ),
                 ),
@@ -1247,7 +1251,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -1256,7 +1260,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -1265,7 +1269,7 @@ Container(
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 fontWeight: FontWeight.w400,
-                color: Colors.black.withOpacity(0.8),
+                color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ],
@@ -1282,14 +1286,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -1299,14 +1303,14 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         TextField(
-          style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
           controller: TextEditingController(text: "org-xxxxxxxxxxxxxxxx"),
-          decoration: _inputDecoration(),
+          decoration: _inputDecoration(context),
         ),
         const SizedBox(height: 12),
 
@@ -1316,21 +1320,21 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black.withOpacity(0.1)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
           ),
           child: DropdownButton<String>(
             value: selectedModel,
             isExpanded: true,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             underline: const SizedBox(),
-            style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+            style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() => selectedModel = newValue);
@@ -1355,7 +1359,7 @@ Container(
           style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
         ),
         const SizedBox(height: 8),
@@ -1365,7 +1369,7 @@ Container(
           max: 4096,
           divisions: 4095,
           label: maxTokens.toString(),
-          activeColor: Colors.black,
+          activeColor: colorScheme.primary,
           onChanged: (double value) {
             setState(() {
               maxTokens = value.toInt();
@@ -1377,7 +1381,7 @@ Container(
           style: GoogleFonts.inter(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.8),
+            color: colorScheme.onSurface.withOpacity(0.8),
           ),
         ),
       ],
@@ -1388,7 +1392,7 @@ Container(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: Colors.black.withOpacity(0.1),
+        color: colorScheme.onSurface.withOpacity(0.1),
         width: 1,
       ),
     ),
@@ -1402,13 +1406,13 @@ Container(
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.primary.withOpacity(0.7),
               borderRadius: BorderRadius.circular(50),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check,
               size: 16,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
             ),
           ),
 
@@ -1418,7 +1422,7 @@ Container(
           Text(
             "Test Openai Connection",
             style: TextStyle(
-              color: Colors.black.withOpacity(0.9),
+              color: colorScheme.onSurface.withOpacity(0.9),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -1435,7 +1439,7 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(12), // a bit more breathing room
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.surface,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(12),
     boxShadow: [
       BoxShadow(
@@ -1444,7 +1448,7 @@ Container(
         offset: const Offset(0, 3),
       ),
     ],
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
   ),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1455,7 +1459,7 @@ Container(
         style: GoogleFonts.inter(
           fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
           fontWeight: FontWeight.w800,
-          color: Colors.black87,
+          color: colorScheme.onSurface.withOpacity(0.87),
         ),
       ),
 
@@ -1472,7 +1476,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1481,7 +1485,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1491,7 +1495,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1500,7 +1504,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1519,7 +1523,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1528,7 +1532,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1538,7 +1542,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1547,7 +1551,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1566,7 +1570,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1575,7 +1579,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1585,7 +1589,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1594,7 +1598,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1613,7 +1617,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1622,7 +1626,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1632,7 +1636,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1641,7 +1645,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1660,7 +1664,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1669,7 +1673,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1679,7 +1683,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1688,7 +1692,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1707,7 +1711,7 @@ Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1716,7 +1720,7 @@ Container(
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.black.withOpacity(0.05)),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1726,7 +1730,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1735,7 +1739,7 @@ Container(
                 style: GoogleFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
             ],
@@ -1751,28 +1755,30 @@ Container(
     );
   }
 
-  InputDecoration _inputDecoration() {
+  InputDecoration _inputDecoration(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       filled: true,
       fillColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: colorScheme.onSurface.withOpacity(0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: colorScheme.onSurface.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: colorScheme.onSurface.withOpacity(0.1)),
       ),
     );
   }
 
-  Widget _buildLink(String label, String url) {
+  Widget _buildLink(BuildContext context, String label, String url) {
     final double width = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
   return GestureDetector(
     onTap: () async {
       final uri = Uri.parse(url);
@@ -1785,7 +1791,7 @@ Container(
       style: GoogleFonts.inter(
         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
         fontWeight: FontWeight.w400,
-        color: Colors.black,
+        color: colorScheme.primary,
       ),
     ),
   );

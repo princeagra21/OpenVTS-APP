@@ -31,6 +31,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
@@ -39,7 +40,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -58,7 +59,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: titleFontSize + 2,
               fontWeight: FontWeight.w700,
-              color: Colors.black.withOpacity(0.85),
+              color: colorScheme.onSurface.withOpacity(0.85),
             ),
           ),
           const SizedBox(height: 16),
@@ -78,14 +79,14 @@ class ProfileRecentActivityBox extends StatelessWidget {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: colorScheme.primary,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         "$index",
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           fontSize: subtitleFontSize - 2,
                           fontWeight: FontWeight.bold,
                         ),
@@ -104,7 +105,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: titleFontSize,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: colorScheme.onSurface.withOpacity(0.87),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -112,7 +113,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                           "${activity['time']} · ${activity['subtitle']}",
                           style: GoogleFonts.inter(
                             fontSize: subtitleFontSize,
-                            color: Colors.black.withOpacity(0.6),
+                            color: colorScheme.onSurface.withOpacity(0.6),
                             height: 1.3,
                           ),
                         ),

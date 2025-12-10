@@ -1,7 +1,8 @@
+// components/admin/navigate_box.dart
 import 'package:fleet_stack/components/small_box/small_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 
 class NavigateBox extends StatelessWidget {
   final String selectedTab;
@@ -17,13 +18,14 @@ class NavigateBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -36,23 +38,20 @@ class NavigateBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           /// NAVIGATE title
           Text(
-            "NAVIGATE",
+            "Navigate",
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
 
           const SizedBox(height: 12),
 
-          /// -----------------------------------------
-          ///   CUSTOM HORIZONTAL TAB SCROLL (NO SCROLLBAR)
-          /// -----------------------------------------
+          /// CUSTOM HORIZONTAL TAB SCROLL (NO SCROLLBAR)
           SizedBox(
             height: 48,
             child: SingleChildScrollView(
@@ -72,7 +71,6 @@ class NavigateBox extends StatelessWidget {
               ),
             ),
           ),
-
         ],
       ),
     );

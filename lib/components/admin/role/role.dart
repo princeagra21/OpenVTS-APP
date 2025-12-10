@@ -12,6 +12,8 @@ class RolesScreen extends StatefulWidget {
 
 class _RolesScreenState extends State<RolesScreen> {
   String selectedRoleTitle = "Custom Role";
+  late final TextEditingController _roleController;
+
   String selectedCurrency = "USD";
   int selectedAmount = 5;
 
@@ -108,6 +110,18 @@ class _RolesScreenState extends State<RolesScreen> {
     },
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _roleController = TextEditingController(text: selectedRoleTitle);
+  }
+
+  @override
+  void dispose() {
+    _roleController.dispose();
+    super.dispose();
+  }
+
   void _applyPreset(String preset) {
     setState(() {
       permissions.addAll(presets[preset]!);
@@ -124,8 +138,11 @@ class _RolesScreenState extends State<RolesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
+
+    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
 
     return AppLayout(
       title: "FLEET STACK",
@@ -139,13 +156,21 @@ class _RolesScreenState extends State<RolesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // MAIN CARD
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(hp),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: scheme.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black.withOpacity(0.05)),
+                border: Border.all(color: scheme.onSurface.withOpacity(0.05)),
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.onSurface.withOpacity(0.02),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ],
               ),
               child: Column(
                 children: [
@@ -159,17 +184,17 @@ class _RolesScreenState extends State<RolesScreen> {
                           ElevatedButton.icon(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: scheme.error,
                               padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            icon: const Icon(Icons.delete_outline, color: Colors.white),
+                            icon: Icon(Icons.delete_outline, color: scheme.onError),
                             label: Text(
                               "Delete",
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: scheme.onError,
                                 fontWeight: FontWeight.w600,
-                                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                                fontSize: titleFs - 2,
                               ),
                             ),
                           ),
@@ -177,17 +202,17 @@ class _RolesScreenState extends State<RolesScreen> {
                           ElevatedButton.icon(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: scheme.primary,
                               padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            icon: const Icon(Icons.save_outlined, color: Colors.white),
+                            icon: Icon(Icons.save_outlined, color: scheme.onPrimary),
                             label: Text(
                               "Save",
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: scheme.onPrimary,
                                 fontWeight: FontWeight.w600,
-                                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                                fontSize: titleFs - 2,
                               ),
                             ),
                           ),
@@ -200,9 +225,9 @@ class _RolesScreenState extends State<RolesScreen> {
                           Text(
                             "Role Permissions",
                             style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontSize: titleFs + 2,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: scheme.onSurface.withOpacity(0.95),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -210,9 +235,9 @@ class _RolesScreenState extends State<RolesScreen> {
                             "Configure access levels for different modules",
                             softWrap: true,
                             style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                              fontWeight: FontWeight.w200,
-                              color: Colors.black.withOpacity(0.9),
+                              fontSize: titleFs - 2,
+                              fontWeight: FontWeight.w300,
+                              color: scheme.onSurface.withOpacity(0.72),
                             ),
                           ),
                         ],
@@ -221,96 +246,101 @@ class _RolesScreenState extends State<RolesScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                 // Role Title + Monthly Cost (stacked vertically)
-Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Role Title
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Role Title",
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getTitleFontSize(width),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: TextEditingController(text: selectedRoleTitle),
-          onChanged: (v) => selectedRoleTitle = v,
-          decoration: _inputDecoration(hint: "Enter role name"),
-        ),
-      ],
-    ),
-    const SizedBox(height: 24),
+                  // Role Title + Monthly Cost (stacked vertically)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Role Title
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Role Title",
+                            style: GoogleFonts.inter(
+                              fontSize: titleFs,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _roleController,
+                            onChanged: (v) => setState(() => selectedRoleTitle = v),
+                            decoration: _inputDecoration(context, hint: "Enter role name"),
+                            style: GoogleFonts.inter(color: scheme.onSurface),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
 
-    // Monthly Cost
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Monthly Cost",
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getTitleFontSize(width),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Currency + Amount stacked vertically
-        Column(
-          children: [
-            Container(
-              width: double.infinity,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withOpacity(0.1)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedCurrency,
-                  isExpanded: true,
-                  style: GoogleFonts.inter(color: Colors.black),
-                  onChanged: (v) => setState(() => selectedCurrency = v!),
-                  items: currencies
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withOpacity(0.1)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: selectedAmount,
-                  isExpanded: true,
-                  style: GoogleFonts.inter(color: Colors.black),
-                  onChanged: (v) => setState(() => selectedAmount = v!),
-                  items: amounts
-                      .map((a) => DropdownMenuItem(
-                            value: a,
-                            child: Text(a == 0 ? "Free" : "$a"),
-                          ))
-                      .toList(),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ],
-),
+                      // Monthly Cost
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Monthly Cost",
+                            style: GoogleFonts.inter(
+                              fontSize: titleFs,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Currency + Amount stacked vertically
+                          Column(
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: scheme.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: scheme.onSurface.withOpacity(0.08)),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedCurrency,
+                                    isExpanded: true,
+                                    style: GoogleFonts.inter(color: scheme.onSurface),
+                                    onChanged: (v) => setState(() => selectedCurrency = v!),
+                                    items: currencies
+                                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: scheme.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: scheme.onSurface.withOpacity(0.08)),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<int>(
+                                    value: selectedAmount,
+                                    isExpanded: true,
+                                    style: GoogleFonts.inter(color: scheme.onSurface),
+                                    onChanged: (v) => setState(() => selectedAmount = v!),
+                                    items: amounts
+                                        .map((a) => DropdownMenuItem(
+                                              value: a,
+                                              child: Text(a == 0 ? "Free" : "$a"),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -320,13 +350,14 @@ Column(
                     children: [
                       Text(
                         "Quick Presets",
-                        style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w800),
+                        style: GoogleFonts.inter(
+                            fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center, // center alignment
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           "Full Admin",
                           "Ops Manager",
@@ -350,13 +381,14 @@ Column(
                     children: [
                       Text(
                         "Set all:",
-                        style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w800),
+                        style: GoogleFonts.inter(
+                            fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center, // center alignment
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           {"label": "None", "level": 0},
                           {"label": "View", "level": 1},
@@ -380,31 +412,43 @@ Column(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      border: Border.all(color: scheme.onSurface.withOpacity(0.05)),
                     ),
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            Expanded(flex: 3, child: Text("Module", style: GoogleFonts.inter(fontWeight: FontWeight.w800))),
-                            Expanded(flex: 5, child: Text("Access", style: GoogleFonts.inter(fontWeight: FontWeight.w800))),
+                            Expanded(
+                                flex: 3,
+                                child: Text("Module",
+                                    style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w800, color: scheme.onSurface))),
+                            Expanded(
+                                flex: 5,
+                                child: Text("Access",
+                                    style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w800, color: scheme.onSurface))),
                           ],
                         ),
-                        const Divider(height: 32),
+                        Divider(height: 32, color: scheme.onSurface.withOpacity(0.06)),
                         ...permissions.keys.map((module) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Row(
                               children: [
-                                Expanded(flex: 3, child: Text(module, style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+                                Expanded(
+                                    flex: 3,
+                                    child: Text(module,
+                                        style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w600, color: scheme.onSurface))),
                                 Expanded(
                                   flex: 5,
                                   child: Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
-                                    crossAxisAlignment: WrapCrossAlignment.center, // center alignment
+                                    crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
                                       {"label": "None", "level": 0},
                                       {"label": "View", "level": 1},
@@ -432,8 +476,6 @@ Column(
                   ),
 
                   const SizedBox(height: 32),
-
-                 
                 ],
               ),
             ),
@@ -443,24 +485,25 @@ Column(
     );
   }
 
-  InputDecoration _inputDecoration({String? hint}) {
+  InputDecoration _inputDecoration(BuildContext context, {String? hint}) {
+    final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.black.withOpacity(0.6), fontSize: 14),
+      hintStyle: GoogleFonts.inter(color: scheme.onSurface.withOpacity(0.6), fontSize: 14),
       filled: true,
-      fillColor: Colors.transparent,
+      fillColor: scheme.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: scheme.onSurface.withOpacity(0.08)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: scheme.onSurface.withOpacity(0.08)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+        borderSide: BorderSide(color: scheme.primary, width: 1.5),
       ),
     );
   }
@@ -474,23 +517,26 @@ class _LocalTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final bool small = MediaQuery.of(context).size.width < 420;
+
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16, vertical: small ? 4 : 6), // slightly smaller vertical padding
+        padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16, vertical: small ? 6 : 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.black : Colors.grey[200],
+          color: selected ? scheme.primary : scheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selected ? scheme.primary : scheme.onSurface.withOpacity(0.06)),
         ),
-        child: Center( // center text vertically
+        child: Center(
           child: Text(
             label,
             style: GoogleFonts.inter(
               fontSize: small ? 11 : 13,
               fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : Colors.black,
+              color: selected ? scheme.onPrimary : scheme.onSurface,
             ),
           ),
         ),

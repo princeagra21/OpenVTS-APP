@@ -1,3 +1,4 @@
+// components/admin/credit_history/email_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
@@ -7,20 +8,21 @@ class CreditHistoryEmailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double inputFontSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ---------- TOP ROW: SEND EMAIL + CLOSE ----------
+              // TOP ROW: SEND EMAIL + CLOSE
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -29,71 +31,102 @@ class CreditHistoryEmailScreen extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close, size: 26),
+                    child: Icon(Icons.close, size: 26, color: colorScheme.onSurface),
                   ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              // ---------- CENTERED SUBTITLE ----------
+              // CENTERED SUBTITLE
               Center(
                 child: Text(
                   "Compose and send an email",
                   style: GoogleFonts.inter(
                     fontSize: inputFontSize,
-                    color: Colors.black54,
+                    color: colorScheme.onSurface.withOpacity(0.54),
                   ),
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              // ---------- INPUT FIELDS ----------
-              _buildTextField(label: "To", fontSize: inputFontSize, hint: "Enter recipient email"),
+              // INPUT FIELDS
+              _buildTextField(
+                label: "To",
+                fontSize: inputFontSize,
+                hint: "Enter recipient email",
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 12),
-              _buildTextField(label: "CC", fontSize: inputFontSize, hint: "CC recipient email"),
+              _buildTextField(
+                label: "CC",
+                fontSize: inputFontSize,
+                hint: "CC recipient email",
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 12),
-              _buildTextField(label: "BCC", fontSize: inputFontSize, hint: "BCC recipient email"),
+              _buildTextField(
+                label: "BCC",
+                fontSize: inputFontSize,
+                hint: "BCC recipient email",
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 12),
-              _buildTextField(label: "Subject", fontSize: inputFontSize, hint: "Email subject"),
+              _buildTextField(
+                label: "Subject",
+                fontSize: inputFontSize,
+                hint: "Email subject",
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 12),
 
-              // ---------- MESSAGE FIELD ----------
-             Expanded(
-  child: TextField(
-    maxLines: 5, // <-- shows resize handle on desktop/web
-    minLines: 5,
-    textAlignVertical: TextAlignVertical.top,
-    decoration: InputDecoration(
-      labelText: "Message",
-      labelStyle: GoogleFonts.inter(fontSize: inputFontSize),
-      hintText: "Type your message here",
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      contentPadding: const EdgeInsets.all(12),
-    ),
-  ),
-),
+              // MESSAGE FIELD
+              Expanded(
+                child: TextField(
+                  maxLines: null,
+                  minLines: 5,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: GoogleFonts.inter(color: colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    labelText: "Message",
+                    labelStyle: GoogleFonts.inter(fontSize: inputFontSize, color: colorScheme.onSurface),
+                    hintText: "Type your message here",
+                    hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: colorScheme.outline),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.all(14),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: 16),
 
-              // ---------- SEND BUTTON ----------
+              // SEND BUTTON
               GestureDetector(
                 onTap: () {
                   // TODO: implement send email functionality
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Center(
@@ -102,7 +135,7 @@ class CreditHistoryEmailScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -117,22 +150,33 @@ class CreditHistoryEmailScreen extends StatelessWidget {
     );
   }
 
-  // ------------------ REUSABLE TEXTFIELD ------------------
+  // REUSABLE TEXTFIELD
   Widget _buildTextField({
     required String label,
     required double fontSize,
     required String hint,
+    required ColorScheme colorScheme,
   }) {
     return TextField(
-      style: GoogleFonts.inter(fontSize: fontSize),
+      style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(fontSize: fontSize),
+        labelStyle: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
         hintText: hint,
+        hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       ),
     );
   }
