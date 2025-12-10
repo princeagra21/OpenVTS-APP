@@ -12,7 +12,6 @@ class EditAdminProfileScreen extends StatefulWidget {
 }
 
 class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
-  // Controllers for the textfields
   final TextEditingController _nameController =
       TextEditingController(text: "Muhammad Sani Yusuf");
   final TextEditingController _emailController =
@@ -27,262 +26,271 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   Country? _selectedCountry;
 
+  // Reusable minimal InputDecoration — exactly like ApiConfigSettingsScreen
+  InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      hintText: hint,
+      hintStyle: GoogleFonts.inter(
+        color: colorScheme.onSurface.withOpacity(0.5),
+        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      prefixIconConstraints: const BoxConstraints(minWidth: 48),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Row: Title + Cancel
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Edit Admin Profile",
                     style: GoogleFonts.inter(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface.withOpacity(0.9),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close, size: 26),
+                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
                   ),
                 ],
               ),
 
               const SizedBox(height: 12),
 
-              // Center text
-              Center(
-                child: Text(
-                  "Update admin details",
-                  style: GoogleFonts.inter(
-                    fontSize: labelSize,
-                    fontWeight: FontWeight.w500,
-                  ),
+              Text(
+                "Update admin details",
+                style: GoogleFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
-              // ---------- Full Name ----------
-              _buildTextField(
-                controller: _nameController,
-                hint: "Full Name",
-                prefixIcon: const Icon(Icons.person, color: Colors.black),
-              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Full Name
+                      TextField(
+                        controller: _nameController,
+                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        decoration: _minimalDecoration(context, hint: "Full Name").copyWith(
+                          prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary, size: 22),
+                        ),
+                      ),
 
-              const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-              // ---------- Email ----------
-              _buildTextField(
-                controller: _emailController,
-                hint: "Email",
-                prefixIcon: const Icon(Icons.email, color: Colors.black),
-              ),
+                      // Email
+                      TextField(
+                        controller: _emailController,
+                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        decoration: _minimalDecoration(context, hint: "Email").copyWith(
+                          prefixIcon: Icon(Icons.email_outlined, color: colorScheme.primary, size: 22),
+                        ),
+                      ),
 
-              const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-              // ---------- Phone with country picker ----------
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      showCountryPicker(
-                        context: context,
-                        showPhoneCode: true,
-                        onSelect: (Country country) {
-                          setState(() {
-                            _selectedCountry = country;
-                          });
-                        },
-                        countryListTheme: CountryListThemeData(
-                          flagSize: 25,
-                          backgroundColor: Colors.white,
-                          textStyle: GoogleFonts.inter(fontSize: 16, color: Colors.black),
-                          bottomSheetHeight: 500,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
+                      // Phone + Country Code
+                      Row(
+                        children: [
+                          // Country Code Picker Button (now matches style)
+                          GestureDetector(
+                            onTap: () {
+                              showCountryPicker(
+                                context: context,
+                                showPhoneCode: true,
+                                onSelect: (Country country) {
+                                  setState(() => _selectedCountry = country);
+                                },
+                                countryListTheme: CountryListThemeData(
+                                  backgroundColor: colorScheme.surface,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  inputDecoration: InputDecoration(
+                                    hintText: 'Search',
+                                    filled: true,
+                                    fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_selectedCountry != null) Text(_selectedCountry!.flagEmoji),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _selectedCountry?.phoneCode ?? "234",
+                                    style: GoogleFonts.inter(fontSize: 16),
+                                  ),
+                                  const Icon(Icons.arrow_drop_down, size: 20),
+                                ],
+                              ),
+                            ),
                           ),
-                          inputDecoration: InputDecoration(
-                            hintText: 'Search country',
-                            hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            filled: true,
-                            fillColor: Colors.grey.shade200,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide.none,
+
+                          const SizedBox(width: 12),
+
+                          // Phone Field
+                          Expanded(
+                            child: TextField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                              decoration: _minimalDecoration(context, hint: "Phone Number").copyWith(
+                                prefixIcon: Icon(Icons.phone_outlined, color: colorScheme.primary, size: 22),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Address
+                      TextField(
+                        controller: _addressController,
+                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        decoration: _minimalDecoration(context, hint: "Address").copyWith(
+                          prefixIcon: Icon(Icons.location_on_outlined, color: colorScheme.primary, size: 22),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Country & State Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _countryController,
+                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                              decoration: _minimalDecoration(context, hint: "Country Code").copyWith(
+                                prefixIcon: Icon(Icons.public, color: colorScheme.primary, size: 22),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _stateController,
+                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                              decoration: _minimalDecoration(context, hint: "State").copyWith(
+                                prefixIcon: Icon(Icons.flag_outlined, color: colorScheme.primary, size: 22),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // City & Pincode Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _cityController,
+                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                              decoration: _minimalDecoration(context, hint: "City").copyWith(
+                                prefixIcon: Icon(Icons.location_city_outlined, color: colorScheme.primary, size: 22),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _pincodeController,
+                              keyboardType: TextInputType.number,
+                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                              decoration: _minimalDecoration(context, hint: "Pincode").copyWith(
+                                prefixIcon: Icon(Icons.pin_drop_outlined, color: colorScheme.primary, size: 22),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Save Button — now matches ApiConfig style
+                      GestureDetector(
+                        onTap: () {
+                          // TODO: Save changes
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Save Changes",
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
-                        children: [
-                          Text(
-                            _selectedCountry != null ? "+${_selectedCountry!.phoneCode}" : "+234",
-                            style: GoogleFonts.inter(fontSize: 16),
-                          ),
-                          const SizedBox(width: 4),
-                          if (_selectedCountry != null)
-                            Text(_selectedCountry!.flagEmoji, style: const TextStyle(fontSize: 18)),
-                          const Icon(Icons.arrow_drop_down),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _phoneController,
-                      hint: "Phone Number",
-                      prefixIcon: const Icon(Icons.phone, color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // ---------- Address ----------
-              _buildTextField(
-                controller: _addressController,
-                hint: "Address",
-                prefixIcon: const Icon(Icons.location_on, color: Colors.black),
-              ),
-
-              const SizedBox(height: 12),
-
-              // ---------- Country Code & State ----------
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _countryController,
-                      hint: "Country Code",
-                      prefixIcon: const Icon(Icons.map, color: Colors.black),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _stateController,
-                      hint: "State Code",
-                      prefixIcon: const Icon(Icons.flag, color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // ---------- City & Pincode ----------
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _cityController,
-                      hint: "City Name",
-                      prefixIcon: const Icon(Icons.location_city, color: Colors.black),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _pincodeController,
-                      hint: "Pincode",
-                      prefixIcon: const Icon(Icons.local_post_office, color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // ---------- Save Changes ----------
-              _infinityButton(
-                text: "Save Changes",
-                onTap: () {
-                  // TODO: implement save logic
-                  Navigator.pop(context);
-                },
-                fontSize: labelSize,
+                ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Reusable textfield with black borders and optional icon
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    Widget? prefixIcon,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        prefixIcon: prefixIcon != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8),
-                child: prefixIcon,
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.black, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.black, width: 2),
-        ),
-      ),
-    );
-  }
-
-  // Full-width button
-  Widget _infinityButton({required String text, required VoidCallback onTap, required double fontSize}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: GoogleFonts.inter(
-              fontSize: fontSize,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ),
       ),

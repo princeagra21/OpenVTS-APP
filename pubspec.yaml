@@ -13,6 +13,7 @@ dependencies:
   # iOS-style Cupertino icons
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
+  device_preview: ^1.2.0
   fl_chart: ^1.1.1
   go_router: ^17.0.0
   http: ^1.6.0
@@ -42,7 +43,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/image/logo.png
+    - assets/image/logo.jpeg
 
   # Fonts
   fonts:
@@ -63,15 +64,15 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path_android: "assets/image/logo.png"
-  image_path_ios: "assets/image/logo.png"
+  image_path_android: "assets/image/logo.jpeg"
+  image_path_ios: "assets/image/logo.jpeg"
   adaptive_icon_background: "#194EE5"
-  adaptive_icon_foreground: "assets/image/logo.png"
+  adaptive_icon_foreground: "assets/image/logo.jpeg"
 
 # Native splash screen - top-level
 flutter_native_splash:
   color: "#194EE5"
-  image: assets/image/logo.png
+  image: assets/image/logo.jpeg
   android: true
   ios: true
   web: false

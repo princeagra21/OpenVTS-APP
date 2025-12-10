@@ -1,10 +1,9 @@
-// components/bottom_bar/custom_bottom_bar.dart
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_utils.dart';
-import '../../utils/adaptive_utils.dart'; // Import the shared utils
+import '../../utils/adaptive_utils.dart';
 
 class CustomBottomBar extends StatelessWidget {
   const CustomBottomBar({super.key});
@@ -12,10 +11,9 @@ class CustomBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String currentPath = GoRouterState.of(context).uri.path;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final double screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme; // Color scheme
 
-    // 🔥 ROUTES WHERE BOTTOM BAR MUST BE HIDDEN
     const List<String> hiddenRoutes = [
       '/admins/details', 
       '/vehicles/details/',
@@ -30,23 +28,17 @@ class CustomBottomBar extends StatelessWidget {
       '/email-settings',
       '/smtp-settings',
       '/user-policy',
-      '/notification-settings',
       '/payment-gateway',
       '/server',
       '/calendar',
       '/roles',
       '/ssl',
-
     ];
 
-    // 🔥 AUTO-HIDE LOGIC
     for (final r in hiddenRoutes) {
-      if (currentPath.startsWith(r)) {
-        return const SizedBox.shrink();
-      }
+      if (currentPath.startsWith(r)) return const SizedBox.shrink();
     }
 
-    // Adaptive values from our utils - scaled down for reduced size
     final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85;
     final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
     final double labelFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
@@ -85,8 +77,6 @@ class CustomBottomBar extends StatelessWidget {
         break;
       }
     }
-
-    // Hide bottom bar if no match
     if (currentIndex == null) return const SizedBox.shrink();
 
     return ClipRRect(
@@ -96,13 +86,9 @@ class CustomBottomBar extends StatelessWidget {
         child: Container(
           height: AdaptiveUtils.getBottomBarHeight(screenWidth),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.10)
-                : Colors.white.withOpacity(0.85),
+            color: cs.surface.withOpacity(0.95),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.2)
-                  : Colors.white.withOpacity(0.7),
+              color: cs.onSurface.withOpacity(0.1),
               width: 1.3,
             ),
           ),
@@ -127,8 +113,8 @@ class CustomBottomBar extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(buttonSize * 0.28),
                       decoration: isSelected
-                          ? const BoxDecoration(
-                              color: Colors.black,
+                          ? BoxDecoration(
+                              color: cs.primary,
                               shape: BoxShape.circle,
                             )
                           : null,
@@ -136,8 +122,8 @@ class CustomBottomBar extends StatelessWidget {
                         icons[index],
                         size: iconSize,
                         color: isSelected
-                            ? Colors.white
-                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                            ? cs.onPrimary
+                            : cs.onSurface.withOpacity(0.7),
                       ),
                     ),
 
@@ -150,8 +136,8 @@ class CustomBottomBar extends StatelessWidget {
                         fontSize: labelFontSize,
                         fontWeight: FontWeight.w800,
                         color: isSelected
-                            ? (isDark ? Colors.white : Colors.black)
-                            : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                            ? cs.primary
+                            : cs.onSurface.withOpacity(0.7),
                         letterSpacing: 0.6,
                       ),
                     ),

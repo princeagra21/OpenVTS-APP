@@ -10,17 +10,20 @@ class ProfileDeleteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final Color redColor = Colors.red;
+
+    // Use semantic error color - works perfectly in light & dark mode
+    final Color dangerColor = colorScheme.error;
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: redColor, width: 2),
+        border: Border.all(color: dangerColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +34,7 @@ class ProfileDeleteBox extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: fontSize + 2,
               fontWeight: FontWeight.bold,
-              color: redColor,
+              color: dangerColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -46,7 +49,7 @@ class ProfileDeleteBox extends StatelessWidget {
                   "This action cannot be undone. It will permanently delete your account and remove all associated data.",
                   style: GoogleFonts.inter(
                     fontSize: fontSize,
-                    color: redColor,
+                    color: dangerColor,
                     height: 1.3,
                   ),
                 ),
@@ -55,7 +58,7 @@ class ProfileDeleteBox extends StatelessWidget {
               OutlinedButton(
                 onPressed: onDelete,
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: redColor, width: 2),
+                  side: BorderSide(color: dangerColor, width: 2),
                   backgroundColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -69,7 +72,7 @@ class ProfileDeleteBox extends StatelessWidget {
                   "Delete",
                   style: GoogleFonts.inter(
                     fontSize: fontSize,
-                    color: redColor,
+                    color: dangerColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

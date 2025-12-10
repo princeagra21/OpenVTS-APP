@@ -11,14 +11,14 @@ class DocumentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double FontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
-    double usedStorage = 2.62; // in GB
-    double totalStorage = 5;    // in GB
-    int totalDocs = 411;        // Total documents
 
-    // List of file maps
+    double usedStorage = 2.62; // in GB
+    double totalStorage = 5;   // in GB
+    int totalDocs = 411;
+
     final List<Map<String, dynamic>> files = [
       {
         "fileName": "Company PAN Certificate.pdf",
@@ -67,7 +67,7 @@ class DocumentsTab extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
@@ -80,7 +80,7 @@ class DocumentsTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: Admin Documents text + small circular + icon
+              // Top row: Admin Documents text + add button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -88,7 +88,7 @@ class DocumentsTab extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.description,
-                        color: Colors.black.withOpacity(0.7),
+                        color: colorScheme.onSurface.withOpacity(0.7),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -96,29 +96,28 @@ class DocumentsTab extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black.withOpacity(0.7),
+                          color: colorScheme.onSurface.withOpacity(0.7),
                           letterSpacing: 0.8,
                         ),
-                      )
+                      ),
                     ],
                   ),
-                  // Small circular + icon
+                  // Add button
                   InkWell(
                     onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const AddDocumentScreen(),
-    ),
-  );
-},
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddDocumentScreen(),
+                        ),
+                      );
+                    },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -128,27 +127,27 @@ class DocumentsTab extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.add,
                           size: 20,
-                          color: Colors.black,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-        
+
               const SizedBox(height: 24),
-        
-              // Health Status container with 3 icons
+
+              // Health Status container
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -163,69 +162,160 @@ class DocumentsTab extends StatelessWidget {
                     Text(
                       "Health Status",
                       style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black.withOpacity(0.7),
-                          letterSpacing: 0.8,
-                        ),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                        letterSpacing: 0.8,
+                      ),
                     ),
                     const SizedBox(height: 16),
-        
-                    // Row with 3 icons and their numbers
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Column(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 28,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "1",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
+                        _buildHealthItem(
+                          icon: Icons.check_circle,
+                          color: Colors.green,
+                          count: "1",
+                          colorScheme: colorScheme,
                         ),
-                        Column(
-                          children: [
-                            Icon(
-                              Icons.warning,
-                              color: Colors.orange,
-                              size: 28,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "4",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
+                        _buildHealthItem(
+                          icon: Icons.warning,
+                          color: Colors.orange,
+                          count: "4",
+                          colorScheme: colorScheme,
                         ),
-                        Column(
-                          children: [
-                            Icon(
-                              Icons.error,
-                              color: Colors.red,
-                              size: 28,
+                        _buildHealthItem(
+                          icon: Icons.error,
+                          color: Colors.red,
+                          count: "2",
+                          colorScheme: colorScheme,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Storage Used container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Storage used",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(0)} GB",
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: PieChart(
+                            PieChartData(
+                              sections: [
+                                PieChartSectionData(
+                                  value: usedStorage,
+                                  color: colorScheme.primary,
+                                  radius: 20,
+                                  showTitle: false,
+                                ),
+                                PieChartSectionData(
+                                  value: totalStorage - usedStorage,
+                                  color: colorScheme.primary.withOpacity(0.1),
+                                  radius: 20,
+                                  showTitle: false,
+                                ),
+                              ],
+                              startDegreeOffset: -90,
+                              sectionsSpace: 0,
+                              centerSpaceRadius: 0,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "2",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Total docs: $totalDocs",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Used",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Remaining",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -234,155 +324,10 @@ class DocumentsTab extends StatelessWidget {
                   ],
                 ),
               ),
-        
-              // Storage Used container (full width)
-        
-        
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-          ),
-          child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top: Storage used title
-          Text(
-            "Storage used",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 16),
-        
-          // Middle row: Usage text + Chart
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Usage text
-              Text(
-                "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(0)} GB",
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-        
-              // Pie chart
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: PieChart(
-                  PieChartData(
-                    sections: [
-                      PieChartSectionData(
-                        value: usedStorage,
-                        color: Colors.black,
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                      PieChartSectionData(
-                        value: totalStorage - usedStorage,
-                        color: Colors.black.withOpacity(0.1),
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                    ],
-                    startDegreeOffset: -90,
-                    sectionsSpace: 0,
-                    centerSpaceRadius: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        
-          const SizedBox(height: 12),
-        
-          // Bottom row: Total documents text + color indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Total documents
-              Text(
-                "Total docs: $totalDocs",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black.withOpacity(0.7),
-                ),
-              ),
-        
-              // Color indicators
-              Row(
-                children: [
-                  // Used
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Used",
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.black.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  // Remaining
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Remaining",
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.black.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-          ),
-        )
             ],
           ),
         ),
-        SizedBox(height: 24,),
+        const SizedBox(height: 24),
         ...files.map((file) => FileCard(
           fileName: file['fileName'],
           version: file['version'],
@@ -393,6 +338,28 @@ class DocumentsTab extends StatelessWidget {
           expiryDate: file['expiryDate'],
           status: file['status'],
         )).toList(),
+      ],
+    );
+  }
+
+  Widget _buildHealthItem({
+    required IconData icon,
+    required Color color,
+    required String count,
+    required ColorScheme colorScheme,
+  }) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 4),
+        Text(
+          count,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
       ],
     );
   }

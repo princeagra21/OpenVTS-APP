@@ -10,8 +10,8 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    /// Updated menu items — Added SSL & Roles
     final List<Map<String, dynamic>> menuItems = [
       {
         'title': 'Server',
@@ -37,8 +37,6 @@ class MoreScreen extends StatelessWidget {
         'icon': CupertinoIcons.settings_solid,
         'route': '/settings',
       },
-
-      /// NEW ITEMS
       {
         'title': 'SSL',
         'subtitle': 'Certificate & HTTPS',
@@ -60,25 +58,23 @@ class MoreScreen extends StatelessWidget {
       subtitle: "Menu",
       actionIcons: const [CupertinoIcons.search, CupertinoIcons.bell],
       leftAvatarText: 'FS',
-
       child: Container(
         padding: EdgeInsets.fromLTRB(hp, hp, hp, hp * 2),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.black.withOpacity(0.03),
+            color: colorScheme.outlineVariant.withOpacity(0.4),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: colorScheme.shadow.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -87,22 +83,18 @@ class MoreScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
                 fontWeight: FontWeight.w700,
-                color: Colors.black.withOpacity(0.85),
+                color: colorScheme.onSurface.withOpacity(0.9),
                 letterSpacing: -0.3,
               ),
             ),
-
             SizedBox(height: hp * 1.2),
 
-            /// FIRST ROW (Server, Calendar)
             _buildRow(menuItems[0], menuItems[1], width, hp, context),
             SizedBox(height: hp),
 
-            /// SECOND ROW (Support, Setting)
             _buildRow(menuItems[2], menuItems[3], width, hp, context),
             SizedBox(height: hp),
 
-            /// THIRD ROW (SSL, Roles)
             _buildRow(menuItems[4], menuItems[5], width, hp, context),
           ],
         ),
@@ -164,49 +156,48 @@ class _MoreMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () {
-          if (route.isNotEmpty) {
-            context.push(route);
-          }
+          if (route.isNotEmpty) context.push(route);
         },
         child: Container(
           padding: EdgeInsets.all(hp),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.black.withOpacity(0.05),
+              color: colorScheme.outlineVariant.withOpacity(0.4),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: colorScheme.shadow.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// ICON
+              /// ICON WRAPPER
               Container(
                 height: AdaptiveUtils.getAvatarSize(width) * 1.5,
                 width: AdaptiveUtils.getAvatarSize(width) * 1.5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.black.withOpacity(0.05),
+                  color: colorScheme.primary.withOpacity(0.12),
                 ),
                 child: Center(
                   child: Icon(
                     icon,
-                    size: AdaptiveUtils.getIconSize(width) * 1.2,
-                    color: Colors.black.withOpacity(0.8),
+                    size: AdaptiveUtils.getIconSize(width) * 1.25,
+                    color: colorScheme.primary,
                   ),
                 ),
               ),
@@ -219,8 +210,8 @@ class _MoreMenuCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width),
                   fontWeight: FontWeight.bold,
-                  color: Colors.black.withOpacity(0.9),
-                  letterSpacing: -0.5,
+                  color: colorScheme.onSurface.withOpacity(0.9),
+                  letterSpacing: -0.4,
                 ),
               ),
 
@@ -232,7 +223,7 @@ class _MoreMenuCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.5),
+                  color: colorScheme.onSurface.withOpacity(0.6),
                   height: 1.2,
                 ),
               ),

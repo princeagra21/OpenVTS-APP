@@ -21,36 +21,85 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     {"label": "No Data",           "count": "935",   "percent": 8.33},
   ];
 
-  final List<Color> colors = [
-    Colors.black,
-    Colors.black.withOpacity(0.7),
-    Colors.black.withOpacity(0.4),
-    Colors.black.withOpacity(0.1),
-  ];
+  Color _lighten(Color color, double amount) {
+    assert(amount >= 0 && amount <= 1);
+    final int red = (color.red + (255 - color.red) * amount).round();
+    final int green = (color.green + (255 - color.green) * amount).round();
+    final int blue = (color.blue + (255 - color.blue) * amount).round();
+    return Color.fromARGB(color.alpha, red, green, blue);
+  }
+
+  Color _darken(Color color, double amount) {
+    assert(amount >= 0 && amount <= 1);
+    final int red = (color.red * (1 - amount)).round();
+    final int green = (color.green * (1 - amount)).round();
+    final int blue = (color.blue * (1 - amount)).round();
+    return Color.fromARGB(color.alpha, red, green, blue);
+  }
+
+  List<Color> getColors(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final modeBrightness = Theme.of(context).brightness;
+    final primaryBrightness = ThemeData.estimateBrightnessForColor(primary);
+
+    if (modeBrightness == primaryBrightness) {
+      // Potential contrast issue: shift primary towards opposite brightness
+      if (primaryBrightness == Brightness.dark) {
+        // Dark primary on dark mode: lighten
+        final shifted = _lighten(primary, 0.4);
+        return [
+          shifted,
+          _darken(shifted, 0.2),
+          _darken(shifted, 0.4),
+          _darken(shifted, 0.6),
+        ];
+      } else {
+        // Light primary on light mode: darken
+        final shifted = _darken(primary, 0.4);
+        return [
+          shifted,
+          _lighten(shifted, 0.2),
+          _lighten(shifted, 0.4),
+          _lighten(shifted, 0.6),
+        ];
+      }
+    } else {
+      // Good contrast: use primary with darkening for shades
+      return [
+        primary,
+        _darken(primary, 0.3),
+        _darken(primary, 0.5),
+        _darken(primary, 0.7),
+      ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     // All sizes from our shared AdaptiveUtils
     final double padding         = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth);     // 14–18
-    final double legendFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;    // 12–14
+    final double titleFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth);     // 14-18
+    final double legendFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;    // 12-14
     final double chartHeight     = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 180 : AdaptiveUtils.isSmallScreen(screenWidth) ? 200 : 220;
 
     // Touch feedback scaling
-    final double baseRadius      = AdaptiveUtils.getButtonSize(screenWidth) + 34; // ~62–70
+    final double baseRadius      = AdaptiveUtils.getButtonSize(screenWidth) + 34; // ~62-70
     final double touchedRadius   = baseRadius + 20;
-    final double centerRadius    = AdaptiveUtils.getIconSize(screenWidth) + 14;     // ~30–34
+    final double centerRadius    = AdaptiveUtils.getIconSize(screenWidth) + 14;     // ~30-34
 
     final double touchedFontSize = titleFontSize;
-    final double normalFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);     // 11–13
+    final double normalFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);     // 11-13
+
+    final colors = getColors(context);
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -68,8 +117,8 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
             children: [
               CircleAvatar(
                 radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.2,
-                backgroundColor: Colors.grey[200],
-                child: const Icon(Icons.directions_car, color: Colors.black),
+                backgroundColor: colorScheme.surfaceVariant,
+                child: Icon(Icons.directions_car, color: colorScheme.primary),
               ),
               SizedBox(width: padding),
               Text(
@@ -77,7 +126,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -111,15 +160,20 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                   final data = entry.value;
                   final isTouched = i == touchedIndex;
 
+                  final sectionColor = colors[i];
+                  final textColor = ThemeData.estimateBrightnessForColor(sectionColor) == Brightness.light 
+                      ? Colors.black 
+                      : Colors.white;
+
                   return PieChartSectionData(
-                    color: colors[i],
+                    color: sectionColor,
                     value: data["percent"],
                     title: isTouched ? '${data["percent"]}%' : '',
                     radius: isTouched ? touchedRadius : baseRadius,
                     titleStyle: GoogleFonts.inter(
                       fontSize: isTouched ? touchedFontSize : normalFontSize,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   );
                 }).toList(),
@@ -153,7 +207,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                     data["label"],
                     style: GoogleFonts.inter(
                       fontSize: legendFontSize,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface.withOpacity(0.87),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -162,7 +216,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                     style: GoogleFonts.inter(
                       fontSize: legendFontSize,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -170,7 +224,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                     '(${data["percent"]}%)',
                     style: GoogleFonts.inter(
                       fontSize: legendFontSize,
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],

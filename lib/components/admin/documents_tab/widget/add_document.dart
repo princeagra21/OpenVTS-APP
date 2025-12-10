@@ -1,3 +1,4 @@
+// components/admin/documents_tab/widget/add_document.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
@@ -31,8 +32,8 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
     if (result != null && result.isNotEmpty && result.first != null) {
       setState(() {
-        _selectedExpiry =
-            "${result.first!.day}/${result.first!.month}/${result.first!.year}";
+        final date = result.first!;
+        _selectedExpiry = "${date.day}/${date.month}/${date.year}";
       });
     }
   }
@@ -52,20 +53,22 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+    final double inputFontSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ------------ TOP ROW ------------
+              // TOP ROW
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -74,59 +77,66 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                     style: GoogleFonts.inter(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close, size: 26),
+                    child: Icon(Icons.close, size: 26, color: colorScheme.onSurface),
                   ),
                 ],
               ),
 
               const SizedBox(height: 20),
 
-              // ------------ Document Type ------------
+              // Document Type
               _inputField(
                 controller: typeController,
                 label: "Document Type",
                 hint: "e.g., Insurance Policy",
+                fontSize: inputFontSize,
+                colorScheme: colorScheme,
               ),
 
               const SizedBox(height: 16),
 
-              // ------------ Name ------------
+              // Name
               _inputField(
                 controller: nameController,
                 label: "Name",
                 hint: "e.g., Insurance Policy 2025.pdf",
+                fontSize: inputFontSize,
+                colorScheme: colorScheme,
               ),
 
               const SizedBox(height: 16),
 
-              // ------------ Expiry Date ------------
+              // Expiry Date
               Text(
                 "Expiry",
                 style: GoogleFonts.inter(
                   fontSize: labelSize,
                   fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: pickExpiryDate,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black, width: 1),
+                    border: Border.all(color: colorScheme.outline),
                   ),
                   child: Text(
                     _selectedExpiry ?? "Select date",
                     style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.black.withOpacity(
-                          _selectedExpiry == null ? 0.5 : 1),
+                      fontSize: inputFontSize,
+                      color: _selectedExpiry == null
+                          ? colorScheme.onSurface.withOpacity(0.5)
+                          : colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -134,42 +144,41 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
               const SizedBox(height: 16),
 
-              // ------------ Tags ------------
+              // Tags
               _inputField(
                 controller: tagsController,
                 label: "Tags",
                 hint: "e.g., compliance",
+                fontSize: inputFontSize,
+                colorScheme: colorScheme,
               ),
 
               const SizedBox(height: 24),
 
-              // ------------ Upload Container ------------
+              // Upload Container
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.grey.shade400,
-                    style: BorderStyle.solid,
-                  ),
-                  color: Colors.grey.shade100,
+                  border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
+                  color: colorScheme.surfaceVariant,
                 ),
                 child: Column(
                   children: [
                     Text(
                       "Drag & drop your file here",
                       style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.black87,
+                        fontSize: inputFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.87),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       "PDF, Images, DOCX — up to 50 MB",
                       style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.black54,
+                        fontSize: inputFontSize - 2,
+                        color: colorScheme.onSurface.withOpacity(0.54),
                       ),
                     ),
 
@@ -179,17 +188,16 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                     GestureDetector(
                       onTap: pickFile,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.black,
+                          color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Text(
                           _selectedFile ?? "Choose File",
                           style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 14,
+                            color: colorScheme.onPrimary,
+                            fontSize: inputFontSize,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -201,26 +209,26 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
 
               const SizedBox(height: 22),
 
-              // ------------ Note Optional ------------
+              // Note Optional
               _inputField(
                 controller: noteController,
                 label: "Note (optional)",
                 hint: "Add any additional details",
                 maxLines: 3,
+                fontSize: inputFontSize,
+                colorScheme: colorScheme,
               ),
 
               const SizedBox(height: 26),
 
-              // ------------ Add Document Button ------------
+              // Add Document Button
               GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Center(
@@ -228,7 +236,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                       "Add Document",
                       style: GoogleFonts.inter(
                         fontSize: labelSize,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -244,12 +252,14 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
     );
   }
 
-  // ---------- Shared Textfield Widget ----------
+  // Shared Textfield Widget
   Widget _inputField({
     required TextEditingController controller,
     required String label,
     required String hint,
     int maxLines = 1,
+    required double fontSize,
+    required ColorScheme colorScheme,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,28 +267,31 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           maxLines: maxLines,
+          style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+            hintStyle: GoogleFonts.inter(
+              fontSize: fontSize,
+              color: colorScheme.onSurface.withOpacity(0.5),
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.black, width: 1),
+              borderSide: BorderSide(color: colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
           ),
         ),

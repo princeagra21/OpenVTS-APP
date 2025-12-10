@@ -1,13 +1,14 @@
 // components/admin/admin_info_boxes.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../utils/adaptive_utils.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 
 class AdminInfoBoxes extends StatelessWidget {
   const AdminInfoBoxes({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     // Adaptive values
@@ -27,6 +28,7 @@ class AdminInfoBoxes extends StatelessWidget {
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
+                colorScheme: colorScheme,
               ),
             ),
             SizedBox(width: horizontalPadding),
@@ -38,6 +40,7 @@ class AdminInfoBoxes extends StatelessWidget {
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
+                colorScheme: colorScheme,
               ),
             ),
           ],
@@ -55,6 +58,7 @@ class AdminInfoBoxes extends StatelessWidget {
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
+                colorScheme: colorScheme,
               ),
             ),
             SizedBox(width: horizontalPadding),
@@ -66,6 +70,7 @@ class AdminInfoBoxes extends StatelessWidget {
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
+                colorScheme: colorScheme,
               ),
             ),
           ],
@@ -81,11 +86,12 @@ class AdminInfoBoxes extends StatelessWidget {
     required double titleFontSize,
     required double contentFontSize,
     required double padding,
+    required ColorScheme colorScheme,
   }) {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -95,7 +101,7 @@ class AdminInfoBoxes extends StatelessWidget {
           ),
         ],
       ),
-      height: 120, // optional fixed height for consistency
+      height: 120,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -104,7 +110,7 @@ class AdminInfoBoxes extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -113,7 +119,7 @@ class AdminInfoBoxes extends StatelessWidget {
               content,
               style: GoogleFonts.inter(
                 fontSize: contentFontSize,
-                color: Colors.black.withOpacity(0.6),
+                color: colorScheme.onSurface.withOpacity(0.6),
                 height: 1.3,
               ),
               maxLines: 3,

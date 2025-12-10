@@ -36,12 +36,13 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
 
     // --- ADAPTIVE VALUES ---
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8–16
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
-    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth); // 13–15
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8-16
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
+    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth); // 13-15
     final bodyFs = titleFs - 1; // general text
     final smallFs = titleFs - 3;
     final iconSize = titleFs + 2;
@@ -66,19 +67,19 @@ class _AdminScreenState extends State<AdminScreen> {
             Container(
               height: padding * 3.5,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
+                color: colorScheme.onSurface.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs),
+                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: "Search name, email, role, department...",
                   hintStyle: GoogleFonts.inter(
-                    color: Colors.black.withOpacity(0.5),
+                    color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: bodyFs,
                   ),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize),
+                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.onSurface),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: padding,
@@ -117,7 +118,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   "Showing ${filteredAdmins.length} of ${admins.length} admins",
                   style: GoogleFonts.inter(
                     fontSize: bodyFs,
-                    color: Colors.black.withOpacity(0.87),
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
 
@@ -128,15 +129,16 @@ class _AdminScreenState extends State<AdminScreen> {
                     vertical: spacing,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.transparent),
+                    border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
                   ),
                   child: Text(
                     "Export",
                     style: GoogleFonts.inter(
                       fontSize: bodyFs,
                       fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -169,7 +171,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     ],
                   ),
                   child: Material(
-                    color: Theme.of(context).colorScheme.surface,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(25),
                     child: InkWell(
                       onTap: () {
@@ -185,12 +187,12 @@ class _AdminScreenState extends State<AdminScreen> {
                               children: [
                                 // AVATAR
                                 CircleAvatar(
-                                  backgroundColor: Colors.black,
+                                  backgroundColor: colorScheme.primary,
                                   radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
                                   child: Text(
                                     admin["initials"],
                                     style: GoogleFonts.inter(
-                                      color: Colors.white,
+                                      color: colorScheme.onPrimary,
                                       fontSize: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -215,6 +217,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                 style: GoogleFonts.inter(
                                                   fontSize: bodyFs,
                                                   fontWeight: FontWeight.bold,
+                                                  color: colorScheme.onSurface,
                                                 ),
                                               ),
                                               SizedBox(width: spacing),
@@ -254,7 +257,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                             decoration: BoxDecoration(
                                               borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
-                                                color: Colors.black.withOpacity(0.5),
+                                                color: colorScheme.primary.withOpacity(0.5),
                                                 width: 1.2,
                                               ),
                                             ),
@@ -263,6 +266,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                               style: GoogleFonts.inter(
                                                 fontSize: smallFs + 1,
                                                 fontWeight: FontWeight.w600,
+                                                color: colorScheme.primary,
                                               ),
                                             ),
                                           ),
@@ -274,13 +278,14 @@ class _AdminScreenState extends State<AdminScreen> {
                                       // PHONE
                                       Row(
                                         children: [
-                                          Icon(CupertinoIcons.phone, size: iconSize),
+                                          Icon(CupertinoIcons.phone, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
                                           SizedBox(width: spacing),
                                           Text(
                                             admin["phone"],
                                             style: GoogleFonts.inter(
                                               fontSize: bodyFs,
                                               fontWeight: FontWeight.w600,
+                                              color: colorScheme.onSurface,
                                             ),
                                           ),
                                         ],
@@ -291,13 +296,14 @@ class _AdminScreenState extends State<AdminScreen> {
                                       // EMAIL
                                       Row(
                                         children: [
-                                          Icon(CupertinoIcons.mail, size: iconSize),
+                                          Icon(CupertinoIcons.mail, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
                                           SizedBox(width: spacing),
                                           Text(
                                             admin["email"],
                                             style: GoogleFonts.inter(
                                               fontSize: bodyFs,
                                               fontWeight: FontWeight.w600,
+                                              color: colorScheme.onSurface,
                                             ),
                                           ),
                                         ],
@@ -320,11 +326,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.black.withOpacity(0.7)),
+                                    border: Border.all(color: colorScheme.primary.withOpacity(0.7)),
                                   ),
                                   child: Text(
                                     "${admin["vehicles"]} Vehicles",
-                                    style: GoogleFonts.inter(fontSize: smallFs),
+                                    style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface),
                                   ),
                                 ),
 
@@ -337,14 +343,14 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.red),
+                                    border: Border.all(color: colorScheme.error),
                                   ),
                                   child: Text(
                                     "${admin["credits"]} LOW Credits",
                                     style: GoogleFonts.inter(
                                       fontSize: smallFs,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.red,
+                                      color: colorScheme.error,
                                     ),
                                   ),
                                 ),
@@ -362,6 +368,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: smallFs + 1,
                                     fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
 
@@ -372,7 +379,10 @@ class _AdminScreenState extends State<AdminScreen> {
                                     onChanged: (v) {
                                       setState(() => admin["active"] = v);
                                     },
-                                    activeColor: Colors.black,
+                                    activeColor: colorScheme.onPrimary,
+                                    activeTrackColor: colorScheme.primary,
+                                    inactiveThumbColor: colorScheme.onPrimary,
+                                    inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
                                   ),
                                 ),
                               ],
@@ -382,14 +392,14 @@ class _AdminScreenState extends State<AdminScreen> {
 
                             Row(
                               children: [
-                                Icon(CupertinoIcons.location, size: iconSize),
+                                Icon(CupertinoIcons.location, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
                                 SizedBox(width: spacing),
                                 Expanded(
                                   child: Text(
                                     admin["location"],
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(fontSize: bodyFs),
+                                    style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
                                   ),
                                 ),
                               ],
@@ -397,7 +407,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
                             SizedBox(height: spacing),
 
-                            Divider(),
+                            Divider(color: colorScheme.onSurface.withOpacity(0.1)),
 
                             SizedBox(height: spacing),
 
@@ -408,7 +418,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     "Joined: ${admin["joined"]}",
                                     style: GoogleFonts.inter(
                                       fontSize: smallFs,
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: colorScheme.onSurface.withOpacity(0.6),
                                     ),
                                   ),
                                 ),
@@ -418,7 +428,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     textAlign: TextAlign.right,
                                     style: GoogleFonts.inter(
                                       fontSize: smallFs - 1,
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: colorScheme.onSurface.withOpacity(0.6),
                                     ),
                                   ),
                                 ),

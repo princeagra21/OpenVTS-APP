@@ -1,11 +1,12 @@
+// screens/vehicles/vehicle_screen.dart
 import 'package:fleet_stack/components/small_box/small_box.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../utils/adaptive_utils.dart';
 
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
@@ -18,13 +19,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
   String selectedTab = "All";
   final TextEditingController _searchController = TextEditingController();
 
-  // Safe date parser
   DateTime _safeParseDate(String dateStr) {
     try {
       return DateFormat('dd MMM yyyy').parse(dateStr);
     } catch (e) {
       try {
-        return DateTime.parse(dateStr); // fallback for yyyy-MM-dd
+        return DateTime.parse(dateStr);
       } catch (_) {
         return DateTime.now();
       }
@@ -253,27 +253,20 @@ class _VehicleScreenState extends State<VehicleScreen> {
     super.dispose();
   }
 
-  Color getAvatarColor(String initials) {
-    final hash = initials.codeUnits.fold(0, (p, c) => p + c);
-    return Colors.primaries[hash % Colors.primaries.length].shade600;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final bodyFs = titleFs - 1;
-    final smallFs = titleFs - 3;
-    final iconSize = titleFs + 2;
-    final cardPadding = padding + 4;
-
-    final primaryColor = Colors.blue.shade700;
-    final accentColor = Colors.green.shade600;
-    final now = DateTime.now();
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
+    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
+    final double bodyFs = titleFs - 1;
+    final double smallFs = titleFs - 3;
+    final double iconSize = titleFs + 2;
+    final double cardPadding = hp + 4;
 
     final searchQuery = _searchController.text.toLowerCase();
+    final now = DateTime.now();
 
     var filteredVehicles = vehicles.where((v) {
       final matchesSearch = searchQuery.isEmpty ||
@@ -301,31 +294,29 @@ class _VehicleScreenState extends State<VehicleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search
+            // SEARCH BAR
             Container(
-              height: padding * 3.5,
+              height: hp * 3.5,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3))],
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs),
+                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: "Search plate, type, user, IMEI...",
-                  hintStyle: GoogleFonts.inter(color: Colors.black54, fontSize: bodyFs),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize),
+                  hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
+                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.onSurface.withOpacity(0.7)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: padding, vertical: padding),
+                  contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
                 ),
               ),
             ),
-            SizedBox(height: padding),
+            SizedBox(height: hp),
 
-            // Tabs
+            // TABS
             Wrap(
               spacing: spacing,
               runSpacing: spacing,
@@ -337,29 +328,32 @@ class _VehicleScreenState extends State<VehicleScreen> {
                 );
               }).toList(),
             ),
-            SizedBox(height: padding),
+            SizedBox(height: hp),
 
-            // Count + Add Button
+            // COUNT + ADD BUTTON
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   "Showing ${filteredVehicles.length} of ${vehicles.length} vehicles",
-                  style: GoogleFonts.inter(fontSize: bodyFs, color: Colors.black87),
+                  style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface.withOpacity(0.87)),
                 ),
                 GestureDetector(
                   onTap: () => context.push("/vehicles/add"),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: padding * 1.5, vertical: spacing),
-                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(20)),
-                    child: Text("Add Vehicle", style: GoogleFonts.inter(fontSize: bodyFs - 3, fontWeight: FontWeight.w600, color: Colors.white)),
+                    padding: EdgeInsets.symmetric(horizontal: hp * 1.5, vertical: spacing),
+                    decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(20)),
+                    child: Text(
+                      "Add Vehicle",
+                      style: GoogleFonts.inter(fontSize: bodyFs - 3, fontWeight: FontWeight.w600, color: colorScheme.onPrimary),
+                    ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: spacing * 1.5),
 
-            // Vehicle Cards
+            // VEHICLE CARDS
             ...filteredVehicles.asMap().entries.map((entry) {
               final index = entry.key;
               final vehicle = entry.value;
@@ -372,12 +366,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
               return AnimatedContainer(
                 duration: Duration(milliseconds: 300 + index * 50),
                 curve: Curves.easeOut,
-                margin: EdgeInsets.only(bottom: padding),
+                margin: EdgeInsets.only(bottom: hp),
                 child: Container(
                   decoration: BoxDecoration(
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(25),
-                    gradient: LinearGradient(colors: [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -390,15 +384,18 @@ class _VehicleScreenState extends State<VehicleScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Top: Icon + Plate + Status + Type
+                            // TOP ROW
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: AdaptiveUtils.getAvatarSize(screenWidth),
-                                  height: AdaptiveUtils.getAvatarSize(screenWidth),
-                                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black12)),
-                                  child: Icon(CupertinoIcons.car_detailed, size: AdaptiveUtils.getFsAvatarFontSize(screenWidth), color: Colors.black),
+                                  width: AdaptiveUtils.getAvatarSize(width),
+                                  height: AdaptiveUtils.getAvatarSize(width),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                                  ),
+                                  child: Icon(CupertinoIcons.car_detailed, size: AdaptiveUtils.getFsAvatarFontSize(width), color: colorScheme.primary),
                                 ),
                                 SizedBox(width: spacing * 1.5),
                                 Expanded(
@@ -410,27 +407,34 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         children: [
                                           Row(
                                             children: [
-                                              Text(vehicle["plate"], style: GoogleFonts.inter(fontSize: bodyFs + 2, fontWeight: FontWeight.bold)),
+                                              Text(vehicle["plate"], style: GoogleFonts.inter(fontSize: bodyFs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
                                               SizedBox(width: spacing),
                                               Container(
                                                 padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: vehicle["active"] ? Colors.green.shade100 : Colors.orange.shade100,
+                                                  color: vehicle["active"] ? colorScheme.primary.withOpacity(0.15) : colorScheme.error.withOpacity(0.15),
                                                   borderRadius: BorderRadius.circular(16),
                                                 ),
-                                                child: Text(vehicle["status"], style: GoogleFonts.inter(fontSize: smallFs, fontWeight: FontWeight.w600, color: vehicle["active"] ? Colors.green.shade800 : Colors.orange.shade800)),
+                                                child: Text(
+                                                  vehicle["status"],
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: smallFs,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: vehicle["active"] ? colorScheme.primary : colorScheme.error,
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          Text(vehicle["type"], style: GoogleFonts.inter(fontSize: smallFs + 2, fontWeight: FontWeight.w600, color: Colors.black87)),
+                                          Text(vehicle["type"], style: GoogleFonts.inter(fontSize: smallFs + 2, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87))),
                                         ],
                                       ),
                                       SizedBox(height: spacing / 2),
                                       Row(
                                         children: [
-                                          Icon(CupertinoIcons.device_phone_portrait, size: iconSize, color: Colors.black54),
+                                          Icon(CupertinoIcons.device_phone_portrait, size: iconSize, color: colorScheme.onSurface.withOpacity(0.6)),
                                           SizedBox(width: spacing),
-                                          Text(vehicle["imei"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500)),
+                                          Text(vehicle["imei"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
                                         ],
                                       ),
                                       SizedBox(height: spacing / 2),
@@ -438,7 +442,10 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         padding: EdgeInsets.only(left: iconSize + spacing),
                                         child: Text(
                                           "${vehicle["motion"]} • ${vehicle["speed"]} • ${vehicle["engine"]}",
-                                          style: GoogleFonts.inter(fontSize: bodyFs - 1, color: vehicle["engine"] == "ON" ? accentColor : Colors.black.withOpacity(0.7)),
+                                          style: GoogleFonts.inter(
+                                            fontSize: bodyFs - 1,
+                                            color: vehicle["engine"] == "ON" ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.7),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -449,63 +456,32 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
                             SizedBox(height: spacing * 2),
 
-                            // PRIMARY USER & ADDED BY — NOW IN SAME ROW
+                            // PRIMARY USER & ADDED BY
                             Row(
                               children: [
-                                // Primary User
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(radius: 18, backgroundColor: getAvatarColor(vehicle["primary_user_initials"]), child: Text(vehicle["primary_user_initials"], style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white))),
-                                      SizedBox(width: spacing),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text("Primary User", style: GoogleFonts.inter(fontSize: smallFs - 1, color: Colors.black54, fontWeight: FontWeight.w600)),
-                                            Text(vehicle["primary_user_name"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.bold)),
-                                            Text(vehicle["primary_user_username"], style: GoogleFonts.inter(fontSize: smallFs, color: Colors.black54)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Added By
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(radius: 18, backgroundColor: getAvatarColor(vehicle["added_by_initials"]), child: Text(vehicle["added_by_initials"], style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white))),
-                                      SizedBox(width: spacing),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text("Added By", style: GoogleFonts.inter(fontSize: smallFs - 1, color: Colors.black54, fontWeight: FontWeight.w600)),
-                                            Text(vehicle["added_by_name"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.bold)),
-                                            Text(vehicle["added_by_username"], style: GoogleFonts.inter(fontSize: smallFs, color: Colors.black54)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                Expanded(child: _userInfo(vehicle["primary_user_initials"], vehicle["primary_user_name"], vehicle["primary_user_username"], width, colorScheme, spacing, bodyFs, smallFs)),
+                                Expanded(child: _userInfo(vehicle["added_by_initials"], vehicle["added_by_name"], vehicle["added_by_username"], width, colorScheme, spacing, bodyFs, smallFs)),
                               ],
                             ),
 
                             SizedBox(height: spacing * 2),
 
-                            // Last Seen + Switch
+                            // LAST SEEN + SWITCH
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Last Seen: ${vehicle["last_activity_date"]} ${vehicle["last_activity_time"]}", style: GoogleFonts.inter(fontSize: smallFs + 1, fontWeight: FontWeight.w600, color: Colors.black87)),
+                                Text(
+                                  "Last Seen: ${vehicle["last_activity_date"]} ${vehicle["last_activity_time"]}",
+                                  style: GoogleFonts.inter(fontSize: smallFs + 1, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
+                                ),
                                 Transform.scale(
                                   scale: 0.85,
                                   child: Switch(
                                     value: vehicle["active"],
-                                    activeColor: Colors.black,
+                                    activeColor: colorScheme.onPrimary,
+                                    activeTrackColor: colorScheme.primary,
+                                    inactiveThumbColor: colorScheme.onSurfaceVariant,
+                                    inactiveTrackColor: colorScheme.surfaceVariant,
                                     onChanged: (v) => setState(() {
                                       vehicle["active"] = v;
                                       vehicle["status"] = v ? "Active" : "Inactive";
@@ -517,20 +493,34 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
                             SizedBox(height: spacing),
 
-                            // License Info
+                            // LICENSE INFO
                             Row(
                               children: [
-                                Icon(CupertinoIcons.doc_checkmark_fill, size: iconSize, color: primaryColor),
+                                Icon(CupertinoIcons.doc_checkmark_fill, size: iconSize, color: colorScheme.primary),
                                 SizedBox(width: spacing),
-                                Expanded(child: Text("Primary: ${vehicle["license_pri"]} ${isPriExpiring ? 'Expiring soon' : 'Valid'}", style: GoogleFonts.inter(fontSize: bodyFs - 1, color: isPriExpiring ? Colors.red.shade700 : Colors.black87))),
-                                Expanded(child: Text("Secondary: ${vehicle["license_sec"]} ${isSecExpiring ? 'Expiring soon' : 'Valid'}", textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: bodyFs - 1, color: isSecExpiring ? Colors.red.shade700 : Colors.black87))),
+                                Expanded(
+                                  child: Text(
+                                    "Primary: ${vehicle["license_pri"]} ${isPriExpiring ? '(Expiring soon)' : '(Valid)'}",
+                                    style: GoogleFonts.inter(fontSize: bodyFs - 1, color: isPriExpiring ? colorScheme.error : colorScheme.onSurface),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "Secondary: ${vehicle["license_sec"]} ${isSecExpiring ? '(Expiring soon)' : '(Valid)'}",
+                                    textAlign: TextAlign.end,
+                                    style: GoogleFonts.inter(fontSize: bodyFs - 1, color: isSecExpiring ? colorScheme.error : colorScheme.onSurface),
+                                  ),
+                                ),
                               ],
                             ),
 
                             SizedBox(height: spacing),
-                            Divider(color: Colors.grey.shade300, thickness: 0.5),
+                            Divider(color: colorScheme.outline.withOpacity(0.3)),
                             SizedBox(height: spacing),
-                            Text("Created: ${vehicle["created_date"]} ${vehicle["created_time"]}", style: GoogleFonts.inter(fontSize: smallFs, color: Colors.black54)),
+                            Text(
+                              "Created: ${vehicle["created_date"]} ${vehicle["created_time"]}",
+                              style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.54)),
+                            ),
                           ],
                         ),
                       ),
@@ -540,10 +530,33 @@ class _VehicleScreenState extends State<VehicleScreen> {
               );
             }).toList(),
 
-            SizedBox(height: padding * 3),
+            SizedBox(height: hp * 3),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _userInfo(String initials, String name, String username, double width, ColorScheme scheme, double spacing, double bodyFs, double smallFs) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: scheme.primary,
+          child: Text(initials, style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: scheme.onPrimary)),
+        ),
+        SizedBox(width: spacing),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Primary User", style: GoogleFonts.inter(fontSize: smallFs - 1, color: scheme.onSurface.withOpacity(0.6))),
+              Text(name, style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+              Text(username, style: GoogleFonts.inter(fontSize: smallFs, color: scheme.onSurface.withOpacity(0.6))),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

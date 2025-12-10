@@ -1,3 +1,5 @@
+// components/admin/vehicles_tab/vehicle_card.dart
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -13,6 +15,7 @@ class VehicleCard extends StatelessWidget {
   final String timezone;
   final String primaryExpiry;
   final String secondaryExpiry;
+
   const VehicleCard({
     super.key,
     required this.name,
@@ -27,13 +30,20 @@ class VehicleCard extends StatelessWidget {
     required this.primaryExpiry,
     required this.secondaryExpiry,
   });
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double subtitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
+    final double labelFontSize = subtitleFontSize - 2;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -54,9 +64,9 @@ class VehicleCard extends StatelessWidget {
                 child: Text(
                   name,
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.7),
+                    color: colorScheme.onSurface.withOpacity(0.7),
                     letterSpacing: 0.8,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -68,7 +78,7 @@ class VehicleCard extends StatelessWidget {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: isActive ? Colors.green : Colors.red,
+                      color: isActive ? colorScheme.primary : colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -76,9 +86,9 @@ class VehicleCard extends StatelessWidget {
                   Text(
                     isActive ? "Active" : "Inactive",
                     style: GoogleFonts.inter(
-                      fontSize: 12,
+                      fontSize: subtitleFontSize,
                       fontWeight: FontWeight.w600,
-                      color: isActive ? Colors.green : Colors.red,
+                      color: isActive ? colorScheme.primary : colorScheme.error,
                     ),
                   ),
                 ],
@@ -86,69 +96,73 @@ class VehicleCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+
           // Vehicle Information Section
           Row(
             children: [
-              Icon(Icons.directions_car_filled, size: 16, color: Colors.black.withOpacity(0.6)),
+              Icon(Icons.directions_car_filled, size: 16, color: colorScheme.primary.withOpacity(0.6)),
               const SizedBox(width: 8),
               Text(
                 "Vehicle Information",
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          _infoRow("Type", type),
-          _infoRow("IMEI", imei),
-          _infoRow("VIN / Chassis No.", vin),
-          _infoRow("Device Model", model),
+          _infoRow("Type", type, labelFontSize, colorScheme),
+          _infoRow("IMEI", imei, labelFontSize, colorScheme),
+          _infoRow("VIN / Chassis No.", vin, labelFontSize, colorScheme),
+          _infoRow("Device Model", model, labelFontSize, colorScheme),
           const SizedBox(height: 12),
+
           // Activity Section
           Row(
             children: [
-              Icon(Icons.access_time_rounded, size: 16, color: Colors.black.withOpacity(0.6)),
+              Icon(Icons.access_time_rounded, size: 16, color: colorScheme.primary.withOpacity(0.6)),
               const SizedBox(width: 8),
               Text(
                 "Activity",
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          _infoRow("Last Seen", lastSeenDate),
-          _infoRow("Time", "$lastSeenTime ($timezone)"),
+          _infoRow("Last Seen", lastSeenDate, labelFontSize, colorScheme),
+          _infoRow("Time", "$lastSeenTime ($timezone)", labelFontSize, colorScheme),
           const SizedBox(height: 12),
+
           // Licence Section
           Row(
             children: [
-              Icon(Icons.verified_outlined, size: 16, color: Colors.black.withOpacity(0.6)),
+              Icon(Icons.verified_outlined, size: 16, color: colorScheme.primary.withOpacity(0.6)),
               const SizedBox(width: 8),
               Text(
                 "Licence Status",
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          _infoRow("Primary", primaryExpiry),
-          _infoRow("Secondary", secondaryExpiry),
+          _infoRow("Primary", primaryExpiry, labelFontSize, colorScheme),
+          _infoRow("Secondary", secondaryExpiry, labelFontSize, colorScheme),
         ],
       ),
     );
   }
-  Widget _infoRow(String title, String value) {
+
+  Widget _infoRow(String title, String value, double fontSize, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -158,9 +172,9 @@ class VehicleCard extends StatelessWidget {
             child: Text(
               title.toUpperCase(),
               style: GoogleFonts.inter(
-                fontSize: 10,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w500,
-                color: Colors.black.withOpacity(0.6),
+                color: colorScheme.onSurface.withOpacity(0.6),
                 letterSpacing: 0.5,
               ),
             ),
@@ -169,9 +183,9 @@ class VehicleCard extends StatelessWidget {
             child: Text(
               value,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: fontSize + 2,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: colorScheme.onSurface,
               ),
               overflow: TextOverflow.ellipsis,
             ),

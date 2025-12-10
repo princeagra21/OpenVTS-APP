@@ -1,4 +1,7 @@
+// components/vehicle/vehicle_config_tab.dart
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class VehicleConfigTab extends StatefulWidget {
@@ -16,14 +19,14 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
 
   String ignitionSource = "Ignition Wire";
 
-  void increment(TextEditingController controller, [double step = 0.01]) {
+  void _increment(TextEditingController controller, [double step = 0.01]) {
     double value = double.tryParse(controller.text) ?? 0;
     value += step;
     controller.text = step < 1 ? value.toStringAsFixed(2) : value.toStringAsFixed(0);
     setState(() {});
   }
 
-  void decrement(TextEditingController controller, [double step = 0.01]) {
+  void _decrement(TextEditingController controller, [double step = 0.01]) {
     double value = double.tryParse(controller.text) ?? 0;
     value -= step;
     if (value < 0) value = 0;
@@ -31,137 +34,119 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
     setState(() {});
   }
 
-  Widget numberField({
+  Widget _numberField({
     required TextEditingController controller,
     required String unit,
     double step = 0.01,
   }) {
-    return SizedBox(
-      width: double.infinity,
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        maxLength: 10,
-        style: const TextStyle(color: Colors.black),
-        decoration: InputDecoration(
-          counterText: "",
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.black),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.black),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.black),
-          ),
-          suffixIcon: Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: colorScheme.surfaceVariant,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    InkWell(
-                        onTap: () => increment(controller, step),
-                        child: const Icon(Icons.arrow_drop_up, size: 18, color: Colors.black)),
-                    InkWell(
-                        onTap: () => decrement(controller, step),
-                        child: const Icon(Icons.arrow_drop_down, size: 18, color: Colors.black)),
-                  ],
-                ),
-                const SizedBox(width: 6),
-                Text(unit,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black87))
+                InkWell(onTap: () => _increment(controller, step), child: Icon(Icons.arrow_drop_up, size: 18, color: colorScheme.onSurface)),
+                InkWell(onTap: () => _decrement(controller, step), child: Icon(Icons.arrow_drop_down, size: 18, color: colorScheme.onSurface)),
               ],
             ),
-          ),
-          suffixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 30),
+            const SizedBox(width: 8),
+            Text(unit, style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold, color: colorScheme.onSurface.withOpacity(0.87))),
+            const SizedBox(width: 12),
+          ],
         ),
       ),
     );
   }
 
-  Widget configBox({
+  Widget _configBox({
     required String title,
     required String subtitle,
     required TextEditingController controller,
     required String unit,
     double step = 0.01,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(title, style: GoogleFonts.inter(fontSize: fs + 2, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.9))),
           const SizedBox(height: 4),
-          Text(subtitle, style: GoogleFonts.inter(fontSize: 13, color: Colors.black54)),
-          const SizedBox(height: 16),
-          numberField(controller: controller, unit: unit, step: step),
+          Text(subtitle, style: GoogleFonts.inter(fontSize: fs - 2, color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 14),
+          _numberField(controller: controller, unit: unit, step: step),
         ],
       ),
     );
   }
 
-  Widget ignitionSourceBox() {
+  Widget _ignitionSourceBox() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Ignition Source", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text("Ignition Source", style: GoogleFonts.inter(fontSize: fs + 2, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.9))),
           const SizedBox(height: 4),
-          Text("Choose how engine ON/OFF is derived.", style: GoogleFonts.inter(fontSize: 13, color: Colors.black54)),
-          const SizedBox(height: 16),
+          Text("Choose how engine ON/OFF is derived.", style: GoogleFonts.inter(fontSize: fs - 2, color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 14),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: RadioListTile<String>(
-                  activeColor: Colors.black,
-                  title: Text("Ignition Wire", style: GoogleFonts.inter(fontSize: 12, color: Colors.black),),
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: colorScheme.primary,
+                  title: Text("Ignition Wire", style: GoogleFonts.inter(fontSize: fs - 1, color: colorScheme.onSurface)),
                   value: "Ignition Wire",
                   groupValue: ignitionSource,
-                  onChanged: (value) {
-                    setState(() {
-                      ignitionSource = value!;
-                    });
-                  },
+                  onChanged: (v) => v != null ? setState(() => ignitionSource = v) : null,
                 ),
               ),
               Expanded(
                 child: RadioListTile<String>(
-                  activeColor: Colors.black,
-                  title: Text("Motion-Based", style: GoogleFonts.inter(fontSize: 12, color: Colors.black),),
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: colorScheme.primary,
+                  title: Text("Motion-Based", style: GoogleFonts.inter(fontSize: fs - 1, color: colorScheme.onSurface)),
                   value: "Motion-Based",
                   groupValue: ignitionSource,
-                  onChanged: (value) {
-                    setState(() {
-                      ignitionSource = value!;
-                    });
-                  },
+                  onChanged: (v) => v != null ? setState(() => ignitionSource = v) : null,
                 ),
               ),
             ],
@@ -173,113 +158,50 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24)),
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(24)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // Buttons at top-right
-    Align(
-      alignment: Alignment.topRight,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // RESET BUTTON
-          OutlinedButton(
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
-              side: MaterialStateProperty.all<BorderSide>(
-                BorderSide(color: Colors.black.withOpacity(0.5)),
+          // TOP BUTTONS
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                onPressed: () => setState(() => ignitionSource = "Ignition Wire"),
+                child: Text("Reset", style: GoogleFonts.inter(fontSize: fs - 2, color: colorScheme.onSurface)),
               ),
-              padding: MaterialStateProperty.all(
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0)),
-              minimumSize: MaterialStateProperty.all(const Size(0, 32)),
-            ),
-            onPressed: () {
-              setState(() {
-                ignitionSource = "Ignition Wire";
-              });
-            },
-            child: const Text(
-              "Reset",
-              style: TextStyle(fontSize: 12, color: Colors.black),
-            ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                onPressed: () {},
+                child: Text("Save", style: GoogleFonts.inter(fontSize: fs - 2, color: colorScheme.onPrimary, fontWeight: FontWeight.w600)),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          // SAVE BUTTON
-          ElevatedButton(
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.black),
-              padding: MaterialStateProperty.all(
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0)),
-              minimumSize: MaterialStateProperty.all(const Size(0, 32)),
-            ),
-            onPressed: () {
-              // Save logic here
-            },
-            child: const Text(
-              "Save",
-              style: TextStyle(fontSize: 12, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    ),
-    const SizedBox(height: 24),
-    // Title under buttons, aligned left
-    Text(
-      "Vehicle Setting Configuration",
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black.withOpacity(0.7),
-      ),
-    ),
-    const SizedBox(height: 20),
-  ],
-),
+          const SizedBox(height: 20),
 
+          // TITLE
+          Text("Vehicle Setting Configuration", style: GoogleFonts.inter(fontSize: fs + 1, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.7))),
+          const SizedBox(height: 24),
 
-          configBox(
-            title: "Speed Multiplier (×)",
-            subtitle: "Multiply raw speed by this factor (e.g., 0.95, 1.00, 1.05).",
-            controller: speedController,
-            unit: "×",
-            step: 0.01,
-          ),
-
-          configBox(
-            title: "Distance Multiplier (×)",
-            subtitle: "Multiply raw distance by this factor (e.g., 0.98, 1.00, 1.10).",
-            controller: distanceController,
-            unit: "×",
-            step: 0.01,
-          ),
-
-          configBox(
-            title: "Set Odometer",
-            subtitle: "Override odometer baseline (km).",
-            controller: odometerController,
-            unit: "km",
-            step: 1,
-          ),
-
-          configBox(
-            title: "Set Engine Hours",
-            subtitle: "Total engine runtime hours.",
-            controller: engineHoursController,
-            unit: "h",
-            step: 1,
-          ),
-
-          ignitionSourceBox(),
+          // CONFIG BOXES
+          _configBox(title: "Speed Multiplier (×)", subtitle: "Multiply raw speed by this factor (e.g., 0.95, 1.00, 1.05).", controller: speedController, unit: "×"),
+          _configBox(title: "Distance Multiplier (×)", subtitle: "Multiply raw distance by this factor (e.g., 0.98, 1.00, 1.10).", controller: distanceController, unit: "×"),
+          _configBox(title: "Set Odometer", subtitle: "Override odometer baseline (km).", controller: odometerController, unit: "km", step: 1),
+          _configBox(title: "Set Engine Hours", subtitle: "Total engine runtime hours.", controller: engineHoursController, unit: "h", step: 1),
+          _ignitionSourceBox(),
         ],
       ),
     );

@@ -57,141 +57,142 @@ class VehicleUsersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme; // color scheme shortcut
     return Column(
-      children: users.map((user) => _buildUserCard(user)).toList(),
+      children: users.map((user) => _buildUserCard(user, cs)).toList(),
     );
   }
-Widget _buildUserCard(Map<String, String> user) {
-  final String initials = _getInitials(user["name"]!);
 
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.grey[50],
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 6,
-          offset: const Offset(0, 3),
-        )
-      ],
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// AVATAR
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.black.withOpacity(0.7),
-          child: Text(
-            initials,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+  Widget _buildUserCard(Map<String, String> user, ColorScheme cs) {
+    final String initials = _getInitials(user["name"]!);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: cs.onSurface.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// AVATAR
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: cs.primary,
+            child: Text(
+              initials,
+              style: TextStyle(
+                color: cs.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
 
-        const SizedBox(width: 16),
+          const SizedBox(width: 16),
 
-        /// MAIN CONTENT
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// NAME + USERNAME
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      user["name"]!,
-                      overflow: TextOverflow.ellipsis,
+          /// MAIN CONTENT
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// NAME + USERNAME
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        user["name"]!,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      user["username"]!,
                       style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: cs.onSurface.withOpacity(0.7),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    user["username"]!,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              /// email & phone
-              Text(
-                user["email"]!,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: Colors.grey[700],
+                  ],
                 ),
-              ),
-              Text(
-                user["phone"]!,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: Colors.grey[700],
-                ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-              /// BOTTOM ROW (Last Seen + Status Button)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  /// Last seen text
-                  Text(
-                    "Last: ${user["lastSeen"]}",
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                /// email & phone
+                Text(
+                  user["email"]!,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: cs.onSurface.withOpacity(0.7),
                   ),
+                ),
+                Text(
+                  user["phone"]!,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
 
-                  /// Status button
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    child: Text(
-                      user["status"]!,
-                      style: const TextStyle(
+                const SizedBox(height: 12),
+
+                /// BOTTOM ROW (Last Seen + Status Button)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    /// Last seen text
+                    Text(
+                      "Last: ${user["lastSeen"]}",
+                      style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.white,
+                        color: cs.onSurface.withOpacity(0.6),
                       ),
                     ),
-                  )
-                ],
-              )
-            ],
+
+                    /// Status button
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: Text(
+                        user["status"]!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  ],
+                )
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-
-  // <-- private helper method IS INSIDE THE CLASS
   String _getInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.length >= 2) {

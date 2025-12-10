@@ -1,3 +1,4 @@
+// components/admin/vehicles_tab/vehicles_tab.dart
 import 'package:fleet_stack/components/admin/vehicles_tab/vehicle_card.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -46,18 +47,18 @@ class VehiclesTab extends StatelessWidget {
       "primaryExpiry": "2026-11-30",
       "secondaryExpiry": "2027-11-30",
     },
-    // Continue adding all other vehicles...
+    // ... more vehicles
   ];
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        _buildOverviewCard(context),
+        _buildOverviewCard(context, colorScheme),
         const SizedBox(height: 24),
         Padding(
-          padding: EdgeInsets.all(4),
+          padding: const EdgeInsets.all(4),
           child: Column(
             children: vehiclesData.map((v) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -81,12 +82,18 @@ class VehiclesTab extends StatelessWidget {
     );
   }
 
-  Widget _buildOverviewCard(BuildContext context) {
+  Widget _buildOverviewCard(BuildContext context, ColorScheme colorScheme) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double valueFontSize = titleFontSize * 2;
+    final double subtitleFontSize = titleFontSize - 2;
+    final double changeFontSize = subtitleFontSize - 1;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -106,18 +113,18 @@ class VehiclesTab extends StatelessWidget {
               Text(
                 "Total Vehicles",
                 style: GoogleFonts.inter(
-                  fontSize: 14,
+                  fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black.withOpacity(0.7),
+                  color: colorScheme.onSurface.withOpacity(0.7),
                   letterSpacing: 0.8,
                 ),
               ),
               Text(
                 "1,200",
                 style: GoogleFonts.inter(
-                  fontSize: 28,
+                  fontSize: valueFontSize,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -126,42 +133,73 @@ class VehiclesTab extends StatelessWidget {
           Text(
             "currently tracked",
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: subtitleFontSize,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.7),
+              color: colorScheme.onSurface.withOpacity(0.7),
               letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: 20),
-          const Divider(),
+          Divider(color: colorScheme.onSurface.withOpacity(0.1)),
           const SizedBox(height: 20),
           // STATUS ROWS
-          _buildStatusRow("Moving", "432", "▲ 3.8%", Colors.green),
+          _buildStatusRow(
+            label: "Moving",
+            value: "432",
+            change: "▲ 3.8%",
+            color: Colors.green,
+            labelFontSize: titleFontSize,
+            valueFontSize: valueFontSize - 12,
+            changeFontSize: changeFontSize,
+            colorScheme: colorScheme,
+          ),
           const SizedBox(height: 16),
-          _buildStatusRow("Idle", "215", "▼ 1.2%", Colors.orange),
+          _buildStatusRow(
+            label: "Idle",
+            value: "215",
+            change: "▼ 1.2%",
+            color: Colors.orange,
+            labelFontSize: titleFontSize,
+            valueFontSize: valueFontSize - 12,
+            changeFontSize: changeFontSize,
+            colorScheme: colorScheme,
+          ),
           const SizedBox(height: 16),
-          _buildStatusRow("Stopped", "190", "▼ 0.6%", Colors.red),
+          _buildStatusRow(
+            label: "Stopped",
+            value: "190",
+            change: "▼ 0.6%",
+            color: Colors.red,
+            labelFontSize: titleFontSize,
+            valueFontSize: valueFontSize - 12,
+            changeFontSize: changeFontSize,
+            colorScheme: colorScheme,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusRow(
-    String label,
-    String value,
-    String change,
-    Color color,
-  ) {
-    final isNegative = change.contains("▼");
+  Widget _buildStatusRow({
+    required String label,
+    required String value,
+    required String change,
+    required Color color,
+    required double labelFontSize,
+    required double valueFontSize,
+    required double changeFontSize,
+    required ColorScheme colorScheme,
+  }) {
+    final isNegative = change.contains('▼');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: labelFontSize,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: colorScheme.onSurface,
           ),
         ),
         Row(
@@ -169,9 +207,9 @@ class VehiclesTab extends StatelessWidget {
             Text(
               value,
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: valueFontSize,
                 fontWeight: FontWeight.w700,
-                color: Colors.black,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 12),
@@ -184,7 +222,7 @@ class VehiclesTab extends StatelessWidget {
             Text(
               change,
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: changeFontSize,
                 fontWeight: FontWeight.w600,
                 color: color,
               ),

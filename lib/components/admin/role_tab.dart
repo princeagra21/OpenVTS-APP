@@ -1,6 +1,6 @@
-import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
 
 class RolesTab extends StatefulWidget {
   const RolesTab({super.key});
@@ -44,19 +44,23 @@ class _RolesTabState extends State<RolesTab> {
     required String hint,
     required List<DropdownMenuItem<String>> items,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: Colors.black),
+            Icon(icon, size: 18, color: colorScheme.primary),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: colorScheme.onSurface,
                 letterSpacing: 0.8,
               ),
             ),
@@ -67,28 +71,28 @@ class _RolesTabState extends State<RolesTab> {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.black),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
             ),
             filled: true,
-            fillColor: Colors.grey[200],
+            fillColor: colorScheme.surfaceVariant,
           ),
           style: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: fontSize,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
+            color: colorScheme.onSurface,
           ),
-          dropdownColor: Colors.grey[200],
+          dropdownColor: colorScheme.surface,
           hint: Text(
             hint,
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: fontSize,
               fontWeight: FontWeight.w500,
-              color: Colors.black.withOpacity(0.6),
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           items: items,
@@ -105,15 +109,18 @@ class _RolesTabState extends State<RolesTab> {
   }
 
   Widget _buildPermissionRow(String module, double screenWidth) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           module,
           style: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: colorScheme.onSurface,
             letterSpacing: 0.8,
           ),
         ),
@@ -128,13 +135,13 @@ class _RolesTabState extends State<RolesTab> {
                   Text(
                     "Full",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) - 2,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Radio<String>(
-                    activeColor: Colors.black,
+                    activeColor: colorScheme.primary,
                     value: "Full",
                     groupValue: _permissions[module],
                     onChanged: (value) {
@@ -150,8 +157,8 @@ class _RolesTabState extends State<RolesTab> {
             Text(
               "⟶",
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.black,
+                fontSize: fontSize,
+                color: colorScheme.onSurface,
               ),
             ),
             Expanded(
@@ -161,13 +168,13 @@ class _RolesTabState extends State<RolesTab> {
                   Text(
                     "Manage",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) - 2,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Radio<String>(
-                    activeColor: Colors.black,
+                    activeColor: colorScheme.primary,
                     value: "Manage",
                     groupValue: _permissions[module],
                     onChanged: (value) {
@@ -183,8 +190,8 @@ class _RolesTabState extends State<RolesTab> {
             Text(
               "⟶",
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.black,
+                fontSize: fontSize,
+                color: colorScheme.onSurface,
               ),
             ),
             Expanded(
@@ -194,13 +201,13 @@ class _RolesTabState extends State<RolesTab> {
                   Text(
                     "Edit",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) - 2,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Radio<String>(
-                    activeColor: Colors.black,
+                    activeColor: colorScheme.primary,
                     value: "Edit",
                     groupValue: _permissions[module],
                     onChanged: (value) {
@@ -216,8 +223,8 @@ class _RolesTabState extends State<RolesTab> {
             Text(
               "⟶",
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.black,
+                fontSize: fontSize,
+                color: colorScheme.onSurface,
               ),
             ),
             Expanded(
@@ -227,13 +234,13 @@ class _RolesTabState extends State<RolesTab> {
                   Text(
                     "View",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) - 2,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Radio<String>(
-                    activeColor: Colors.black,
+                    activeColor: colorScheme.primary,
                     value: "View",
                     groupValue: _permissions[module],
                     onChanged: (value) {
@@ -249,8 +256,8 @@ class _RolesTabState extends State<RolesTab> {
             Text(
               "⟶",
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.black,
+                fontSize: fontSize,
+                color: colorScheme.onSurface,
               ),
             ),
             Expanded(
@@ -260,13 +267,13 @@ class _RolesTabState extends State<RolesTab> {
                   Text(
                     "None",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) - 2,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   Radio<String>(
-                    activeColor: Colors.black,
+                    activeColor: colorScheme.primary,
                     value: "None",
                     groupValue: _permissions[module],
                     onChanged: (value) {
@@ -287,7 +294,9 @@ class _RolesTabState extends State<RolesTab> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
     List<Widget> permissionRows = [];
     for (var module in modules) {
       permissionRows.add(_buildPermissionRow(module, screenWidth));
@@ -301,7 +310,7 @@ class _RolesTabState extends State<RolesTab> {
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 400),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -319,14 +328,14 @@ class _RolesTabState extends State<RolesTab> {
             // Roles Header
             Row(
               children: [
-                const Icon(Icons.admin_panel_settings, size: 24),
+                Icon(Icons.admin_panel_settings, size: 24, color: colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   "Roles",
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.7),
+                    color: colorScheme.onSurface.withOpacity(0.7),
                     letterSpacing: 0.8,
                   ),
                 ),
@@ -345,9 +354,9 @@ class _RolesTabState extends State<RolesTab> {
             Text(
               "Permissions overview for this role",
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withOpacity(0.7),
+                color: colorScheme.onSurface.withOpacity(0.7),
                 letterSpacing: 0.8,
               ),
             ),

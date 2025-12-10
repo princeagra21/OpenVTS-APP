@@ -1,3 +1,4 @@
+// components/vehicle/vehicle_logs_tab.dart
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,260 +17,161 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
     DateTime.now().add(const Duration(days: 1)),
   ];
 
-  final Color blackColor = Colors.black; // single source of truth for black
-
   String get formattedRange {
     final start = _selectedRange[0];
     final end = _selectedRange[1];
-
-    if (start == null || end == null) return "";
-
-    return "${_formatDate(start)} - ${_formatDate(end)}";
+    if (start == null || end == null) return "Select date range";
+    return "${_formatDate(start)} – ${_formatDate(end)}";
   }
 
   String _formatDate(DateTime date) {
-    return "${_month(date.month)} ${date.day}, ${date.year}";
-  }
-
-  String _month(int m) {
-    const months = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec"
-    ];
-    return months[m - 1];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return "${months[date.month - 1]} ${date.day}, ${date.year}";
   }
 
   Future<void> _pickDateRange() async {
     final results = await showCalendarDatePicker2Dialog(
       context: context,
-      dialogSize: const Size(350, 350),
+      dialogSize: const Size(350, 380),
       value: _selectedRange,
       config: CalendarDatePicker2WithActionButtonsConfig(
         calendarType: CalendarDatePicker2Type.range,
-        selectedDayHighlightColor: blackColor,
-        selectedDayTextStyle: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-        dayTextStyle: TextStyle(
-          color: blackColor,
-          fontWeight: FontWeight.w500,
-        ),
-        todayTextStyle: TextStyle(
-          color: blackColor,
-          fontWeight: FontWeight.bold,
-        ),
-        controlsTextStyle: TextStyle(
-          color: blackColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-        okButtonTextStyle: TextStyle(
-          color: blackColor,
-          fontWeight: FontWeight.bold,
-        ),
-        cancelButtonTextStyle: TextStyle(
-          color: blackColor,
-          fontWeight: FontWeight.bold,
-        ),
+        selectedDayHighlightColor: Theme.of(context).colorScheme.primary,
+        selectedDayTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        dayTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+        todayTextStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+        controlsTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
+        okButtonTextStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+        cancelButtonTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontWeight: FontWeight.bold),
       ),
     );
 
-    if (results != null) {
+    if (results != null && results.length == 2) {
       setState(() => _selectedRange = results);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    // Responsive values
-    final double buttonWidth = screenWidth < 420 ? 120 : 150;
-    final double iconSize = AdaptiveUtils.getIconSize(screenWidth);
-    final double fontSize = screenWidth < 420 ? 12 : 14;
-    final double textFieldPadding = screenWidth < 420 ? 10 : 14;
-    final double emptyStatePadding = screenWidth < 420 ? 20 : 30;
-
-    // Cyclic rounded radius for text fields
-    final double textFieldRadius = screenWidth < 360
-        ? 8
-        : screenWidth < 420
-            ? 10
-            : 12;
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double smallFs = fs - 2;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: blackColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          /// HEADER
+          // HEADER
           Row(
             children: [
-              Icon(Icons.list_alt_rounded, size: iconSize, color: blackColor),
-              SizedBox(width: AdaptiveUtils.getLeftSectionSpacing(screenWidth)),
+              Icon(Icons.list_alt_rounded, size: fs + 4, color: colorScheme.primary),
+              SizedBox(width: hp / 2),
               Text(
                 "Vehicle Logs",
-                style: GoogleFonts.inter(
-                  fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth),
-                  fontWeight: FontWeight.bold,
-                ),
+                style: GoogleFonts.inter(fontSize: fs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
               ),
             ],
           ),
-
-          SizedBox(height: 4),
-
+          const SizedBox(height: 4),
           Text(
             "Generate and filter vehicle GPS logs",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.7)),
           ),
+          const SizedBox(height: 20),
 
-          SizedBox(height: 20),
-
-          /// DATE RANGE TEXTFIELD
+          // DATE RANGE PICKER
           GestureDetector(
             onTap: _pickDateRange,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: textFieldPadding, vertical: textFieldPadding),
+              padding: EdgeInsets.symmetric(horizontal: hp, vertical: hp * 0.9),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(textFieldRadius),
-                border: Border.all(color: blackColor, width: 1.3),
+                color: colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.primary, width: 1.5),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_month, size: iconSize, color: blackColor),
-                  SizedBox(width: 10),
-                  Text(
-                    formattedRange,
-                    style: GoogleFonts.inter(fontSize: fontSize),
-                  ),
+                  Icon(Icons.calendar_month, size: fs + 4, color: colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Text(formattedRange, style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface)),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
 
-          SizedBox(height: 16),
-
-          /// SEARCH TEXT FIELD
+          // SEARCH FIELD
           TextField(
-            style: GoogleFonts.inter(fontSize: fontSize),
+            style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: "Search by IMEI, coordinate, attributes...",
-              hintStyle: GoogleFonts.inter(fontSize: fontSize),
-              prefixIcon: Icon(Icons.search, size: iconSize, color: blackColor),
+              hintStyle: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface.withOpacity(0.6)),
+              prefixIcon: Icon(Icons.search, size: fs + 4, color: colorScheme.primary),
               filled: true,
-              fillColor: Colors.grey[100],
-              contentPadding: EdgeInsets.symmetric(vertical: textFieldPadding),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(textFieldRadius),
-                borderSide: BorderSide(color: blackColor, width: 1.3),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(textFieldRadius),
-                borderSide: BorderSide(color: blackColor, width: 1.6),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(textFieldRadius),
-                borderSide: BorderSide(color: blackColor),
-              ),
+              fillColor: colorScheme.surfaceVariant,
+              contentPadding: EdgeInsets.symmetric(vertical: hp * 0.9),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
+          const SizedBox(height: 24),
 
-          SizedBox(height: 20),
-
-          /// BUTTONS → CENTER + SAME SIZE
+          // ACTION BUTTONS
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                width: buttonWidth,
-                child: ElevatedButton.icon(
+              Expanded(
+                child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: Icon(Icons.file_download, size: iconSize, color: blackColor),
-                  label: Text(
-                    "Export CSV",
-                    style: GoogleFonts.inter(fontSize: fontSize, color: blackColor),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: textFieldPadding),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(textFieldRadius),
-                      side: BorderSide(color: blackColor.withOpacity(0.5)),
-                    ),
+                  icon: Icon(Icons.file_download, size: fs + 2, color: colorScheme.primary),
+                  label: Text("Export CSV", style: GoogleFonts.inter(fontSize: fs, color: colorScheme.primary, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: hp * 0.9),
+                    side: BorderSide(color: colorScheme.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
-              SizedBox(width: 14),
-              SizedBox(
-                width: buttonWidth,
-                child: ElevatedButton.icon(
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: Icon(Icons.email, size: iconSize, color: blackColor),
-                  label: Text(
-                    "Email",
-                    style: GoogleFonts.inter(fontSize: fontSize, color: blackColor),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: textFieldPadding),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(textFieldRadius),
-                      side: BorderSide(color: blackColor.withOpacity(0.5)),
-                    ),
+                  icon: Icon(Icons.email, size: fs + 2, color: colorScheme.primary),
+                  label: Text("Email", style: GoogleFonts.inter(fontSize: fs, color: colorScheme.primary, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: hp * 0.9),
+                    side: BorderSide(color: colorScheme.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 32),
 
-          SizedBox(height: 30),
-
-          /// EMPTY STATE BOX
+          // EMPTY STATE
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(emptyStatePadding),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(textFieldRadius),
-            ),
+            padding: EdgeInsets.all(hp * 2),
+            decoration: BoxDecoration(color: colorScheme.surfaceVariant, borderRadius: BorderRadius.circular(16)),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.insert_drive_file, size: 40, color: blackColor),
-                SizedBox(height: 12),
-                Text(
-                  "No Logs Found",
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 6),
+                Icon(Icons.insert_drive_file_outlined, size: 48, color: colorScheme.onSurface.withOpacity(0.4)),
+                const SizedBox(height: 12),
+                Text("No Logs Found", style: GoogleFonts.inter(fontSize: fs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface.withOpacity(0.8))),
+                const SizedBox(height: 6),
                 Text(
                   "Try adjusting your date range or search filter",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.6)),
                 ),
               ],
             ),

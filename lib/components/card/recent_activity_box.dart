@@ -19,11 +19,12 @@ class SmallTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4–12
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4–8
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);         // 11–13
+    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
+    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);         // 11-13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -31,16 +32,16 @@ class SmallTab extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
         decoration: BoxDecoration(
-          color: selected ? (selectedBackground ?? Colors.black) : Colors.transparent,
+          color: selected ? (selectedBackground ?? colorScheme.primary) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black, width: 1),
+          border: Border.all(color: colorScheme.onSurface, width: 1),
         ),
         child: Text(
           label,
           style: GoogleFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : Colors.black,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
       ),
@@ -58,13 +59,16 @@ class RecentActivityBox extends StatefulWidget {
 class _RecentActivityBoxState extends State<RecentActivityBox> {
   String activityTab = "Vehicles";
 
-  final Map<String, Color> statusColors = {
-    "Active": Colors.black,
-    "Idle": Colors.black.withOpacity(0.7),
-    "Completed": Colors.black,
-    "Pending": Colors.black.withOpacity(0.7),
-    "Failed": Colors.red.shade900,
-  };
+  Map<String, Color> getStatusColors(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return {
+      "Active": colorScheme.primary,
+      "Idle": colorScheme.primary.withOpacity(0.7),
+      "Completed": colorScheme.primary,
+      "Pending": colorScheme.primary.withOpacity(0.7),
+      "Failed": colorScheme.error,
+    };
+  }
 
   late final List<Map<String, dynamic>> vehicleActivities;
   late final List<Map<String, dynamic>> transactionActivities;
@@ -103,12 +107,15 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
   }
 
   Widget buildActivityItem(Map<String, dynamic> activity) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double mainFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12–16
-    final double subFontSize    = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11–13
-    final double badgeFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11–13
-    final double itemPadding    = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6–10
+    final double mainFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12-16
+    final double subFontSize    = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11-13
+    final double badgeFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11-13
+    final double itemPadding    = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
+
+    final statusColors = getStatusColors(context);
 
     Widget avatar;
     Widget content;
@@ -118,16 +125,16 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       case "Vehicles":
         avatar = CircleAvatar(
           radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: Colors.grey[200],
-          child: const Icon(Icons.directions_car, color: Colors.black),
+          backgroundColor: colorScheme.surfaceVariant,
+          child: Icon(Icons.directions_car, color: colorScheme.primary),
         );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
-            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
-            Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
+            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
           ],
         );
 
@@ -139,15 +146,15 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           ),
           child: Text(
             activity["status"],
-            style: GoogleFonts.inter(color: Colors.white, fontSize: badgeFontSize),
+            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
           ),
         );
 
       case "Transactions":
         avatar = CircleAvatar(
           radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: Colors.grey[200],
-          child: const Icon(Icons.receipt_long, color: Colors.black),
+          backgroundColor: colorScheme.surfaceVariant,
+          child: Icon(Icons.receipt_long, color: colorScheme.primary),
         );
 
         content = Column(
@@ -156,8 +163,8 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
-                Text(activity["value"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold)),
+                Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                Text(activity["value"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
               ],
             ),
             const SizedBox(height: 4),
@@ -166,7 +173,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 Expanded(
                   child: Text(
                     activity["description"],
-                    style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54),
+                    style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -179,7 +186,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                   ),
                   child: Text(
                     activity["status"],
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: badgeFontSize),
+                    style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
                   ),
                 ),
               ],
@@ -195,24 +202,24 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.black.withOpacity(0.8), width: 2),
+            border: Border.all(color: colorScheme.primary.withOpacity(0.8), width: 2),
           ),
           child: CircleAvatar(
             radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
             backgroundColor: Colors.transparent,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold)),
+            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.primary)),
           ),
         );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600)),
-            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54)),
+            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
           ],
         );
 
-        right = Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: Colors.black54));
+        right = Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)));
     }
 
     return Padding(
@@ -233,6 +240,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     final double padding       = AdaptiveUtils.getHorizontalPadding(screenWidth);
@@ -242,7 +250,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -258,10 +266,10 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Recent Activity", style: GoogleFonts.inter(fontSize: titleFontSize, fontWeight: FontWeight.bold)),
+              Text("Recent Activity", style: GoogleFonts.inter(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
               InkWell(
                 onTap: () {},
-                child: Text("View all", style: GoogleFonts.inter(fontSize: linkFontSize, color: Colors.black)),
+                child: Text("View all", style: GoogleFonts.inter(fontSize: linkFontSize, color: colorScheme.primary)),
               ),
             ],
           ),
@@ -290,7 +298,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             child: ListView.separated(
               padding: EdgeInsets.zero,
               itemCount: currentActivities.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.08)),
+              separatorBuilder: (_, __) => Divider(height: 1, color: colorScheme.onSurface.withOpacity(0.08)),
               itemBuilder: (_, index) => buildActivityItem(currentActivities[index]),
             ),
           ),

@@ -1,3 +1,4 @@
+// screens/settings/smtp_config_settings_screen.dart
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -23,9 +24,8 @@ class SmtpConfigSettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SmtpConfigHeader(),
+            const SmtpConfigHeader(),
             const SizedBox(height: 24),
-            // You can add more boxes here if needed
           ],
         ),
       ),
@@ -46,6 +46,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
@@ -53,347 +54,153 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
       width: double.infinity,
       padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    // -----------------------------------------
-    // BUTTONS (SAVE AND TEST) - RIGHT SIDE TOP
-    // -----------------------------------------
-    Align(
-      alignment: Alignment.centerRight,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              padding: EdgeInsets.symmetric(
-                horizontal: hp + 2,
-                vertical: hp - 4,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: Icon(
-              Icons.save_outlined,
-              color: Colors.white,
-              size: AdaptiveUtils.getIconSize(width),
-            ),
-            label: Text(
-              "Save Configuration",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+          // TOP BUTTONS (Save & Test)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(Icons.save_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
+                  label: Text(
+                    "Save Configuration",
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(Icons.email_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
+                  label: Text(
+                    "Send Test Email",
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              padding: EdgeInsets.symmetric(
-                horizontal: hp + 2,
-                vertical: hp - 4,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: Icon(
-              Icons.email_outlined,
-              color: Colors.white,
-              size: AdaptiveUtils.getIconSize(width),
-            ),
-            label: Text(
-              "Send Test Email",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-
-    const SizedBox(height: 24),
-
-    // -----------------------------------------
-    // LEFT TEXTS
-    // -----------------------------------------
-    Text(
-      "SMTP Configuration",
-      style: GoogleFonts.inter(
-        fontSize: AdaptiveUtils.getTitleFontSize(width),
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-      ),
-    ),
-    const SizedBox(height: 4),
-    Text(
-      "Configure your email server settings",
-      style: GoogleFonts.inter(
-        fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-        fontWeight: FontWeight.w800,
-        color: Colors.black.withOpacity(0.9),
-      ),
-    ),
-  ],
-),
-
 
           const SizedBox(height: 24),
 
-          // ==================== Enable SMTP Service Container ====================
+          // TITLE
+          Text(
+            "SMTP Configuration",
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getTitleFontSize(width),
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Configure your email server settings",
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface.withOpacity(0.9),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Enable SMTP Service
+          _buildSection(
+            context: context,
+            icon: Icons.email_rounded,
+            title: "Enable SMTP Service",
+            subtitle: "SMTP service is active and will send emails",
+            trailing: Transform.scale(
+              scale: 0.7,
+              child: Switch(
+                value: smtpEnabled,
+                activeColor: colorScheme.onPrimary,
+                activeTrackColor: colorScheme.primary,
+                inactiveThumbColor: colorScheme.onPrimary,
+                inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
+                onChanged: (v) => setState(() => smtpEnabled = v),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Configure Your SMTP Server
+          _buildSection(
+            context: context,
+            icon: Icons.settings_rounded,
+            title: "Configure Your SMTP Server",
+            subtitle: "Enter your custom SMTP server details below to send system emails and notifications.",
+          ),
+
+          const SizedBox(height: 24),
+
+          // SMTP Server Configuration Fields
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3))],
+              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.email_rounded,
-                          size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                          color: Colors.black87,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Enable SMTP Service",
-                          style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        value: smtpEnabled,
-                        activeColor: Colors.white,
-                        activeTrackColor: Colors.black,
-                        inactiveThumbColor: Colors.white,
-                        inactiveTrackColor: Colors.black.withOpacity(0.3),
-                        onChanged: (v) => setState(() => smtpEnabled = v),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "SMTP service is active and will send emails",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ==================== Configure Your SMTP Server ====================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.settings_rounded,
-                      size: 22,
-                      color: Colors.black87,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Configure Your SMTP Server",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "Enter your custom SMTP server details below to send system emails and notifications.",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ==================== SMTP Server Configuration ====================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // SMTP HOST
-                Text(
-                  "SMTP HOST",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
+                _buildInputField(context, label: "SMTP HOST", hint: "e.g., smtp.gmail.com"),
+                const SizedBox(height: 16),
+                _buildInputField(context, label: "SMTP PORT", hint: "Common: 587, 465, 25"),
                 const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(hint: "e.g., smtp.gmail.com"),
-                ),
-                const SizedBox(height: 12),
-
-                // SMTP PORT
-                Text(
-                  "SMTP PORT",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(hint: "Common: 587, 465, 25"),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Common: 587, 465, 25",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
-                  ),
-                ),
+                Text("Common: 587, 465, 25", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
                 const SizedBox(height: 24),
 
-                // USE TLS/SSL ENCRYPTION
+                // TLS/SSL Switch
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.black.withOpacity(0.05)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Use TLS/SSL Encryption",
-                            style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Transform.scale(
-                            scale: 0.7,
-                            child: Switch(
-                              value: tlsEnabled,
-                              activeColor: Colors.white,
-                              activeTrackColor: Colors.black,
-                              inactiveThumbColor: Colors.white,
-                              inactiveTrackColor: Colors.black.withOpacity(0.3),
-                              onChanged: (v) => setState(() => tlsEnabled = v),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
                       Text(
-                        "Secure connection enabled (Recommended for ports 465 and 587)",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black.withOpacity(0.8),
+                        "Use TLS/SSL Encryption",
+                        style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
+                      ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: tlsEnabled,
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
+                          onChanged: (v) => setState(() => tlsEnabled = v),
                         ),
                       ),
                     ],
@@ -401,167 +208,30 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                 ),
                 const SizedBox(height: 24),
 
-                // USERNAME / EMAIL
-                Text(
-                  "USERNAME / EMAIL",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
+                _buildInputField(context, label: "USERNAME / EMAIL", hint: "SMTP authentication username (usually your email address)"),
+                const SizedBox(height: 16),
+                _buildInputField(context, label: "PASSWORD / APP PASSWORD", hint: "For Gmail/Google Workspace, use an App Password", obscureText: true),
                 const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(
-                    hint: "SMTP authentication username (usually your email address)",
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // PASSWORD / APP PASSWORD
-                Text(
-                  "PASSWORD / APP PASSWORD",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  obscureText: true,
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(
-                    hint: "For Gmail/Google Workspace, use an App Password",
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "For Gmail/Google Workspace, use an App Password",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black.withOpacity(0.8),
-                  ),
-                ),
+                Text("For Gmail/Google Workspace, use an App Password", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // ==================== Sender Information ====================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
-            ),
+          // Sender Information
+          _buildSection(
+            context: context,
+            icon: Icons.person_rounded,
+            title: "Sender Information",
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.person_rounded,
-                      size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                      color: Colors.black87,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Sender Information",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // FROM EMAIL ADDRESS
-                Text(
-                  "FROM EMAIL ADDRESS",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(
-                    hint: "This email address will appear as the sender for all system emails",
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // FROM NAME
-                Text(
-                  "FROM NAME",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(text: "FleetStack"),
-                  decoration: _inputDecoration(
-                    hint: "Display name that will appear alongside the email address",
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // REPLY-TO EMAIL (OPTIONAL)
-                Text(
-                  "REPLY-TO EMAIL (Optional)",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  ),
-                  controller: TextEditingController(),
-                  decoration: _inputDecoration(
-                    hint: "Email address where replies should be sent (if different from sender)",
-                  ),
-                ),
+                _buildInputField(context, label: "FROM EMAIL ADDRESS", hint: "This email address will appear as the sender for all system emails"),
+                const SizedBox(height: 16),
+                _buildInputField(context, label: "FROM NAME", hint: "Display name that will appear alongside the email address", initialValue: "FleetStack"),
+                const SizedBox(height: 16),
+                _buildInputField(context, label: "REPLY-TO EMAIL (Optional)", hint: "Email address where replies should be sent (if different from sender)"),
               ],
             ),
           ),
@@ -570,28 +240,83 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
     );
   }
 
-  InputDecoration _inputDecoration({String? hint}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: GoogleFonts.inter(
-        color: Colors.black.withOpacity(0.6),
-        fontSize: 14,
+  Widget _buildSection({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    Widget? child,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3))],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: AdaptiveUtils.getTitleFontSize(width) + 5, color: colorScheme.primary.withOpacity(0.87)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) + 2, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 12),
+            Text(subtitle, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
+          ],
+          if (child != null) ...[
+            const SizedBox(height: 16),
+            child,
+          ],
+        ],
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
-      ),
+    );
+  }
+
+  Widget _buildInputField(BuildContext context, {required String label, required String hint, String? initialValue, bool obscureText = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          obscureText: obscureText,
+          controller: TextEditingController(text: initialValue),
+          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: AdaptiveUtils.getTitleFontSize(width)),
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+          ),
+        ),
+      ],
     );
   }
 }

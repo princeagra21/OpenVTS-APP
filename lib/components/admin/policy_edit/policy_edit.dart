@@ -1,3 +1,4 @@
+// screens/policy/policy_edit_screen.dart
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -14,14 +15,10 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
   String selectedPolicy = "Terms of Service";
 
   final Map<String, String> policies = {
-    "Terms of Service":
-        """Welcome to FleetStack. By accessing or using our platform, you agree to comply with and be bound by these Terms of Service...""",
-    "Privacy Policy":
-        """We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we handle your personal data...""",
-    "Cookie Policy":
-        """This website uses cookies to enhance user experience and analyze performance and traffic on our website...""",
-    "Refund Policy":
-        """We offer refunds within 14 days of purchase if you are not satisfied with our service. To request a refund, please contact support...""",
+    "Terms of Service": "Welcome to FleetStack. By accessing or using our platform, you agree to comply with and be bound by these Terms of Service...",
+    "Privacy Policy": "We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we handle your personal data...",
+    "Cookie Policy": "This website uses cookies to enhance user experience and analyze performance and traffic on our website...",
+    "Refund Policy": "We offer refunds within 14 days of purchase if you are not satisfied with our service. To request a refund, please contact support...",
   };
 
   late TextEditingController policyController;
@@ -43,9 +40,17 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
   }
 
   @override
+  void dispose() {
+    policyController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
 
     return AppLayout(
       title: "FLEET STACK",
@@ -59,304 +64,143 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Main Header Container
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(hp),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black.withOpacity(0.05)),
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 6))],
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // -----------------------------------------------------------------
-                  // BUTTONS AT THE VERY TOP (aligned to the right)
-                  // -----------------------------------------------------------------
+                  // TOP BUTTONS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            selectedPolicy = "Terms of Service";
-                            _updatePolicyContent();
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: hp + 2,
-                            vertical: hp - 4,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      OutlinedButton.icon(
+                        onPressed: () => setState(() {
+                          selectedPolicy = "Terms of Service";
+                          _updatePolicyContent();
+                        }),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+                          padding: EdgeInsets.symmetric(horizontal: hp + 4, vertical: hp - 4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.refresh_outlined,
-                            color: Colors.white),
-                        label: Text(
-                          "Reset All",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        icon: Icon(Icons.refresh_rounded, color: colorScheme.onSurface),
+                        label: Text("Reset All", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Save all changes
-                        },
+                        onPressed: () {},
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: hp + 2,
-                            vertical: hp - 4,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          backgroundColor: colorScheme.primary,
+                          padding: EdgeInsets.symmetric(horizontal: hp + 4, vertical: hp - 4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.save_outlined,
-                            color: Colors.white),
-                        label: Text(
-                          "Save All",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        icon: Icon(Icons.save_outlined, color: colorScheme.onPrimary),
+                        label: Text("Save All", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: colorScheme.onPrimary)),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 28),
 
-                  const SizedBox(height: 16),
-
-                  // -----------------------------------------------------------------
-                  // TITLE + DESCRIPTION (now below the buttons)
-                  // -----------------------------------------------------------------
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "User Policy Management",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getTitleFontSize(width),
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Create and manage legal agreements for your users",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-
+                  // TITLE
+                  Text("User Policy Management", style: GoogleFonts.inter(fontSize: fs + 6, fontWeight: FontWeight.w900, color: colorScheme.onSurface.withOpacity(0.9))),
+                  const SizedBox(height: 8),
+                  Text("Create and manage legal agreements for your users", style: GoogleFonts.inter(fontSize: fs - 1, color: colorScheme.onSurface.withOpacity(0.7))),
                   const SizedBox(height: 32),
 
-                  // Policy Selection Dropdown
+                  // POLICY SELECTOR
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(hp),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      color: colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Select Policy to Edit",
-                          style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width),
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
+                        Text("Select Policy to Edit", style: GoogleFonts.inter(fontSize: fs + 2, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.9))),
                         const SizedBox(height: 16),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: Colors.black.withOpacity(0.1)),
+                        DropdownButtonFormField<String>(
+                          value: selectedPolicy,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: colorScheme.surface,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
                           ),
-                          child: DropdownButton<String>(
-                            value: selectedPolicy,
-                            isExpanded: true,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            underline: const SizedBox(),
-                            style: GoogleFonts.inter(
-                              color: Colors.black,
-                             fontSize: AdaptiveUtils.getTitleFontSize(width),
-                            ),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  selectedPolicy = newValue;
-                                  _updatePolicyContent();
-                                });
-                              }
-                            },
-                            items: policies.keys
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
+                          style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
+                          dropdownColor: colorScheme.surface,
+                          items: policies.keys.map((key) => DropdownMenuItem(value: key, child: Text(key))).toList(),
+                          onChanged: (v) => v != null ? setState(() {
+                            selectedPolicy = v;
+                            _updatePolicyContent();
+                          }) : null,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 28),
 
-                  const SizedBox(height: 24),
-
-                  // Policy Content Container
+                  // POLICY EDITOR
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(hp),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      color: colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.description_rounded,
-                              size:
-                                  AdaptiveUtils.getTitleFontSize(width) + 5,
-                              color: Colors.black87,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              selectedPolicy,
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getTitleFontSize(width) + 2,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
+                        Row(children: [
+                          Icon(Icons.description_rounded, size: fs + 8, color: colorScheme.primary),
+                          const SizedBox(width: 12),
+                          Text(selectedPolicy, style: GoogleFonts.inter(fontSize: fs + 4, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.9))),
+                        ]),
                         const SizedBox(height: 12),
-                        Text(
-                          "Configure the policy content and settings",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black.withOpacity(0.8),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+                        Text("Configure the policy content and settings", style: GoogleFonts.inter(fontSize: fs - 2, color: colorScheme.onSurface.withOpacity(0.7))),
+                        const SizedBox(height: 20),
 
-                        // Word count + Reset to Template button
+                        // WORD COUNT + RESET
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "${policyController.text.trim().split(' ').length} words",
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                        5,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87,
-                              ),
-                            ),
+                            Text("${policyController.text.trim().split(' ').where((e) => e.isNotEmpty).length} words", style: GoogleFonts.inter(fontSize: fs - 2, fontWeight: FontWeight.w500, color: colorScheme.onSurface.withOpacity(0.8))),
                             TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  policyController.text =
-                                      policies[selectedPolicy] ?? "";
-                                });
-                              },
-                              child: Text(
-                                "Reset to Template",
-                                style: GoogleFonts.inter(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              onPressed: () => setState(() => policyController.text = policies[selectedPolicy] ?? ""),
+                              child: Text("Reset to Template", style: GoogleFonts.inter(fontSize: fs - 2, fontWeight: FontWeight.w600, color: colorScheme.primary)),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
 
-                        // Policy TextField
+                        // TEXT EDITOR
                         TextField(
                           controller: policyController,
                           maxLines: null,
-                          minLines: 15,
-                          style: GoogleFonts.inter(
-                            color: Colors.black,
-                            fontSize: AdaptiveUtils.getTitleFontSize(width),
-                            height: 1.6,
-                          ),
+                          minLines: 18,
+                          style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface, height: 1.7),
                           decoration: InputDecoration(
                             hintText: "Enter policy content here...",
-                            hintStyle: GoogleFonts.inter(
-                              color: Colors.black.withOpacity(0.5),
-                            ),
+                            hintStyle: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface.withOpacity(0.5)),
                             filled: true,
-                            fillColor: Colors.transparent,
+                            fillColor: colorScheme.surface,
                             contentPadding: const EdgeInsets.all(20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                  color: Colors.black.withOpacity(0.1)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                  color: Colors.black.withOpacity(0.1)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                  color: Colors.black.withOpacity(0.1)),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          "Plain text format. Updates will be reflected immediately for users.",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 6,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black.withOpacity(0.7),
-                          ),
-                        ),
+                        Text("Plain text format. Updates will be reflected immediately for users.", style: GoogleFonts.inter(fontSize: fs - 4, color: colorScheme.onSurface.withOpacity(0.6))),
                       ],
                     ),
                   ),
@@ -367,11 +211,5 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    policyController.dispose();
-    super.dispose();
   }
 }

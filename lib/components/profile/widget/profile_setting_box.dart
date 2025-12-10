@@ -1,4 +1,3 @@
-
 // components/profile/profile_box.dart
 import 'package:fleet_stack/components/admin/profile_tab/edit_admin_profile_screen.dart';
 import 'package:fleet_stack/components/admin/profile_tab/update_password_screen.dart';
@@ -11,6 +10,7 @@ class ProfileSettingBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
@@ -25,7 +25,7 @@ class ProfileSettingBox extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(padding + 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -43,11 +43,11 @@ class ProfileSettingBox extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: avatarRadius,
-                backgroundColor: Colors.black,
+                backgroundColor: colorScheme.primary,
                 child: Text(
                   "MS",
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontSize: avatarFontSize,
                     fontWeight: FontWeight.bold,
                   ),
@@ -66,6 +66,7 @@ class ProfileSettingBox extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: nameFontSize,
                               fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -77,13 +78,13 @@ class ProfileSettingBox extends StatelessWidget {
                             vertical: spacing - 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: colorScheme.primary,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             "Admin",
                             style: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: colorScheme.onPrimary,
                               fontSize: badgeFontSize,
                               fontWeight: FontWeight.w600,
                             ),
@@ -96,7 +97,7 @@ class ProfileSettingBox extends StatelessWidget {
                       "@danmasana",
                       style: GoogleFonts.inter(
                         fontSize: usernameFontSize,
-                        color: Colors.black.withOpacity(0.6),
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -111,15 +112,17 @@ class ProfileSettingBox extends StatelessWidget {
                     child: Switch(
                       value: true,
                       onChanged: (value) {},
-                      activeColor: Colors.black,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      activeColor: colorScheme.onPrimary,
+                      activeTrackColor: colorScheme.primary,
+                      inactiveThumbColor: colorScheme.onPrimary,
+                      inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
                     ),
                   ),
                   Text(
                     "Status",
                     style: GoogleFonts.inter(
                       fontSize: badgeFontSize,
-                      color: Colors.black.withOpacity(0.6),
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -151,14 +154,14 @@ class ProfileSettingBox extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: spacing - 2),
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   "Email Verified",
                   style: GoogleFonts.inter(
                     fontSize: badgeFontSize,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -184,7 +187,7 @@ class ProfileSettingBox extends StatelessWidget {
                   child: Container(
                     height: 30,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1.5),
+                      border: Border.all(color: colorScheme.primary, width: 1.5),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Center(
@@ -193,6 +196,7 @@ class ProfileSettingBox extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -213,7 +217,7 @@ class ProfileSettingBox extends StatelessWidget {
                   child: Container(
                     height: 30,
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Center(
@@ -222,7 +226,7 @@ class ProfileSettingBox extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),

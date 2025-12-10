@@ -1,20 +1,20 @@
 // components/vehicle/vehicle_documents_tab.dart
-import 'package:fl_chart/fl_chart.dart';
 import 'package:fleet_stack/components/admin/documents_tab/widget/add_document.dart';
 import 'package:fleet_stack/components/admin/documents_tab/widget/file_card.dart';
+import 'package:fleet_stack/utils/adaptive_utils.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/utils/adaptive_utils.dart';
 
 class VehicleDocumentsTab extends StatelessWidget {
   const VehicleDocumentsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
-    // Vehicle file data (must be declared before using it)
     final List<Map<String, dynamic>> files = [
       {
         "fileName": "Vendor NDA (Traccar Integration).pdf",
@@ -58,215 +58,116 @@ class VehicleDocumentsTab extends StatelessWidget {
       },
     ];
 
-    // Health Status counts
     int validCount = files.where((f) => f['status'].toString().startsWith("Valid")).length;
     int expiringCount = files.where((f) => f['status'].toString().startsWith("Expiring")).length;
     int expiredCount = files.where((f) => f['status'].toString().startsWith("Expired")).length;
 
-    final double usedStorage = 3.12; // GB
-    final double totalStorage = 5; // GB
+    final double usedStorage = 3.12;
+    final double totalStorage = 5;
     final int totalDocs = files.length;
 
     return Column(
       children: [
+        // MAIN CARD
         Container(
-          padding: EdgeInsets.all(padding),
+          padding: EdgeInsets.all(hp),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row: Vehicle Documents + add button
+              // HEADER + ADD BUTTON
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.description, color: Colors.black.withOpacity(0.7)),
+                      Icon(Icons.description, size: 20, color: colorScheme.onSurface.withOpacity(0.7)),
                       const SizedBox(width: 8),
                       Text(
                         "Vehicle Documents",
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black.withOpacity(0.7),
-                          letterSpacing: 0.8,
+                          color: colorScheme.onSurface.withOpacity(0.7),
                         ),
-                      )
+                      ),
                     ],
                   ),
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AddDocumentScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddDocumentScreen())),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 3))],
                       ),
-                      child: const Center(
-                        child: Icon(Icons.add, size: 20, color: Colors.black),
-                      ),
+                      child: Icon(Icons.add, size: 22, color: colorScheme.primary),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // Health Status
+              // HEALTH STATUS
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   children: [
                     Text(
                       "Health Status",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.7),
-                        letterSpacing: 0.8,
-                      ),
+                      style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.7)),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Column(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.green, size: 28),
-                            const SizedBox(height: 4),
-                            Text("$validCount",
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                )),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange, size: 28),
-                            const SizedBox(height: 4),
-                            Text("$expiringCount",
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                )),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Icon(Icons.error, color: Colors.red, size: 28),
-                            const SizedBox(height: 4),
-                            Text("$expiredCount",
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                )),
-                          ],
-                        ),
+                        _statusItem(context, Icons.check_circle, Colors.green, validCount),
+                        _statusItem(context, Icons.warning, Colors.orange, expiringCount),
+                        _statusItem(context, Icons.error, Colors.red, expiredCount),
                       ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
 
-              // Storage container
+              // STORAGE
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Storage used",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.7),
-                        letterSpacing: 0.8,
-                      ),
-                    ),
+                    Text("Storage used", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.7))),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(0)} GB",
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
+                        Text("${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(0)} GB", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
                         SizedBox(
-                          width: 100,
-                          height: 100,
+                          width: 90,
+                          height: 90,
                           child: PieChart(
                             PieChartData(
                               sections: [
-                                PieChartSectionData(
-                                  value: usedStorage,
-                                  color: Colors.black,
-                                  radius: 20,
-                                  showTitle: false,
-                                ),
-                                PieChartSectionData(
-                                  value: totalStorage - usedStorage,
-                                  color: Colors.black.withOpacity(0.1),
-                                  radius: 20,
-                                  showTitle: false,
-                                ),
+                                PieChartSectionData(value: usedStorage, color: colorScheme.primary, radius: 18, showTitle: false),
+                                PieChartSectionData(value: totalStorage - usedStorage, color: colorScheme.surfaceVariant, radius: 18, showTitle: false),
                               ],
                               startDegreeOffset: -90,
                               sectionsSpace: 0,
@@ -280,57 +181,12 @@ class VehicleDocumentsTab extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Total docs: $totalDocs",
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black.withOpacity(0.7),
-                          ),
-                        ),
+                        Text("Total docs: $totalDocs", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) - 2, color: colorScheme.onSurface.withOpacity(0.7))),
                         Row(
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "Used",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: Colors.black.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _legendItem(context, colorScheme.primary, "Used"),
                             const SizedBox(width: 16),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "Remaining",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: Colors.black.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _legendItem(context, colorScheme.surfaceVariant, "Remaining"),
                           ],
                         ),
                       ],
@@ -344,17 +200,42 @@ class VehicleDocumentsTab extends StatelessWidget {
 
         const SizedBox(height: 24),
 
-        // File list
-        ...files.map((file) => FileCard(
-              fileName: file['fileName'],
-              version: file['version'],
-              fileSize: file['fileSize'],
-              type: file['type'],
-              tags: List<String>.from(file['tags']),
-              uploadedDate: file['uploadedDate'],
-              expiryDate: file['expiryDate'],
-              status: file['status'],
-            )).toList(),
+        // FILE LIST
+        ...files.map((file) => Padding(
+              padding: EdgeInsets.only(bottom: hp / 2),
+              child: FileCard(
+                fileName: file['fileName'],
+                version: file['version'],
+                fileSize: file['fileSize'],
+                type: file['type'],
+                tags: List<String>.from(file['tags']),
+                uploadedDate: file['uploadedDate'],
+                expiryDate: file['expiryDate'],
+                status: file['status'],
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _statusItem(BuildContext context, IconData icon, Color color, int count) {
+    final width = MediaQuery.of(context).size.width;
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 6),
+        Text("$count", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _legendItem(BuildContext context, Color color, String label) {
+    final width = MediaQuery.of(context).size.width;
+    return Row(
+      children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+        const SizedBox(width: 6),
+        Text(label, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) - 4, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
       ],
     );
   }
