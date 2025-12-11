@@ -65,15 +65,15 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path_android: "assets/image/logo.jpeg"
-  image_path_ios: "assets/image/logo.jpeg"
+  image_path_android: "assets/image/logo.png"
+  image_path_ios: "assets/image/logo.png"
   adaptive_icon_background: "#194EE5"
-  adaptive_icon_foreground: "assets/image/logo.jpeg"
+  adaptive_icon_foreground: "assets/image/logo.png"
 
 # Native splash screen - top-level
 flutter_native_splash:
   color: "#194EE5"
-  image: assets/image/logo.jpeg
+  image: assets/image/logo.png
   android: true
   ios: true
   web: false
