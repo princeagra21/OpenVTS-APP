@@ -81,7 +81,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 6),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 0),
                 child: Row(
                   children: [
                     // LEFT SIDE
@@ -93,7 +93,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               height: 45,
                               width: 230,
                               child: Image.asset(
-                                'image/logo.jpeg',
+                                'assets/image/logo.jpeg',
                                 fit: BoxFit.contain,
                               ),
                             )
@@ -102,7 +102,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               height: 45,
                               width: 180,
                               child: Image.asset(
-                                'image/logo.jpeg',
+                                'assets/image/logo.jpeg',
                                 fit: BoxFit.contain,
                               ),
                             )
