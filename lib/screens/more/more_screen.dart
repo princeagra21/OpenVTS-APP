@@ -64,7 +64,7 @@ class MoreScreen extends StatelessWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: colorScheme.outlineVariant.withOpacity(0.4),
+            color: Colors.black.withOpacity(0.04),
             width: 1,
           ),
           boxShadow: [
@@ -171,12 +171,12 @@ class _MoreMenuCard extends StatelessWidget {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.4),
+              color: colorScheme.primary.withOpacity(0.03),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

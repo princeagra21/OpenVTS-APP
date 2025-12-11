@@ -1,5 +1,5 @@
 import 'package:fleet_stack/components/small_box/small_box.dart';
-import 'package:fleet_stack/layout/app_layout.dart';
+import 'package:fleet_stack/layout/app_layout.dart'; // Adjust if path changed
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -55,6 +55,11 @@ class _AdminScreenState extends State<AdminScreen> {
       subtitle: "Administrators",
       actionIcons: const [
         CupertinoIcons.add,
+      ],
+      onActionTaps: [ // NEW: Handle tap on add icon
+        () {
+          context.push('/admins/add'); // Navigate to AddNewAdminScreen (adjust route if needed)
+        },
       ],
       leftAvatarText: 'SA',
       child: SingleChildScrollView(
