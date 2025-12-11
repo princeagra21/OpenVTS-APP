@@ -4,12 +4,14 @@ import 'package:fleet_stack/components/vehicle/widget/vehicle_config_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_details_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_documents_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_logs_tab.dart';
+import 'package:fleet_stack/components/vehicle/widget/vehicle_map_tab.dart';
 import 'package:fleet_stack/components/vehicle/widget/vehicle_users_tab.dart';
 import 'package:fleet_stack/components/admin/navigate.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
 
 class VehicleDetailsScreen extends StatefulWidget {
   final String id;
@@ -133,11 +135,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           ),
           const SizedBox(height: 24),
       
-          // TAB CONTENT
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _buildTabContent(key: ValueKey(selectedTab)),
-          ),
+// TAB CONTENT
+AnimatedSwitcher(
+  duration: const Duration(milliseconds: 300),
+  child: _buildTabContent(key: ValueKey(selectedTab)),
+),
       
           const SizedBox(height: 40),
         ],
@@ -159,47 +161,43 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     );
   }
 
- Widget _buildTabContent({Key? key}) {
+Widget _buildTabContent({Key? key}) {
   Widget content;
 
   switch (selectedTab) {
     case "Vehicle Details":
-      content = VehicleDetailsTab();
+      content = const VehicleDetailsTab();
       break;
     case "Vehicle Users":
-      content = const VehicleUsersTab();  // This one needs scrolling
+      content = const VehicleUsersTab();
       break;
     case "Send Commands":
-      content = SendCommandsTab();
+      content = const SendCommandsTab();
       break;
     case "Logs":
-      content = VehicleLogsTab();
+      content = const VehicleLogsTab();
       break;
     case "Maps":
-      content = const Center(child: Text("Maps Tab - Coming Soon", style: TextStyle(fontSize: 18)));
+      content = VehicleMapTab(
+        vehicleLocation: const LatLng(19.0760, 72.8777), // Mumbai
+        vehiclePlate: "DL01 AB 1287",
+      );
       break;
     case "Documents":
-      content = VehicleDocumentsTab();
+      content = const VehicleDocumentsTab();
       break;
     case "Vehicle Config":
-      content = VehicleConfigTab();
+      content = const VehicleConfigTab();
       break;
     default:
-      content = const SizedBox();
+      content = const SizedBox.shrink();
   }
 
-  // If the content is a ListView (or any primary scrollable), wrap in Expanded
-  // Otherwise, let it be as is (for fixed-height content)
-  if (selectedTab == "Vehicle Users" || selectedTab == "Logs") {
-    return Expanded(
-      key: key,
-      child: content,
-    );
-  }
-
+  // Now just return content directly — no special Expanded logic needed
   return Container(
     key: key,
     child: content,
   );
 }
+  
 }
