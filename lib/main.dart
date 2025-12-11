@@ -19,6 +19,7 @@ import 'package:fleet_stack/components/profile/profile_screen.dart';
 import 'package:fleet_stack/components/vehicle/VehicleDetailsScreen.dart';
 import 'package:fleet_stack/components/vehicle/vehicle_screen.dart';
 import 'package:fleet_stack/components/vehicle/widget/add_new_vehicle.dart';
+import 'package:fleet_stack/screens/admin/add_new_admin.dart';
 import 'package:fleet_stack/screens/admin/administrator_details_screen.dart';
 import 'package:fleet_stack/screens/admin/admins_screen.dart';
 import 'package:fleet_stack/screens/map/map_screen.dart';
@@ -26,6 +27,7 @@ import 'package:fleet_stack/screens/more/more_screen.dart';
 import 'package:fleet_stack/screens/setting/setting_screen.dart';
 import 'package:fleet_stack/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,6 +56,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/api-config', builder: (_, __) => const ApiConfigSettingsScreen()),
     GoRoute(path: '/support', builder: (_, __) => const SupportScreen()),
+    GoRoute(path: '/admins/add', builder: (_, __) => const AddNewAdminScreen()),
 
     GoRoute(path: '/smtp-settings', builder: (_, __) => const SmtpConfigSettingsScreen()),
     GoRoute(path: '/localization', builder: (_, __) => const LocalizationSettingsScreen()),
@@ -100,7 +103,6 @@ class ThemeController {
   ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.light);
   ValueNotifier<Color> brandColor = ValueNotifier(AppTheme.defaultBrand);
 
-  /// Load cached saved values
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -111,7 +113,6 @@ class ThemeController {
     brandColor.value = Color(colorValue);
   }
 
-  /// Save dark/light mode
   void setDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isDark", isDark);
@@ -119,7 +120,6 @@ class ThemeController {
     themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
   }
 
-  /// Save brand color
   void setBrand(Color color) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt("brandColor", color.value);
@@ -164,15 +164,15 @@ class ValueListenableBuilder2<A, B> extends StatelessWidget {
 /// ===========================
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  /// Load theme cache before runApp
   await themeController.loadTheme();
 
   runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
-    ),
+    kReleaseMode
+        ? const MyApp()
+        : DevicePreview(
+            enabled: true,
+            builder: (context) => const MyApp(),
+          ),
   );
 }
 
@@ -192,8 +192,11 @@ class MyApp extends StatelessWidget {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               useInheritedMediaQuery: true,
-              locale: DevicePreview.locale(context),
-              builder: DevicePreview.appBuilder,
+
+              // Only active in debug mode
+              locale: kReleaseMode ? null : DevicePreview.locale(context),
+              builder: kReleaseMode ? null : DevicePreview.appBuilder,
+
               routerConfig: router,
               theme: AppTheme.light(brand),
               darkTheme: AppTheme.dark(brand),
