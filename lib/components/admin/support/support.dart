@@ -171,7 +171,16 @@ class _SupportScreenState extends State<SupportScreen> {
               style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width), fontWeight: FontWeight.w800, color: colorScheme.onSurface),
             ),
             const SizedBox(height: 4),
-            Text("${dummyTickets.length} tickets", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(
+              "${dummyTickets.length} tickets",
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+              overflow: TextOverflow.ellipsis, // adds the "..."
+              maxLines: 1, // ensures single-line text
+            ),
+
             const SizedBox(height: 16),
 
             // TICKET CARDS LIST
@@ -251,23 +260,32 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.ticket.title,
-                    style: GoogleFonts.inter(
-                      fontSize: titleSize + 2,
-                      fontWeight: FontWeight.w800,
-                      color: colorScheme.onSurface.withOpacity(0.9),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
-                  ),
-                ],
-              ),
+             Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Expanded(
+      child: Text(
+        widget.ticket.title,
+        style: GoogleFonts.inter(
+          fontSize: titleSize + 2,
+          fontWeight: FontWeight.w800,
+          color: colorScheme.onSurface.withOpacity(0.9),
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+    ),
+    GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Icon(
+        Icons.close,
+        size: 28,
+        color: colorScheme.onSurface.withOpacity(0.8),
+      ),
+    ),
+  ],
+),
+
 
               const SizedBox(height: 12),
 
@@ -464,51 +482,52 @@ class _MessagesContainer extends StatelessWidget {
         border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: ListView.builder(
-        reverse: true, // Display newest message at the bottom
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      message.sender,
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: message.isInternalNote ? Colors.purple : colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      message.timestamp,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
+  reverse: false, // default
+  itemCount: messages.length,
+  itemBuilder: (context, index) {
+    final message = messages[index];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                message.sender,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: message.isInternalNote ? Colors.purple : colorScheme.onSurface,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  message.content,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                message.timestamp,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            message.content,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: colorScheme.onSurface.withOpacity(0.87),
             ),
-          );
-        },
+          ),
+        ],
       ),
+    );
+  },
+)
     );
   }
 }
+
 
 // LOCAL TAB (Unchanged)
 class _LocalTab extends StatelessWidget {
