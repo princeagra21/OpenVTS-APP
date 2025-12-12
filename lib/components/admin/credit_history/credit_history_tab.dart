@@ -2,6 +2,7 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:fleet_stack/components/admin/credit_history/credit_history_details_screen.dart';
 import 'package:fleet_stack/components/admin/credit_history/email_screen.dart';
+import 'package:fleet_stack/components/admin/credit_history/add_deduct_credit_screen.dart'; // Add this import
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -98,7 +99,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
 
           const SizedBox(height: 12),
 
-          // DOWNLOAD + EMAIL
+          // DOWNLOAD + EMAIL + ADD/DEDUCT
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -140,6 +141,33 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                     const SizedBox(width: 6),
                     Text(
                       "Email",
+                      style: GoogleFonts.inter(
+                        fontSize: fontSize,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 24),
+
+              // ADD/DEDUCT CREDIT
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddDeductCreditScreen(),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Icon(Icons.add_circle_outline, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Add/Deduct",
                       style: GoogleFonts.inter(
                         fontSize: fontSize,
                         color: colorScheme.onSurface,

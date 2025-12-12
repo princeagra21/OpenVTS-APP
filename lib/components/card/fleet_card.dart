@@ -75,24 +75,24 @@ class FleetOverviewBox extends StatelessWidget {
                   color: colorScheme.onSurface,
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: spacing + 4,
-                  vertical: spacing - 2,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: colorScheme.onSurface, width: 1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "Today 12M",
-                  style: GoogleFonts.inter(
-                    fontSize: badgeFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
+            //  Container(
+              //  padding: EdgeInsets.symmetric(
+                //  horizontal: spacing + 4,
+                //  vertical: spacing - 2,
+              //  ),
+               // decoration: BoxDecoration(
+                 // border: Border.all(color: colorScheme.onSurface, width: 1),
+     //             borderRadius: BorderRadius.circular(20),
+       ///         ),
+       //         child: Text(
+        //          "Today 12M",
+        //          style: GoogleFonts.inter(
+        //            fontSize: badgeFontSize,
+        //            fontWeight: FontWeight.w600,
+        //            color: colorScheme.onSurface,
+        //          ),
+        //        ),
+         //     ),
             ],
           ),
 
@@ -140,32 +140,34 @@ class FleetOverviewBox extends StatelessWidget {
     );
   }
 
-  Widget _capsule(BuildContext context, String text, double fontSize, double spacing) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacing + 6,
-        vertical: spacing,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onSurface,
+ Widget _capsule(BuildContext context, String text, double fontSize, double spacing) {
+  final cs = Theme.of(context).colorScheme;
+
+  return Container(
+    padding: EdgeInsets.symmetric(
+      horizontal: spacing + 8,
+      vertical: spacing,
+    ),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(999), // TRUE PILL
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
         ),
+      ],
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: cs.onSurface,
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

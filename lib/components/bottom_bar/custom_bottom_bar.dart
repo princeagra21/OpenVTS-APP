@@ -33,6 +33,8 @@ class CustomBottomBar extends StatelessWidget {
       '/calendar',
       '/roles',
       '/ssl',
+      '/all-transactions',
+      '/all-activities',
     ];
 
     for (final r in hiddenRoutes) {

@@ -1,10 +1,8 @@
-import 'package:fleet_stack/components/small_box/small_box.dart';
 import 'package:fleet_stack/layout/app_layout.dart';
 import 'package:fleet_stack/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -54,11 +52,11 @@ class SettingsScreen extends StatelessWidget {
       ),
     ),
 
-    SmallTab(
-      label: "8 items",
-      selected: true,
-      onTap: () {},
-    ),
+  //  SmallTab(
+  //    label: "8 items",
+ //     selected: true,
+//      onTap: () {},
+ //   ),
   ],
 ),
 
