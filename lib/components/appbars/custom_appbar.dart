@@ -10,13 +10,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String subtitle;
   final List<IconData>? icons;
-  final List<VoidCallback>? onIconTaps; // NEW: Tap handlers for icons
+  final List<VoidCallback>? onIconTaps;
   final bool showLeftAvatar;
   final bool showRightAvatar;
   final String leftAvatarText;
   final bool showLogo;
-
-  /// NEW: Scroll offset from NotificationListener
   final double scrollOffset;
 
   CustomAppBar({
@@ -24,12 +22,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     required String subtitle,
     this.icons,
-    this.onIconTaps, // NEW
+    this.onIconTaps,
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
     required this.leftAvatarText,
     this.showLogo = false,
-    this.scrollOffset = 0, // Default value
+    this.scrollOffset = 0,
   }) : subtitle = subtitle.length > 18
             ? '${subtitle.substring(0, 15)}...'
             : subtitle;
@@ -44,7 +42,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Blur effect based on scroll
     final double blurAmount = scrollOffset > 20 ? 20 : 0;
     final double bgOpacity = scrollOffset > 20 ? 0.7 : 0.0;
 
@@ -177,17 +174,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (icons != null)
-                            ...icons!.asMap().entries.map((entry) { // NEW: Use asMap for index
+                            ...icons!.asMap().entries.map((entry) {
                               final int index = entry.key;
                               final IconData icon = entry.value;
-                              final isBell = icon == CupertinoIcons.bell;
+                              final bool isBell = icon == CupertinoIcons.bell;
 
                               return Padding(
                                 padding: EdgeInsets.only(left: iconPaddingLeft),
-                                child: GestureDetector( // NEW: Wrap in GestureDetector for tap
+                                child: GestureDetector(
                                   onTap: onIconTaps != null && index < onIconTaps!.length
                                       ? onIconTaps![index]
-                                      : null, // If no tap handler, do nothing
+                                      : null,
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
@@ -212,18 +209,26 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                           color: cs.primary,
                                         ),
                                       ),
+
+                                      // ONLY SHOW BADGE ON BELL
                                       if (isBell)
                                         Positioned(
-                                          top: -2,
-                                          right: -2,
+                                          top: -buttonSize * 0.15,
+                                          right: -buttonSize * 0.15,
                                           child: Container(
-                                            padding: const EdgeInsets.all(2),
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 16,
+                                              minHeight: 16,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: cs.primary,
                                               shape: BoxShape.circle,
                                             ),
+                                            alignment: Alignment.center,
                                             child: Text(
                                               "3",
+                                              textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: cs.onPrimary,
                                                 fontSize: bellNotificationFontSize,

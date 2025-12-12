@@ -1,7 +1,9 @@
 import 'package:fleet_stack/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../components/appbars/custom_appbar.dart';
 import '../components/bottom_bar/custom_bottom_bar.dart';
+import 'dart:ui';
 
 class AppLayout extends StatefulWidget {
   final String title;
@@ -39,12 +41,65 @@ class AppLayout extends StatefulWidget {
 
 class _AppLayoutState extends State<AppLayout> {
   double _scrollOffset = 0.0;
+  bool _isSearching = false;
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _closeSearch() {
+    setState(() {
+      _isSearching = false;
+    });
+    // Optionally clear the search text: _searchController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    // Prepare effective tap handlers, overriding or adding for search icon
+    List<VoidCallback>? effectiveTaps = widget.onActionTaps != null
+        ? List.from(widget.onActionTaps!)
+        : null;
+
+    if (widget.actionIcons != null) {
+      for (int i = 0; i < widget.actionIcons!.length; i++) {
+        if (widget.actionIcons![i] == CupertinoIcons.search) {
+          VoidCallback searchTap = () {
+            setState(() {
+              _isSearching = true;
+            });
+          };
+
+          if (effectiveTaps == null) {
+            effectiveTaps = List.generate(widget.actionIcons!.length, (_) => () {});
+          }
+
+          if (widget.onActionTaps != null && i < widget.onActionTaps!.length && widget.onActionTaps![i] != null) {
+            VoidCallback original = widget.onActionTaps![i]!;
+            effectiveTaps[i] = () {
+              searchTap();
+              original();
+            }; // Chain original if provided
+          } else {
+            effectiveTaps[i] = searchTap;
+          }
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: isDark
@@ -82,27 +137,101 @@ class _AppLayoutState extends State<AppLayout> {
             ),
           ),
 
-          /// CUSTOM APP BAR
+          /// CUSTOM APP BAR with animated opacity and ignore pointer when searching
           if (widget.showAppBar)
             Positioned(
               left: 0,
               right: 0,
               top: 0,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                child: CustomAppBar(
-                  title: widget.title,
-                  subtitle: widget.subtitle,
-                  icons: widget.actionIcons ?? [],
-                  onIconTaps: widget.onActionTaps, // NEW: Pass tap handlers
-                  showLeftAvatar: widget.showLeftAvatar,
-                  showRightAvatar: widget.showRightAvatar,
-                  leftAvatarText: widget.leftAvatarText,
-                  scrollOffset: _scrollOffset, // Pass the dynamic offset
+              child: IgnorePointer(
+                ignoring: _isSearching,
+                child: AnimatedOpacity(
+                  opacity: _isSearching ? 0.0 : 1.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: CustomAppBar(
+                    title: widget.title,
+                    subtitle: widget.subtitle,
+                    icons: widget.actionIcons ?? [],
+                    onIconTaps: effectiveTaps, // Use effective taps with search handling
+                    showLeftAvatar: widget.showLeftAvatar,
+                    showRightAvatar: widget.showRightAvatar,
+                    leftAvatarText: widget.leftAvatarText,
+                    scrollOffset: _scrollOffset, // Pass the dynamic offset
+                  ),
                 ),
               ),
             ),
+
+          // ---------------- SEARCH BAR ----------------
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+            left: 0,
+            right: 0,
+            top: _isSearching ? topPadding + 10 : -120,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    height: 55,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: cs.surface.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: cs.primary.withOpacity(0.3)), // Replaced 'brand' with cs.primary
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: "Search location",
+                              border: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                              fillColor:  cs.surface.withOpacity(0.75),
+                              hintStyle: TextStyle(
+                                color: cs.onSurface.withOpacity(0.5),
+                              ),
+                              isDense: true, // optional – reduces padding
+                              contentPadding: EdgeInsets.zero, // optional – tight layout
+                            ),
+                            style: TextStyle(color: cs.onSurface),
+                            onSubmitted: (q) {
+                              debugPrint("Searching: $q");
+                              _closeSearch();
+                            },
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _closeSearch,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            ),
+                            child: Icon(Icons.close,
+                                size: 18, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
 

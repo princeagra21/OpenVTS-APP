@@ -1,5 +1,6 @@
-// components/activity/recent_activity_box.dart
+// UPDATED: components/activity/recent_activity_box.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
@@ -267,10 +268,24 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Recent Activity", style: GoogleFonts.inter(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-              InkWell(
-                onTap: () {},
-                child: Text("View all", style: GoogleFonts.inter(fontSize: linkFontSize, color: colorScheme.primary)),
-              ),
+             InkWell(
+  onTap: () {
+    context.push(
+      '/all-activities',
+      extra: {
+        'type': activityTab,
+      },
+    );
+  },
+  child: Text(
+    "View all",
+    style: GoogleFonts.inter(
+      fontSize: linkFontSize,
+      color: colorScheme.primary,
+    ),
+  ),
+),
+
             ],
           ),
 

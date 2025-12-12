@@ -14,7 +14,10 @@ import 'package:fleet_stack/components/admin/server_status/server_status.dart';
 import 'package:fleet_stack/components/admin/smpt_configuration_setting/smpt_configuration_setting.dart';
 import 'package:fleet_stack/components/admin/ssl/ssl.dart';
 import 'package:fleet_stack/components/admin/support/support.dart';
+import 'package:fleet_stack/components/auth/login_screen.dart';
 import 'package:fleet_stack/components/branding/branding_settings_screen.dart';
+import 'package:fleet_stack/components/card/all_activities_screen.dart';
+import 'package:fleet_stack/components/onboarding/onboarding_screen.dart';
 import 'package:fleet_stack/components/profile/profile_screen.dart';
 import 'package:fleet_stack/components/vehicle/VehicleDetailsScreen.dart';
 import 'package:fleet_stack/components/vehicle/vehicle_screen.dart';
@@ -36,7 +39,7 @@ import 'screens/home/home_screen.dart';
 
 /// ROUTER
 final GoRouter router = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/onboarding',
   routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/admins', builder: (_, __) => const AdminScreen()),
@@ -57,7 +60,17 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/api-config', builder: (_, __) => const ApiConfigSettingsScreen()),
     GoRoute(path: '/support', builder: (_, __) => const SupportScreen()),
     GoRoute(path: '/admins/add', builder: (_, __) => const AddNewAdminScreen()),
+  GoRoute(
+  path: '/all-activities',
+  builder: (context, state) {
+    final type = (state.extra as Map?)?['type'] ?? 'Transactions';
+    return AllActivitiesScreen(activityType: type);
+  },
+),
 
+
+    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/smtp-settings', builder: (_, __) => const SmtpConfigSettingsScreen()),
     GoRoute(path: '/localization', builder: (_, __) => const LocalizationSettingsScreen()),
     GoRoute(path: '/application-settings', builder: (_, __) => const ApplicationSettingsScreen()),
