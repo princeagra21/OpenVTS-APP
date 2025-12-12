@@ -146,32 +146,6 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  String selectedLocalTab = "Conversation"; // Keep Conversation selected initially
-  String selectedDropdownStatus = "Closed";
-  final List<String> localTabs = ["All", "Open", "In Process", "Answered", "Hold", "Closed"];
-  final List<String> statusOptions = ["Closed", "Open", "In Process", "Answered", "Hold"];
-  final TextEditingController messageController = TextEditingController();
-
-  // New State: Selected Ticket
-  Ticket? selectedTicket;
-
-  @override
-  void initState() {
-    super.initState();
-    // 1. When the user enters the screen, select the first ticket by default.
-    if (dummyTickets.isNotEmpty) {
-      selectedTicket = dummyTickets.first;
-      // Also update the dropdown to match the selected ticket's status
-      selectedDropdownStatus = selectedTicket!.status;
-    }
-  }
-
-  void _selectTicket(Ticket ticket) {
-    setState(() {
-      selectedTicket = ticket;
-      selectedDropdownStatus = ticket.status; // Update dropdown to match ticket status
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,32 +165,6 @@ class _SupportScreenState extends State<SupportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // MAIN TICKET DETAIL CONTAINER
-            if (selectedTicket != null)
-              _TicketDetailContainer(
-                ticket: selectedTicket!,
-                selectedDropdownStatus: selectedDropdownStatus,
-                statusOptions: statusOptions,
-                onStatusChanged: (value) {
-                  if (value != null) setState(() => selectedDropdownStatus = value);
-                },
-                messageController: messageController,
-                selectedLocalTab: selectedLocalTab,
-                onTabSelected: (tab) => setState(() => selectedLocalTab = tab),
-              ),
-
-            if (selectedTicket == null)
-              Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  "Select a ticket from the inbox below to view details.",
-                  style: GoogleFonts.inter(fontSize: 16, color: colorScheme.onSurface.withOpacity(0.7)),
-                ),
-              ),
-
-            const SizedBox(height: 24),
-
             // INBOX TITLE
             Text(
               "Inbox",
@@ -229,8 +177,14 @@ class _SupportScreenState extends State<SupportScreen> {
             // TICKET CARDS LIST
             ...dummyTickets.map((ticket) => _TicketCard(
                   ticket: ticket,
-                  isSelected: ticket.id == selectedTicket?.id, // Highlight the selected card
-                  onTap: () => _selectTicket(ticket), // Set the selected ticket
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TicketDetailsScreen(ticket: ticket),
+                      ),
+                    );
+                  },
                 )).toList(),
           ],
         ),
@@ -239,205 +193,231 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 }
 
-// --- New Widget for Ticket Detail View (Master Container) ---
+// --- Ticket Details Screen ---
 
-class _TicketDetailContainer extends StatelessWidget {
+class TicketDetailsScreen extends StatefulWidget {
   final Ticket ticket;
-  final String selectedDropdownStatus;
-  final List<String> statusOptions;
-  final ValueChanged<String?> onStatusChanged;
-  final TextEditingController messageController;
-  final String selectedLocalTab;
-  final ValueChanged<String> onTabSelected;
 
-  const _TicketDetailContainer({
-    required this.ticket,
-    required this.selectedDropdownStatus,
-    required this.statusOptions,
-    required this.onStatusChanged,
-    required this.messageController,
-    required this.selectedLocalTab,
-    required this.onTabSelected,
-  });
+  const TicketDetailsScreen({super.key, required this.ticket});
+
+  @override
+  State<TicketDetailsScreen> createState() => _TicketDetailsScreenState();
+}
+
+class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
+  String selectedLocalTab = "Conversation";
+  late String selectedDropdownStatus;
+  final TextEditingController messageController = TextEditingController();
+  final List<String> statusOptions = ["Closed", "Open", "In Process", "Answered", "Hold"];
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDropdownStatus = widget.ticket.status;
+  }
+
+  InputDecoration _dropdownDecoration(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
+    final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     // Filter messages based on the selected tab
     final filteredMessages = selectedLocalTab == "Conversation"
-        ? ticket.messages.where((m) => !m.isInternalNote).toList()
-        : ticket.messages.where((m) => m.isInternalNote).toList();
+        ? widget.ticket.messages.where((m) => !m.isInternalNote).toList()
+        : widget.ticket.messages.where((m) => m.isInternalNote).toList();
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HEADER: Title + Dropdown
-          Row(
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.ticket.title,
+                    style: GoogleFonts.inter(
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface.withOpacity(0.9),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(
+                "${widget.ticket.id} • ${widget.ticket.name}",
+                style: GoogleFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ticket.title,
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface.withOpacity(0.87),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Status Dropdown
+                      DropdownButtonFormField<String>(
+                        decoration: _dropdownDecoration(context),
+                        value: selectedDropdownStatus,
+                        items: statusOptions
+                            .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) setState(() => selectedDropdownStatus = value);
+                        },
+                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "${ticket.name} • Created: ${ticket.created} • Updated: ${ticket.updated}",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                        color: colorScheme.onSurface.withOpacity(0.54),
+
+                      const SizedBox(height: 16),
+
+                      // Owner info
+                      Text(
+                        "Ticket owner: ${widget.ticket.owner}",
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize - 2,
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              // DROPDOWN
-              Container(
-                width: 110,
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
-                ),
-                child: DropdownButton<String>(
-                  value: selectedDropdownStatus,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  dropdownColor: colorScheme.surface,
-                  icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurface),
-                  style: GoogleFonts.inter(fontSize: 13, color: colorScheme.onSurface),
-                  onChanged: onStatusChanged,
-                  items: statusOptions.map((status) {
-                    return DropdownMenuItem<String>(
-                      value: status,
-                      child: Text(status),
-                    );
-                  }).toList(),
+
+                      const SizedBox(height: 16),
+
+                      // Created/Updated info
+                      Text(
+                        "Created: ${widget.ticket.created} • Updated: ${widget.ticket.updated}",
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize - 2,
+                          color: colorScheme.onSurface.withOpacity(0.54),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Tabs
+                      Wrap(
+                        spacing: 12,
+                        children: ["Conversation", "Internal Note"].map((tab) {
+                          return _LocalTab(
+                            label: tab,
+                            selected: tab == selectedLocalTab,
+                            onTap: () => setState(() => selectedLocalTab = tab),
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Messages
+                      _MessagesContainer(
+                        messages: filteredMessages,
+                        selectedTab: selectedLocalTab,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Message Input
+                      TextField(
+                        controller: messageController,
+                        maxLines: 5,
+                        style: GoogleFonts.inter(color: colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          hintText: "Write your message...",
+                          hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.smart_toy, size: 18, color: colorScheme.primary),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Generate Answer",
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: colorScheme.primary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.send, color: colorScheme.onPrimary, size: 18),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Send",
+                                  style: GoogleFonts.inter(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-          Divider(color: colorScheme.onSurface.withOpacity(0.1)),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              "Status: ${ticket.status} • Ticket owner: ${ticket.owner}",
-              style: GoogleFonts.inter(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.7)),
-            ),
-          ),
-          Divider(color: colorScheme.onSurface.withOpacity(0.1)),
-          const SizedBox(height: 16),
-
-          // Conversation / Internal Note Tabs
-          Wrap(
-            spacing: 12,
-            children: ["Conversation", "Internal Note"].map((tab) {
-              return _LocalTab(
-                label: tab,
-                selected: tab == selectedLocalTab,
-                onTap: () => onTabSelected(tab),
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 2. Display place of messages with ticket message
-          _MessagesContainer(
-            messages: filteredMessages,
-            selectedTab: selectedLocalTab,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Message Input
-          TextField(
-            controller: messageController,
-            maxLines: 5,
-            style: GoogleFonts.inter(color: colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: "Write your message...",
-              hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: colorScheme.primary, width: 2),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // AI Answer
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.smart_toy, size: 18, color: colorScheme.primary),
-                    const SizedBox(width: 6),
-                    Text(
-                      "Generate Answer",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: colorScheme.primary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Send button
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.send, color: colorScheme.onPrimary, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      "Send",
-                      style: GoogleFonts.inter(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -454,11 +434,12 @@ class _MessagesContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double messageHeight = MediaQuery.of(context).size.height * 0.4;
 
     if (messages.isEmpty) {
       return Container(
         width: double.infinity,
-        height: 150,
+        height: messageHeight,
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -475,7 +456,7 @@ class _MessagesContainer extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 300),
+      height: messageHeight,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceVariant,
@@ -484,7 +465,6 @@ class _MessagesContainer extends StatelessWidget {
       ),
       child: ListView.builder(
         reverse: true, // Display newest message at the bottom
-        shrinkWrap: true,
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final message = messages[index];
@@ -569,12 +549,10 @@ class _LocalTab extends StatelessWidget {
 // TICKET CARD (Modified to accept a Ticket object and handle selection)
 class _TicketCard extends StatelessWidget {
   final Ticket ticket;
-  final bool isSelected;
   final VoidCallback onTap;
 
   const _TicketCard({
     required this.ticket,
-    required this.isSelected,
     required this.onTap,
   });
 
@@ -593,9 +571,9 @@ class _TicketCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: EdgeInsets.all(hp),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withOpacity(0.1) : colorScheme.surface,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
