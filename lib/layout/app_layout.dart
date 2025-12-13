@@ -190,7 +190,7 @@ class _AppLayoutState extends State<AppLayout> {
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            autofocus: true,
+                            autofocus: false,
                             decoration: InputDecoration(
                               hintText: "Search location",
                               border: InputBorder.none,
