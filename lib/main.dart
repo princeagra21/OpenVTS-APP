@@ -1,113 +1,44 @@
 import 'package:device_preview/device_preview.dart';
-import 'package:fleet_stack/components/admin/api_config/api_config.dart';
-import 'package:fleet_stack/components/admin/application_setting/application_setting.dart';
-import 'package:fleet_stack/components/admin/branding/branding_screen.dart';
-import 'package:fleet_stack/components/admin/calender/calender_screen.dart';
-import 'package:fleet_stack/components/admin/email_template_setting/email_template.dart';
-import 'package:fleet_stack/components/admin/localization/localization.dart';
-import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gateway_details.dart';
-import 'package:fleet_stack/components/admin/payment_gateway_setting/payment_gateway_setting.dart';
-import 'package:fleet_stack/components/admin/policy_edit/policy_edit.dart';
-import 'package:fleet_stack/components/admin/push_notification_template/push_notification_template.dart';
-import 'package:fleet_stack/components/admin/role/role.dart';
-import 'package:fleet_stack/components/admin/server_status/server_status.dart';
-import 'package:fleet_stack/components/admin/smpt_configuration_setting/smpt_configuration_setting.dart';
-import 'package:fleet_stack/components/admin/ssl/ssl.dart';
-import 'package:fleet_stack/components/admin/support/support.dart';
-import 'package:fleet_stack/components/auth/login_screen.dart';
-import 'package:fleet_stack/components/branding/branding_settings_screen.dart';
-import 'package:fleet_stack/components/card/all_activities_screen.dart';
-import 'package:fleet_stack/components/onboarding/onboarding_screen.dart';
-import 'package:fleet_stack/components/profile/profile_screen.dart';
-import 'package:fleet_stack/components/vehicle/VehicleDetailsScreen.dart';
-import 'package:fleet_stack/components/vehicle/vehicle_screen.dart';
-import 'package:fleet_stack/components/vehicle/widget/add_new_vehicle.dart';
-import 'package:fleet_stack/screens/admin/add_new_admin.dart';
-import 'package:fleet_stack/screens/admin/administrator_details_screen.dart';
-import 'package:fleet_stack/screens/admin/admins_screen.dart';
-import 'package:fleet_stack/screens/map/map_screen.dart';
-import 'package:fleet_stack/screens/more/more_screen.dart';
-import 'package:fleet_stack/screens/setting/setting_screen.dart';
-import 'package:fleet_stack/theme/app_theme.dart';
+import 'package:fleet_stack/login_screen.dart';
+import 'package:fleet_stack/onboarding_screen.dart';
+import 'package:fleet_stack/modules/superadmin/router/superadmin_routes.dart';
+import 'package:fleet_stack/modules/admin/router/admin_routes.dart';
+import 'package:fleet_stack/modules/superadmin/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'screens/home/home_screen.dart';
-
 /// ROUTER
 final GoRouter router = GoRouter(
   initialLocation: '/onboarding',
   routes: [
-    GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/admins', builder: (_, __) => const AdminScreen()),
-    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
-    GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+
+    /// ======================
+    /// 🌍 GLOBAL ROUTES
+    /// ======================
     GoRoute(
-      path: '/admins/details/:id',
-      name: 'adminDetails',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return AdministratorDetailsScreen(id: id!);
-      },
+      path: '/onboarding',
+      builder: (_, __) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (_, __) => const LoginScreen(),
     ),
 
-    GoRoute(path: '/branding', builder: (_, __) => const BrandingScreen()),
-    GoRoute(path: '/white-label', builder: (_, __) => const BrandingSettingsScreen()),
-    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/api-config', builder: (_, __) => const ApiConfigSettingsScreen()),
-    GoRoute(path: '/support', builder: (_, __) => const SupportScreen()),
-    GoRoute(path: '/admins/add', builder: (_, __) => const AddNewAdminScreen()),
-  GoRoute(
-  path: '/all-activities',
-  builder: (context, state) {
-    final type = (state.extra as Map?)?['type'] ?? 'Transactions';
-    return AllActivitiesScreen(activityType: type);
-  },
-),
+    /// ======================
+    /// 👑 SUPERADMIN ROUTES
+    /// ======================
+    ...superAdminRoutes,
 
-
-    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/smtp-settings', builder: (_, __) => const SmtpConfigSettingsScreen()),
-    GoRoute(path: '/localization', builder: (_, __) => const LocalizationSettingsScreen()),
-    GoRoute(path: '/application-settings', builder: (_, __) => const ApplicationSettingsScreen()),
-    GoRoute(path: '/email-settings', builder: (_, __) => const EmailTemplateSettingsScreen()),
-
-    GoRoute(
-      path: '/payment-gateway/:id',
-      builder: (context, state) {
-        final gatewayId = state.pathParameters['id']!;
-        return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
-      },
-    ),
-
-    GoRoute(path: '/payment-gateway', builder: (_, __) => const PaymentGatewaySettingsScreen()),
-    GoRoute(path: '/notification-settings', builder: (_, __) => const PushNotificationTemplateSettingsScreen()),
-
-    GoRoute(path: '/vehicles', builder: (_, __) => const VehicleScreen()),
-    GoRoute(path: '/vehicles/add', builder: (_, __) => const AddVehicleScreen()),
-
-    GoRoute(path: '/calendar', builder: (_, __) => const EventCalendarScreen()),
-    GoRoute(path: '/server', builder: (_, __) => const ServerStatusScreen()),
-    GoRoute(path: '/ssl', builder: (_, __) => const SSLManagementScreen()),
-    GoRoute(path: '/roles', builder: (_, __) => const RolesScreen()),
-    GoRoute(path: '/user-policy', builder: (_, __) => const PolicyEditScreen()),
-    GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
-    GoRoute(path: '/map', builder: (_, __) => const MapScreen()),
-
-    GoRoute(
-      path: '/vehicles/details/:id',
-      name: 'vehicleDetails',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return VehicleDetailsScreen(id: id!);
-      },
-    ),
+    /// ======================
+    /// 🔑 ADMIN ROUTES
+    /// ======================
+    ...adminRoutes,
   ],
 );
+
 
 /// ==============================
 ///  THEME CONTROLLER + CACHE
