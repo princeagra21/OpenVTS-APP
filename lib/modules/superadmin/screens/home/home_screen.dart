@@ -1,7 +1,7 @@
+import 'package:fleet_stack/modules/superadmin/components/card/adoption_widget.dart';
 import 'package:fleet_stack/modules/superadmin/components/card/fleet_card.dart';
 import 'package:fleet_stack/modules/superadmin/components/card/recent_activity_box.dart';
 import 'package:fleet_stack/modules/superadmin/components/card/vehicle_status_box.dart';
-import 'package:fleet_stack/modules/superadmin/components/home/adoption_growth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
