@@ -8,6 +8,7 @@ class CustomTextField extends StatefulWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final double fontSize;
+  final FocusNode? focusNode;
 
   const CustomTextField({
     super.key,
@@ -17,6 +18,7 @@ class CustomTextField extends StatefulWidget {
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
     required this.fontSize,
+    this.focusNode,
   });
 
   @override
@@ -41,6 +43,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       style: GoogleFonts.inter(fontSize: widget.fontSize, color: colorScheme.onSurface),
+      focusNode: widget.focusNode,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.transparent,

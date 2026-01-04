@@ -1,5 +1,6 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/login_screen.dart';
+import 'package:fleet_stack/modules/user/router/user_routes.dart';
 import 'package:fleet_stack/onboarding_screen.dart';
 import 'package:fleet_stack/modules/superadmin/router/superadmin_routes.dart';
 import 'package:fleet_stack/modules/admin/router/admin_routes.dart';
@@ -26,6 +27,11 @@ final GoRouter router = GoRouter(
       path: '/login',
       builder: (_, __) => const LoginScreen(),
     ),
+    GoRoute(
+      path: '/',
+      builder: (_, __) => const LoginScreen(),
+    ),
+
 
     /// ======================
     /// 👑 SUPERADMIN ROUTES
@@ -36,6 +42,11 @@ final GoRouter router = GoRouter(
     /// 🔑 ADMIN ROUTES
     /// ======================
     ...adminRoutes,
+
+    /// ======================
+    ///  USER ROUTES
+    /// ======================
+    ...userRoutes,
   ],
 );
 
