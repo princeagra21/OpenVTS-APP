@@ -1,12 +1,214 @@
-/*
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
+import 'dart:ui';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
+import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
+import 'package:fleet_stack/modules/user/screens/route/add_map_location_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:latlong2/latlong.dart' as latlng;
+import 'package:latlong2/latlong.dart';
+import 'package:flutter/services.dart';
+import '../../layout/app_layout.dart';
+
+enum GeofenceType {
+  circle,
+  polygon,
+  rectangle,
+  line,
+  poi,
+  route,
+}
+
+class Geofence {
+  final GeofenceType type;
+  final String label;
+  final Color color;
+  final double? radius;
+  final List<LatLng> points;
+  final double? width;
+
+  Geofence({
+    required this.type,
+    required this.label,
+    this.color = Colors.blue,
+    this.radius,
+    this.points = const [],
+    this.width,
+  });
+}
+
+@immutable
+class ExpandableFab extends StatefulWidget {
+  const ExpandableFab({
+    super.key,
+    this.initialOpen,
+    required this.distance,
+    required this.children,
+  });
+  final bool? initialOpen;
+  final double distance;
+  final List<Widget> children;
+  @override
+  State<ExpandableFab> createState() => _ExpandableFabState();
+}
+
+class _ExpandableFabState extends State<ExpandableFab>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _expandAnimation;
+  bool _open = false;
+  @override
+  void initState() {
+    super.initState();
+    _open = widget.initialOpen ?? false;
+    _controller = AnimationController(
+      value: _open ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      curve: Curves.fastOutSlowIn,
+      reverseCurve: Curves.easeOutQuad,
+      parent: _controller,
+    );
+  }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  void _toggle() {
+    setState(() {
+      _open = !_open;
+      if (_open) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: widget.children.length * widget.distance + 100,
+      width: 200,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        clipBehavior: Clip.none,
+        children: [
+          _buildTapToCloseFab(),
+          ..._buildExpandingActionButtons(),
+          _buildTapToOpenFab(),
+        ],
+      ),
+    );
+  }
+  Widget _buildTapToCloseFab() {
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Center(
+        child: Material(
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          elevation: 4,
+          child: InkWell(
+            onTap: _toggle,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  List<Widget> _buildExpandingActionButtons() {
+    final children = <Widget>[];
+    final count = widget.children.length;
+    for (var i = 0; i < count; i++) {
+      children.add(
+        _ExpandingActionButton(
+          maxDistance: (i + 1) * widget.distance,
+          progress: _expandAnimation,
+          child: widget.children[i],
+        ),
+      );
+    }
+    return children;
+  }
+  Widget _buildTapToOpenFab() {
+    return IgnorePointer(
+      ignoring: _open,
+      child: AnimatedContainer(
+        transformAlignment: Alignment.center,
+        transform: Matrix4.diagonal3Values(
+          _open ? 0.7 : 1.0,
+          _open ? 0.7 : 1.0,
+          1.0,
+        ),
+        duration: const Duration(milliseconds: 250),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+        child: AnimatedOpacity(
+          opacity: _open ? 0.0 : 1.0,
+          curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
+          duration: const Duration(milliseconds: 250),
+          child: FloatingActionButton(
+            onPressed: _toggle,
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+@immutable
+class _ExpandingActionButton extends StatelessWidget {
+  const _ExpandingActionButton({
+    required this.maxDistance,
+    required this.progress,
+    required this.child,
+  });
+  final double maxDistance;
+  final Animation<double> progress;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: progress,
+      builder: (context, child) {
+        final offset = Offset(0, progress.value * maxDistance);
+        return Positioned(
+          right: 4.0,
+          bottom: 4.0 + offset.dy,
+          child: child!,
+        );
+      },
+      child: FadeTransition(opacity: progress, child: child),
+    );
+  }
+}
+
+@immutable
+class ActionButton extends StatelessWidget {
+  const ActionButton({
+    super.key,
+    this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+  final VoidCallback? onPressed;
+  final Icon icon;
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: onPressed,
+      label: Text(label),
+      icon: icon,
+    );
+  }
+}
 
 class GeofenceScreen extends StatefulWidget {
   const GeofenceScreen({super.key});
@@ -16,440 +218,533 @@ class GeofenceScreen extends StatefulWidget {
 }
 
 class _GeofenceScreenState extends State<GeofenceScreen> {
-  String selectedTab = "Geofences";
-  final TextEditingController _searchController = TextEditingController();
+  final MapController _mapController = MapController();
+  // ---- MAP STATE ----
+  final LatLng _initialCenter = LatLng(28.6139, 77.2090);
+  late LatLng _currentCenter;
+  double _currentZoom = 5.0;
+  // ---- GEOFENCE STATE ----
+  final List<Geofence> _geofences = [];
+  bool _isAddingGeofence = false;
+  GeofenceType? _pendingGeofenceType;
+  final List<LatLng> _tempPoints = [];
+  // ---- POI Add ----
+  bool _isPickingPOIFromMap = false;
+  String? _pendingPOILabel;
+  IconData _pendingPOIIcon = Icons.location_on;
 
-  int selectedIndex = 0; // Default to Main Office Perimeter
+  @override
+  void initState() {
+    super.initState();
+    _currentCenter = _initialCenter;
+  }
 
-  final List<_GeofenceData> geofenceItems = [
-    _GeofenceData(
-      icon: CupertinoIcons.circle,
-      title: "Main Office Perimeter",
-      subtitle: "CIRCLE • 50m tolerance • 229m radius",
-    ),
-    _GeofenceData(
-      icon: CupertinoIcons.crop,
-      title: "Warehouse District",
-      subtitle: "POLYGON • 25m tolerance",
-    ),
-    _GeofenceData(
-      icon: CupertinoIcons.shopping_cart,
-      title: "Shopping Mall Area",
-      subtitle: "POLYGON",
-    ),
-    _GeofenceData(
-      icon: Icons.show_chart,
-      title: "Highway Corridor",
-      subtitle: "LINE • 100m tolerance",
-    ),
-  ];
+  void _zoomIn() {
+    final newZoom = (_currentZoom + 1).clamp(3.0, 18.0);
+    _mapController.move(_currentCenter, newZoom);
+    setState(() => _currentZoom = newZoom);
+  }
+
+  void _zoomOut() {
+    final newZoom = (_currentZoom - 1).clamp(3.0, 18.0);
+    _mapController.move(_currentCenter, newZoom);
+    setState(() => _currentZoom = newZoom);
+  }
+
+  // Add geofence
+  void _addGeofence(Geofence g) {
+    setState(() {
+      _geofences.add(g);
+    });
+  }
+
+  // Clear all geofences
+  void _clearGeofences() {
+    setState(() {
+      _geofences.clear();
+    });
+  }
+
+  // Start adding geofence
+  void _startAddingGeofence(GeofenceType type) {
+    setState(() {
+      _isAddingGeofence = true;
+      _pendingGeofenceType = type;
+      _tempPoints.clear();
+    });
+    String message = '';
+    switch (type) {
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        message = 'Tap map to select center';
+        break;
+      case GeofenceType.rectangle:
+        message = 'Tap map for first corner, then second corner';
+        break;
+      case GeofenceType.polygon:
+        message = 'Tap map to add vertices, long press to finish (min 3 points)';
+        break;
+      case GeofenceType.line:
+      case GeofenceType.route:
+        message = 'Tap map to add points, long press to finish (min 2 points)';
+        break;
+    }
+    if (message.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  // Show dialog for radius
+  Future<void> _showRadiusDialog(LatLng center, {String label = 'Geofence'}) async {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Enter Radius (meters) for $label'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Radius'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _isAddingGeofence = false);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final radius = double.tryParse(controller.text);
+              if (radius != null && radius > 0) {
+                _addGeofence(Geofence(
+                  type: _pendingGeofenceType!,
+                  label: label,
+                  points: [center],
+                  radius: radius,
+                ));
+              }
+              Navigator.pop(ctx);
+              setState(() => _isAddingGeofence = false);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show dialog for width
+  Future<void> _showWidthDialog(List<LatLng> points, {String label = 'Geofence'}) async {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Enter Width (meters) for $label'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Width'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _isAddingGeofence = false);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final width = double.tryParse(controller.text);
+              if (width != null && width > 0) {
+                _addGeofence(Geofence(
+                  type: _pendingGeofenceType!,
+                  label: label,
+                  points: points,
+                  width: width,
+                ));
+              }
+              Navigator.pop(ctx);
+              setState(() => _isAddingGeofence = false);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Handle POI addition from screens
+  Future<void> _handleAddPOI(String type, BuildContext ctx) async {
+    Widget screen;
+    if (type == 'landmark') {
+      screen = const AddLandmarkScreen();
+    } else if (type == 'lat_lng') {
+      screen = const AddLatLngScreen();
+    } else if (type == 'map_location') {
+      screen = const AddMapLocationScreen();
+    } else {
+      return;
+    }
+    final result = await Navigator.push<Map<String, dynamic>?>(
+      ctx,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+    if (result == null) return;
+    final label = result['label'] as String;
+    if (type == 'map_location') {
+      // Enable map picking for location
+      _pendingPOILabel = label;
+      _pendingPOIIcon = result['icon'] as IconData? ?? Icons.location_on;
+      setState(() {
+        _isAddingGeofence = true;
+        _pendingGeofenceType = GeofenceType.poi;
+        _isPickingPOIFromMap = true;
+      });
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(content: Text('Tap the map to place POI "$label"')),
+      );
+    } else {
+      // Direct add from lat/lng or landmark
+      final lat = (result['lat'] as num).toDouble();
+      final lng = (result['lng'] as num).toDouble();
+      final point = LatLng(lat, lng);
+      _mapController.move(point, _currentZoom);
+      await _showRadiusDialog(point, label: label);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
+    final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
+    final iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final bottomMargin = MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
+    final double expandedSpace = 200.0;
+
+    return AppLayout(
+      title: "MAP",
+      subtitle: "Geofence Management",
+      actionIcons: [],
+      onActionTaps: [],
+      showAppBar: false,
+      leftAvatarText: "MP",
+      showLeftAvatar: false,
+      horizontalPadding: 0,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 0),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: Stack(
+            children: [
+              // ================= MAP =================
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _initialCenter,
+                  initialZoom: _currentZoom,
+                  minZoom: 3,
+                  maxZoom: 18,
+                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+                  onPositionChanged: (camera, _) {
+                    _currentCenter = camera.center;
+                    _currentZoom = camera.zoom;
+                    if (mounted) setState(() {});
+                  },
+                  onTap: (tapPos, latlng) {
+                    if (_isAddingGeofence && _pendingGeofenceType != null) {
+                      _tempPoints.add(latlng);
+                      switch (_pendingGeofenceType) {
+                        case GeofenceType.circle:
+                          _showRadiusDialog(latlng);
+                          break;
+                        case GeofenceType.poi:
+                          if (_isPickingPOIFromMap && _pendingPOILabel != null) {
+                            _showRadiusDialog(latlng, label: _pendingPOILabel!);
+                            setState(() {
+                              _isPickingPOIFromMap = false;
+                              _pendingPOILabel = null;
+                            });
+                          }
+                          break;
+                        case GeofenceType.rectangle:
+                          if (_tempPoints.length == 2) {
+                            final p1 = _tempPoints[0];
+                            final p2 = _tempPoints[1];
+                            final minLat = p1.latitude < p2.latitude ? p1.latitude : p2.latitude;
+                            final maxLat = p1.latitude > p2.latitude ? p1.latitude : p2.latitude;
+                            final minLng = p1.longitude < p2.longitude ? p1.longitude : p2.longitude;
+                            final maxLng = p1.longitude > p2.longitude ? p1.longitude : p2.longitude;
+                            final points = [
+                              LatLng(minLat, minLng),
+                              LatLng(minLat, maxLng),
+                              LatLng(maxLat, maxLng),
+                              LatLng(maxLat, minLng),
+                            ];
+                            _addGeofence(Geofence(
+                              type: GeofenceType.rectangle,
+                              label: 'Rectangle Geofence',
+                              points: points,
+                            ));
+                            setState(() {
+                              _isAddingGeofence = false;
+                              _tempPoints.clear();
+                            });
+                          }
+                          break;
+                        case GeofenceType.polygon:
+                        case GeofenceType.line:
+                        case GeofenceType.route:
+                          setState(() {}); // Update temp layer
+                          break;
+                        case null:
+                          // TODO: Handle this case.
+                          throw UnimplementedError();
+                      }
+                    }
+                  },
+                  onLongPress: (tapPos, latlng) {
+                    if (_isAddingGeofence && _pendingGeofenceType != null) {
+                      switch (_pendingGeofenceType) {
+                        case GeofenceType.polygon:
+                          if (_tempPoints.length >= 3) {
+                            List<LatLng> points = List.from(_tempPoints);
+                            points.add(_tempPoints.first); // Close polygon
+                            _addGeofence(Geofence(
+                              type: GeofenceType.polygon,
+                              label: 'Polygon Geofence',
+                              points: points,
+                            ));
+                            setState(() {
+                              _isAddingGeofence = false;
+                              _tempPoints.clear();
+                            });
+                          }
+                          break;
+                        case GeofenceType.line:
+                          if (_tempPoints.length >= 2) {
+                            _showWidthDialog(List.from(_tempPoints), label: 'Line Geofence');
+                          }
+                          break;
+                        case GeofenceType.route:
+                          if (_tempPoints.length >= 2) {
+                            _showWidthDialog(List.from(_tempPoints), label: 'Route Geofence');
+                          }
+                          break;
+                        default:
+                          break;
+                      }
+                    }
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    subdomains: const ['a', 'b', 'c'],
+                  ),
+                  // Geofence layers
+                  // Geofence layers (safe: only include when points/radius/width exist)
+CircleLayer(
+  circles: _geofences
+      .where((g) =>
+          (g.type == GeofenceType.circle || g.type == GeofenceType.poi) &&
+          g.points.isNotEmpty &&
+          g.radius != null)
+      .map((g) => CircleMarker(
+            point: g.points[0],
+            radius: g.radius!,
+            color: g.color.withOpacity(0.3),
+            borderColor: g.color,
+            borderStrokeWidth: 2,
+          ))
+      .toList(),
+),
+
+PolygonLayer(
+  polygons: _geofences
+      .where((g) =>
+          (g.type == GeofenceType.polygon || g.type == GeofenceType.rectangle) &&
+          g.points.length >= 3) // polygon needs >=3 (rectangle will be 4)
+      .map((g) => Polygon(
+            points: g.points,
+            color: g.color.withOpacity(0.3),
+            borderColor: g.color,
+            borderStrokeWidth: 2,
+          ))
+      .toList(),
+),
+
+PolylineLayer(
+  polylines: _geofences
+      .where((g) =>
+          (g.type == GeofenceType.line || g.type == GeofenceType.route) &&
+          g.points.length >= 2 &&
+          (g.width ?? 0) > 0)
+      .map((g) => Polyline(
+            points: g.points,
+            color: g.color,
+            strokeWidth: g.width ?? 5.0,
+          ))
+      .toList(),
+),
+
+// Temp drawing layer for adding geofence (only when _tempPoints has points)
+if (_isAddingGeofence &&
+    (_pendingGeofenceType == GeofenceType.polygon ||
+     _pendingGeofenceType == GeofenceType.line ||
+     _pendingGeofenceType == GeofenceType.route) &&
+    _tempPoints.isNotEmpty)
+  PolylineLayer(
+    polylines: [
+      Polyline(
+        points: _tempPoints,
+        color: Colors.red,
+        strokeWidth: 3.0,
+      ),
+    ],
+  ),
+
+                ],
+              ),
+              // ================= RIGHT CONTROLS (Zoom, Clear) =================
+              Positioned(
+                right: 16,
+                bottom: bottomMargin + 10 + expandedSpace,
+                child: Column(
+                  children: [
+                    Tooltip(
+                      message: 'Zoom In',
+                      child: _fab(
+                        hero: "zoom_in",
+                        icon: Icons.add,
+                        size: fabSize,
+                        iconSize: iconSize,
+                        onTap: _zoomIn,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Tooltip(
+                      message: 'Zoom Out',
+                      child: _fab(
+                        hero: "zoom_out",
+                        icon: Icons.remove,
+                        size: fabSize,
+                        iconSize: iconSize,
+                        onTap: _zoomOut,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Tooltip(
+                      message: 'Clear Geofences',
+                      child: _fab(
+                        hero: "clear",
+                        icon: Icons.clear,
+                        size: fabSize,
+                        iconSize: iconSize,
+                        onTap: _clearGeofences,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // ================= EXPANDABLE GEOFENCE FAB =================
+              Positioned(
+                right: 16,
+                bottom: bottomMargin + 10,
+                child: ExpandableFab(
+                  distance: 60.0,
+                  children: [
+                    ActionButton(
+                      label: 'Circle',
+                      icon: const Icon(Icons.circle_outlined),
+                      onPressed: () => _startAddingGeofence(GeofenceType.circle),
+                    ),
+                    ActionButton(
+                      label: 'Polygon',
+                      icon: const Icon(Icons.polyline_outlined),
+                      onPressed: () => _startAddingGeofence(GeofenceType.polygon),
+                    ),
+                    ActionButton(
+                      label: 'Rectangle',
+                      icon: const Icon(Icons.rectangle_outlined),
+                      onPressed: () => _startAddingGeofence(GeofenceType.rectangle),
+                    ),
+                    ActionButton(
+                      label: 'Line',
+                      icon: const Icon(Icons.timeline),
+                      onPressed: () => _startAddingGeofence(GeofenceType.line),
+                    ),
+                    ActionButton(
+                      label: 'Route',
+                      icon: const Icon(Icons.route),
+                      onPressed: () => _startAddingGeofence(GeofenceType.route),
+                    ),
+                  ],
+                ),
+              ),
+              // ================= EXPANDABLE POI FAB =================
+              /*
+              Positioned(
+                left: 16,
+                bottom: bottomMargin + 10,
+                child: ExpandableFab(
+                  distance: 60.0,
+                  children: [
+                    ActionButton(
+                      label: 'POI Landmark',
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _handleAddPOI('landmark', context),
+                    ),
+                    ActionButton(
+                      label: 'POI Map location',
+                      icon: const Icon(Icons.touch_app),
+                      onPressed: () => _handleAddPOI('map_location', context),
+                    ),
+                    ActionButton(
+                      label: 'POI Lat/Long',
+                      icon: const Icon(Icons.map),
+                      onPressed: () => _handleAddPOI('lat_lng', context),
+                    ),
+                  ],
+                ),
+              ),
+              */
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================= UI HELPERS =================
+  Widget _fab({
+    required String hero,
+    required IconData icon,
+    required double size,
+    required double iconSize,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: FloatingActionButton(
+        heroTag: hero,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        onPressed: onTap,
+        child: Icon(icon, size: iconSize),
+      ),
+    );
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _mapController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double iconSize = titleFs + 2;
-
-    // Adaptive grid settings
-    final int crossAxisCount = width > 600 ? 2 : 1;
-    final double childAspectRatio = width > 600 ? 2.5 : 4.5;
-
-    // Map data based on selected geofence
-    final selectedItem = geofenceItems[selectedIndex];
-
-    late latlng.LatLng mapCenter;
-    late double mapZoom;
-    final List<CircleMarker> circles = [];
-    final List<Polygon> polygons = [];
-    final List<Polyline> polylines = [];
-    final List<Marker> markers = [];
-
-    final Color fillColor = colorScheme.primary.withOpacity(0.2);
-    final Color borderColor = colorScheme.primary;
-
-    if (selectedIndex == 0) {
-      // Main Office - Circle
-      mapCenter = const latlng.LatLng(37.7749, -122.4194); // San Francisco
-      mapZoom = 15.5;
-      circles.addAll([
-        CircleMarker(
-          point: mapCenter,
-          radius: 229,
-          useRadiusInMeter: true,
-          color: fillColor,
-          borderColor: borderColor,
-          borderStrokeWidth: 4,
-        ),
-        // Tolerance ring (outer)
-        CircleMarker(
-          point: mapCenter,
-          radius: 279, // 229 + 50m tolerance
-          useRadiusInMeter: true,
-          color: Colors.transparent,
-          borderColor: borderColor.withOpacity(0.5),
-          borderStrokeWidth: 2,
-        ),
-      ]);
-    } else if (selectedIndex == 1) {
-      // Warehouse District - Polygon
-      mapCenter = const latlng.LatLng(37.8044, -122.2711); // Oakland area
-      mapZoom = 14.0;
-      final List<latlng.LatLng> points = [
-        latlng.LatLng(mapCenter.latitude + 0.008, mapCenter.longitude - 0.008),
-        latlng.LatLng(mapCenter.latitude + 0.008, mapCenter.longitude + 0.012),
-        latlng.LatLng(mapCenter.latitude - 0.008, mapCenter.longitude + 0.012),
-        latlng.LatLng(mapCenter.latitude - 0.008, mapCenter.longitude - 0.008),
-        latlng.LatLng(mapCenter.latitude + 0.008, mapCenter.longitude - 0.008),
-      ];
-      polygons.add(Polygon(
-        points: points,
-        color: fillColor,
-        borderColor: borderColor,
-        borderStrokeWidth: 4,
-        // Note: some flutter_map versions removed the 'isFilled' parameter from Polygon.
-      ));
-    } else if (selectedIndex == 2) {
-      // Shopping Mall Area - Polygon (render as small markers for broad compatibility)
-      mapCenter = const latlng.LatLng(37.3382, -121.8863); // San Jose area
-      mapZoom = 13.5;
-      final List<latlng.LatLng> points = [
-        latlng.LatLng(mapCenter.latitude + 0.012, mapCenter.longitude - 0.015),
-        latlng.LatLng(mapCenter.latitude + 0.012, mapCenter.longitude + 0.020),
-        latlng.LatLng(mapCenter.latitude - 0.012, mapCenter.longitude + 0.020),
-        latlng.LatLng(mapCenter.latitude - 0.012, mapCenter.longitude - 0.015),
-        latlng.LatLng(mapCenter.latitude + 0.012, mapCenter.longitude - 0.015),
-      ];
-      // Some flutter_map versions changed the Polygon API; to avoid breaking changes,
-      // represent polygon vertices as small markers so the preview still indicates the area.
-      for (final p in points) {
-        markers.add(Marker(
-          point: p,
-          width: 12,
-          height: 12,
-          child: Container(
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.9),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ));
-      }
-    } else if (selectedIndex == 3) {
-      // Highway Corridor - Line
-      mapCenter = const latlng.LatLng(37.7749, -122.4194);
-      mapZoom = 11.5;
-      polylines.add(Polyline(
-        points: [
-          const latlng.LatLng(37.6000, -122.5000),
-          const latlng.LatLng(37.9500, -122.3000),
-        ],
-        color: borderColor,
-        strokeWidth: 6,
-      ));
-    }
-
-    // Central marker for all types
-    markers.add(Marker(
-      point: mapCenter,
-      width: 40,
-      height: 40,
-      child: Icon(
-        Icons.location_on,
-        color: Theme.of(context).colorScheme.primary,
-        size: 40,
-      ),
-    ));
-
-    // Provide a simple, stable preview widget instead of directly depending on
-    // flutter_map internals that may have changed between package versions.
-    final Widget mapPreview = Container(
-      color: Colors.grey.shade100,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.map, size: 48, color: colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(
-              selectedItem.title,
-              style: GoogleFonts.inter(
-                fontSize: titleFs,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              selectedItem.subtitle,
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    return AppLayout(
-      title: 'USER',
-      subtitle: 'MAP',
-      leftAvatarText: 'mp',
-      showAppBar: false,
-      horizontalPadding: 5,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(hp),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // TABS
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ["Geofences", "POI", "Routes"].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () => setState(() => selectedTab = tab),
-                );
-              }).toList(),
-            ),
-
-            SizedBox(height: hp * 2),
-
-            // SEARCH BAR
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  )
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
-                decoration: InputDecoration(
-                  hintText: "Search model, IMEI, VIN, user...",
-                  hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.primary.withOpacity(0.7)),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Colors.transparent, width: 0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
-                ),
-              ),
-            ),
-
-            SizedBox(height: hp),
-
-            // MAIN CONTAINER WITH LIST + MAP PREVIEW
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GridView.builder(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: geofenceItems.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: childAspectRatio,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = geofenceItems[index];
-                    return GeofenceListTile(
-                      icon: item.icon,
-                      title: item.title,
-                      subtitle: item.subtitle,
-                      isSelected: index == selectedIndex,
-                      onTap: () {
-                        setState(() {
-                          selectedIndex = index;
-                        });
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Map Preview: ${selectedItem.title}',
-                  style: GoogleFonts.inter(
-                    fontSize: titleFs,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: 400,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: mapPreview,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GeofenceData {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  _GeofenceData({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-  }
-
-class GeofenceListTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool isSelected;
-  final VoidCallback? onTap;
-
-  const GeofenceListTile({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.isSelected = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-
-    final double iconContainerSize = AdaptiveUtils.getAvatarSize(width) * 1.1;
-    final double innerIconSize = AdaptiveUtils.getIconSize(width);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected ? colorScheme.primary.withOpacity(0.05) : colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.05),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: AdaptiveUtils.getHorizontalPadding(width) * 1.2, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  height: iconContainerSize,
-                  width: iconContainerSize,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colorScheme.primary.withOpacity(0.1),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      icon,
-                      size: innerIconSize - 2,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
-                          color: colorScheme.onSurface.withOpacity(0.55),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
-import 'package:flutter/material.dart';
-
-class GeofenceScreen extends StatelessWidget {
-  const GeofenceScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppLayout(title: 'title', showAppBar: false, subtitle: 'subtitle', child: const Center(child: Text("Geofence Screen")), leftAvatarText: 'leftAvatarText');
   }
 }

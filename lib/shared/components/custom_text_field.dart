@@ -9,6 +9,7 @@ class CustomTextField extends StatefulWidget {
   final TextInputType keyboardType;
   final double fontSize;
   final FocusNode? focusNode;
+  final String? Function(String?)? validator;
 
   const CustomTextField({
     super.key,
@@ -19,6 +20,7 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     required this.fontSize,
     this.focusNode,
+    this.validator,
   });
 
   @override
@@ -38,12 +40,13 @@ class _CustomTextFieldState extends State<CustomTextField> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return TextField(
+    return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       style: GoogleFonts.inter(fontSize: widget.fontSize, color: colorScheme.onSurface),
       focusNode: widget.focusNode,
+      validator: widget.validator,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.transparent,
@@ -75,6 +78,18 @@ class _CustomTextFieldState extends State<CustomTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: colorScheme.error.withOpacity(0.1)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
+        ),
+        errorStyle: GoogleFonts.inter(
+          color: colorScheme.error,
+          fontSize: widget.fontSize * 0.8,
         ),
       ),
     );
