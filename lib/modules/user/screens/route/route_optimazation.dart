@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:latlong2/latlong.dart';
-// import 'package:open_route_service/open_route_service.dart'; // Uncomment for real routing
+import 'package:open_route_service/open_route_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../layout/app_layout.dart';
@@ -32,189 +32,24 @@ class Waypoint {
   });
 }
 
-@immutable
-class ExpandableFab extends StatefulWidget {
-  const ExpandableFab({
+class TopActionButton extends StatelessWidget {
+  const TopActionButton({
     super.key,
-    this.initialOpen,
-    required this.distance,
-    required this.children,
-  });
-
-  final bool? initialOpen;
-  final double distance;
-  final List<Widget> children;
-
-  @override
-  State<ExpandableFab> createState() => _ExpandableFabState();
-}
-
-class _ExpandableFabState extends State<ExpandableFab>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _expandAnimation;
-  bool _open = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _open = widget.initialOpen ?? false;
-    _controller = AnimationController(
-      value: _open ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 250),
-      vsync: this,
-    );
-    _expandAnimation = CurvedAnimation(
-      curve: Curves.fastOutSlowIn,
-      reverseCurve: Curves.easeOutQuad,
-      parent: _controller,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _toggle() {
-    setState(() {
-      _open = !_open;
-      if (_open) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.children.length * widget.distance + 100,
-      width: 200,
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        clipBehavior: Clip.none,
-        children: [
-          _buildTapToCloseFab(),
-          ..._buildExpandingActionButtons(),
-          _buildTapToOpenFab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTapToCloseFab() {
-    return SizedBox(
-      width: 56,
-      height: 56,
-      child: Center(
-        child: Material(
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          elevation: 4,
-          child: InkWell(
-            onTap: _toggle,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildExpandingActionButtons() {
-    final children = <Widget>[];
-    final count = widget.children.length;
-    for (var i = 0; i < count; i++) {
-      children.add(
-        _ExpandingActionButton(
-          maxDistance: (i + 1) * widget.distance,
-          progress: _expandAnimation,
-          child: widget.children[i],
-        ),
-      );
-    }
-    return children;
-  }
-
-  Widget _buildTapToOpenFab() {
-    return IgnorePointer(
-      ignoring: _open,
-      child: AnimatedContainer(
-        transformAlignment: Alignment.center,
-        transform: Matrix4.diagonal3Values(
-          _open ? 0.7 : 1.0,
-          _open ? 0.7 : 1.0,
-          1.0,
-        ),
-        duration: const Duration(milliseconds: 250),
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-        child: AnimatedOpacity(
-          opacity: _open ? 0.0 : 1.0,
-          curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
-          duration: const Duration(milliseconds: 250),
-          child: FloatingActionButton(
-            onPressed: _toggle,
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-@immutable
-class _ExpandingActionButton extends StatelessWidget {
-  const _ExpandingActionButton({
-    required this.maxDistance,
-    required this.progress,
-    required this.child,
-  });
-
-  final double maxDistance;
-  final Animation<double> progress;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: progress,
-      builder: (context, child) {
-        final offset = Offset(0, progress.value * maxDistance);
-        return Positioned(
-          right: 4.0,
-          bottom: 4.0 + offset.dy,
-          child: child!,
-        );
-      },
-      child: FadeTransition(opacity: progress, child: child),
-    );
-  }
-}
-
-@immutable
-class ActionButton extends StatelessWidget {
-  const ActionButton({
-    super.key,
-    this.onPressed,
+    required this.onPressed,
     required this.icon,
     required this.label,
   });
 
-  final VoidCallback? onPressed;
+  final VoidCallback onPressed;
   final Icon icon;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
+    return ElevatedButton.icon(
       onPressed: onPressed,
-      label: Text(label),
       icon: icon,
+      label: Text(label),
     );
   }
 }
@@ -222,6 +57,8 @@ class ActionButton extends StatelessWidget {
 class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   final MapController _mapController = MapController();
   final PopupController _popupLayerController = PopupController();
+
+  late final OpenRouteService client;
 
   // ---- MAP STATE ----
   final LatLng _initialCenter = LatLng(28.6139, 77.2090);
@@ -249,10 +86,11 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   @override
   void initState() {
     super.initState();
+    client = OpenRouteService(
+        apiKey:
+            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImY2NTk4MGZlZjBmMTRjOTY5M2YxMDE1YzgzMGU2ZTA1IiwiaCI6Im11cm11cjY0In0=');
     _currentCenter = _initialCenter;
   }
-
-  
 
   void _zoomIn() {
     final newZoom = (_currentZoom + 1).clamp(3.0, 18.0);
@@ -303,7 +141,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
             Row(
               children: [
                 const Text('Icon: '),
-                Icon(waypoint.icon),
+                Icon(waypoint.icon, ),
               ],
             ),
           ],
@@ -350,9 +188,11 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     while (improved) {
       improved = false;
       for (int i = 1; i < route.length - 2; i++) {
-        for (int j = i + 1; j < route.length - 1; j++) {
-          final double oldDist = distance(route[i - 1], route[i]) + distance(route[j], route[j + 1]);
-          final double newDist = distance(route[i - 1], route[j]) + distance(route[i], route[j + 1]);
+        for (int j = i + 2; j < route.length - 1; j++) {
+          final double oldDist = distance.as(LengthUnit.Meter, route[i - 1], route[i]) +
+              distance.as(LengthUnit.Meter, route[j], route[j + 1]);
+          final double newDist = distance.as(LengthUnit.Meter, route[i - 1], route[j]) +
+              distance.as(LengthUnit.Meter, route[i], route[j + 1]);
           if (newDist < oldDist) {
             // Reverse segment i to j
             final reversed = route.sublist(i, j + 1).reversed.toList();
@@ -404,27 +244,51 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     // Apply 2-opt for deeper optimization
     ordered = _twoOptImprove(ordered);
 
+    // Fetch real road route using OpenRouteService
+    List<LatLng> realRoute = [];
+    double apiDistance = 0.0;
+
+    try {
+      final List<ORSCoordinate> orsCoords = ordered.map((p) => ORSCoordinate(latitude: p.latitude, longitude: p.longitude)).toList();
+      final GeoJsonFeatureCollection geoJson = await client.directionsMultiRouteGeoJsonPost(
+        coordinates: orsCoords,
+        profileOverride: ORSProfile.drivingCar, // Adjust profile as needed (e.g., cyclingElectric, footWalking)
+        units: 'km', // Request distances in km
+      );
+
+      if (geoJson.features.isNotEmpty) {
+        final GeoJsonFeature feature = geoJson.features.first;
+        final GeoJsonFeatureGeometry geometry = feature.geometry;
+
+        if (geometry.type == 'LineString' && geometry.coordinates.isNotEmpty) {
+          realRoute = geometry.coordinates.first.map((c) => LatLng(c.latitude, c.longitude)).toList();
+        }
+
+        final dynamic summary = feature.properties['summary'];
+        if (summary != null && summary['distance'] != null) {
+          apiDistance = (summary['distance'] as num).toDouble();
+        }
+      }
+    } catch (e) {
+      // Handle API errors (e.g., invalid key, network issue) and fall back
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to fetch road route: $e. Using straight-line fallback.'),
+      ));
+    }
+
+    if (realRoute.isEmpty) {
+      realRoute = ordered;
+      apiDistance = _calculateTotalDistance(realRoute);
+    }
+
     setState(() {
       _route
         ..clear()
-        ..addAll(ordered);
+        ..addAll(realRoute.isNotEmpty ? realRoute : ordered);
       _isOptimized = true;
-      _totalDistanceKm = _calculateTotalDistance(_route);
+      _totalDistanceKm = apiDistance > 0 ? apiDistance : _calculateTotalDistance(_route);
       _isOptimizing = false;
     });
-
-    // Optional: Fetch real road route using OpenRouteService (requires API key)
-    // final OpenRouteService client = OpenRouteService(apiKey: 'YOUR_ORS_API_KEY');
-    // final directions = await client.directionsRouteCoordsGet(
-    //   coordinates: _route.map((p) => Coordinate(p.latitude, p.longitude)).toList(),
-    // );
-    // if (directions.routes.isNotEmpty) {
-    //   final realRoute = directions.routes[0].geometry!.map((geo) => LatLng(geo.latitude, geo.longitude)).toList();
-    //   setState(() {
-    //     _route = realRoute;
-    //     _totalDistanceKm = directions.routes[0].summary!.distance / 1000; // meters to km
-    //   });
-    // }
 
     // Center map on route average
     if (_route.isNotEmpty) {
@@ -438,7 +302,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     ));
   }
 
- 
   Future<void> _handleAdd(String type, BuildContext ctx) async {
     Widget screen;
     if (type == 'landmark') {
@@ -544,13 +407,11 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
           child: Icon(
             w.icon,
             size: 40,
-            color: cs.primary,
+            color:  Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.black,
           ),
         ),
       );
     }).toList();
-
-    final double expandedSpace = 200.0; // Approximate space for 3 expanded buttons
 
     return AppLayout(
       title: "MAP",
@@ -608,7 +469,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         Polyline(
                           points: _route,
                           strokeWidth: 4.0,
-                          color: cs.primary,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.blue
+                              : Colors.blue,
                         ),
                       ],
                     ),
@@ -648,10 +511,46 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 ],
               ),
 
+              // ================= TOP ADD BUTTONS =================
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: cs.surface,
+                  padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TopActionButton(
+                          onPressed: () => _handleAdd('landmark', context),
+                          icon: const Icon(Icons.edit),
+                          label: 'Landmark',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _handleAdd('map_location', context),
+                          icon: const Icon(Icons.touch_app),
+                          label: 'Map location',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _handleAdd('lat_lng', context),
+                          icon: const Icon(Icons.map),
+                          label: 'Insert lat/long',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               // ================= RIGHT CONTROLS (Zoom, Optimize, Clear, Assign, Email) =================
               Positioned(
                 right: 16,
-                bottom: bottomMargin + 10 + expandedSpace,
+                bottom: bottomMargin + 10,
                 child: Column(
                   children: [
                     Tooltip(
@@ -718,32 +617,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         iconSize: iconSize,
                         onTap: _emailRoute,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ================= EXPANDABLE ADD FAB =================
-              Positioned(
-                right: 16,
-                bottom: bottomMargin + 10,
-                child: ExpandableFab(
-                  distance: 60.0,
-                  children: [
-                    ActionButton(
-                      label: 'Landmark',
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _handleAdd('landmark', context),
-                    ),
-                    ActionButton(
-                      label: 'Map location',
-                      icon: const Icon(Icons.touch_app),
-                      onPressed: () => _handleAdd('map_location', context),
-                    ),
-                    ActionButton(
-                      label: 'Insert lat/long',
-                      icon: const Icon(Icons.map),
-                      onPressed: () => _handleAdd('lat_lng', context),
                     ),
                   ],
                 ),

@@ -1,4 +1,4 @@
-// UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
+// screens/all_activities_screen.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
@@ -30,32 +30,25 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   void _generateData() {
-    switch (widget.activityType) {
-      case "Vehicles":
-        allActivities = List.generate(50, (i) => {
-              "id": "MH-12-AB-${1000 + i}",
-              "name": ["Tata Ace", "Maruti Swift", "Hyundai Creta"][i % 3],
-              "status": ["Active", "Idle"][i % 2],
-              "date": DateTime.now().subtract(Duration(days: i)),
-            });
-        break;
-      case "Activities":
-        allActivities = List.generate(50, (i) => {
-              "title": ["Login", "Order Created", "Payment Verified"][i % 3],
-              "description": "${["Aarav Sharma", "Vihaan Patel", "Aditya Singh"][i % 3]} performed an action",
-              "status": ["Completed", "Pending", "Failed"][i % 3],
-              "date": DateTime.now().subtract(Duration(days: i)),
-            });
-        break;
-      case "Users":
-        allActivities = List.generate(50, (i) => {
-              "name": ["Aarav Sharma", "Vihaan Patel", "Aditya Singh", "Reyansh Kumar", "Arjun Reddy"][i % 5],
-              "email": "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
-              "date": DateTime.now().subtract(Duration(days: i)),
-            });
-        break;
-      default:
-        allActivities = [];
+    final List<String> descTemplates = [
+      "Policy updated for Fleet-APAC",
+      "User Priya created a TrackLink",
+      "12 vehicles added to Group Warehousing",
+      "Admin billed for 200 credits",
+      "System maintenance completed",
+      "Vehicle MH-12-AB-1234 started trip",
+      "Route optimized for Trip #456",
+      "Alert: Overspeed detected for MH-01-BB-5678",
+      "User Raj updated profile",
+      "Group Logistics permissions changed",
+    ];
+    if (widget.activityType == "Recent Activity") {
+      allActivities = List.generate(50, (i) => {
+            "description": descTemplates[i % descTemplates.length],
+            "date": DateTime.now().subtract(Duration(days: i)),
+          });
+    } else {
+      allActivities = [];
     }
   }
 
@@ -96,124 +89,31 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
     }).toList();
   }
 
-  Map<String, Color> getStatusColors(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return {
-      "Active": colorScheme.primary,
-      "Idle": colorScheme.primary.withOpacity(0.7),
-      "Completed": colorScheme.primary,
-      "Pending": colorScheme.primary.withOpacity(0.7),
-      "Failed": colorScheme.error,
-    };
-  }
-
   Widget buildActivityItem(Map<String, dynamic> activity) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
     final double mainFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
     final double subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
     final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-    final statusColors = getStatusColors(context);
     final dateStr = DateFormat('MMM dd, yyyy • hh:mm a').format(activity["date"]);
 
-    Widget avatar;
-    Widget content;
-    Widget right = const SizedBox.shrink();
+    final avatar = CircleAvatar(
+      radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+      backgroundColor: colorScheme.surfaceVariant,
+      child: Icon(Icons.history, color: colorScheme.primary),
+    );
 
-    switch (widget.activityType) {
-      case "Vehicles":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.directions_car, color: colorScheme.primary),
-        );
+    final content = Text(
+      activity["description"],
+      style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+    );
 
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(horizontal: itemPadding + 2, vertical: itemPadding - 2),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            activity["status"],
-            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
-          ),
-        );
-        break;
-
-      case "Activities":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.timeline, color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["title"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["description"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(horizontal: itemPadding, vertical: itemPadding - 3),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            activity["status"],
-            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
-          ),
-        );
-        break;
-
-      case "Users":
-        final name = activity["name"] as String;
-        final initials = name.split(" ").map((e) => e.isNotEmpty ? e[0] : '').take(2).join();
-
-        avatar = Container(
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: colorScheme.primary.withOpacity(0.8), width: 2),
-          ),
-          child: CircleAvatar(
-            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-            backgroundColor: Colors.transparent,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.primary)),
-          ),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
-          ],
-        );
-
-        right = const SizedBox.shrink(); // No status for users
-        break;
-
-      default:
-        return const SizedBox.shrink();
-    }
+    final right = Text(
+      dateStr,
+      style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)),
+    );
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: itemPadding),
@@ -222,10 +122,8 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           avatar,
           SizedBox(width: itemPadding + 2),
           Expanded(child: content),
-          if (right is! SizedBox) ...[
-            SizedBox(width: itemPadding + 2),
-            right,
-          ],
+          SizedBox(width: itemPadding + 2),
+          right,
         ],
       ),
     );

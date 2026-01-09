@@ -1,8 +1,9 @@
-// components/recent_activity_box.dart  // Renamed from the original snippet for clarity; unchanged otherwise
+// components/recent_activity_box.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:intl/intl.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -62,69 +63,70 @@ class RecentActivityBox extends StatefulWidget {
 }
 
 class _RecentActivityBoxState extends State<RecentActivityBox> {
-  String activityTab = "Vehicles";
+  String activityTab = "Recent Activity";
 
-  Map<String, Color> getStatusColors(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return {
-      "Active": colorScheme.primary,
-      "Idle": colorScheme.primary.withOpacity(0.7),
-      "Completed": colorScheme.primary,
-      "Pending": colorScheme.primary.withOpacity(0.7),
-      "Failed": colorScheme.error,
-    };
-  }
-
-  late final List<Map<String, dynamic>> vehicleActivities;
-  late final List<Map<String, dynamic>> activityActivities;
-  late final List<Map<String, dynamic>> userActivities;
+  late final List<Map<String, dynamic>> recentActivities;
 
   @override
   void initState() {
     super.initState();
-
-    /// VEHICLE
-    vehicleActivities = List.generate(10, (i) => {
-          "id": "MH-12-AB-${1000 + i}",
-          "name": ["Tata Ace", "Maruti Swift", "Hyundai Creta"][i % 3],
-          "status": ["Active", "Idle"][i % 2],
-          "time":
-              "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${10 + i % 12}:${(i * 3 % 60).toString().padLeft(2, '0')}",
-        });
-
-    /// ACTIVITY
-    activityActivities = List.generate(10, (i) => {
-          "id": "ACT-2024-${100 + i}",
-          "title": ["Login", "Order Created", "Payment Verified"][i % 3],
-          "description":
-              "${["Aarav", "Vihaan", "Aditya"][i % 3]} performed an action",
-          "status": ["Completed", "Pending", "Failed"][i % 3],
-        });
-
-    /// USER
-    userActivities = List.generate(10, (i) => {
-          "name": [
-            "Aarav Sharma",
-            "Vihaan Patel",
-            "Aditya Singh",
-            "Reyansh Kumar",
-            "Arjun Reddy"
-          ][i % 5],
-          "email":
-              "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
-          "time":
-              "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${13 + i % 12}:${(i * 5 % 60).toString().padLeft(2, '0')}",
-        });
+    recentActivities = [
+      {
+        "date": DateTime.now().subtract(Duration(hours: 1, minutes: 18)),
+        "description": "Policy updated for Fleet-APAC"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(hours: 2, minutes: 37)),
+        "description": "User Priya created a TrackLink"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(hours: 2, minutes: 52)),
+        "description": "12 vehicles added to Group Warehousing"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(days: 1)),
+        "description": "Admin billed for 200 credits"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(days: 2)),
+        "description": "System maintenance completed"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(days: 3, hours: 4)),
+        "description": "Vehicle MH-12-AB-1234 started trip"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(hours: 5)),
+        "description": "Route optimized for Trip #456"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(minutes: 30)),
+        "description": "Alert: Overspeed detected for MH-01-BB-5678"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(days: 4)),
+        "description": "User Raj updated profile"
+      },
+      {
+        "date": DateTime.now().subtract(Duration(days: 5)),
+        "description": "Group Logistics permissions changed"
+      },
+    ];
   }
 
   List<Map<String, dynamic>> get currentActivities {
-    switch (activityTab) {
-      case "Vehicles":
-        return vehicleActivities;
-      case "Activities":
-        return activityActivities;
-      default:
-        return userActivities;
+    return recentActivities;
+  }
+
+  String formatRelative(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) {
+      return DateFormat('HH:mm').format(date);
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else {
+      return '${diff.inDays} days ago';
     }
   }
 
@@ -136,134 +138,23 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
     final double subFontSize =
         AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth);
     final double itemPadding =
         AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-    final statusColors = getStatusColors(context);
+    final avatar = CircleAvatar(
+      radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+      backgroundColor: colorScheme.surfaceVariant,
+      child: Icon(Icons.history, color: colorScheme.primary),
+    );
 
-    Widget avatar;
-    Widget content;
-    Widget right = const SizedBox.shrink();
-
-    switch (activityTab) {
-      /// VEHICLE
-      case "Vehicles":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.directions_car,
-              color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["id"],
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-                    /*
-            Text(activity["name"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-                    */
-            Text(activity["time"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: itemPadding + 2,
-              vertical: itemPadding - 2),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(activity["status"],
-              style: GoogleFonts.inter(
-                  color: colorScheme.onPrimary,
-                  fontSize: badgeFontSize)),
-        );
-        break;
-
-      /// ACTIVITY
-      case "Activities":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.timeline,
-              color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["title"],
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-            Text(activity["description"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: itemPadding,
-              vertical: itemPadding - 3),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(activity["status"],
-              style: GoogleFonts.inter(
-                  color: colorScheme.onPrimary,
-                  fontSize: badgeFontSize)),
-        );
-        break;
-
-      /// USER
-      default:
-        final name = activity["name"] as String;
-        final initials =
-            name.split(" ").map((e) => e[0]).take(2).join();
-
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.primary.withOpacity(0.1),
-          child: Text(initials,
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary)),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name,
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-            Text(activity["email"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Text(activity["time"],
-            style: GoogleFonts.inter(
-                fontSize: subFontSize,
-                color: colorScheme.onSurface.withOpacity(0.54)));
-    }
+    final content = Text(
+      '${formatRelative(activity["date"])} ${activity["description"]}',
+      style: GoogleFonts.inter(
+        fontSize: mainFontSize - 3,
+        fontWeight: FontWeight.w500,
+        color: colorScheme.onSurface,
+      ),
+    );
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: itemPadding),
@@ -272,8 +163,6 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           avatar,
           SizedBox(width: itemPadding + 2),
           Expanded(child: content),
-          SizedBox(width: itemPadding + 2),
-          right,
         ],
       ),
     );
@@ -311,17 +200,17 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Wrap(
-            spacing:
-                AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
-            runSpacing: 8,
-            children: [ "Vehicles"].map((tab) {
-              return SmallTab(
-                label: tab,
-                selected: activityTab == tab,
-                onTap: () => setState(() => activityTab = tab),
-              );
-            }).toList(),
-          ),
+                spacing:
+                    AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
+                runSpacing: 8,
+                children: ["Recent Activity"].map((tab) {
+                  return SmallTab(
+                    label: tab,
+                    selected: activityTab == tab,
+                    onTap: () => setState(() => activityTab = tab),
+                  );
+                }).toList(),
+              ),
               InkWell(
                 onTap: () {
                   context.push(
@@ -336,10 +225,11 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               ),
             ],
           ),
-          SizedBox(height: padding),
+          SizedBox(height: 20),
           SizedBox(
             height: 320,
             child: ListView.separated(
+              padding: EdgeInsets.zero,
               itemCount: currentActivities.length,
               separatorBuilder: (_, __) => Divider(
                 height: 1,
