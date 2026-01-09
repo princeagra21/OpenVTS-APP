@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/user/screens/landmark/add_buffer_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_map_location_screen.dart';
@@ -210,6 +212,28 @@ class ActionButton extends StatelessWidget {
   }
 }
 
+class TopActionButton extends StatelessWidget {
+  const TopActionButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final Icon icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: icon,
+      label: Text(label),
+    );
+  }
+}
+
 class GeofenceScreen extends StatefulWidget {
   const GeofenceScreen({super.key});
 
@@ -231,7 +255,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   // ---- POI Add ----
   bool _isPickingPOIFromMap = false;
   String? _pendingPOILabel;
-  IconData _pendingPOIIcon = Icons.location_on;
 
   @override
   void initState() {
@@ -251,8 +274,55 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     setState(() => _currentZoom = newZoom);
   }
 
+  double _directedHausdorff(List<LatLng> pointsA, List<LatLng> pointsB) {
+    final distance = const Distance();
+    double maxMinDist = 0.0;
+    for (var p in pointsA) {
+      double minDist = double.infinity;
+      for (var q in pointsB) {
+        final d = distance.as(LengthUnit.Meter, p, q);
+        if (d < minDist) minDist = d;
+      }
+      if (minDist > maxMinDist) maxMinDist = minDist;
+    }
+    return maxMinDist;
+  }
+
+  bool _isTooSimilar(Geofence newGeofence, Geofence existing) {
+    if (newGeofence.type != existing.type) return false;
+    final distance = const Distance();
+    switch (newGeofence.type) {
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        if (newGeofence.points.isEmpty || existing.points.isEmpty || newGeofence.radius == null || existing.radius == null) return false;
+        final d = distance.as(LengthUnit.Meter, newGeofence.points[0], existing.points[0]);
+        final rDiff = (newGeofence.radius! - existing.radius!).abs();
+        return d < 100 && rDiff < 50; 
+      case GeofenceType.polygon:
+      case GeofenceType.rectangle:
+      case GeofenceType.line:
+      case GeofenceType.route:
+        if (newGeofence.points.length < 2 || existing.points.length < 2) return false;
+        final d1 = _directedHausdorff(newGeofence.points, existing.points);
+        final d2 = _directedHausdorff(existing.points, newGeofence.points);
+        final hausdorff = math.max(d1, d2);
+        final double nw = newGeofence.width ?? 0.0;
+        final double ew = existing.width ?? 0.0;
+        final wDiff = (nw - ew).abs();
+        return hausdorff < 100 && wDiff < 10;
+    }
+  }
+
   // Add geofence
   void _addGeofence(Geofence g) {
+    for (var existing in _geofences) {
+      if (_isTooSimilar(g, existing)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geofence too similar to an existing one')),
+        );
+        return;
+      }
+    }
     setState(() {
       _geofences.add(g);
     });
@@ -294,86 +364,48 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     }
   }
 
-  // Show dialog for radius
-  Future<void> _showRadiusDialog(LatLng center, {String label = 'Geofence'}) async {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Enter Radius (meters) for $label'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Radius'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isAddingGeofence = false);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final radius = double.tryParse(controller.text);
-              if (radius != null && radius > 0) {
-                _addGeofence(Geofence(
-                  type: _pendingGeofenceType!,
-                  label: label,
-                  points: [center],
-                  radius: radius,
-                ));
-              }
-              Navigator.pop(ctx);
-              setState(() => _isAddingGeofence = false);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+  // Show screen for radius
+  Future<void> _showRadiusScreen(LatLng center, {String label = 'Geofence'}) async {
+    final result = await Navigator.push<Map<String, dynamic>?>(
+      context,
+      MaterialPageRoute(builder: (_) => AddBufferScreen(isRadius: true, initialLabel: label)),
     );
+
+    if (result != null) {
+      final double radius = result['value'];
+      final String newLabel = result['label'];
+      _addGeofence(Geofence(
+        type: _pendingGeofenceType!,
+        label: newLabel,
+        points: [center],
+        radius: radius,
+      ));
+      setState(() => _isAddingGeofence = false);
+    } else {
+      setState(() => _isAddingGeofence = false);
+    }
   }
 
-  // Show dialog for width
-  Future<void> _showWidthDialog(List<LatLng> points, {String label = 'Geofence'}) async {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Enter Width (meters) for $label'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Width'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isAddingGeofence = false);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final width = double.tryParse(controller.text);
-              if (width != null && width > 0) {
-                _addGeofence(Geofence(
-                  type: _pendingGeofenceType!,
-                  label: label,
-                  points: points,
-                  width: width,
-                ));
-              }
-              Navigator.pop(ctx);
-              setState(() => _isAddingGeofence = false);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+  // Show screen for width
+  Future<void> _showWidthScreen(List<LatLng> points, {String label = 'Geofence'}) async {
+    final result = await Navigator.push<Map<String, dynamic>?>(
+      context,
+      MaterialPageRoute(builder: (_) => AddBufferScreen(isRadius: false, initialLabel: label)),
     );
+
+    if (result != null) {
+      final double width = result['value'];
+      final String newLabel = result['label'];
+      _addGeofence(Geofence(
+        type: _pendingGeofenceType!,
+        label: newLabel,
+        points: points,
+        width: width,
+      ));
+      setState(() => _isAddingGeofence = false);
+    } else {
+      setState(() => _isAddingGeofence = false);
+    }
   }
 
   // Handle POI addition from screens
@@ -397,7 +429,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     if (type == 'map_location') {
       // Enable map picking for location
       _pendingPOILabel = label;
-      _pendingPOIIcon = result['icon'] as IconData? ?? Icons.location_on;
       setState(() {
         _isAddingGeofence = true;
         _pendingGeofenceType = GeofenceType.poi;
@@ -412,7 +443,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       final lng = (result['lng'] as num).toDouble();
       final point = LatLng(lat, lng);
       _mapController.move(point, _currentZoom);
-      await _showRadiusDialog(point, label: label);
+      await _showRadiusScreen(point, label: label);
     }
   }
 
@@ -424,7 +455,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
     final iconSize = AdaptiveUtils.getIconSize(screenWidth);
     final bottomMargin = MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
-    final double expandedSpace = 200.0;
 
     return AppLayout(
       title: "MAP",
@@ -460,11 +490,11 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                       _tempPoints.add(latlng);
                       switch (_pendingGeofenceType) {
                         case GeofenceType.circle:
-                          _showRadiusDialog(latlng);
+                          _showRadiusScreen(latlng);
                           break;
                         case GeofenceType.poi:
                           if (_isPickingPOIFromMap && _pendingPOILabel != null) {
-                            _showRadiusDialog(latlng, label: _pendingPOILabel!);
+                            _showRadiusScreen(latlng, label: _pendingPOILabel!);
                             setState(() {
                               _isPickingPOIFromMap = false;
                               _pendingPOILabel = null;
@@ -527,12 +557,12 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                           break;
                         case GeofenceType.line:
                           if (_tempPoints.length >= 2) {
-                            _showWidthDialog(List.from(_tempPoints), label: 'Line Geofence');
+                            _showWidthScreen(List.from(_tempPoints), label: 'Line Geofence');
                           }
                           break;
                         case GeofenceType.route:
                           if (_tempPoints.length >= 2) {
-                            _showWidthDialog(List.from(_tempPoints), label: 'Route Geofence');
+                            _showWidthScreen(List.from(_tempPoints), label: 'Route Geofence');
                           }
                           break;
                         default:
@@ -546,7 +576,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                     urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                     subdomains: const ['a', 'b', 'c'],
                   ),
-                  // Geofence layers
                   // Geofence layers (safe: only include when points/radius/width exist)
 CircleLayer(
   circles: _geofences
@@ -610,10 +639,57 @@ if (_isAddingGeofence &&
 
                 ],
               ),
+              // ================= TOP ADD BUTTONS =================
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: cs.surface,
+                  padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TopActionButton(
+                          onPressed: () => _startAddingGeofence(GeofenceType.circle),
+                          icon: const Icon(Icons.circle_outlined),
+                          label: 'Circle',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _startAddingGeofence(GeofenceType.polygon),
+                          icon: const Icon(Icons.polyline_outlined),
+                          label: 'Polygon',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _startAddingGeofence(GeofenceType.rectangle),
+                          icon: const Icon(Icons.rectangle_outlined),
+                          label: 'Rectangle',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _startAddingGeofence(GeofenceType.line),
+                          icon: const Icon(Icons.timeline),
+                          label: 'Line',
+                        ),
+                        const SizedBox(width: 8),
+                        TopActionButton(
+                          onPressed: () => _startAddingGeofence(GeofenceType.route),
+                          icon: const Icon(Icons.route),
+                          label: 'Route',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               // ================= RIGHT CONTROLS (Zoom, Clear) =================
               Positioned(
                 right: 16,
-                bottom: bottomMargin + 10 + expandedSpace,
+                bottom: bottomMargin + 10,
                 child: Column(
                   children: [
                     Tooltip(
@@ -647,41 +723,6 @@ if (_isAddingGeofence &&
                         iconSize: iconSize,
                         onTap: _clearGeofences,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // ================= EXPANDABLE GEOFENCE FAB =================
-              Positioned(
-                right: 16,
-                bottom: bottomMargin + 10,
-                child: ExpandableFab(
-                  distance: 60.0,
-                  children: [
-                    ActionButton(
-                      label: 'Circle',
-                      icon: const Icon(Icons.circle_outlined),
-                      onPressed: () => _startAddingGeofence(GeofenceType.circle),
-                    ),
-                    ActionButton(
-                      label: 'Polygon',
-                      icon: const Icon(Icons.polyline_outlined),
-                      onPressed: () => _startAddingGeofence(GeofenceType.polygon),
-                    ),
-                    ActionButton(
-                      label: 'Rectangle',
-                      icon: const Icon(Icons.rectangle_outlined),
-                      onPressed: () => _startAddingGeofence(GeofenceType.rectangle),
-                    ),
-                    ActionButton(
-                      label: 'Line',
-                      icon: const Icon(Icons.timeline),
-                      onPressed: () => _startAddingGeofence(GeofenceType.line),
-                    ),
-                    ActionButton(
-                      label: 'Route',
-                      icon: const Icon(Icons.route),
-                      onPressed: () => _startAddingGeofence(GeofenceType.route),
                     ),
                   ],
                 ),
