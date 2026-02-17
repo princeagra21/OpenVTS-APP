@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: http://15.206.76.175
 
     steps:
       # 1️⃣ Checkout Code
@@ -52,7 +54,7 @@ jobs:
 
       # 8️⃣ Build Release APK
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
 
       # 9️⃣ Upload APK Artifact
       - name: Upload APK as Artifact
