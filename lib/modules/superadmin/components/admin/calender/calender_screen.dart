@@ -1,10 +1,19 @@
-// 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME  
+// 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME
 // EventCalendarScreen (Drop-in Replacement)
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/calendar_event_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class EventCalendarScreen extends StatefulWidget {
@@ -16,9 +25,19 @@ class EventCalendarScreen extends StatefulWidget {
 
 class _EventCalendarScreenState extends State<EventCalendarScreen> {
   DateTime _selectedDate = DateTime.now();
+  String? _selectedType;
+  CalendarEventItem? _selectedEvent;
+  List<CalendarEventItem> _events = const [];
+  final Map<String, List<CalendarEventItem>> _monthCache = {};
+  bool _loadingMonth = false;
+  bool _loading = false;
+  bool _errorShown = false;
+  CancelToken? _token;
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+  DateTime? _loadedMonth;
 
-  // Sample Events
-  final Map<DateTime, List<Map<String, dynamic>>> _events = {
+  final Map<DateTime, List<Map<String, dynamic>>> _fallbackEvents = {
     DateTime(2025, 12, 8): [
       {'title': 'Admin Created', 'type': 'admin', 'time': '09:15'},
       {'title': 'User Created', 'type': 'user', 'time': '14:30'},
@@ -30,11 +49,220 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _loadMonth(_selectedDate);
+  }
+
+  @override
+  void dispose() {
+    _token?.cancel('Calendar disposed');
+    super.dispose();
+  }
+
+  DateTime _dayKey(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime _monthStart(DateTime d) => DateTime(d.year, d.month, 1);
+
+  DateTime _monthEnd(DateTime d) => DateTime(d.year, d.month + 1, 0);
+
+  String _monthKey(DateTime d) =>
+      "${d.year}-${d.month.toString().padLeft(2, '0')}";
+
+  String _fmtDate(DateTime d) {
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
+  }
+
+  String _normType(String raw) {
+    final s = raw.toLowerCase().replaceAll(' ', '').replaceAll('_', '');
+    if (s.contains('admin')) return 'admin';
+    if (s.contains('user')) return 'user';
+    if (s.contains('vehicle') && s.contains('exp')) return 'vehicle_expiry';
+    if (s.contains('vehicle') && s.contains('add')) return 'vehicle_added';
+    if (s == 'vehicleexpiry') return 'vehicle_expiry';
+    if (s == 'vehicleadded') return 'vehicle_added';
+    if (s == 'vehicle') return 'vehicle';
+    return s;
+  }
+
+  bool _matchesType(CalendarEventItem e) {
+    if (_selectedType == null || _selectedType!.isEmpty) return true;
+    final want = _selectedType!;
+    final t = _normType(e.type);
+    if (want == 'vehicle') {
+      return t == 'vehicle' || t == 'vehicle_expiry' || t == 'vehicle_added';
+    }
+    return t == want;
+  }
+
+  Map<DateTime, List<CalendarEventItem>> get _eventsByDate {
+    final out = <DateTime, List<CalendarEventItem>>{};
+    for (final e in _events.where(_matchesType)) {
+      final d = e.date;
+      if (d == null) continue;
+      final key = _dayKey(d);
+      out.putIfAbsent(key, () => <CalendarEventItem>[]).add(e);
+    }
+    return out;
+  }
+
+  Future<void> _loadMonth(DateTime anyDateInMonth, {bool force = false}) async {
+    final month = _monthStart(anyDateInMonth);
+    _loadedMonth = month;
+    final key = _monthKey(month);
+
+    if (!force && _monthCache.containsKey(key)) {
+      if (!mounted) return;
+      setState(() {
+        _events = _monthCache[key] ?? const [];
+        _loading = false;
+      });
+      return;
+    }
+
+    if (_loadingMonth) return;
+    _loadingMonth = true;
+    _token?.cancel('Reload calendar month');
+    final token = CancelToken();
+    _token = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+      final res = await _repo!.getCalendarEvents(
+        from: _fmtDate(_monthStart(anyDateInMonth)),
+        to: _fmtDate(_monthEnd(anyDateInMonth)),
+        cancelToken: token,
+      );
+      if (!mounted) return;
+      res.when(
+        success: (rows) {
+          setState(() {
+            _monthCache[key] = rows;
+            _events = rows;
+            _loading = false;
+            _errorShown = false;
+          });
+        },
+        failure: (err) {
+          setState(() => _loading = false);
+          if (_errorShown) return;
+          _errorShown = true;
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to view calendar events.'
+              : "Couldn't load calendar events. Showing fallback values.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (_errorShown) return;
+      _errorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't load calendar events. Showing fallback values.",
+          ),
+        ),
+      );
+    } finally {
+      _loadingMonth = false;
+    }
+  }
+
+  Map<DateTime, List<Map<String, dynamic>>> get _effectiveEventMap {
+    final byDate = _eventsByDate;
+    if (byDate.isEmpty) return _fallbackEvents;
+    final out = <DateTime, List<Map<String, dynamic>>>{};
+    byDate.forEach((k, v) {
+      out[k] = v
+          .map(
+            (e) => <String, dynamic>{
+              'title': e.title.isNotEmpty ? e.title : 'Event',
+              'type': _normType(e.type),
+              'time': e.time.isNotEmpty
+                  ? e.time
+                  : (e.date != null
+                        ? '${e.date!.hour.toString().padLeft(2, '0')}:${e.date!.minute.toString().padLeft(2, '0')}'
+                        : ''),
+              '__event': e,
+            },
+          )
+          .toList();
+    });
+    return out;
+  }
+
+  CalendarEventItem _eventFromMap(
+    Map<String, dynamic> event,
+    DateTime selectedDate,
+  ) {
+    final existing = event['__event'];
+    if (existing is CalendarEventItem) return existing;
+    return CalendarEventItem(<String, dynamic>{
+      'title': event['title'],
+      'type': event['type'],
+      'time': event['time'],
+      'date': _fmtDate(selectedDate),
+    });
+  }
+
+  String _eventDetailText(CalendarEventItem? e) {
+    if (e == null) return "Select an event to view details.";
+    final description = e.description.trim();
+    if (description.isNotEmpty) return description;
+    final time = e.time.trim();
+    if (time.isNotEmpty) return "Time: $time";
+    final dt = e.createdAt ?? e.date;
+    if (dt != null) {
+      return "Date: ${dt.day}/${dt.month}/${dt.year}";
+    }
+    return "No additional details.";
+  }
+
+  void _openSelectedEventTarget() {
+    final e = _selectedEvent;
+    if (e == null) return;
+
+    final vehicleId = e.vehicleId.trim();
+    final adminId = e.adminId.trim();
+    String? route;
+    if (vehicleId.isNotEmpty) {
+      route = '/superadmin/vehicles/details/$vehicleId';
+    } else if (adminId.isNotEmpty) {
+      route = '/superadmin/admins/details/$adminId';
+    }
+    if (route == null) return;
+
+    try {
+      context.push(route);
+    } catch (err) {
+      if (kDebugMode) {
+        debugPrint('Calendar open route failed: $err');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme; // Short alias
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
     final bool isMobile = width < 650;
+    final eventMap = _effectiveEventMap;
 
     return AppLayout(
       title: "FLEET STACK",
@@ -77,14 +305,40 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              "Today",
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                                fontWeight: FontWeight.w500,
-                                color: cs.onSurface.withOpacity(0.7),
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () =>
+                                      _loadMonth(_selectedDate, force: true),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Text(
+                                    "Today",
+                                    style: GoogleFonts.inter(
+                                      fontSize:
+                                          AdaptiveUtils.getSubtitleFontSize(
+                                            width,
+                                          ) -
+                                          3,
+                                      fontWeight: FontWeight.w500,
+                                      color: cs.onSurface.withOpacity(0.7),
+                                    ),
+                                  ),
+                                ),
+                                if (_loading) ...[
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        cs.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
@@ -93,7 +347,9 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                       if (!isMobile)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: cs.onSurface.withOpacity(0.06),
                             borderRadius: BorderRadius.circular(20),
@@ -118,10 +374,51 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     runSpacing: 10,
                     alignment: WrapAlignment.center,
                     children: [
-                      _legendItem("Admin Created", cs),
-                      _legendItem("User Created", cs),
-                      _legendItem("Vehicle Expiry", cs),
-                      _legendItem("Vehicle Added", cs),
+                      _legendItem(
+                        "Admin Created",
+                        cs,
+                        selected: _selectedType == 'admin',
+                        onTap: () => setState(
+                          () => _selectedType = _selectedType == 'admin'
+                              ? null
+                              : 'admin',
+                        ),
+                      ),
+                      _legendItem(
+                        "User Created",
+                        cs,
+                        selected: _selectedType == 'user',
+                        onTap: () => setState(
+                          () => _selectedType = _selectedType == 'user'
+                              ? null
+                              : 'user',
+                        ),
+                      ),
+                      _legendItem(
+                        "Vehicle Expiry",
+                        cs,
+                        selected:
+                            _selectedType == 'vehicle_expiry' ||
+                            _selectedType == 'vehicle',
+                        onTap: () => setState(
+                          () =>
+                              _selectedType = _selectedType == 'vehicle_expiry'
+                              ? null
+                              : 'vehicle_expiry',
+                        ),
+                      ),
+                      _legendItem(
+                        "Vehicle Added",
+                        cs,
+                        selected:
+                            _selectedType == 'vehicle_added' ||
+                            _selectedType == 'vehicle',
+                        onTap: () => setState(
+                          () => _selectedType = _selectedType == 'vehicle_added'
+                              ? null
+                              : 'vehicle_added',
+                        ),
+                      ),
                     ],
                   ),
 
@@ -167,66 +464,76 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                       ),
 
                       // Day cell builder
-                      dayBuilder: ({
-                        required DateTime date,
-                        bool? isSelected,
-                        bool? isToday,
-                        TextStyle? textStyle,
-                        BoxDecoration? decoration,
-                        bool? isDisabled,
-                      }) {
-                        final hasEvent = _events.containsKey(
-                          DateTime(date.year, date.month, date.day),
-                        );
+                      dayBuilder:
+                          ({
+                            required DateTime date,
+                            bool? isSelected,
+                            bool? isToday,
+                            TextStyle? textStyle,
+                            BoxDecoration? decoration,
+                            bool? isDisabled,
+                          }) {
+                            final hasEvent = eventMap.containsKey(
+                              _dayKey(date),
+                            );
 
-                        return Center(
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: isSelected == true
-                                  ? cs.primary
-                                  : isToday == true
+                            return Center(
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isSelected == true
+                                      ? cs.primary
+                                      : isToday == true
                                       ? cs.primary.withOpacity(0.08)
                                       : null,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Text(
-                                  "${date.day}",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected == true
-                                        ? cs.onPrimary
-                                        : cs.onSurface,
-                                  ),
+                                  shape: BoxShape.circle,
                                 ),
-
-                                if (hasEvent)
-                                  Positioned(
-                                    bottom: 3,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: cs.primary,
-                                        shape: BoxShape.circle,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Text(
+                                      "${date.day}",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected == true
+                                            ? cs.onPrimary
+                                            : cs.onSurface,
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+
+                                    if (hasEvent)
+                                      Positioned(
+                                        bottom: 3,
+                                        child: Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: cs.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                     ),
                     value: [_selectedDate],
                     onValueChanged: (dates) {
-                      if (dates.first != null) {
-                        setState(() => _selectedDate = dates.first!);
+                      if (dates.isNotEmpty) {
+                        final nextDate = dates.first;
+                        final nextMonth = _monthStart(nextDate);
+                        setState(() {
+                          _selectedDate = nextDate;
+                          _selectedEvent = null;
+                        });
+                        if (_loadedMonth == null ||
+                            _monthStart(_loadedMonth!) != nextMonth) {
+                          _loadMonth(nextDate);
+                        }
                       }
                     },
                   ),
@@ -254,7 +561,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                   const SizedBox(height: 24),
 
                   // EVENTS LIST
-                  ..._buildEventList(context, cs, width),
+                  ..._buildEventList(context, cs, width, eventMap),
 
                   const SizedBox(height: 32),
 
@@ -269,18 +576,22 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          "Event Details",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: cs.onSurface,
+                        GestureDetector(
+                          onTap: _openSelectedEventTarget,
+                          behavior: HitTestBehavior.opaque,
+                          child: Text(
+                            "Event Details",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "Select an event to view details.",
+                          _eventDetailText(_selectedEvent),
                           style: GoogleFonts.inter(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 3,
@@ -301,10 +612,12 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
   // EVENT LIST REUSABLE BUILDER
   List<Widget> _buildEventList(
-      BuildContext context, ColorScheme cs, double width) {
-    final events = _events[DateTime(
-            _selectedDate.year, _selectedDate.month, _selectedDate.day)] ??
-        [];
+    BuildContext context,
+    ColorScheme cs,
+    double width,
+    Map<DateTime, List<Map<String, dynamic>>> eventMap,
+  ) {
+    final events = eventMap[_dayKey(_selectedDate)] ?? [];
 
     if (events.isEmpty) {
       return [
@@ -330,78 +643,99 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     }
 
     return events.map((event) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.onSurface.withOpacity(0.05)),
+      final selected = _selectedEvent?.id.isNotEmpty == true
+          ? (_selectedEvent!.id == _eventFromMap(event, _selectedDate).id)
+          : false;
+      return GestureDetector(
+        onTap: () => setState(
+          () => _selectedEvent = _eventFromMap(event, _selectedDate),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: cs.primary,
-                shape: BoxShape.circle,
-              ),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? cs.primary.withOpacity(0.35)
+                  : cs.onSurface.withOpacity(0.05),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event['title'],
-                    style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "at ${event['time']}",
-                    style: GoogleFonts.inter(
-                      fontSize:
-                          AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                      color: cs.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-                ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event['title'],
+                      style: GoogleFonts.inter(
+                        fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "at ${event['time']}",
+                      style: GoogleFonts.inter(
+                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }).toList();
   }
 
   // LEGEND UI
-  Widget _legendItem(String label, ColorScheme cs) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: cs.primary,
-            shape: BoxShape.circle,
+  Widget _legendItem(
+    String label,
+    ColorScheme cs, {
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: cs.primary,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: cs.onSurface,
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: selected ? cs.primary : cs.onSurface,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,10 +1,18 @@
+import 'package:fleet_stack/core/models/vehicle_user_item.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class VehicleUsersTab extends StatelessWidget {
-  const VehicleUsersTab({super.key});
+class VehicleUsersTab extends StatefulWidget {
+  final List<VehicleUserItem>? users;
 
-  final List<Map<String, String>> users = const [
+  const VehicleUsersTab({super.key, this.users});
+
+  @override
+  State<VehicleUsersTab> createState() => _VehicleUsersTabState();
+}
+
+class _VehicleUsersTabState extends State<VehicleUsersTab> {
+  final List<Map<String, String>> _fallbackUsers = const [
     {
       "name": "Akash Kumar",
       "username": "@akash.k",
@@ -55,11 +63,47 @@ class VehicleUsersTab extends StatelessWidget {
     },
   ];
 
+  late List<Map<String, String>> _users;
+
+  @override
+  void initState() {
+    super.initState();
+    _users = _resolvedUsers(widget.users);
+  }
+
+  @override
+  void didUpdateWidget(covariant VehicleUsersTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.users != widget.users) {
+      setState(() {
+        _users = _resolvedUsers(widget.users);
+      });
+    }
+  }
+
+  List<Map<String, String>> _resolvedUsers(List<VehicleUserItem>? users) {
+    final mapped = (users ?? const <VehicleUserItem>[])
+        .map(
+          (u) => <String, String>{
+            "name": u.name.isNotEmpty ? u.name : "—",
+            "username": u.username.isNotEmpty ? "@${u.username}" : "",
+            "lastSeen": u.lastSeen.isNotEmpty ? u.lastSeen : "—",
+            "email": u.email,
+            "phone": u.phone,
+            "status": "Login",
+          },
+        )
+        .toList();
+    return mapped.isEmpty
+        ? List<Map<String, String>>.from(_fallbackUsers)
+        : mapped;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme; // color scheme shortcut
+    final cs = Theme.of(context).colorScheme;
     return Column(
-      children: users.map((user) => _buildUserCard(user, cs)).toList(),
+      children: _users.map((user) => _buildUserCard(user, cs)).toList(),
     );
   }
 
@@ -77,13 +121,12 @@ class VehicleUsersTab extends StatelessWidget {
             color: cs.onSurface.withOpacity(0.03),
             blurRadius: 6,
             offset: const Offset(0, 3),
-          )
+          ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// AVATAR
           CircleAvatar(
             radius: 24,
             backgroundColor: cs.primary,
@@ -95,15 +138,11 @@ class VehicleUsersTab extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(width: 16),
-
-          /// MAIN CONTENT
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// NAME + USERNAME
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -128,10 +167,7 @@ class VehicleUsersTab extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
-
-                /// email & phone
                 Text(
                   user["email"]!,
                   style: GoogleFonts.inter(
@@ -146,14 +182,10 @@ class VehicleUsersTab extends StatelessWidget {
                     color: cs.onSurface.withOpacity(0.7),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                /// BOTTOM ROW (Last Seen + Status Button)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    /// Last seen text
                     Text(
                       "Last: ${user["lastSeen"]}",
                       style: GoogleFonts.inter(
@@ -161,8 +193,6 @@ class VehicleUsersTab extends StatelessWidget {
                         color: cs.onSurface.withOpacity(0.6),
                       ),
                     ),
-
-                    /// Status button
                     ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
@@ -178,13 +208,11 @@ class VehicleUsersTab extends StatelessWidget {
                       ),
                       child: Text(
                         user["status"]!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(fontSize: 12),
                       ),
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           ),

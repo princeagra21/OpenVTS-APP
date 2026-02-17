@@ -1,4 +1,11 @@
 // components/charts/adoption_growth_box.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/superadmin_adoption_graph.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -23,20 +30,23 @@ class SmallTab extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth); // 11-13
+    final double hPadding =
+        AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
+    final double vPadding =
+        AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 11-13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: hPadding,
-          vertical: vPadding,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
         decoration: BoxDecoration(
-          color: selected ? (selectedBackground ?? colorScheme.primary) : Colors.transparent,
+          color: selected
+              ? (selectedBackground ?? colorScheme.primary)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: colorScheme.onSurface, width: 1),
         ),
@@ -64,9 +74,124 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   String monthTab = "12M";
   Set<String> selectedStats = {"Vehicles", "Users", "Licenses"};
 
-  final List<double> vehicles = [12, 22, 18, 30, 34, 20, 15, 25, 28, 32, 38, 40];
-  final List<double> users = [10, 15, 12, 21, 25, 19, 22, 27, 30, 35, 37, 39];
-  final List<double> licenses = [5, 10, 15, 14, 16, 18, 20, 22, 24, 26, 29, 30];
+  final List<double> _fallbackVehicles = [
+    12,
+    22,
+    18,
+    30,
+    34,
+    20,
+    15,
+    25,
+    28,
+    32,
+    38,
+    40,
+  ];
+  final List<double> _fallbackUsers = [
+    10,
+    15,
+    12,
+    21,
+    25,
+    19,
+    22,
+    27,
+    30,
+    35,
+    37,
+    39,
+  ];
+  final List<double> _fallbackLicenses = [
+    5,
+    10,
+    15,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    29,
+    30,
+  ];
+
+  SuperadminAdoptionGraph? _graph;
+  bool _loadingGraph = false;
+  bool _graphErrorShown = false;
+  CancelToken? _graphCancelToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGraph();
+  }
+
+  @override
+  void dispose() {
+    _graphCancelToken?.cancel('AdoptionGrowthBox disposed');
+    super.dispose();
+  }
+
+  Future<void> _loadGraph() async {
+    _graphCancelToken?.cancel('Reload adoption graph');
+    final token = CancelToken();
+    _graphCancelToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingGraph = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getAdoptionGraph(cancelToken: token);
+      if (!mounted) return;
+
+      res.when(
+        success: (graph) {
+          if (!mounted) return;
+          setState(() {
+            _graph = graph;
+            _loadingGraph = false;
+            _graphErrorShown = false;
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() => _loadingGraph = false);
+          if (_graphErrorShown) return;
+          _graphErrorShown = true;
+
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? "Not authorized to view growth data."
+              : "Couldn't load growth data. Showing fallback chart.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingGraph = false);
+      if (_graphErrorShown) return;
+      _graphErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load growth data. Showing fallback chart."),
+        ),
+      );
+    }
+  }
 
   Map<String, Color> getStatColors(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -78,10 +203,11 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   }
 
   List<double> getDataFor(String stat) {
+    final graph = _graph;
     final base = switch (stat) {
-      "Vehicles" => vehicles,
-      "Users" => users,
-      _ => licenses,
+      "Vehicles" => graph?.vehicles() ?? _fallbackVehicles,
+      "Users" => graph?.users() ?? _fallbackUsers,
+      _ => graph?.licenses() ?? _fallbackLicenses,
     };
 
     return switch (monthTab) {
@@ -91,7 +217,11 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     };
   }
 
-  int get numMonths => switch (monthTab) { "3M" => 3, "6M" => 6, _ => 12 };
+  int get numMonths => switch (monthTab) {
+    "3M" => 3,
+    "6M" => 6,
+    _ => 12,
+  };
 
   double get yMax {
     if (selectedStats.isEmpty) return 10;
@@ -107,17 +237,22 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
 
     // All sizes from AdaptiveUtils — pure and clean
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2 ;
-    final double subheaderFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double subheaderFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
     final double chartHeight = AdaptiveUtils.isVerySmallScreen(screenWidth)
-    ? 180
-    : AdaptiveUtils.isSmallScreen(screenWidth)
+        ? 180
+        : AdaptiveUtils.isSmallScreen(screenWidth)
         ? 200
         : 220;
 
-    final double leftTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 3; // ~8-10
-    final double bottomTitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9-11
-    final double lineWidth = AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7-3.3
+    final double leftTitleFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 3; // ~8-10
+    final double bottomTitleFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 2; // ~9-11
+    final double lineWidth =
+        AdaptiveUtils.getIconSize(screenWidth) / 6; // ~2.7-3.3
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4-5
     final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
@@ -133,7 +268,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-       // border: Border.all(color: Colors.black),
+        // border: Border.all(color: Colors.black),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -163,7 +298,25 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Adoption and growth", style: titleStyle),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: "Adoption and growth", style: titleStyle),
+                    if (_loadingGraph)
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               SizedBox(height: padding / 2),
               Align(alignment: Alignment.centerRight, child: monthTabs),
             ],
@@ -171,7 +324,25 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         : Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Adoption and growth", style: titleStyle),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: "Adoption and growth", style: titleStyle),
+                    if (_loadingGraph)
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               monthTabs,
             ],
           );
@@ -254,16 +425,16 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                       showTitles: true,
                       interval: yMax / 3,
                       reservedSize: screenWidth < 420 ? 32 : 40,
-                        getTitlesWidget: (value, meta) => SideTitleWidget(
-  meta: meta, // pass the required argument
-  child: Text(
-    "${value.toInt()}K",
-    style: GoogleFonts.inter(
-      fontSize: leftTitleFontSize,
-      color: colorScheme.onSurface.withOpacity(0.87),
-    ),
-  ),
-),
+                      getTitlesWidget: (value, meta) => SideTitleWidget(
+                        meta: meta, // pass the required argument
+                        child: Text(
+                          "${value.toInt()}K",
+                          style: GoogleFonts.inter(
+                            fontSize: leftTitleFontSize,
+                            color: colorScheme.onSurface.withOpacity(0.87),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   bottomTitles: AxisTitles(
@@ -287,14 +458,21 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   horizontalInterval: yMax / 3,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => FlLine(color: colorScheme.onSurface.withOpacity(0.12), strokeWidth: 1),
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: colorScheme.onSurface.withOpacity(0.12),
+                    strokeWidth: 1,
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: selectedStats.map((stat) {
@@ -311,12 +489,13 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                     color: color,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                        radius: dotRadius,
-                        color: color,
-                        strokeColor: colorScheme.surface,
-                        strokeWidth: 2,
-                      ),
+                      getDotPainter: (spot, percent, bar, index) =>
+                          FlDotCirclePainter(
+                            radius: dotRadius,
+                            color: color,
+                            strokeColor: colorScheme.surface,
+                            strokeWidth: 2,
+                          ),
                     ),
                   );
                 }).toList(),

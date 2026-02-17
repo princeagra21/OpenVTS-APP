@@ -1,4 +1,10 @@
 // components/fleet/fleet_overview_box.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
@@ -42,8 +48,87 @@ class CustomBox extends StatelessWidget {
   }
 }
 
-class FleetOverviewBox extends StatelessWidget {
+class FleetOverviewBox extends StatefulWidget {
   const FleetOverviewBox({super.key});
+
+  @override
+  State<FleetOverviewBox> createState() => _FleetOverviewBoxState();
+}
+
+class _FleetOverviewBoxState extends State<FleetOverviewBox> {
+  SuperadminTotalCounts? _counts;
+  bool _loadingCounts = false;
+  bool _countsErrorShown = false;
+  CancelToken? _countsCancelToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  @override
+  void dispose() {
+    _countsCancelToken?.cancel('FleetOverviewBox disposed');
+    super.dispose();
+  }
+
+  Future<void> _loadCounts() async {
+    _countsCancelToken?.cancel('Reload counts');
+    final token = CancelToken();
+    _countsCancelToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingCounts = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getTotalCounts(cancelToken: token);
+      if (!mounted) return;
+
+      res.when(
+        success: (counts) {
+          if (!mounted) return;
+          setState(() {
+            _counts = counts;
+            _loadingCounts = false;
+            _countsErrorShown = false;
+          });
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() => _loadingCounts = false);
+          if (_countsErrorShown) return;
+          _countsErrorShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Couldn't load counts. Showing fallback data."),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingCounts = false);
+      if (_countsErrorShown) return;
+      _countsErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load counts. Showing fallback data."),
+        ),
+      );
+    }
+  }
+
+  String _fmtInt(int v) => v.toString();
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +136,40 @@ class FleetOverviewBox extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Adaptive values from our design system
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;     // 14–18
-    final double bigNumberFontSize = titleFontSize * 2.4; // ~34–43, scales perfectly
-    final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) ; // 13–15
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);     // 12–14
-    final double capsuleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) ;   // 13–15
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);         // 6–10
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 14–18
+    final double bigNumberFontSize =
+        titleFontSize * 2.4; // ~34–43, scales perfectly
+    final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 13–15
+    final double capsuleFontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 13–15
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(
+      screenWidth,
+    ); // 6–10
+
+    const fallbackTotalVehicles = 3579;
+    const fallbackActiveVehicles = 2300;
+    const fallbackTotalUsers = 2097;
+    const fallbackTotalAdmins = 234;
+    const fallbackLicensesUsed = 34298;
+
+    final counts = _counts;
+    final totalVehicles = counts == null
+        ? fallbackTotalVehicles
+        : counts.totalVehicles;
+    final activeVehicles = counts == null
+        ? fallbackActiveVehicles
+        : counts.activeVehicles;
+    final totalUsers = counts == null ? fallbackTotalUsers : counts.totalUsers;
+    final totalAdmins = counts == null
+        ? fallbackTotalAdmins
+        : counts.totalAdmins;
+    final licensesUsed = counts == null
+        ? fallbackLicensesUsed
+        : counts.licensesUsed;
 
     return CustomBox(
       radius: 25.0,
@@ -67,32 +180,50 @@ class FleetOverviewBox extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Your fleet Today",
-                style: GoogleFonts.inter(
-                  fontSize: titleFontSize,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: "Your fleet Today",
+                      style: GoogleFonts.inter(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    if (_loadingCounts)
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            //  Container(
+              //  Container(
               //  padding: EdgeInsets.symmetric(
-                //  horizontal: spacing + 4,
-                //  vertical: spacing - 2,
+              //  horizontal: spacing + 4,
+              //  vertical: spacing - 2,
               //  ),
-               // decoration: BoxDecoration(
-                 // border: Border.all(color: colorScheme.onSurface, width: 1),
-     //             borderRadius: BorderRadius.circular(20),
-       ///         ),
-       //         child: Text(
-        //          "Today 12M",
-        //          style: GoogleFonts.inter(
-        //            fontSize: badgeFontSize,
-        //            fontWeight: FontWeight.w600,
-        //            color: colorScheme.onSurface,
-        //          ),
-        //        ),
-         //     ),
+              // decoration: BoxDecoration(
+              // border: Border.all(color: colorScheme.onSurface, width: 1),
+              //             borderRadius: BorderRadius.circular(20),
+              ///         ),
+              //         child: Text(
+              //          "Today 12M",
+              //          style: GoogleFonts.inter(
+              //            fontSize: badgeFontSize,
+              //            fontWeight: FontWeight.w600,
+              //            color: colorScheme.onSurface,
+              //          ),
+              //        ),
+              //     ),
             ],
           ),
 
@@ -100,7 +231,7 @@ class FleetOverviewBox extends StatelessWidget {
 
           // Big Number
           Text(
-            "3579",
+            _fmtInt(totalVehicles),
             style: GoogleFonts.inter(
               fontSize: bigNumberFontSize,
               fontWeight: FontWeight.bold,
@@ -129,10 +260,30 @@ class FleetOverviewBox extends StatelessWidget {
             spacing: spacing + 4,
             runSpacing: spacing + 2,
             children: [
-              _capsule(context, "Active 2300", capsuleFontSize, spacing),
-              _capsule(context, "Users 2097", capsuleFontSize, spacing),
-              _capsule(context, "Admins 234", capsuleFontSize, spacing),
-              _capsule(context, "Licenses used 34298", capsuleFontSize, spacing),
+              _capsule(
+                context,
+                "Active ${_fmtInt(activeVehicles)}",
+                capsuleFontSize,
+                spacing,
+              ),
+              _capsule(
+                context,
+                "Users ${_fmtInt(totalUsers)}",
+                capsuleFontSize,
+                spacing,
+              ),
+              _capsule(
+                context,
+                "Admins ${_fmtInt(totalAdmins)}",
+                capsuleFontSize,
+                spacing,
+              ),
+              _capsule(
+                context,
+                "Licenses used ${_fmtInt(licensesUsed)}",
+                capsuleFontSize,
+                spacing,
+              ),
             ],
           ),
         ],
@@ -140,34 +291,35 @@ class FleetOverviewBox extends StatelessWidget {
     );
   }
 
- Widget _capsule(BuildContext context, String text, double fontSize, double spacing) {
-  final cs = Theme.of(context).colorScheme;
+  Widget _capsule(
+    BuildContext context,
+    String text,
+    double fontSize,
+    double spacing,
+  ) {
+    final cs = Theme.of(context).colorScheme;
 
-  return Container(
-    padding: EdgeInsets.symmetric(
-      horizontal: spacing + 8,
-      vertical: spacing,
-    ),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(999), // TRUE PILL
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 6,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w700,
-        color: cs.onSurface,
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: spacing + 8, vertical: spacing),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999), // TRUE PILL
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    ),
-  );
-}
-
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          color: cs.onSurface,
+        ),
+      ),
+    );
+  }
 }

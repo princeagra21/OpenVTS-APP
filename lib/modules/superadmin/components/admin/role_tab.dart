@@ -1,9 +1,21 @@
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
+import 'package:fleet_stack/core/models/permission_matrix.dart';
+import 'package:fleet_stack/core/models/role_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class RolesTab extends StatefulWidget {
-  const RolesTab({super.key});
+  final String adminId;
+
+  const RolesTab({super.key, required this.adminId});
 
   @override
   State<RolesTab> createState() => _RolesTabState();
@@ -11,7 +23,13 @@ class RolesTab extends StatefulWidget {
 
 class _RolesTabState extends State<RolesTab> {
   String _selectedRole = 'Full Admin';
-  Map<String, String> _permissions = {};
+  final Map<String, String> _permissions = {};
+
+  // Fallback-first roles list.
+  List<RoleItem> _roles = const [
+    RoleItem({'id': 'full_admin', 'name': 'Full Admin'}),
+  ];
+
   final List<String> modules = [
     "Tenants",
     "Users",
@@ -30,11 +48,136 @@ class _RolesTabState extends State<RolesTab> {
     "SSL"
   ];
 
+  bool _loading = false;
+  bool _errorShown = false;
+  bool _saveNotEnabledShown = false;
+
+  CancelToken? _token;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
   @override
   void initState() {
     super.initState();
     for (var module in modules) {
       _permissions[module] = 'Full';
+    }
+    _loadRoleAndPermissions();
+  }
+
+  @override
+  void dispose() {
+    _token?.cancel('dispose');
+    super.dispose();
+  }
+
+  void _ensureRepo() {
+    if (_api != null) return;
+    _api = ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo = SuperadminRepository(api: _api!);
+  }
+
+  void _snackOnce(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _loadRoleAndPermissions() async {
+    _ensureRepo();
+
+    _token?.cancel('reload');
+    _token = CancelToken();
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      // Postman-confirmed source of truth:
+      // only use GET /superadmin/admin/{adminId} for role + permissions hydration.
+      final res = await _repo!.getAdminProfile(
+        widget.adminId,
+        cancelToken: _token,
+      );
+
+      if (!mounted) return;
+
+      String adminRoleId = '';
+      String adminRoleName = '';
+
+      if (res.isSuccess) {
+        final AdminProfile p = res.data!;
+
+        adminRoleId = p.roleId.trim();
+        adminRoleName = p.roleName.trim();
+
+        final matrix = PermissionMatrix.fromRaw(p.permissionsRaw);
+        if (matrix.levelsByModule.isNotEmpty) {
+          // Normalize/hydrate only the stable core module rows.
+          const stableModules = <String>[
+            'Tenants',
+            'Users',
+            'Roles',
+            'Vehicles',
+            'Devices',
+            'SIM/APN',
+          ];
+          for (final module in stableModules) {
+            final lvl = matrix.levelForModule(module);
+            if (lvl != null) _permissions[module] = lvl.uiLabel;
+          }
+        } else if (kDebugMode) {
+          debugPrint(
+            'RolesTab: permissions missing in admin payload for adminId=${widget.adminId}',
+          );
+        }
+      } else {
+        if (!_errorShown) {
+          _errorShown = true;
+          final err = res.error;
+          if (err is ApiException &&
+              (err.statusCode == 401 || err.statusCode == 403)) {
+            _snackOnce("Not authorized to view roles.");
+          } else {
+            _snackOnce("Couldn't load roles. Showing defaults.");
+          }
+        }
+      }
+
+      // Preselect role based on admin profile if possible.
+      if (adminRoleName.isNotEmpty) {
+        final match = _roles.firstWhere(
+          (r) => r.name.trim().toLowerCase() == adminRoleName.toLowerCase(),
+          orElse: () => const RoleItem({'id': '', 'name': ''}),
+        );
+        if (match.name.isNotEmpty) {
+          _selectedRole = match.name;
+        } else {
+          _selectedRole = adminRoleName;
+          final exists = _roles.any(
+            (r) => r.name.trim().toLowerCase() == adminRoleName.toLowerCase(),
+          );
+          if (!exists) {
+            _roles = [
+              ..._roles,
+              RoleItem({
+                'id': adminRoleId.isEmpty ? adminRoleName : adminRoleId,
+                'name': adminRoleName,
+              }),
+            ];
+          }
+        }
+      }
+    } catch (_) {
+      if (!_errorShown) {
+        _errorShown = true;
+        _snackOnce("Couldn't load roles. Showing defaults.");
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -101,7 +244,6 @@ class _RolesTabState extends State<RolesTab> {
             setState(() {
               _selectedRole = value!;
             });
-            print("Selected $label: $value");
           },
         ),
       ],
@@ -148,7 +290,10 @@ class _RolesTabState extends State<RolesTab> {
                       setState(() {
                         _permissions[module] = value!;
                       });
-                      print("Selected access for $module: $value");
+                      if (kDebugMode && !_saveNotEnabledShown) {
+                        _saveNotEnabledShown = true;
+                        _snackOnce("Editing roles not available yet.");
+                      }
                     },
                   ),
                 ],
@@ -181,7 +326,10 @@ class _RolesTabState extends State<RolesTab> {
                       setState(() {
                         _permissions[module] = value!;
                       });
-                      print("Selected access for $module: $value");
+                      if (kDebugMode && !_saveNotEnabledShown) {
+                        _saveNotEnabledShown = true;
+                        _snackOnce("Editing roles not available yet.");
+                      }
                     },
                   ),
                 ],
@@ -214,7 +362,10 @@ class _RolesTabState extends State<RolesTab> {
                       setState(() {
                         _permissions[module] = value!;
                       });
-                      print("Selected access for $module: $value");
+                      if (kDebugMode && !_saveNotEnabledShown) {
+                        _saveNotEnabledShown = true;
+                        _snackOnce("Editing roles not available yet.");
+                      }
                     },
                   ),
                 ],
@@ -247,7 +398,10 @@ class _RolesTabState extends State<RolesTab> {
                       setState(() {
                         _permissions[module] = value!;
                       });
-                      print("Selected access for $module: $value");
+                      if (kDebugMode && !_saveNotEnabledShown) {
+                        _saveNotEnabledShown = true;
+                        _snackOnce("Editing roles not available yet.");
+                      }
                     },
                   ),
                 ],
@@ -280,7 +434,10 @@ class _RolesTabState extends State<RolesTab> {
                       setState(() {
                         _permissions[module] = value!;
                       });
-                      print("Selected access for $module: $value");
+                      if (kDebugMode && !_saveNotEnabledShown) {
+                        _saveNotEnabledShown = true;
+                        _snackOnce("Editing roles not available yet.");
+                      }
                     },
                   ),
                 ],
@@ -297,6 +454,24 @@ class _RolesTabState extends State<RolesTab> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+
+    final roleNames = _roles
+        .map((r) => r.name.trim())
+        .where((n) => n.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    if (_selectedRole.trim().isNotEmpty && !roleNames.contains(_selectedRole)) {
+      roleNames.insert(0, _selectedRole);
+    }
+
+    final roleItems = roleNames
+        .map(
+          (n) => DropdownMenuItem<String>(value: n, child: Text(n)),
+        )
+        .toList();
+
     List<Widget> permissionRows = [];
     for (var module in modules) {
       permissionRows.add(_buildPermissionRow(module, screenWidth));
@@ -339,6 +514,18 @@ class _RolesTabState extends State<RolesTab> {
                     letterSpacing: 0.8,
                   ),
                 ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: _loading
+                      ? CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
             const SizedBox(height: 30),
@@ -346,9 +533,7 @@ class _RolesTabState extends State<RolesTab> {
               icon: Icons.person,
               label: "Select Role",
               hint: "Select Role",
-              items: const [
-                DropdownMenuItem(value: "Full Admin", child: Text("Full Admin")),
-              ],
+              items: roleItems,
             ),
             const SizedBox(height: 20),
             Text(

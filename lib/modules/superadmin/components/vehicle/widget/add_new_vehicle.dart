@@ -1,4 +1,10 @@
 // screens/vehicle/add_vehicle_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,16 +22,41 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _imeiController = TextEditingController();
   final _simController = TextEditingController();
 
-  String? _selectedPlan;
+  String? _selectedPricingPlan;
   String? _selectedDeviceType;
   String? _selectedVehicleType;
 
-  final List<String> plans = ["Basic", "Standard", "Premium"];
+  final List<String> _fallbackPricingPlans = ["Basic", "Standard", "Premium"];
+  late List<String> _pricingPlanNames;
+  bool _loadingPricingPlans = false;
+  bool _pricingPlansErrorShown = false;
+  CancelToken? _pricingPlansCancelToken;
+  CancelToken? _pricingPlansCapabilityCancelToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
   final List<String> deviceTypes = ["FBM920", "GT06", "FM1200", "GV500"];
-  final List<String> vehicleTypes = ["Car", "Truck", "SUV", "Bus", "Van", "Bike"];
+  final List<String> vehicleTypes = [
+    "Car",
+    "Truck",
+    "SUV",
+    "Bus",
+    "Van",
+    "Bike",
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pricingPlanNames = List<String>.from(_fallbackPricingPlans);
+    _initPricingPlans();
+  }
 
   @override
   void dispose() {
+    _pricingPlansCancelToken?.cancel('AddVehicleScreen disposed');
+    _pricingPlansCapabilityCancelToken?.cancel('AddVehicleScreen disposed');
     _userController.dispose();
     _vehicleNoController.dispose();
     _imeiController.dispose();
@@ -33,13 +64,143 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     super.dispose();
   }
 
+  Future<void> _initPricingPlans() async {
+    _pricingPlansCapabilityCancelToken?.cancel(
+      'Reload pricing plan capability',
+    );
+    final token = CancelToken();
+    _pricingPlansCapabilityCancelToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingPricingPlans = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final capRes = await _repo!.canAccessAdminPricingPlans(
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      capRes.when(
+        success: (canAccess) {
+          if (!mounted) return;
+          if (!canAccess) {
+            setState(() => _loadingPricingPlans = false);
+            if (_pricingPlansErrorShown) return;
+            _pricingPlansErrorShown = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Not authorized to view plans.')),
+            );
+            return;
+          }
+
+          // Authorized: load the full list (keeps fallback-first behavior).
+          _loadPricingPlans(startLoading: false);
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() => _loadingPricingPlans = false);
+          if (_pricingPlansErrorShown) return;
+          _pricingPlansErrorShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Couldn't load plans. Showing fallback list."),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingPricingPlans = false);
+      if (_pricingPlansErrorShown) return;
+      _pricingPlansErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load plans. Showing fallback list."),
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadPricingPlans({bool startLoading = true}) async {
+    _pricingPlansCancelToken?.cancel('Reload pricing plans');
+    final token = CancelToken();
+    _pricingPlansCancelToken = token;
+
+    if (!mounted) return;
+    if (startLoading) {
+      setState(() => _loadingPricingPlans = true);
+    }
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getPricingPlans(cancelToken: token);
+      if (!mounted) return;
+
+      res.when(
+        success: (plans) {
+          if (!mounted) return;
+          final names = plans
+              .map((p) => p.name.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+
+          setState(() {
+            _loadingPricingPlans = false;
+            _pricingPlansErrorShown = false;
+            _pricingPlanNames = names.isNotEmpty ? names : const ["No data"];
+            if (_pricingPlanNames.length == 1 &&
+                _pricingPlanNames.first == "No data") {
+              _selectedPricingPlan = null;
+            }
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() => _loadingPricingPlans = false);
+          if (_pricingPlansErrorShown) return;
+          _pricingPlansErrorShown = true;
+
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to view plans.'
+              : "Couldn't load plans. Showing fallback list.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingPricingPlans = false);
+      if (_pricingPlansErrorShown) return;
+      _pricingPlansErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load plans. Showing fallback list."),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(w);
-    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);     // ~18–22
-    final double labelSize = AdaptiveUtils.getTitleFontSize(w);        // ~14–16
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w); // ~18–22
+    final double labelSize = AdaptiveUtils.getTitleFontSize(w); // ~14–16
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -63,7 +224,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close_rounded, size: 28, color: colorScheme.onSurface.withOpacity(0.7)),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ),
@@ -121,9 +286,14 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       StylishDropdown(
                         label: "Select Plan",
                         hint: "Choose subscription plan",
-                        value: _selectedPlan,
-                        items: plans,
-                        onChanged: (v) => setState(() => _selectedPlan = v),
+                        value: _selectedPricingPlan,
+                        items: _pricingPlanNames,
+                        loading: _loadingPricingPlans,
+                        onChanged:
+                            (_pricingPlanNames.length == 1 &&
+                                _pricingPlanNames.first == "No data")
+                            ? null
+                            : (v) => setState(() => _selectedPricingPlan = v),
                       ),
                       const SizedBox(height: 16),
 
@@ -132,7 +302,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         hint: "Select tracker model",
                         value: _selectedDeviceType,
                         items: deviceTypes,
-                        onChanged: (v) => setState(() => _selectedDeviceType = v),
+                        onChanged: (v) =>
+                            setState(() => _selectedDeviceType = v),
                       ),
                       const SizedBox(height: 16),
 
@@ -141,7 +312,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         hint: "Select vehicle category",
                         value: _selectedVehicleType,
                         items: vehicleTypes,
-                        onChanged: (v) => setState(() => _selectedVehicleType = v),
+                        onChanged: (v) =>
+                            setState(() => _selectedVehicleType = v),
                       ),
                       const SizedBox(height: 32),
 
@@ -226,15 +398,27 @@ class StylishTextField extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: fs),
-            prefixIcon: Icon(prefixIcon, color: colorScheme.primary, size: fs + 6),
+            hintStyle: GoogleFonts.inter(
+              color: colorScheme.onSurface.withOpacity(0.6),
+              fontSize: fs,
+            ),
+            prefixIcon: Icon(
+              prefixIcon,
+              color: colorScheme.primary,
+              size: fs + 6,
+            ),
             filled: true,
             fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -255,6 +439,7 @@ class StylishDropdown extends StatelessWidget {
   final String hint;
   final String? value;
   final List<String> items;
+  final bool loading;
   final ValueChanged<String?>? onChanged;
 
   const StylishDropdown({
@@ -263,6 +448,7 @@ class StylishDropdown extends StatelessWidget {
     required this.hint,
     this.value,
     required this.items,
+    this.loading = false,
     this.onChanged,
   });
 
@@ -275,12 +461,30 @@ class StylishDropdown extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: fs,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface.withOpacity(0.87),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: label,
+                style: GoogleFonts.inter(
+                  fontSize: fs,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              if (loading)
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -291,18 +495,35 @@ class StylishDropdown extends StatelessWidget {
             border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
             color: colorScheme.surface,
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
             ],
           ),
           child: DropdownButton<String>(
             value: value,
-            hint: Text(hint, style: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: fs)),
+            hint: Text(
+              hint,
+              style: GoogleFonts.inter(
+                color: colorScheme.onSurface.withOpacity(0.6),
+                fontSize: fs,
+              ),
+            ),
             isExpanded: true,
             underline: const SizedBox.shrink(),
-            icon: Icon(Icons.arrow_drop_down_rounded, color: colorScheme.onSurface.withOpacity(0.6), size: fs + 10),
+            icon: Icon(
+              Icons.arrow_drop_down_rounded,
+              color: colorScheme.onSurface.withOpacity(0.6),
+              size: fs + 10,
+            ),
             dropdownColor: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
+            style: GoogleFonts.inter(
+              fontSize: fs,
+              color: colorScheme.onSurface,
+            ),
             items: items
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),

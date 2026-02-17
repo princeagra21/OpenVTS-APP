@@ -1,3 +1,10 @@
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_list_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,22 +24,216 @@ class _AdminScreenState extends State<AdminScreen> {
   String selectedTab = "All";
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> admins = List.generate(5, (i) => {
-        "id": i,
-        "initials": "MS",
-        "name": "Muhammad Sani",
-        "phone": "+2349018980920",
-        "username": "@muhammad",
-        "email": "muhammad@gmail.com",
-        "status": i % 2 == 0 ? "Verified" : "Pending",
-        "vehicles": "76",
-        "credits": "18",
-        "recentLogin": "Oct 12, 09:32",
-        "active": true,
-        "location": "Dawakin Tofa, Kano, Nigeria",
-        "joined": "Aug 11, 2025 • 120d",
-        "role": "Das Fleet Management • Primary",
+  late List<Map<String, dynamic>> _admins;
+  bool _loadingAdmins = false;
+  bool _adminsErrorShown = false;
+  CancelToken? _adminsCancelToken;
+  final Map<String, CancelToken> _statusTokensByAdminId = {};
+  final Set<String> _statusSubmittingAdminIds = {};
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
+  final List<Map<String, dynamic>> _fallbackAdmins = List.generate(
+    5,
+    (i) => {
+      "id": i,
+      "initials": "MS",
+      "name": "Muhammad Sani",
+      "phone": "+2349018980920",
+      "username": "@muhammad",
+      "email": "muhammad@gmail.com",
+      "status": i % 2 == 0 ? "Verified" : "Pending",
+      "vehicles": "76",
+      "credits": "18",
+      "recentLogin": "Oct 12, 09:32",
+      "active": true,
+      "location": "Dawakin Tofa, Kano, Nigeria",
+      "joined": "Aug 11, 2025 • 120d",
+      "role": "Das Fleet Management • Primary",
+    },
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _admins = List<Map<String, dynamic>>.from(_fallbackAdmins);
+    _searchController.addListener(() => setState(() {}));
+    _loadAdmins();
+  }
+
+  @override
+  void dispose() {
+    _adminsCancelToken?.cancel('AdminScreen disposed');
+    for (final t in _statusTokensByAdminId.values) {
+      t.cancel('AdminScreen disposed');
+    }
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\\s+'));
+    final out = parts
+        .where((p) => p.isNotEmpty)
+        .take(2)
+        .map((p) => p[0])
+        .join();
+    return out.isEmpty ? '—' : out.toUpperCase();
+  }
+
+  Map<String, dynamic> _mapAdmin(AdminListItem a) {
+    final name = a.name.isNotEmpty ? a.name : '—';
+    final status = a.status.isNotEmpty
+        ? a.status
+        : (a.isActive ? 'Active' : 'Disabled');
+
+    return <String, dynamic>{
+      "id": a.id.isNotEmpty ? a.id : '',
+      "initials": _initials(name),
+      "name": name,
+      "phone": a.phone,
+      "username": a.username.isNotEmpty ? '@${a.username}' : '',
+      "email": a.email,
+      "status": status,
+      "vehicles": a.vehiclesCount == 0 ? '' : a.vehiclesCount.toString(),
+      "credits": a.credits == 0 ? '' : a.credits.toString(),
+      "recentLogin": a.recentLogin,
+      "active": a.isActive,
+      "location": a.location,
+      "joined": a.createdAt,
+      "role": a.role,
+    };
+  }
+
+  Future<void> _loadAdmins() async {
+    _adminsCancelToken?.cancel('Reload admins');
+    final token = CancelToken();
+    _adminsCancelToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingAdmins = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getAdmins(
+        page: 1,
+        limit: 50,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (items) {
+          if (!mounted) return;
+          final mapped = items.map(_mapAdmin).toList();
+          setState(() {
+            _loadingAdmins = false;
+            _adminsErrorShown = false;
+            _admins = mapped;
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() => _loadingAdmins = false);
+          if (_adminsErrorShown) return;
+          _adminsErrorShown = true;
+
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to view admins.'
+              : "Couldn't load admins. Showing fallback list.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingAdmins = false);
+      if (_adminsErrorShown) return;
+      _adminsErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load admins. Showing fallback list."),
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleAdminStatus({
+    required Map<String, dynamic> admin,
+    required bool isActive,
+  }) async {
+    final adminId = admin['id']?.toString() ?? '';
+    if (adminId.isEmpty) return;
+    if (_statusSubmittingAdminIds.contains(adminId)) return;
+
+    final prev = admin['active'] == true;
+
+    // Optimistic update.
+    setState(() {
+      admin['active'] = isActive;
+      _statusSubmittingAdminIds.add(adminId);
+    });
+
+    _api ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= SuperadminRepository(api: _api!);
+
+    _statusTokensByAdminId[adminId]?.cancel('New toggle');
+    final token = CancelToken();
+    _statusTokensByAdminId[adminId] = token;
+
+    try {
+      final res = await _repo!.updateAdminStatus(
+        adminId,
+        isActive,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (_) {
+          if (!mounted) return;
+          setState(() {
+            _statusSubmittingAdminIds.remove(adminId);
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() {
+            admin['active'] = prev; // revert
+            _statusSubmittingAdminIds.remove(adminId);
+          });
+
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized.'
+              : "Couldn't update status.";
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        admin['active'] = prev; // revert
+        _statusSubmittingAdminIds.remove(adminId);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't update status.")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,17 +249,36 @@ class _AdminScreenState extends State<AdminScreen> {
     final iconSize = titleFs + 2;
     final cardPadding = padding + 4; // slightly bigger for cards
 
-    final filteredAdmins = admins;
+    final query = _searchController.text.trim().toLowerCase();
+    final filteredAdmins = _admins.where((a) {
+      final matchesSearch =
+          query.isEmpty ||
+          a['name'].toString().toLowerCase().contains(query) ||
+          a['email'].toString().toLowerCase().contains(query) ||
+          a['role'].toString().toLowerCase().contains(query) ||
+          a['username'].toString().toLowerCase().contains(query);
+
+      final status = a['status'].toString().toLowerCase();
+      final active = a['active'] == true;
+      final matchesTab =
+          selectedTab == "All" ||
+          (selectedTab == "Active" && active) ||
+          (selectedTab == "Disabled" && !active) ||
+          (selectedTab == "Pending" && status.contains('pending'));
+
+      return matchesSearch && matchesTab;
+    }).toList();
 
     return AppLayout(
       title: "SUPER ADMIN",
       subtitle: "Administrators",
-      actionIcons: const [
-        CupertinoIcons.add,
-      ],
-      onActionTaps: [ // NEW: Handle tap on add icon
+      actionIcons: const [CupertinoIcons.add],
+      onActionTaps: [
+        // NEW: Handle tap on add icon
         () {
-          context.push('/superadmin/admins/add'); // Navigate to AddNewAdminScreen (adjust route if needed)
+          context.push(
+            '/superadmin/admins/add',
+          ); // Navigate to AddNewAdminScreen (adjust route if needed)
         },
       ],
       leftAvatarText: 'SA',
@@ -77,14 +297,21 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+                style: GoogleFonts.inter(
+                  fontSize: bodyFs,
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   hintText: "Search name, email, role, department...",
                   hintStyle: GoogleFonts.inter(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: bodyFs,
                   ),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.onSurface),
+                  prefixIcon: Icon(
+                    CupertinoIcons.search,
+                    size: iconSize,
+                    color: colorScheme.onSurface,
+                  ),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: padding,
@@ -119,11 +346,30 @@ class _AdminScreenState extends State<AdminScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Showing ${filteredAdmins.length} of ${admins.length} admins",
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs,
-                    color: colorScheme.onSurface.withOpacity(0.87),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text:
+                            "Showing ${filteredAdmins.length} of ${_admins.length} admins",
+                        style: GoogleFonts.inter(
+                          fontSize: bodyFs,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      if (_loadingAdmins)
+                        const WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 
@@ -136,7 +382,9 @@ class _AdminScreenState extends State<AdminScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.1),
+                    ),
                   ),
                   child: Text(
                     "Export",
@@ -180,7 +428,19 @@ class _AdminScreenState extends State<AdminScreen> {
                     borderRadius: BorderRadius.circular(25),
                     child: InkWell(
                       onTap: () {
-                        context.push("/superadmin/admins/details/${admin['id']}");
+                        () async {
+                          final ctx = context;
+                          final deleted = await ctx.push<bool>(
+                            "/superadmin/admins/details/${admin['id']}",
+                          );
+                          if (!ctx.mounted) return;
+                          if (deleted == true) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(content: Text('Admin deleted')),
+                            );
+                            _loadAdmins();
+                          }
+                        }();
                       },
                       borderRadius: BorderRadius.circular(25),
                       child: Padding(
@@ -193,12 +453,17 @@ class _AdminScreenState extends State<AdminScreen> {
                                 // AVATAR
                                 CircleAvatar(
                                   backgroundColor: colorScheme.primary,
-                                  radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                                  radius:
+                                      AdaptiveUtils.getAvatarSize(screenWidth) /
+                                      2,
                                   child: Text(
                                     admin["initials"],
                                     style: GoogleFonts.inter(
                                       color: colorScheme.onPrimary,
-                                      fontSize: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                                      fontSize:
+                                          AdaptiveUtils.getFsAvatarFontSize(
+                                            screenWidth,
+                                          ),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -209,11 +474,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                 // RIGHT SIDE
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       // NAME + STATUS + LOGIN
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: [
@@ -234,17 +501,24 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   vertical: spacing - 3,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: admin["status"] == "Verified"
-                                                      ? Colors.green.withOpacity(0.2)
-                                                      : Colors.orange.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(16),
+                                                  color:
+                                                      admin["status"] ==
+                                                          "Verified"
+                                                      ? Colors.green
+                                                            .withOpacity(0.2)
+                                                      : Colors.orange
+                                                            .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
                                                 ),
                                                 child: Text(
                                                   admin["status"],
                                                   style: GoogleFonts.inter(
                                                     fontSize: smallFs,
                                                     fontWeight: FontWeight.w600,
-                                                    color: admin["status"] == "Verified"
+                                                    color:
+                                                        admin["status"] ==
+                                                            "Verified"
                                                         ? Colors.green
                                                         : Colors.orange,
                                                   ),
@@ -260,9 +534,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                               vertical: spacing - 2,
                                             ),
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(20),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                               border: Border.all(
-                                                color: colorScheme.primary.withOpacity(0.5),
+                                                color: colorScheme.primary
+                                                    .withOpacity(0.5),
                                                 width: 1.2,
                                               ),
                                             ),
@@ -283,7 +559,12 @@ class _AdminScreenState extends State<AdminScreen> {
                                       // PHONE
                                       Row(
                                         children: [
-                                          Icon(CupertinoIcons.phone, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
+                                          Icon(
+                                            CupertinoIcons.phone,
+                                            size: iconSize,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.87),
+                                          ),
                                           SizedBox(width: spacing),
                                           Text(
                                             admin["phone"],
@@ -301,7 +582,12 @@ class _AdminScreenState extends State<AdminScreen> {
                                       // EMAIL
                                       Row(
                                         children: [
-                                          Icon(CupertinoIcons.mail, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
+                                          Icon(
+                                            CupertinoIcons.mail,
+                                            size: iconSize,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.87),
+                                          ),
                                           SizedBox(width: spacing),
                                           Text(
                                             admin["email"],
@@ -331,11 +617,18 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: colorScheme.primary.withOpacity(0.7)),
+                                    border: Border.all(
+                                      color: colorScheme.primary.withOpacity(
+                                        0.7,
+                                      ),
+                                    ),
                                   ),
                                   child: Text(
                                     "${admin["vehicles"]} Vehicles",
-                                    style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface),
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs,
+                                      color: colorScheme.onSurface,
+                                    ),
                                   ),
                                 ),
 
@@ -348,7 +641,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: colorScheme.error),
+                                    border: Border.all(
+                                      color: colorScheme.error,
+                                    ),
                                   ),
                                   child: Text(
                                     "${admin["credits"]} LOW Credits",
@@ -381,13 +676,20 @@ class _AdminScreenState extends State<AdminScreen> {
                                   scale: 0.75,
                                   child: Switch(
                                     value: admin["active"],
-                                    onChanged: (v) {
-                                      setState(() => admin["active"] = v);
-                                    },
+                                    onChanged:
+                                        _statusSubmittingAdminIds.contains(
+                                              admin['id']?.toString() ?? '',
+                                            )
+                                            ? null
+                                            : (v) => _toggleAdminStatus(
+                                                  admin: admin,
+                                                  isActive: v,
+                                                ),
                                     activeColor: colorScheme.onPrimary,
                                     activeTrackColor: colorScheme.primary,
                                     inactiveThumbColor: colorScheme.onPrimary,
-                                    inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
+                                    inactiveTrackColor: colorScheme.primary
+                                        .withOpacity(0.3),
                                   ),
                                 ),
                               ],
@@ -397,14 +699,23 @@ class _AdminScreenState extends State<AdminScreen> {
 
                             Row(
                               children: [
-                                Icon(CupertinoIcons.location, size: iconSize, color: colorScheme.onSurface.withOpacity(0.87)),
+                                Icon(
+                                  CupertinoIcons.location,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface.withOpacity(
+                                    0.87,
+                                  ),
+                                ),
                                 SizedBox(width: spacing),
                                 Expanded(
                                   child: Text(
                                     admin["location"],
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+                                    style: GoogleFonts.inter(
+                                      fontSize: bodyFs,
+                                      color: colorScheme.onSurface,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -412,7 +723,9 @@ class _AdminScreenState extends State<AdminScreen> {
 
                             SizedBox(height: spacing),
 
-                            Divider(color: colorScheme.onSurface.withOpacity(0.1)),
+                            Divider(
+                              color: colorScheme.onSurface.withOpacity(0.1),
+                            ),
 
                             SizedBox(height: spacing),
 
@@ -423,7 +736,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                     "Joined: ${admin["joined"]}",
                                     style: GoogleFonts.inter(
                                       fontSize: smallFs,
-                                      color: colorScheme.onSurface.withOpacity(0.6),
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.6,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -433,7 +748,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                     textAlign: TextAlign.right,
                                     style: GoogleFonts.inter(
                                       fontSize: smallFs - 1,
-                                      color: colorScheme.onSurface.withOpacity(0.6),
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.6,
+                                      ),
                                     ),
                                   ),
                                 ),

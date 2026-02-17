@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -11,8 +12,15 @@ class RolesScreen extends StatefulWidget {
 }
 
 class _RolesScreenState extends State<RolesScreen> {
+  // Postman recon (X-Fleet.postman_collection.json):
+  // - LIST roles endpoint: not found
+  // - GET role details endpoint: not found
+  // - SAVE role endpoint: not found
+  // - DELETE role endpoint: not found
+  // Role APIs are unavailable in Postman right now, so this screen stays local/mock.
   String selectedRoleTitle = "Custom Role";
   late final TextEditingController _roleController;
+  bool _roleApiUnavailableShown = false;
 
   String selectedCurrency = "USD";
   int selectedAmount = 5;
@@ -136,6 +144,14 @@ class _RolesScreenState extends State<RolesScreen> {
     });
   }
 
+  void _showRoleApiUnavailableOnce() {
+    if (!kDebugMode || _roleApiUnavailableShown || !mounted) return;
+    _roleApiUnavailableShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Role APIs not available yet')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -169,7 +185,7 @@ class _RolesScreenState extends State<RolesScreen> {
                     color: scheme.onSurface.withOpacity(0.02),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -182,13 +198,21 @@ class _RolesScreenState extends State<RolesScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: _showRoleApiUnavailableOnce,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: scheme.error,
-                              padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: hp + 2,
+                                vertical: hp - 4,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            icon: Icon(Icons.delete_outline, color: scheme.onError),
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: scheme.onError,
+                            ),
                             label: Text(
                               "Delete",
                               style: GoogleFonts.inter(
@@ -200,13 +224,21 @@ class _RolesScreenState extends State<RolesScreen> {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: _showRoleApiUnavailableOnce,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: scheme.primary,
-                              padding: EdgeInsets.symmetric(horizontal: hp + 2, vertical: hp - 4),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: hp + 2,
+                                vertical: hp - 4,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            icon: Icon(Icons.save_outlined, color: scheme.onPrimary),
+                            icon: Icon(
+                              Icons.save_outlined,
+                              color: scheme.onPrimary,
+                            ),
                             label: Text(
                               "Save",
                               style: GoogleFonts.inter(
@@ -265,8 +297,12 @@ class _RolesScreenState extends State<RolesScreen> {
                           const SizedBox(height: 8),
                           TextField(
                             controller: _roleController,
-                            onChanged: (v) => setState(() => selectedRoleTitle = v),
-                            decoration: _inputDecoration(context, hint: "Enter role name"),
+                            onChanged: (v) =>
+                                setState(() => selectedRoleTitle = v),
+                            decoration: _inputDecoration(
+                              context,
+                              hint: "Enter role name",
+                            ),
                             style: GoogleFonts.inter(color: scheme.onSurface),
                           ),
                         ],
@@ -295,17 +331,29 @@ class _RolesScreenState extends State<RolesScreen> {
                                 decoration: BoxDecoration(
                                   color: scheme.surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: scheme.onSurface.withOpacity(0.08)),
+                                  border: Border.all(
+                                    color: scheme.onSurface.withOpacity(0.08),
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: selectedCurrency,
                                     isExpanded: true,
-                                    style: GoogleFonts.inter(color: scheme.onSurface),
-                                    onChanged: (v) => setState(() => selectedCurrency = v!),
+                                    style: GoogleFonts.inter(
+                                      color: scheme.onSurface,
+                                    ),
+                                    onChanged: (v) =>
+                                        setState(() => selectedCurrency = v!),
                                     items: currencies
-                                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                        .map(
+                                          (c) => DropdownMenuItem(
+                                            value: c,
+                                            child: Text(c),
+                                          ),
+                                        )
                                         .toList(),
                                   ),
                                 ),
@@ -317,20 +365,29 @@ class _RolesScreenState extends State<RolesScreen> {
                                 decoration: BoxDecoration(
                                   color: scheme.surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: scheme.onSurface.withOpacity(0.08)),
+                                  border: Border.all(
+                                    color: scheme.onSurface.withOpacity(0.08),
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<int>(
                                     value: selectedAmount,
                                     isExpanded: true,
-                                    style: GoogleFonts.inter(color: scheme.onSurface),
-                                    onChanged: (v) => setState(() => selectedAmount = v!),
+                                    style: GoogleFonts.inter(
+                                      color: scheme.onSurface,
+                                    ),
+                                    onChanged: (v) =>
+                                        setState(() => selectedAmount = v!),
                                     items: amounts
-                                        .map((a) => DropdownMenuItem(
-                                              value: a,
-                                              child: Text(a == 0 ? "Free" : "$a"),
-                                            ))
+                                        .map(
+                                          (a) => DropdownMenuItem(
+                                            value: a,
+                                            child: Text(a == 0 ? "Free" : "$a"),
+                                          ),
+                                        )
                                         .toList(),
                                   ),
                                 ),
@@ -351,25 +408,29 @@ class _RolesScreenState extends State<RolesScreen> {
                       Text(
                         "Quick Presets",
                         style: GoogleFonts.inter(
-                            fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
+                          fontSize: titleFs,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          "Full Admin",
-                          "Ops Manager",
-                          "Support",
-                          "Read Only",
-                        ].map((preset) {
-                          return _LocalTab(
-                            label: preset,
-                            selected: false,
-                            onTap: () => _applyPreset(preset),
-                          );
-                        }).toList(),
+                        children:
+                            [
+                              "Full Admin",
+                              "Ops Manager",
+                              "Support",
+                              "Read Only",
+                            ].map((preset) {
+                              return _LocalTab(
+                                label: preset,
+                                selected: false,
+                                onTap: () => _applyPreset(preset),
+                              );
+                            }).toList(),
                       ),
                     ],
                   ),
@@ -382,26 +443,31 @@ class _RolesScreenState extends State<RolesScreen> {
                       Text(
                         "Set all:",
                         style: GoogleFonts.inter(
-                            fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
+                          fontSize: titleFs,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          {"label": "None", "level": 0},
-                          {"label": "View", "level": 1},
-                          {"label": "Edit", "level": 2},
-                          {"label": "Manage", "level": 3},
-                          {"label": "Full", "level": 4},
-                        ].map((item) {
-                          return _LocalTab(
-                            label: item["label"] as String,
-                            selected: false,
-                            onTap: () => _setAllPermissions(item["level"] as int),
-                          );
-                        }).toList(),
+                        children:
+                            [
+                              {"label": "None", "level": 0},
+                              {"label": "View", "level": 1},
+                              {"label": "Edit", "level": 2},
+                              {"label": "Manage", "level": 3},
+                              {"label": "Full", "level": 4},
+                            ].map((item) {
+                              return _LocalTab(
+                                label: item["label"] as String,
+                                selected: false,
+                                onTap: () =>
+                                    _setAllPermissions(item["level"] as int),
+                              );
+                            }).toList(),
                       ),
                     ],
                   ),
@@ -414,57 +480,82 @@ class _RolesScreenState extends State<RolesScreen> {
                     decoration: BoxDecoration(
                       color: scheme.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: scheme.onSurface.withOpacity(0.05)),
+                      border: Border.all(
+                        color: scheme.onSurface.withOpacity(0.05),
+                      ),
                     ),
                     child: Column(
                       children: [
                         Row(
                           children: [
                             Expanded(
-                                flex: 3,
-                                child: Text("Module",
-                                    style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w800, color: scheme.onSurface))),
+                              flex: 3,
+                              child: Text(
+                                "Module",
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ),
                             Expanded(
-                                flex: 5,
-                                child: Text("Access",
-                                    style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w800, color: scheme.onSurface))),
+                              flex: 5,
+                              child: Text(
+                                "Access",
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        Divider(height: 32, color: scheme.onSurface.withOpacity(0.06)),
+                        Divider(
+                          height: 32,
+                          color: scheme.onSurface.withOpacity(0.06),
+                        ),
                         ...permissions.keys.map((module) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Row(
                               children: [
                                 Expanded(
-                                    flex: 3,
-                                    child: Text(module,
-                                        style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.w600, color: scheme.onSurface))),
+                                  flex: 3,
+                                  child: Text(
+                                    module,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      color: scheme.onSurface,
+                                    ),
+                                  ),
+                                ),
                                 Expanded(
                                   flex: 5,
                                   child: Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
-                                    crossAxisAlignment: WrapCrossAlignment.center,
-                                    children: [
-                                      {"label": "None", "level": 0},
-                                      {"label": "View", "level": 1},
-                                      {"label": "Edit", "level": 2},
-                                      {"label": "Manage", "level": 3},
-                                      {"label": "Full", "level": 4},
-                                    ].map((item) {
-                                      final level = item["level"] as int;
-                                      final label = item["label"] as String;
-                                      final isSelected = permissions[module] == level;
-                                      return _LocalTab(
-                                        label: label,
-                                        selected: isSelected,
-                                        onTap: () => setState(() => permissions[module] = level),
-                                      );
-                                    }).toList(),
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children:
+                                        [
+                                          {"label": "None", "level": 0},
+                                          {"label": "View", "level": 1},
+                                          {"label": "Edit", "level": 2},
+                                          {"label": "Manage", "level": 3},
+                                          {"label": "Full", "level": 4},
+                                        ].map((item) {
+                                          final level = item["level"] as int;
+                                          final label = item["label"] as String;
+                                          final isSelected =
+                                              permissions[module] == level;
+                                          return _LocalTab(
+                                            label: label,
+                                            selected: isSelected,
+                                            onTap: () => setState(
+                                              () => permissions[module] = level,
+                                            ),
+                                          );
+                                        }).toList(),
                                   ),
                                 ),
                               ],
@@ -489,7 +580,10 @@ class _RolesScreenState extends State<RolesScreen> {
     final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: scheme.onSurface.withOpacity(0.6), fontSize: 14),
+      hintStyle: GoogleFonts.inter(
+        color: scheme.onSurface.withOpacity(0.6),
+        fontSize: 14,
+      ),
       filled: true,
       fillColor: scheme.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -513,7 +607,11 @@ class _LocalTab extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _LocalTab({required this.label, required this.selected, required this.onTap});
+  const _LocalTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -524,11 +622,18 @@ class _LocalTab extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16, vertical: small ? 6 : 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: small ? 12 : 16,
+          vertical: small ? 6 : 8,
+        ),
         decoration: BoxDecoration(
           color: selected ? scheme.primary : scheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: selected ? scheme.primary : scheme.onSurface.withOpacity(0.06)),
+          border: Border.all(
+            color: selected
+                ? scheme.primary
+                : scheme.onSurface.withOpacity(0.06),
+          ),
         ),
         child: Center(
           child: Text(

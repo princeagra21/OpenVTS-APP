@@ -1,4 +1,11 @@
 // UPDATED: components/activity/recent_activity_box.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/debug/superadmin_recent_vehicles_smoke_test.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,9 +30,13 @@ class SmallTab extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);         // 11-13
+    final double hPadding =
+        AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
+    final double vPadding =
+        AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 11-13
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -33,7 +44,9 @@ class SmallTab extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
         decoration: BoxDecoration(
-          color: selected ? (selectedBackground ?? colorScheme.primary) : Colors.transparent,
+          color: selected
+              ? (selectedBackground ?? colorScheme.primary)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: colorScheme.onSurface, width: 1),
         ),
@@ -71,32 +84,217 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     };
   }
 
-  late final List<Map<String, dynamic>> vehicleActivities;
-  late final List<Map<String, dynamic>> transactionActivities;
-  late final List<Map<String, dynamic>> userActivities;
+  late List<Map<String, dynamic>> vehicleActivities;
+  late List<Map<String, dynamic>> transactionActivities;
+  late List<Map<String, dynamic>> userActivities;
+
+  final CancelToken _recentVehiclesCancelToken = CancelToken();
+  final CancelToken _recentUsersCancelToken = CancelToken();
+  final CancelToken _smokeCancelToken = CancelToken();
+  bool _loadingRecentVehicles = false;
+  bool _loadingRecentUsers = false;
+  bool _recentVehiclesErrorShown = false;
+  bool _recentUsersErrorShown = false;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
 
   @override
   void initState() {
     super.initState();
-    vehicleActivities = List.generate(10, (i) => {
-          "id": "MH-12-AB-${1000 + i}",
-          "name": ["Tata Ace", "Maruti Swift", "Hyundai Creta"][i % 3],
-          "status": ["Active", "Idle"][i % 2],
-          "time": "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${10 + i % 12}:${(i * 3 % 60).toString().padLeft(2, '0')}",
-        });
+    vehicleActivities = List.generate(
+      10,
+      (i) => {
+        "id": "MH-12-AB-${1000 + i}",
+        "name": ["Tata Ace", "Maruti Swift", "Hyundai Creta"][i % 3],
+        "status": ["Active", "Idle"][i % 2],
+        "time":
+            "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${10 + i % 12}:${(i * 3 % 60).toString().padLeft(2, '0')}",
+      },
+    );
 
-    transactionActivities = List.generate(10, (i) => {
-          "id": "TXN-2024-11-${100 + i}",
-          "value": "₹${10000 + i * 1000}",
-          "description": "${["Aarav Sharma", "Vihaan Patel", "Aditya Singh"][i % 3]} • ${["License Purchase", "Payment Received", "Refund Issued"][i % 3]}",
-          "status": ["Completed", "Pending", "Failed"][i % 3],
-        });
+    transactionActivities = List.generate(
+      10,
+      (i) => {
+        "id": "TXN-2024-11-${100 + i}",
+        "value": "₹${10000 + i * 1000}",
+        "description":
+            "${["Aarav Sharma", "Vihaan Patel", "Aditya Singh"][i % 3]} • ${["License Purchase", "Payment Received", "Refund Issued"][i % 3]}",
+        "status": ["Completed", "Pending", "Failed"][i % 3],
+      },
+    );
 
-    userActivities = List.generate(10, (i) => {
-          "name": ["Aarav Sharma", "Vihaan Patel", "Aditya Singh", "Reyansh Kumar", "Arjun Reddy"][i % 5],
-          "email": "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
-          "time": "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${13 + i % 12}:${(i * 5 % 60).toString().padLeft(2, '0')}",
-        });
+    userActivities = List.generate(
+      10,
+      (i) => {
+        "name": [
+          "Aarav Sharma",
+          "Vihaan Patel",
+          "Aditya Singh",
+          "Reyansh Kumar",
+          "Arjun Reddy",
+        ][i % 5],
+        "email":
+            "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
+        "time":
+            "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${13 + i % 12}:${(i * 5 % 60).toString().padLeft(2, '0')}",
+      },
+    );
+
+    _loadRecentVehicles();
+    _loadRecentUsers();
+  }
+
+  @override
+  void dispose() {
+    _recentVehiclesCancelToken.cancel('RecentActivityBox disposed');
+    _recentUsersCancelToken.cancel('RecentActivityBox disposed');
+    _smokeCancelToken.cancel('RecentActivityBox disposed');
+    super.dispose();
+  }
+
+  Future<void> _loadRecentVehicles() async {
+    if (!mounted) return;
+    setState(() => _loadingRecentVehicles = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getRecentVehicles(
+        cancelToken: _recentVehiclesCancelToken,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (vehicles) {
+          if (!mounted) return;
+          final mapped = vehicles
+              .map(
+                (v) => <String, dynamic>{
+                  "id": v.id.isNotEmpty ? v.id : "—",
+                  "name": v.name.isNotEmpty ? v.name : "—",
+                  "status": v.status.isNotEmpty ? v.status : "Active",
+                  "time": v.time,
+                },
+              )
+              .toList();
+
+          setState(() {
+            _loadingRecentVehicles = false;
+            _recentVehiclesErrorShown = false;
+            vehicleActivities = mapped.isNotEmpty
+                ? mapped
+                : [
+                    {
+                      "id": "—",
+                      "name": "No data",
+                      "status": "Idle",
+                      "time": "",
+                    },
+                  ];
+          });
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() => _loadingRecentVehicles = false);
+
+          if (_recentVehiclesErrorShown) return;
+          _recentVehiclesErrorShown = true;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Couldn't load recent vehicles. Showing fallback data.",
+              ),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingRecentVehicles = false);
+      if (_recentVehiclesErrorShown) return;
+      _recentVehiclesErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't load recent vehicles. Showing fallback data.",
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadRecentUsers() async {
+    if (!mounted) return;
+    setState(() => _loadingRecentUsers = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getRecentUsers(
+        cancelToken: _recentUsersCancelToken,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (users) {
+          if (!mounted) return;
+          final mapped = users
+              .map(
+                (u) => <String, dynamic>{
+                  'name': u.name.isNotEmpty ? u.name : '—',
+                  'email': u.email,
+                  'time': u.time,
+                },
+              )
+              .toList();
+
+          setState(() {
+            _loadingRecentUsers = false;
+            _recentUsersErrorShown = false;
+            userActivities = mapped.isNotEmpty
+                ? mapped
+                : [
+                    {'name': 'No data', 'email': '', 'time': ''},
+                  ];
+          });
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() => _loadingRecentUsers = false);
+
+          if (_recentUsersErrorShown) return;
+          _recentUsersErrorShown = true;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Couldn't load recent users. Showing fallback data.",
+              ),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingRecentUsers = false);
+      if (_recentUsersErrorShown) return;
+      _recentUsersErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load recent users. Showing fallback data."),
+        ),
+      );
+    }
   }
 
   List<Map<String, dynamic>> get currentActivities {
@@ -111,10 +309,17 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double mainFontSize   = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12-16
-    final double subFontSize    = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11-13
-    final double badgeFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth);      // 11-13
-    final double itemPadding    = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
+    final double mainFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12-16
+    final double subFontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 11-13
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    ); // 11-13
+    final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(
+      screenWidth,
+    ); // 6-10
 
     final statusColors = getStatusColors(context);
 
@@ -133,21 +338,46 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(
+              activity["id"],
+              style: GoogleFonts.inter(
+                fontSize: mainFontSize,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              activity["name"],
+              style: GoogleFonts.inter(
+                fontSize: subFontSize,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
+            Text(
+              activity["time"],
+              style: GoogleFonts.inter(
+                fontSize: subFontSize,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
           ],
         );
 
         right = Container(
-          padding: EdgeInsets.symmetric(horizontal: itemPadding + 2, vertical: itemPadding - 2),
+          padding: EdgeInsets.symmetric(
+            horizontal: itemPadding + 2,
+            vertical: itemPadding - 2,
+          ),
           decoration: BoxDecoration(
             color: statusColors[activity["status"]],
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             activity["status"],
-            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
+            style: GoogleFonts.inter(
+              color: colorScheme.onPrimary,
+              fontSize: badgeFontSize,
+            ),
           ),
         );
 
@@ -164,8 +394,22 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                Text(activity["value"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                Text(
+                  activity["id"],
+                  style: GoogleFonts.inter(
+                    fontSize: mainFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  activity["value"],
+                  style: GoogleFonts.inter(
+                    fontSize: mainFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -174,20 +418,29 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 Expanded(
                   child: Text(
                     activity["description"],
-                    style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)),
+                    style: GoogleFonts.inter(
+                      fontSize: subFontSize,
+                      color: colorScheme.onSurface.withOpacity(0.54),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: itemPadding, vertical: itemPadding - 3),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: itemPadding,
+                    vertical: itemPadding - 3,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColors[activity["status"]],
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     activity["status"],
-                    style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
+                    style: GoogleFonts.inter(
+                      color: colorScheme.onPrimary,
+                      fontSize: badgeFontSize,
+                    ),
                   ),
                 ),
               ],
@@ -197,30 +450,63 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
       default: // Users
         final name = activity["name"] as String;
-        final initials = name.split(" ").map((e) => e.isNotEmpty ? e[0] : '').take(2).join();
+        final initials = name
+            .split(" ")
+            .map((e) => e.isNotEmpty ? e[0] : '')
+            .take(2)
+            .join();
 
         avatar = Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: colorScheme.primary.withOpacity(0.8), width: 2),
+            border: Border.all(
+              color: colorScheme.primary.withOpacity(0.8),
+              width: 2,
+            ),
           ),
           child: CircleAvatar(
             radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
             backgroundColor: Colors.transparent,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.primary)),
+            child: Text(
+              initials,
+              style: GoogleFonts.inter(
+                fontSize: mainFontSize,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
+            ),
           ),
         );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(
+              name,
+              style: GoogleFonts.inter(
+                fontSize: mainFontSize,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              activity["email"],
+              style: GoogleFonts.inter(
+                fontSize: subFontSize,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
           ],
         );
 
-        right = Text(activity["time"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)));
+        right = Text(
+          activity["time"],
+          style: GoogleFonts.inter(
+            fontSize: subFontSize,
+            color: colorScheme.onSurface.withOpacity(0.54),
+          ),
+        );
     }
 
     return Padding(
@@ -230,10 +516,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           avatar,
           SizedBox(width: itemPadding + 2),
           Expanded(child: content),
-          if (right is! SizedBox) ...[
-            SizedBox(width: itemPadding + 2),
-            right,
-          ],
+          if (right is! SizedBox) ...[SizedBox(width: itemPadding + 2), right],
         ],
       ),
     );
@@ -244,9 +527,9 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double padding       = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double linkFontSize  = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -267,25 +550,54 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Recent Activity", style: GoogleFonts.inter(fontSize: titleFontSize, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-             InkWell(
-  onTap: () {
-    context.push(
-      '/superadmin/all-activities',
-      extra: {
-        'type': activityTab,
-      },
-    );
-  },
-  child: Text(
-    "View all",
-    style: GoogleFonts.inter(
-      fontSize: linkFontSize,
-      color: colorScheme.primary,
-    ),
-  ),
-),
-
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: "Recent Activity",
+                      style: GoogleFonts.inter(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    if ((_loadingRecentVehicles && activityTab == "Vehicles") ||
+                        (_loadingRecentUsers && activityTab == "Users"))
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  context.push(
+                    '/superadmin/all-activities',
+                    extra: {'type': activityTab},
+                  );
+                },
+                onLongPress: kDebugMode
+                    ? () => DebugSuperadminRecentVehiclesSmokeTest.run(
+                        context,
+                        cancelToken: _smokeCancelToken,
+                      )
+                    : null,
+                child: Text(
+                  "View all",
+                  style: GoogleFonts.inter(
+                    fontSize: linkFontSize,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
             ],
           ),
 
@@ -313,8 +625,12 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             child: ListView.separated(
               padding: EdgeInsets.zero,
               itemCount: currentActivities.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: colorScheme.onSurface.withOpacity(0.08)),
-              itemBuilder: (_, index) => buildActivityItem(currentActivities[index]),
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: colorScheme.onSurface.withOpacity(0.08),
+              ),
+              itemBuilder: (_, index) =>
+                  buildActivityItem(currentActivities[index]),
             ),
           ),
         ],

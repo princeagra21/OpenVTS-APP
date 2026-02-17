@@ -1,11 +1,19 @@
 // components/admin/edit_admin_profile_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:country_picker/country_picker.dart';
 
 class EditAdminProfileScreen extends StatefulWidget {
-  const EditAdminProfileScreen({super.key});
+  final String adminId;
+
+  const EditAdminProfileScreen({super.key, required this.adminId});
 
   @override
   State<EditAdminProfileScreen> createState() => _EditAdminProfileScreenState();
@@ -25,6 +33,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
   final TextEditingController _pincodeController = TextEditingController(text: "700001");
 
   Country? _selectedCountry;
+  bool _submitting = false;
+  CancelToken? _submitToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
 
   // Reusable minimal InputDecoration — exactly like ApiConfigSettingsScreen
   InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
@@ -52,6 +65,113 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _submitToken?.cancel('dispose');
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _stateController.dispose();
+    _countryController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
+    super.dispose();
+  }
+
+  void _ensureRepo() {
+    if (_api != null) return;
+    _api = ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo = SuperadminRepository(api: _api!);
+  }
+
+  void _snackOnce(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  String _mobilePrefix() {
+    final code = (_selectedCountry?.phoneCode ?? "234").trim();
+    if (code.isEmpty) return '';
+    return code.startsWith('+') ? code : '+$code';
+  }
+
+  String _countryCode() {
+    final cc = _countryController.text.trim();
+    if (cc.isNotEmpty) return cc.toUpperCase();
+    final fromPicker = (_selectedCountry?.countryCode ?? '').trim();
+    if (fromPicker.isNotEmpty) return fromPicker.toUpperCase();
+    return '';
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty) {
+      _snackOnce('Please fill in name, email, and phone.');
+      return;
+    }
+    if (!email.contains('@')) {
+      _snackOnce('Please enter a valid email.');
+      return;
+    }
+
+    _ensureRepo();
+
+    _submitToken?.cancel('resubmit');
+    _submitToken = CancelToken();
+
+    setState(() => _submitting = true);
+
+    try {
+      // Payload keys must match Postman.
+      final payload = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'mobilePrefix': _mobilePrefix(),
+        'mobileNumber': phone,
+        'addressLine': _addressController.text.trim(),
+        'countryCode': _countryCode(),
+        'stateCode': _stateController.text.trim(),
+        'cityName': _cityController.text.trim(),
+        'pincode': _pincodeController.text.trim(),
+      };
+
+      final res = await _repo!.updateAdminProfile(
+        widget.adminId,
+        payload,
+        cancelToken: _submitToken,
+      );
+
+      if (!mounted) return;
+
+      if (res.isSuccess) {
+        _snackOnce('Profile updated');
+        Navigator.pop(context, true);
+        return;
+      }
+
+      final err = res.error;
+      if (err is ApiException && (err.statusCode == 401 || err.statusCode == 403)) {
+        _snackOnce('Not authorized to update profile.');
+      } else {
+        _snackOnce("Couldn't update profile.");
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _snackOnce("Couldn't update profile.");
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -263,10 +383,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
                       // Save Button — now matches ApiConfig style
                       GestureDetector(
-                        onTap: () {
-                          // TODO: Save changes
-                          Navigator.pop(context);
-                        },
+                        onTap: _submitting ? null : _submit,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 18),
@@ -275,14 +392,25 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
-                            child: Text(
-                              "Save Changes",
-                              style: GoogleFonts.inter(
-                                fontSize: labelSize,
-                                color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: _submitting
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    "Save Changes",
+                                    style: GoogleFonts.inter(
+                                      fontSize: labelSize,
+                                      color: colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),

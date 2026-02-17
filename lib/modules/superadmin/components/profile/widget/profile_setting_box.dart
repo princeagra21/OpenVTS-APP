@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileSettingBox extends StatelessWidget {
-  const ProfileSettingBox({super.key});
+  final String adminId;
+
+  const ProfileSettingBox({super.key, this.adminId = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -14,13 +16,46 @@ class ProfileSettingBox extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
-    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
-    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
+    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(
+      screenWidth,
+    );
+    final double nameFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
     final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
-    final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double badgeFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
+    final double buttonFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double largeSpacing = padding;
+
+    void openEditProfile() {
+      final id = adminId.trim();
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin ID is unavailable.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => EditAdminProfileScreen(adminId: id)),
+      );
+    }
+
+    void openUpdatePassword() {
+      final id = adminId.trim();
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin ID is unavailable.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => UpdatePasswordScreen(adminId: id)),
+      );
+    }
 
     return Container(
       padding: EdgeInsets.all(padding + 8),
@@ -136,7 +171,10 @@ class ProfileSettingBox extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: spacing - 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -152,7 +190,10 @@ class ProfileSettingBox extends StatelessWidget {
               ),
               SizedBox(width: spacing + 4),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: spacing - 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(20),
@@ -176,18 +217,14 @@ class ProfileSettingBox extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const EditAdminProfileScreen(),
-                      ),
-                    );
-                  },
+                  onTap: openEditProfile,
                   child: Container(
                     height: 30,
                     decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.primary, width: 1.5),
+                      border: Border.all(
+                        color: colorScheme.primary,
+                        width: 1.5,
+                      ),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Center(
@@ -206,14 +243,7 @@ class ProfileSettingBox extends StatelessWidget {
               SizedBox(width: spacing + 4),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const UpdatePasswordScreen(),
-                      ),
-                    );
-                  },
+                  onTap: openUpdatePassword,
                   child: Container(
                     height: 30,
                     decoration: BoxDecoration(
