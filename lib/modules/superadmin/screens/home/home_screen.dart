@@ -28,13 +28,10 @@ class HomeScreen extends StatelessWidget {
         children: const [
           FleetOverviewBox(),
           SizedBox(height: 24),
-
           AdoptionGrowthBox(),
           SizedBox(height: 24),
-
           VehicleStatusBox(),
           SizedBox(height: 24),
-
           RecentActivityBox(),
           SizedBox(height: 24),
         ],

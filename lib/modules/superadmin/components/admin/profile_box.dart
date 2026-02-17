@@ -1,12 +1,137 @@
 // components/profile/profile_box.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/edit_admin_profile_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/update_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
-class ProfileBox extends StatelessWidget {
-  const ProfileBox({super.key});
+class ProfileBox extends StatefulWidget {
+  final String adminId;
+  final VoidCallback? onProfileUpdated;
+
+  const ProfileBox({super.key, required this.adminId, this.onProfileUpdated});
+
+  @override
+  State<ProfileBox> createState() => _ProfileBoxState();
+}
+
+class _ProfileBoxState extends State<ProfileBox> {
+  bool _active = true; // fallback-first
+  bool _submittingStatus = false;
+  bool _snackShown = false;
+
+  CancelToken? _loadToken;
+  CancelToken? _statusToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialStatus();
+  }
+
+  @override
+  void dispose() {
+    _statusToken?.cancel('dispose');
+    _loadToken?.cancel('dispose');
+    super.dispose();
+  }
+
+  void _ensureRepo() {
+    if (_api != null) return;
+    _api = ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo = SuperadminRepository(api: _api!);
+  }
+
+  void _snackOnce(String msg) {
+    if (!mounted || _snackShown) return;
+    _snackShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _loadInitialStatus() async {
+    _ensureRepo();
+    _loadToken?.cancel('reload');
+    final token = CancelToken();
+    _loadToken = token;
+
+    try {
+      final res = await _repo!.getAdminProfile(
+        widget.adminId,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+      if (res.isSuccess) {
+        final p = res.data!;
+        setState(() => _active = p.isActive);
+      }
+    } catch (_) {
+      // Silent fallback.
+    }
+  }
+
+  Future<void> _toggleStatus(bool value) async {
+    if (_submittingStatus) return;
+    _snackShown = false;
+
+    final prev = _active;
+    setState(() {
+      _active = value; // optimistic
+      _submittingStatus = true;
+    });
+
+    _ensureRepo();
+    _statusToken?.cancel('new toggle');
+    final token = CancelToken();
+    _statusToken = token;
+
+    try {
+      final res = await _repo!.updateAdminStatus(
+        widget.adminId,
+        value,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (_) {
+          if (!mounted) return;
+          setState(() => _submittingStatus = false);
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() {
+            _active = prev; // revert
+            _submittingStatus = false;
+          });
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized.'
+              : "Couldn't update status.";
+          _snackOnce(msg);
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _active = prev; // revert
+        _submittingStatus = false;
+      });
+      _snackOnce("Couldn't update status.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +141,8 @@ class ProfileBox extends StatelessWidget {
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
     final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
-    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
+    final double nameFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
     final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
     final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
     final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
@@ -119,8 +245,8 @@ class ProfileBox extends StatelessWidget {
                   Transform.scale(
                     scale: 0.75,
                     child: Switch(
-                      value: true,
-                      onChanged: (value) {},
+                      value: _active,
+                      onChanged: _submittingStatus ? null : _toggleStatus,
                       activeColor: colorScheme.onPrimary,
                       activeTrackColor: colorScheme.primary,
                       inactiveThumbColor: colorScheme.onPrimary,
@@ -192,12 +318,15 @@ class ProfileBox extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const EditAdminProfileScreen(),
+                        builder: (_) =>
+                            EditAdminProfileScreen(adminId: widget.adminId),
                       ),
-                    );
+                    ).then((updated) {
+                      if (updated == true) widget.onProfileUpdated?.call();
+                    });
                   },
                   child: Container(
                     height: 30,
@@ -222,10 +351,11 @@ class ProfileBox extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const UpdatePasswordScreen(),
+                        builder: (_) =>
+                            UpdatePasswordScreen(adminId: widget.adminId),
                       ),
                     );
                   },
@@ -255,3 +385,4 @@ class ProfileBox extends StatelessWidget {
     );
   }
 }
+

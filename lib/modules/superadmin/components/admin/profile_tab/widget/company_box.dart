@@ -3,9 +3,13 @@ import 'package:fleet_stack/modules/superadmin/components/small_box/small_box.da
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 
 class CompanyBox extends StatelessWidget {
-  const CompanyBox({super.key});
+  final AdminProfile? profile;
+  final bool loading;
+
+  const CompanyBox({super.key, this.profile, this.loading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +17,39 @@ class CompanyBox extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double subheaderFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
+    final double subheaderFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
+
+    const fallbackCompanyName = "Fleet Stack Global Pvt. Ltd.";
+    const fallbackWebsite = "fleetstackglobal.com";
+    const fallbackAddressLine = "42, Indus Tech Park";
+    const fallbackCity = "Bengaluru";
+    const fallbackState = "Karnataka";
+    const fallbackPostal = "560001";
+    const fallbackCountry = "India (IN)";
+    const fallbackEmail = "aarav.sharma@fleetstackglobal.com";
+    const fallbackPhone = "+91 8987675654";
+
+    final p = profile;
+    final companyName = (p != null && p.companyName.isNotEmpty)
+        ? p.companyName
+        : fallbackCompanyName;
+    final website = (p != null && p.website.isNotEmpty)
+        ? p.website
+        : fallbackWebsite;
+    final addressLine = (p != null && p.addressLine.isNotEmpty)
+        ? p.addressLine
+        : fallbackAddressLine;
+    final city = (p != null && p.city.isNotEmpty) ? p.city : fallbackCity;
+    final state = (p != null && p.state.isNotEmpty) ? p.state : fallbackState;
+    final postal = (p != null && p.pincode.isNotEmpty)
+        ? p.pincode
+        : fallbackPostal;
+    final country = (p != null && p.country.isNotEmpty)
+        ? p.country
+        : fallbackCountry;
+    final email = (p != null && p.email.isNotEmpty) ? p.email : fallbackEmail;
+    final phone = (p != null && p.phone.isNotEmpty) ? p.phone : fallbackPhone;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -32,13 +68,31 @@ class CompanyBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // COMPANY
-          Text(
-            "Company",
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.7),
-              letterSpacing: 0.8,
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: "Company",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                if (loading)
+                  const WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -46,7 +100,7 @@ class CompanyBox extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Fleet Stack Global Pvt. Ltd.",
+                companyName,
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,
@@ -63,7 +117,7 @@ class CompanyBox extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            "fleetstackglobal.com",
+            website,
             style: GoogleFonts.inter(
               fontSize: subheaderFontSize,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -111,15 +165,30 @@ class CompanyBox extends StatelessWidget {
           const SizedBox(height: 12),
           Column(
             children: [
-              _buildAddressRow("Line", "42, Indus Tech Park", subheaderFontSize, colorScheme),
+              _buildAddressRow(
+                "Line",
+                addressLine,
+                subheaderFontSize,
+                colorScheme,
+              ),
               const SizedBox(height: 8),
-              _buildAddressRow("City", "Bengaluru", subheaderFontSize, colorScheme),
+              _buildAddressRow("City", city, subheaderFontSize, colorScheme),
               const SizedBox(height: 8),
-              _buildAddressRow("State", "Karnataka", subheaderFontSize, colorScheme),
+              _buildAddressRow("State", state, subheaderFontSize, colorScheme),
               const SizedBox(height: 8),
-              _buildAddressRow("Postal", "560001", subheaderFontSize, colorScheme),
+              _buildAddressRow(
+                "Postal",
+                postal,
+                subheaderFontSize,
+                colorScheme,
+              ),
               const SizedBox(height: 8),
-              _buildAddressRow("Country", "India (IN)", subheaderFontSize, colorScheme),
+              _buildAddressRow(
+                "Country",
+                country,
+                subheaderFontSize,
+                colorScheme,
+              ),
             ],
           ),
 
@@ -140,7 +209,7 @@ class CompanyBox extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "aarav.sharma@fleetstackglobal.com",
+                email,
                 style: GoogleFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -148,7 +217,7 @@ class CompanyBox extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "+91 8987675654",
+                phone,
                 style: GoogleFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -156,7 +225,7 @@ class CompanyBox extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "fleetstackglobal.com",
+                website,
                 style: GoogleFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -169,7 +238,12 @@ class CompanyBox extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressRow(String label, String value, double fontSize, ColorScheme colorScheme) {
+  Widget _buildAddressRow(
+    String label,
+    String value,
+    double fontSize,
+    ColorScheme colorScheme,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

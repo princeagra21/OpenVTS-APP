@@ -1,6 +1,11 @@
 // screens/settings/localization_settings_screen.dart
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/common_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -22,10 +27,7 @@ class LocalizationSettingsScreen extends StatelessWidget {
         padding: EdgeInsets.all(hp),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const LocalizationHeader(),
-            const SizedBox(height: 24),
-          ],
+          children: [const LocalizationHeader(), const SizedBox(height: 24)],
         ),
       ),
     );
@@ -44,14 +46,29 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   String textDirection = "LTR";
   String dateFormat = "dd MMM yyyy";
   String timeFormat = "24-hour";
-  String selectedTimezoneOffset = "+00:00"; // Store offset; assume loaded as this
+  String selectedTimezoneValue =
+      "+00:00"; // Stored value (offset or ID depending on API)
   String units = "KM";
   double lat = 19.0760;
   double lng = 72.8777;
   int zoom = 10;
 
   final DateTime previewDate = DateTime(2025, 12, 7, 15, 28);
-  final List<String> months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  final List<String> months = [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   final Map<String, String> languageMap = {
     "EN": "English",
@@ -60,22 +77,132 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     "DE": "German",
   };
 
-  // Timezone list: offset value + region/city label (to avoid confusion)
-  final List<Map<String, String>> timezoneOptions = [
-    {"offset": "+00:00", "label": "UTC (GMT+00:00)"},
-    {"offset": "+01:00", "label": "Europe/London (GMT+01:00)"},
-    {"offset": "+02:00", "label": "Europe/Paris (GMT+02:00)"},
-    {"offset": "-05:00", "label": "America/New_York (GMT-05:00)"},
-    {"offset": "+05:30", "label": "Asia/Kolkata (GMT+05:30)"},
-    // Add more region/city entries as needed
+  // Fallback timezone list (used on API error / offline).
+  final List<TimezoneOption> _fallbackTimezones = const [
+    TimezoneOption(value: "+00:00", label: "UTC (GMT+00:00)"),
+    TimezoneOption(value: "+01:00", label: "Europe/London (GMT+01:00)"),
+    TimezoneOption(value: "+02:00", label: "Europe/Paris (GMT+02:00)"),
+    TimezoneOption(value: "-05:00", label: "America/New_York (GMT-05:00)"),
+    TimezoneOption(value: "+05:30", label: "Asia/Kolkata (GMT+05:30)"),
   ];
 
+  static const String _kNoDataTimezoneValue = '__NO_DATA__';
+
+  bool _timezonesLoading = false;
+  bool _timezonesEmpty = false;
+  List<TimezoneOption> _timezones = const [];
+  bool _timezoneFailureSnackShown = false;
+
+  ApiClient? _api;
+  CommonRepository? _commonRepo;
+  final CancelToken _timezonesCancelToken = CancelToken();
+
   // Helper to get label from offset (for preview or storage)
-  String getTimezoneLabel(String offset) {
-    return timezoneOptions.firstWhere(
-      (tz) => tz['offset'] == offset,
-      orElse: () => {"label": "Unknown"},
-    )['label']!;
+  String getTimezoneLabel(String value) {
+    final active = _activeTimezones;
+    final found = active.where((tz) => tz.value == value).toList();
+    if (found.isNotEmpty) return found.first.label;
+    return "Unknown";
+  }
+
+  List<TimezoneOption> get _activeTimezones {
+    if (_timezonesEmpty) {
+      return const [
+        TimezoneOption(value: _kNoDataTimezoneValue, label: 'No data'),
+      ];
+    }
+    return _timezones.isNotEmpty ? _timezones : _fallbackTimezones;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTimezones();
+  }
+
+  @override
+  void dispose() {
+    _timezonesCancelToken.cancel('LocalizationHeader disposed');
+    super.dispose();
+  }
+
+  Future<void> _loadTimezones() async {
+    if (!mounted) return;
+    setState(() {
+      _timezonesLoading = true;
+      _timezonesEmpty = false;
+    });
+
+    try {
+      // Lazily create the API client for this screen (Phase B minimal wiring).
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _commonRepo ??= CommonRepository(api: _api!);
+
+      final res = await _commonRepo!.getTimezones(
+        cancelToken: _timezonesCancelToken,
+      );
+
+      if (!mounted) return;
+
+      res.when(
+        success: (options) {
+          if (!mounted) return;
+          setState(() {
+            _timezonesLoading = false;
+            _timezones = options;
+            _timezonesEmpty = options.isEmpty;
+            _timezoneFailureSnackShown = false;
+
+            if (_timezonesEmpty) {
+              selectedTimezoneValue = _kNoDataTimezoneValue;
+              return;
+            }
+
+            final exists = options.any((t) => t.value == selectedTimezoneValue);
+            if (!exists) {
+              selectedTimezoneValue = options.first.value;
+            }
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() {
+            _timezonesLoading = false;
+            _timezones = const [];
+            _timezonesEmpty = false; // fallback list will be used
+          });
+
+          if (!_timezoneFailureSnackShown) {
+            _timezoneFailureSnackShown = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Failed to load timezones. Using fallback values.',
+                ),
+              ),
+            );
+          }
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _timezonesLoading = false;
+        _timezones = const [];
+        _timezonesEmpty = false;
+      });
+      if (!_timezoneFailureSnackShown) {
+        _timezoneFailureSnackShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('API not configured. Using fallback values.'),
+          ),
+        );
+      }
+    }
   }
 
   String getFormattedDate() {
@@ -144,7 +271,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Lang: ${languageMap[selectedLanguage]} • Dir: $textDirection • TZ: ${getTimezoneLabel(selectedTimezoneOffset)}",
+                  "Lang: ${languageMap[selectedLanguage]} • Dir: $textDirection • TZ: ${getTimezoneLabel(selectedTimezoneValue)}",
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -155,13 +282,32 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _previewItem("Date", getFormattedDate(), width, colorScheme)),
-                    Expanded(child: _previewItem("Time", getFormattedTime(), width, colorScheme)),
+                    Expanded(
+                      child: _previewItem(
+                        "Date",
+                        getFormattedDate(),
+                        width,
+                        colorScheme,
+                      ),
+                    ),
+                    Expanded(
+                      child: _previewItem(
+                        "Time",
+                        getFormattedTime(),
+                        width,
+                        colorScheme,
+                      ),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _previewItem("Map Center", "${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}", width, colorScheme),
+                          _previewItem(
+                            "Map Center",
+                            "${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}",
+                            width,
+                            colorScheme,
+                          ),
                           const SizedBox(height: 6),
                           _previewItem("Zoom", "$zoom", width, colorScheme),
                         ],
@@ -182,15 +328,21 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               value: selectedLanguage,
               decoration: _dropdownDecoration(context),
               items: languageMap.entries
-                  .map((e) => DropdownMenuItem(
-                        value: e.key,
-                        child: Text(
-                          e.value,
-                          style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2),
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e.key,
+                      child: Text(
+                        e.value,
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 2,
                         ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
-              onChanged: (v) => v != null ? setState(() => selectedLanguage = v) : null,
+              onChanged: (v) =>
+                  v != null ? setState(() => selectedLanguage = v) : null,
             ),
           ),
           const SizedBox(height: 24),
@@ -206,7 +358,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   selectedColor: colorScheme.primary,
                   labelStyle: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    color: textDirection == "LTR" ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color: textDirection == "LTR"
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => textDirection = "LTR"),
@@ -218,7 +372,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   selectedColor: colorScheme.primary,
                   labelStyle: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    color: textDirection == "RTL" ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color: textDirection == "RTL"
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => textDirection = "RTL"),
@@ -236,12 +392,21 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               value: dateFormat,
               decoration: _dropdownDecoration(context),
               items: ["dd MMM yyyy", "MM/dd/yyyy", "yyyy-MM-dd"]
-                  .map((f) => DropdownMenuItem(
-                        value: f,
-                        child: Text(f, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2)),
-                      ))
+                  .map(
+                    (f) => DropdownMenuItem(
+                      value: f,
+                      child: Text(
+                        f,
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 2,
+                        ),
+                      ),
+                    ),
+                  )
                   .toList(),
-              onChanged: (v) => v != null ? setState(() => dateFormat = v) : null,
+              onChanged: (v) =>
+                  v != null ? setState(() => dateFormat = v) : null,
             ),
           ),
           const SizedBox(height: 24),
@@ -260,7 +425,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       selectedColor: colorScheme.primary,
                       labelStyle: GoogleFonts.inter(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                        color: timeFormat == "24-hour" ? colorScheme.onPrimary : colorScheme.onSurface,
+                        color: timeFormat == "24-hour"
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurface,
                       ),
                       onSelected: (_) => setState(() => timeFormat = "24-hour"),
                     ),
@@ -271,7 +438,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       selectedColor: colorScheme.primary,
                       labelStyle: GoogleFonts.inter(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                        color: timeFormat == "12-hour" ? colorScheme.onPrimary : colorScheme.onSurface,
+                        color: timeFormat == "12-hour"
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurface,
                       ),
                       onSelected: (_) => setState(() => timeFormat = "12-hour"),
                     ),
@@ -294,15 +463,38 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             context: context,
             title: "Timezone",
             child: DropdownButtonFormField<String>(
-              value: selectedTimezoneOffset,
-              decoration: _dropdownDecoration(context),
-              items: timezoneOptions
-                  .map((tz) => DropdownMenuItem<String>(
-                        value: tz['offset'],
-                        child: Text(tz['label']!, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2)),
-                      ))
+              value: selectedTimezoneValue,
+              decoration: _dropdownDecoration(context).copyWith(
+                suffixIcon: _timezonesLoading
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : null,
+              ),
+              items: _activeTimezones
+                  .map(
+                    (tz) => DropdownMenuItem<String>(
+                      value: tz.value,
+                      child: Text(
+                        tz.label,
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 2,
+                        ),
+                      ),
+                    ),
+                  )
                   .toList(),
-              onChanged: (v) => v != null ? setState(() => selectedTimezoneOffset = v) : null,
+              onChanged: (_timezonesLoading || _timezonesEmpty)
+                  ? null
+                  : (v) => v != null
+                        ? setState(() => selectedTimezoneValue = v)
+                        : null,
             ),
           ),
           const SizedBox(height: 24),
@@ -318,7 +510,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   selectedColor: colorScheme.primary,
                   labelStyle: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    color: units == "KM" ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color: units == "KM"
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => units = "KM"),
@@ -330,7 +524,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   selectedColor: colorScheme.primary,
                   labelStyle: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    color: units == "MILES" ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color: units == "MILES"
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   onSelected: (_) => setState(() => units = "MILES"),
@@ -348,9 +544,29 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _buildInputField(context, "LATITUDE", lat.toStringAsFixed(4), (v) => lat = double.tryParse(v) ?? lat)),
-                    SizedBox(width: AdaptiveUtils.getLeftSectionSpacing(width).toDouble() * 2),
-                    Expanded(child: _buildInputField(context, "LONGITUDE", lng.toStringAsFixed(4), (v) => lng = double.tryParse(v) ?? lng)),
+                    Expanded(
+                      child: _buildInputField(
+                        context,
+                        "LATITUDE",
+                        lat.toStringAsFixed(4),
+                        (v) => lat = double.tryParse(v) ?? lat,
+                      ),
+                    ),
+                    SizedBox(
+                      width:
+                          AdaptiveUtils.getLeftSectionSpacing(
+                            width,
+                          ).toDouble() *
+                          2,
+                    ),
+                    Expanded(
+                      child: _buildInputField(
+                        context,
+                        "LONGITUDE",
+                        lng.toStringAsFixed(4),
+                        (v) => lng = double.tryParse(v) ?? lng,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -385,14 +601,25 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   textDirection = "LTR";
                   dateFormat = "dd MMM yyyy";
                   timeFormat = "24-hour";
-                  selectedTimezoneOffset = "+00:00";
+                  selectedTimezoneValue = _timezonesEmpty
+                      ? _kNoDataTimezoneValue
+                      : "+00:00";
                   units = "KM";
                   lat = 19.0760;
                   lng = 72.8777;
                   zoom = 10;
                 }),
-                style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                icon: Icon(Icons.refresh_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.refresh_outlined,
+                  color: colorScheme.onPrimary,
+                  size: AdaptiveUtils.getIconSize(width),
+                ),
                 label: Text(
                   "Reset",
                   style: GoogleFonts.inter(
@@ -407,8 +634,17 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 onPressed: () {
                   // TODO: Save logic - e.g., store selectedTimezoneOffset as the offset
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                icon: Icon(Icons.save_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.save_outlined,
+                  color: colorScheme.onPrimary,
+                  size: AdaptiveUtils.getIconSize(width),
+                ),
                 label: Text(
                   "Save",
                   style: GoogleFonts.inter(
@@ -425,7 +661,12 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     );
   }
 
-  Widget _buildSection({required BuildContext context, required String title, String? subtitle, Widget? child}) {
+  Widget _buildSection({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    Widget? child,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     return Container(
@@ -434,13 +675,26 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
         border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) + 2, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87))),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+          ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -451,22 +705,37 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               ),
             ),
           ],
-          if (child != null) ...[
-            const SizedBox(height: 12),
-            child,
-          ],
+          if (child != null) ...[const SizedBox(height: 12), child],
         ],
       ),
     );
   }
 
-  Widget _previewItem(String label, String value, double width, ColorScheme colorScheme) {
+  Widget _previewItem(
+    String label,
+    String value,
+    double width,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.8))),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface.withOpacity(0.8),
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3, color: colorScheme.onSurface.withOpacity(0.8))),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+            color: colorScheme.onSurface.withOpacity(0.8),
+          ),
+        ),
       ],
     );
   }
@@ -477,14 +746,28 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return InputDecoration(
       filled: true,
       fillColor: Colors.transparent,
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: AdaptiveUtils.isVerySmallScreen(width) ? 10 : 12),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: AdaptiveUtils.isVerySmallScreen(width) ? 10 : 12,
+      ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
     );
   }
 
-  Widget _buildInputField(BuildContext context, String label, String initial, void Function(String) onChanged) {
+  Widget _buildInputField(
+    BuildContext context,
+    String label,
+    String initial,
+    void Function(String) onChanged,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     return Column(
@@ -500,7 +783,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: TextEditingController(text: initial)..selection = TextSelection.fromPosition(TextPosition(offset: initial.length)),
+          controller: TextEditingController(text: initial)
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: initial.length),
+            ),
           onChanged: onChanged,
           style: GoogleFonts.inter(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
@@ -509,10 +795,21 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
           ),
         ),
       ],

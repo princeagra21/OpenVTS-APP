@@ -6,7 +6,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileSettingBox extends StatelessWidget {
-  const ProfileSettingBox({super.key});
+  final String displayName;
+  final String username;
+  final String roleLabel;
+  final String initials;
+  final bool loading;
+
+  const ProfileSettingBox({
+    super.key,
+    this.displayName = 'Muhammad Sani',
+    this.username = '@danmasana',
+    this.roleLabel = 'Admin',
+    this.initials = 'MS',
+    this.loading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +27,16 @@ class ProfileSettingBox extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
-    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(screenWidth);
-    final double nameFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
+    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(
+      screenWidth,
+    );
+    final double nameFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
     final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
-    final double buttonFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double badgeFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
+    final double buttonFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double largeSpacing = padding;
 
@@ -45,7 +63,7 @@ class ProfileSettingBox extends StatelessWidget {
                 radius: avatarRadius,
                 backgroundColor: colorScheme.primary,
                 child: Text(
-                  "MS",
+                  initials,
                   style: GoogleFonts.inter(
                     color: colorScheme.onPrimary,
                     fontSize: avatarFontSize,
@@ -62,7 +80,7 @@ class ProfileSettingBox extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            "Muhammad Sani",
+                            displayName,
                             style: GoogleFonts.inter(
                               fontSize: nameFontSize,
                               fontWeight: FontWeight.bold,
@@ -82,7 +100,7 @@ class ProfileSettingBox extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            "Admin",
+                            roleLabel,
                             style: GoogleFonts.inter(
                               color: colorScheme.onPrimary,
                               fontSize: badgeFontSize,
@@ -90,16 +108,32 @@ class ProfileSettingBox extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (loading) ...[
+                          SizedBox(width: spacing),
+                          const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ],
                       ],
                     ),
                     SizedBox(height: spacing / 2),
-                    Text(
-                      "@danmasana",
-                      style: GoogleFonts.inter(
-                        fontSize: usernameFontSize,
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            username,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: usernameFontSize,
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -139,7 +173,10 @@ class ProfileSettingBox extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: spacing - 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: spacing + 4,
+                  vertical: spacing - 2,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -155,7 +192,7 @@ class ProfileSettingBox extends StatelessWidget {
               ),
               SizedBox(width: spacing),
 
-              // Verified badge + plain text 
+              // Verified badge + plain text
               Row(
                 children: [
                   Container(
@@ -202,7 +239,10 @@ class ProfileSettingBox extends StatelessWidget {
                   child: Container(
                     height: 30,
                     decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.primary, width: 1.5),
+                      border: Border.all(
+                        color: colorScheme.primary,
+                        width: 1.5,
+                      ),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Center(

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- Allow HTTP only for this testing host -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">15.206.76.175</domain>
+    </domain-config>
+</network-security-config>

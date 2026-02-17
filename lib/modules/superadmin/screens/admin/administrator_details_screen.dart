@@ -1,4 +1,3 @@
-
 import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/credit_history_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/documents_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
@@ -7,23 +6,25 @@ import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/prof
 import 'package:fleet_stack/modules/superadmin/components/admin/role_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/setting_tab/setting.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/vehicles_tab/vehicles_tab.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart' show AppLayout;
+import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart'
+    show AppLayout;
 import 'package:flutter/material.dart';
 
-class AdministratorDetailsScreen extends StatefulWidget {  // Made stateful to manage tab state
+class AdministratorDetailsScreen extends StatefulWidget {
+  // Made stateful to manage tab state
   final String id;
 
-  const AdministratorDetailsScreen({
-    super.key,
-    required this.id,
-  });
+  const AdministratorDetailsScreen({super.key, required this.id});
 
   @override
-  State<AdministratorDetailsScreen> createState() => _AdministratorDetailsScreenState();
+  State<AdministratorDetailsScreen> createState() =>
+      _AdministratorDetailsScreenState();
 }
 
-class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen> {
+class _AdministratorDetailsScreenState
+    extends State<AdministratorDetailsScreen> {
   String selectedTab = "Profile";
+  int _profileReloadNonce = 0;
 
   final List<String> tabs = [
     "Profile",
@@ -31,7 +32,7 @@ class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen>
     "Documents",
     "Vehicles",
     "Setting",
-    "Roles"
+    "Roles",
   ];
 
   @override
@@ -45,7 +46,14 @@ class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ProfileBox(),  // Assuming this is always visible as a header
+            ProfileBox(
+              adminId: widget.id,
+              onProfileUpdated: () {
+                setState(() {
+                  _profileReloadNonce++;
+                });
+              },
+            ), // Assuming this is always visible as a header
             const SizedBox(height: 24),
             NavigateBox(
               selectedTab: selectedTab,
@@ -57,7 +65,7 @@ class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen>
               },
             ),
             const SizedBox(height: 4),
-            _buildTabContent(),  // Dynamic content based on selected tab
+            _buildTabContent(), // Dynamic content based on selected tab
             const SizedBox(height: 24),
           ],
         ),
@@ -65,67 +73,66 @@ class _AdministratorDetailsScreenState extends State<AdministratorDetailsScreen>
     );
   }
 
-Widget _buildTabContent() {
-  switch (selectedTab) {
-    case "Profile":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          ProfileTab(),
-        ],
-      );
-    case "Credit History":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          CreditHistoryTab(),
-          SizedBox(height: 24),
-        ],
-      );
-    case "Documents":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          DocumentsTab(),
-          SizedBox(height: 24),
-        ],
-      );
+  Widget _buildTabContent() {
+    switch (selectedTab) {
+      case "Profile":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            ProfileTab(
+              key: ValueKey('profile_${widget.id}_$_profileReloadNonce'),
+              adminId: widget.id,
+            ),
+          ],
+        );
+      case "Credit History":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            CreditHistoryTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
+      case "Documents":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            DocumentsTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
 
-   case "Vehicles":
-  return
-   Column(
-     children: [
-       SizedBox(height: 24),
-        VehiclesTab(),
-        SizedBox(height: 24),
-     ],
-   );
+      case "Vehicles":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            VehiclesTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
 
+      case "Setting":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminSettingsTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
 
-    case "Setting":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          AdminSettingsTab(),
-          SizedBox(height: 24),
-        ],
-      );
+      case "Roles":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            RolesTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
 
-    case "Roles":
-      return Column(
-        children: const [
-          SizedBox(height: 24),
-          RolesTab(),
-          SizedBox(height: 24),
-        ],
-      );
-
-    default:
-      return const SizedBox.shrink();
+      default:
+        return const SizedBox.shrink();
+    }
   }
-}
-
-
 }
 
 // Temporary placeholder widget - replace with your actual content widgets
@@ -148,4 +155,3 @@ class PlaceholderContent extends StatelessWidget {
     );
   }
 }
-

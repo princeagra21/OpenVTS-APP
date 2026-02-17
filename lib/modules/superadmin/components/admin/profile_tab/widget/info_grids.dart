@@ -2,9 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 
 class AdminInfoBoxes extends StatelessWidget {
-  const AdminInfoBoxes({super.key});
+  final AdminProfile? profile;
+
+  const AdminInfoBoxes({super.key, this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -12,9 +15,32 @@ class AdminInfoBoxes extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     // Adaptive values
-    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double contentFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(
+      screenWidth,
+    );
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double contentFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+
+    const fallbackVehicles = "512";
+    const fallbackCredits = "12,000";
+    const fallbackLastLogin = "20 Nov 2025, 7:30pm\n17 hours ago";
+    const fallbackCreated = "10 Sept 2025";
+
+    final p = profile;
+    final vehicles = (p != null && p.vehiclesCount != 0)
+        ? p.vehiclesCount.toString()
+        : fallbackVehicles;
+    final credits = (p != null && p.credits != 0)
+        ? p.credits.toString()
+        : fallbackCredits;
+    final lastLogin = (p != null && p.lastLogin.isNotEmpty)
+        ? p.lastLogin
+        : fallbackLastLogin;
+    final created = (p != null && p.createdAt.isNotEmpty)
+        ? p.createdAt
+        : fallbackCreated;
 
     return Column(
       children: [
@@ -24,7 +50,7 @@ class AdminInfoBoxes extends StatelessWidget {
               child: _buildInfoBox(
                 context: context,
                 title: "Vehicles",
-                content: "512",
+                content: vehicles,
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
@@ -36,7 +62,7 @@ class AdminInfoBoxes extends StatelessWidget {
               child: _buildInfoBox(
                 context: context,
                 title: "Credits",
-                content: "12,000",
+                content: credits,
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
@@ -54,7 +80,7 @@ class AdminInfoBoxes extends StatelessWidget {
               child: _buildInfoBox(
                 context: context,
                 title: "Last Login",
-                content: "20 Nov 2025, 7:30pm\n17 hours ago",
+                content: lastLogin,
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,
@@ -66,7 +92,7 @@ class AdminInfoBoxes extends StatelessWidget {
               child: _buildInfoBox(
                 context: context,
                 title: "Created",
-                content: "10 Sept 2025",
+                content: created,
                 titleFontSize: titleFontSize,
                 contentFontSize: contentFontSize,
                 padding: horizontalPadding,

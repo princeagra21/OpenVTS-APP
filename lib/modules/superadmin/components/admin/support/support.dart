@@ -1,4 +1,12 @@
 // screens/support/support_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/ticket_message_item.dart';
+import 'package:fleet_stack/core/models/ticket_list_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -78,17 +86,20 @@ final List<Ticket> dummyTickets = [
     messages: [
       Message(
         sender: "Contoso Ops",
-        content: "Hi Team, we need to set up a daily SFTP export of vehicle data (trip summary, current location) to our server. We require the file every day at 02:00 IST. Please let us know the required credentials.",
+        content:
+            "Hi Team, we need to set up a daily SFTP export of vehicle data (trip summary, current location) to our server. We require the file every day at 02:00 IST. Please let us know the required credentials.",
         timestamp: "Yesterday, 10:30 AM",
       ),
       Message(
         sender: "Fleet Stack Support",
-        content: "Hello Contoso Ops, we have provisioned the SFTP export. Please find your credentials and configuration details attached. The daily CSV export will begin tomorrow at 02:00 IST. We are marking this ticket as Answered and will close it in 24 hours if no further issues are reported.",
+        content:
+            "Hello Contoso Ops, we have provisioned the SFTP export. Please find your credentials and configuration details attached. The daily CSV export will begin tomorrow at 02:00 IST. We are marking this ticket as Answered and will close it in 24 hours if no further issues are reported.",
         timestamp: "Yesterday, 04:45 PM",
       ),
       Message(
         sender: "Fleet Stack Support",
-        content: "Configuration confirmed by Contoso Ops, closing ticket. [Internal Note]",
+        content:
+            "Configuration confirmed by Contoso Ops, closing ticket. [Internal Note]",
         timestamp: "Today, 10:00 AM",
         isInternalNote: true,
       ),
@@ -106,12 +117,14 @@ final List<Ticket> dummyTickets = [
     messages: [
       Message(
         sender: "Priya Sharma",
-        content: "I rotated my API key, but the new key is still returning a 401 Unauthorized error. I've double-checked the header format. The old key stopped working as expected.",
+        content:
+            "I rotated my API key, but the new key is still returning a 401 Unauthorized error. I've double-checked the header format. The old key stopped working as expected.",
         timestamp: "2 hours ago",
       ),
       Message(
         sender: "Fleet Stack Support",
-        content: "We are looking into the key rotation logs and investigating the issue with the 401 error. Will update you shortly. [In Process]",
+        content:
+            "We are looking into the key rotation logs and investigating the issue with the 401 error. Will update you shortly. [In Process]",
         timestamp: "10 mins ago",
       ),
     ],
@@ -128,7 +141,8 @@ final List<Ticket> dummyTickets = [
     messages: [
       Message(
         sender: "Rahul Verma",
-        content: "When trying to add a new GT06 device with IMEI 123456789012345, I get a validation error 'IMEI already in use or blocked'. This is a new device.",
+        content:
+            "When trying to add a new GT06 device with IMEI 123456789012345, I get a validation error 'IMEI already in use or blocked'. This is a new device.",
         timestamp: "2 days ago, 9:00 AM",
       ),
     ],
@@ -146,12 +160,138 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
+  late List<Ticket> _tickets;
+  bool _loadingTickets = false;
+  bool _ticketsErrorShown = false;
+  CancelToken? _ticketsCancelToken;
+
+  ApiClient? _api;
+  SuperadminRepository? _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _tickets = List<Ticket>.from(dummyTickets);
+    _loadTickets();
+  }
+
+  @override
+  void dispose() {
+    _ticketsCancelToken?.cancel('SupportScreen disposed');
+    super.dispose();
+  }
+
+  Ticket _mapTicketItem(TicketListItem t) {
+    final id = t.id.isNotEmpty
+        ? t.id
+        : (t.ticketNumber.isNotEmpty ? t.ticketNumber : '—');
+    final title = t.subject.isNotEmpty ? t.subject : '—';
+    final name = t.ownerName.isNotEmpty
+        ? t.ownerName
+        : (t.userName.isNotEmpty ? t.userName : '—');
+    final status = t.status.isNotEmpty ? t.status : 'Open';
+    final created = t.createdAt.isNotEmpty ? t.createdAt : '';
+    final updated = '';
+    final desc = t.snippet.isNotEmpty
+        ? t.snippet
+        : (t.priority.isNotEmpty ? 'Priority: ${t.priority}' : '');
+
+    return Ticket(
+      title: title,
+      id: id,
+      name: name,
+      owner: name,
+      status: status,
+      desc: desc,
+      created: created,
+      updated: updated,
+      messages: const <Message>[],
+    );
+  }
+
+  Future<void> _loadTickets() async {
+    _ticketsCancelToken?.cancel('Reload tickets');
+    final token = CancelToken();
+    _ticketsCancelToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingTickets = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.getTickets(
+        page: 1,
+        limit: 50,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (items) {
+          if (!mounted) return;
+          final mapped = items.map(_mapTicketItem).toList();
+          setState(() {
+            _loadingTickets = false;
+            _ticketsErrorShown = false;
+            _tickets = mapped;
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() => _loadingTickets = false);
+          if (_ticketsErrorShown) return;
+          _ticketsErrorShown = true;
+
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to view tickets.'
+              : "Couldn't load tickets. Showing fallback list.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingTickets = false);
+      if (_ticketsErrorShown) return;
+      _ticketsErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load tickets. Showing fallback list."),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
+
+    final showNoData = !_loadingTickets && _tickets.isEmpty;
+    final displayTickets = showNoData
+        ? <Ticket>[
+            const Ticket(
+              title: "No tickets",
+              id: "—",
+              name: "—",
+              owner: "—",
+              status: "Open",
+              desc: "",
+              created: "",
+              updated: "",
+              messages: <Message>[],
+            ),
+          ]
+        : _tickets;
 
     return AppLayout(
       title: "FLEET STACK",
@@ -166,13 +306,35 @@ class _SupportScreenState extends State<SupportScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // INBOX TITLE
-            Text(
-              "Inbox",
-              style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width), fontWeight: FontWeight.w800, color: colorScheme.onSurface),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: "Inbox",
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  if (_loadingTickets)
+                    const WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             Text(
-              "${dummyTickets.length} tickets",
+              "${showNoData ? 0 : _tickets.length} tickets",
               style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.54),
@@ -184,17 +346,24 @@ class _SupportScreenState extends State<SupportScreen> {
             const SizedBox(height: 16),
 
             // TICKET CARDS LIST
-            ...dummyTickets.map((ticket) => _TicketCard(
-                  ticket: ticket,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TicketDetailsScreen(ticket: ticket),
-                      ),
-                    );
-                  },
-                )).toList(),
+            ...displayTickets
+                .map(
+                  (ticket) => _TicketCard(
+                    ticket: ticket,
+                    onTap: () async {
+                      final changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TicketDetailsScreen(ticket: ticket),
+                        ),
+                      );
+                      if (changed == true && mounted) {
+                        _loadTickets();
+                      }
+                    },
+                  ),
+                )
+                .toList(),
           ],
         ),
       ),
@@ -217,12 +386,193 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   String selectedLocalTab = "Conversation";
   late String selectedDropdownStatus;
   final TextEditingController messageController = TextEditingController();
-  final List<String> statusOptions = ["Closed", "Open", "In Process", "Answered", "Hold"];
+  final List<TicketMessageItem> _messages = <TicketMessageItem>[];
+  final List<String> statusOptions = [
+    "Closed",
+    "Open",
+    "In Process",
+    "Answered",
+    "Hold",
+  ];
+  bool _sending = false;
+  bool _updatingStatus = false;
+  bool _sendErrorShown = false;
+  bool _statusErrorShown = false;
+  bool _hasChanges = false;
+  CancelToken? _sendToken;
+  CancelToken? _statusToken;
+  ApiClient? _api;
+  SuperadminRepository? _repo;
 
   @override
   void initState() {
     super.initState();
     selectedDropdownStatus = widget.ticket.status;
+    _messages.addAll(
+      widget.ticket.messages.map(
+        (m) => TicketMessageItem(<String, dynamic>{
+          'senderName': m.sender,
+          'message': m.content,
+          'createdAt': m.timestamp,
+          'isInternal': m.isInternalNote,
+        }),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _sendToken?.cancel('TicketDetailsScreen disposed');
+    _statusToken?.cancel('TicketDetailsScreen disposed');
+    messageController.dispose();
+    super.dispose();
+  }
+
+  String _wireStatus(String status) {
+    final s = status.trim().toLowerCase();
+    if (s == 'in process') return 'In Progress';
+    return status;
+  }
+
+  Future<void> _sendMessage() async {
+    final text = messageController.text.trim();
+    if (text.isEmpty || _sending) return;
+
+    _sendToken?.cancel('New send message');
+    final token = CancelToken();
+    _sendToken = token;
+
+    if (!mounted) return;
+    setState(() {
+      _sending = true;
+      _sendErrorShown = false;
+    });
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final internal = selectedLocalTab == 'Internal Note';
+      final res = await _repo!.sendTicketMessage(
+        widget.ticket.id,
+        text,
+        internal: internal,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (item) {
+          final now = DateTime.now();
+          final local = TicketMessageItem(<String, dynamic>{
+            'senderName': 'You',
+            'message': text,
+            'createdAt':
+                '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+            'isInternal': internal,
+          });
+          setState(() {
+            _sending = false;
+            _messages.add(item ?? local);
+            messageController.clear();
+            _hasChanges = true;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Message sent')));
+        },
+        failure: (err) {
+          setState(() => _sending = false);
+          if (_sendErrorShown) return;
+          _sendErrorShown = true;
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to send message.'
+              : "Couldn't send message.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      if (_sendErrorShown) return;
+      _sendErrorShown = true;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't send message.")));
+    }
+  }
+
+  Future<void> _changeStatus(String nextStatus) async {
+    final previous = selectedDropdownStatus;
+    if (_updatingStatus || nextStatus == previous) return;
+
+    _statusToken?.cancel('New status update');
+    final token = CancelToken();
+    _statusToken = token;
+
+    if (!mounted) return;
+    setState(() {
+      selectedDropdownStatus = nextStatus;
+      _updatingStatus = true;
+      _statusErrorShown = false;
+    });
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+      final res = await _repo!.updateTicketStatus(
+        widget.ticket.id,
+        _wireStatus(nextStatus),
+        cancelToken: token,
+      );
+      if (!mounted) return;
+      res.when(
+        success: (_) {
+          setState(() => _updatingStatus = false);
+          _hasChanges = true;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Status updated')));
+        },
+        failure: (err) {
+          setState(() {
+            _updatingStatus = false;
+            selectedDropdownStatus = previous;
+          });
+          if (_statusErrorShown) return;
+          _statusErrorShown = true;
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to update status.'
+              : "Couldn't update status.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _updatingStatus = false;
+        selectedDropdownStatus = previous;
+      });
+      if (_statusErrorShown) return;
+      _statusErrorShown = true;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update status.")));
+    }
   }
 
   InputDecoration _dropdownDecoration(BuildContext context) {
@@ -233,8 +583,14 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       fillColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
     );
   }
 
@@ -247,9 +603,19 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     // Filter messages based on the selected tab
-    final filteredMessages = selectedLocalTab == "Conversation"
-        ? widget.ticket.messages.where((m) => !m.isInternalNote).toList()
-        : widget.ticket.messages.where((m) => m.isInternalNote).toList();
+    final filteredMessages =
+        (selectedLocalTab == "Conversation"
+                ? _messages.where((m) => !m.isInternal)
+                : _messages.where((m) => m.isInternal))
+            .map(
+              (m) => Message(
+                sender: m.senderName.isNotEmpty ? m.senderName : 'Unknown',
+                content: m.message,
+                timestamp: m.createdAt,
+                isInternalNote: m.isInternal,
+              ),
+            )
+            .toList();
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -260,32 +626,31 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-             Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: Text(
-        widget.ticket.title,
-        style: GoogleFonts.inter(
-          fontSize: titleSize + 2,
-          fontWeight: FontWeight.w800,
-          color: colorScheme.onSurface.withOpacity(0.9),
-        ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-    ),
-    GestureDetector(
-      onTap: () => Navigator.pop(context),
-      child: Icon(
-        Icons.close,
-        size: 28,
-        color: colorScheme.onSurface.withOpacity(0.8),
-      ),
-    ),
-  ],
-),
-
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.ticket.title,
+                      style: GoogleFonts.inter(
+                        fontSize: titleSize + 2,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface.withOpacity(0.9),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context, _hasChanges),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 12),
 
@@ -310,13 +675,26 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         decoration: _dropdownDecoration(context),
                         value: selectedDropdownStatus,
                         items: statusOptions
-                            .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+                            .map(
+                              (status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status),
+                              ),
+                            )
                             .toList(),
-                        onChanged: (value) {
-                          if (value != null) setState(() => selectedDropdownStatus = value);
-                        },
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                        icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
+                        onChanged: _updatingStatus
+                            ? null
+                            : (value) {
+                                if (value != null) _changeStatus(value);
+                              },
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
+                        ),
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: colorScheme.primary,
+                        ),
                       ),
 
                       const SizedBox(height: 16),
@@ -372,16 +750,28 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         style: GoogleFonts.inter(color: colorScheme.onSurface),
                         decoration: InputDecoration(
                           hintText: "Write your message...",
-                          hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                          hintStyle: GoogleFonts.inter(
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+                            borderSide: BorderSide(
+                              color: colorScheme.outline.withOpacity(0.3),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -393,38 +783,76 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.smart_toy, size: 18, color: colorScheme.primary),
+                                Icon(
+                                  Icons.smart_toy,
+                                  size: 18,
+                                  color: colorScheme.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   "Generate Answer",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: colorScheme.primary),
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.send, color: colorScheme.onPrimary, size: 18),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "Send",
-                                  style: GoogleFonts.inter(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
-                                ),
-                              ],
+                          InkWell(
+                            onTap: _sending ? null : _sendMessage,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: _sending
+                                        ? CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  colorScheme.onPrimary,
+                                                ),
+                                          )
+                                        : Icon(
+                                            Icons.send,
+                                            color: colorScheme.onPrimary,
+                                            size: 18,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    "Send",
+                                    style: GoogleFonts.inter(
+                                      color: colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -467,7 +895,9 @@ class _MessagesContainer extends StatelessWidget {
         ),
         child: Text(
           "No ${selectedTab.toLowerCase()} messages for this ticket.",
-          style: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6)),
+          style: GoogleFonts.inter(
+            color: colorScheme.onSurface.withOpacity(0.6),
+          ),
         ),
       );
     }
@@ -482,52 +912,53 @@ class _MessagesContainer extends StatelessWidget {
         border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: ListView.builder(
-  reverse: false, // default
-  itemCount: messages.length,
-  itemBuilder: (context, index) {
-    final message = messages[index];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                message.sender,
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: message.isInternalNote ? Colors.purple : colorScheme.onSurface,
+        reverse: false, // default
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final message = messages[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      message.sender,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: message.isInternalNote
+                            ? Colors.purple
+                            : colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      message.timestamp,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                message.timestamp,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                const SizedBox(height: 4),
+                Text(
+                  message.content,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: colorScheme.onSurface.withOpacity(0.87),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            message.content,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: colorScheme.onSurface.withOpacity(0.87),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
-    );
-  },
-)
     );
   }
 }
-
 
 // LOCAL TAB (Unchanged)
 class _LocalTab extends StatelessWidget {
@@ -535,7 +966,11 @@ class _LocalTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _LocalTab({required this.label, required this.selected, required this.onTap});
+  const _LocalTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -547,7 +982,10 @@ class _LocalTab extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16, vertical: small ? 6 : 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: small ? 12 : 16,
+          vertical: small ? 6 : 8,
+        ),
         decoration: BoxDecoration(
           color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
@@ -570,10 +1008,7 @@ class _TicketCard extends StatelessWidget {
   final Ticket ticket;
   final VoidCallback onTap;
 
-  const _TicketCard({
-    required this.ticket,
-    required this.onTap,
-  });
+  const _TicketCard({required this.ticket, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -608,7 +1043,10 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               "${ticket.id} • ${ticket.name}",
-              style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) - 2, color: colorScheme.onSurface.withOpacity(0.54)),
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -622,7 +1060,10 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               ticket.desc,
-              style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), color: colorScheme.onSurface.withOpacity(0.87)),
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                color: colorScheme.onSurface.withOpacity(0.87),
+              ),
             ),
           ],
         ),
