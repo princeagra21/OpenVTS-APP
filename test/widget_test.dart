@@ -11,7 +11,7 @@ import 'package:fleet_stack/main.dart';
 
 void main() {
   testWidgets('App builds (smoke test)', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(router: buildRouter('/onboarding')));
     // Avoid pumpAndSettle here; the app has ongoing animations/routes that can
     // keep the test harness busy indefinitely.
     await tester.pump(const Duration(milliseconds: 16));

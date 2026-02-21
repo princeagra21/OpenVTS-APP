@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:device_preview/device_preview.dart';
+import 'package:fleet_stack/core/repositories/auth_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
 import 'package:fleet_stack/onboarding_screen.dart';
@@ -11,27 +15,78 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// ROUTER
-final GoRouter router = GoRouter(
-  initialLocation: '/onboarding',
-  routes: [
+String _targetPathForRole(String? backendRole) {
+  final normalized = (backendRole ?? '').trim().toLowerCase();
+  if (normalized.contains('super')) return '/superadmin/home';
+  if (normalized.contains('admin')) return '/admin/home';
+  if (normalized.contains('driver')) return '/user/home';
+  if (normalized.contains('user')) return '/user/home';
+  return '/user/home';
+}
 
+Map<String, dynamic>? _decodeJwtPayload(String token) {
+  final parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    final payload = utf8.decode(
+      base64Url.decode(base64Url.normalize(parts[1])),
+    );
+    final decoded = jsonDecode(payload);
+    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded.cast());
+  } catch (_) {
+    return null;
+  }
+  return null;
+}
+
+bool _isTokenExpired(String token) {
+  final payload = _decodeJwtPayload(token);
+  if (payload == null) return false;
+
+  final expRaw = payload['exp'];
+  int? expSeconds;
+  if (expRaw is int) {
+    expSeconds = expRaw;
+  } else if (expRaw is num) {
+    expSeconds = expRaw.toInt();
+  } else if (expRaw is String) {
+    expSeconds = int.tryParse(expRaw);
+  }
+
+  if (expSeconds == null) return false;
+  final expiry = DateTime.fromMillisecondsSinceEpoch(
+    expSeconds * 1000,
+    isUtc: true,
+  );
+  return DateTime.now().toUtc().isAfter(expiry);
+}
+
+Future<String> _resolveInitialLocation() async {
+  final storage = TokenStorage.defaultInstance();
+  final token = await storage.readAccessToken();
+
+  if (token == null || token.trim().isEmpty) return '/onboarding';
+
+  if (_isTokenExpired(token)) {
+    await storage.clear();
+    return '/onboarding';
+  }
+
+  final role = AuthRepository.extractRole(null, token: token);
+  return _targetPathForRole(role);
+}
+
+/// ROUTER
+GoRouter buildRouter(String initialLocation) => GoRouter(
+  initialLocation: initialLocation,
+  routes: [
     /// ======================
     /// 🌍 GLOBAL ROUTES
     /// ======================
-    GoRoute(
-      path: '/onboarding',
-      builder: (_, __) => const OnboardingScreen(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (_, __) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/',
-      builder: (_, __) => const LoginScreen(),
-    ),
-
+    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
 
     /// ======================
     /// 👑 SUPERADMIN ROUTES
@@ -50,7 +105,6 @@ final GoRouter router = GoRouter(
   ],
 );
 
-
 /// ==============================
 ///  THEME CONTROLLER + CACHE
 /// ==============================
@@ -62,7 +116,8 @@ class ThemeController {
     final prefs = await SharedPreferences.getInstance();
 
     final isDark = prefs.getBool("isDark") ?? false;
-    final colorValue = prefs.getInt("brandColor") ?? AppTheme.defaultBrand.value;
+    final colorValue =
+        prefs.getInt("brandColor") ?? AppTheme.defaultBrand.value;
 
     themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
     brandColor.value = Color(colorValue);
@@ -120,19 +175,38 @@ class ValueListenableBuilder2<A, B> extends StatelessWidget {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await themeController.loadTheme();
+  final initialLocation = await _resolveInitialLocation();
+  final enableDevicePreview =
+      !kReleaseMode ||
+      kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.android;
+  if (kDebugMode) {
+    debugPrint('[AuthBootstrap] initialLocation=$initialLocation');
+  }
+  final appRouter = buildRouter(initialLocation);
 
   runApp(
-    kReleaseMode
-        ? const MyApp()
-        : DevicePreview(
+    enableDevicePreview
+        ? DevicePreview(
             enabled: true,
-            builder: (context) => const MyApp(),
-          ),
+            builder: (context) => MyApp(
+              router: appRouter,
+              enableDevicePreview: enableDevicePreview,
+            ),
+          )
+        : MyApp(router: appRouter, enableDevicePreview: enableDevicePreview),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GoRouter router;
+  final bool enableDevicePreview;
+
+  const MyApp({
+    super.key,
+    required this.router,
+    this.enableDevicePreview = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -148,9 +222,10 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               useInheritedMediaQuery: true,
 
-              // Only active in debug mode
-              locale: kReleaseMode ? null : DevicePreview.locale(context),
-              builder: kReleaseMode ? null : DevicePreview.appBuilder,
+              locale: enableDevicePreview
+                  ? DevicePreview.locale(context)
+                  : null,
+              builder: enableDevicePreview ? DevicePreview.appBuilder : null,
 
               routerConfig: router,
               theme: AppTheme.light(brand),
