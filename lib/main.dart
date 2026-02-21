@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:device_preview/device_preview.dart';
-import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
@@ -62,6 +61,62 @@ bool _isTokenExpired(String token) {
   return DateTime.now().toUtc().isAfter(expiry);
 }
 
+String? _coerceRoleString(Object? value) {
+  if (value == null) return null;
+  if (value is String) {
+    final s = value.trim();
+    return s.isEmpty ? null : s;
+  }
+  if (value is List) {
+    for (final item in value) {
+      final s = _coerceRoleString(item);
+      if (s != null) return s;
+    }
+  }
+  if (value is Map) {
+    final s = _coerceRoleString(
+      value['name'] ??
+          value['role'] ??
+          value['type'] ??
+          value['slug'] ??
+          value['code'],
+    );
+    if (s != null) return s;
+  }
+  final asString = value.toString().trim();
+  return asString.isEmpty ? null : asString;
+}
+
+String? _extractRoleFromToken(String token) {
+  final payload = _decodeJwtPayload(token);
+  if (payload == null) return null;
+
+  String? pickFromMap(Map map) {
+    final direct = [
+      map['role'],
+      map['userRole'],
+      map['userType'],
+      map['roleType'],
+      map['type'],
+    ];
+    for (final v in direct) {
+      final role = _coerceRoleString(v);
+      if (role != null) return role;
+    }
+
+    for (final key in const ['data', 'user', 'account']) {
+      final nested = map[key];
+      if (nested is Map) {
+        final role = pickFromMap(nested);
+        if (role != null) return role;
+      }
+    }
+    return null;
+  }
+
+  return pickFromMap(payload);
+}
+
 Future<String> _resolveInitialLocation() async {
   final storage = TokenStorage.defaultInstance();
   final token = await storage.readAccessToken();
@@ -73,7 +128,7 @@ Future<String> _resolveInitialLocation() async {
     return '/onboarding';
   }
 
-  final role = AuthRepository.extractRole(null, token: token);
+  final role = _extractRoleFromToken(token);
   return _targetPathForRole(role);
 }
 
