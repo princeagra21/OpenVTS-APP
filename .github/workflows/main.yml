@@ -52,13 +52,20 @@ jobs:
       - name: Generate Splash Screen
         run: flutter pub run flutter_native_splash:create
 
-      # 8️⃣ Build Release APK
-      - name: Build Release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+      # 8️⃣ Build Flutter Web (release)
+      - name: Build Flutter Web (release)
+        run: flutter build web --release --dart-define=DEVICE_PREVIEW=true --no-tree-shake-icons
 
-      # 9️⃣ Upload APK Artifact
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-apk-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+      # 9️⃣ Zip web build
+      - name: Zip web build
+        run: |
+          cd build/web
+          zip -r ../../web_build.zip .
+
+      # 🔟 Upload Web Build to Your VPS (Node Upload API)
+      - name: Upload Web Build to Your VPS (Node Upload API)
+        if: github.event_name == 'push'
+        run: |
+          curl -f -X POST "${{ secrets.UPLOAD_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.UPLOAD_TOKEN }}" \
+            -F "build=@web_build.zip"
