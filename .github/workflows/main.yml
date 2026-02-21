@@ -54,7 +54,7 @@ jobs:
 
       # 8️⃣ Build Flutter Web (release)
       - name: Build Flutter Web (release)
-        run: flutter build web --release --dart-define=DEVICE_PREVIEW=true --no-tree-shake-icons
+        run: flutter build web --release --dart-define=DEVICE_PREVIEW=true --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} --no-tree-shake-icons
 
       # 9️⃣ Zip web build
       - name: Zip web build
