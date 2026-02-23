@@ -54,7 +54,7 @@ jobs:
 
       # 8️⃣ Build Flutter APK (release)
       - name: Build Flutter APK (release)
-        run: flutter build apk --release --dart-define=DEVICE_PREVIEW=true --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} --no-tree-shake-icons
+        run: flutter build apk --release --dart-define=DEVICE_PREVIEW=false --dart-define=API_BASE_URL=${{ env.API_BASE_URL }} --no-tree-shake-icons
 
       # 9️⃣ Upload APK as GitHub Actions artifact
       - name: Upload APK Artifact
