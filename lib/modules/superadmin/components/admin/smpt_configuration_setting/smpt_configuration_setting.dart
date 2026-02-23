@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -49,17 +50,15 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
   // - PATCH /superadmin/smtpsettings
   // - POST /superadmin/testsmtp
   // Also present in collection (not used here): GET/PATCH /superadmin/smtpconfig/1.
-  bool smtpEnabled = true;
-  bool tlsEnabled = true;
+  bool smtpEnabled = false;
+  bool tlsEnabled = false;
 
   final TextEditingController _hostController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _fromEmailController = TextEditingController();
-  final TextEditingController _fromNameController = TextEditingController(
-    text: 'FleetStack',
-  );
+  final TextEditingController _fromNameController = TextEditingController();
   final TextEditingController _replyToController = TextEditingController();
 
   bool _loading = false;
@@ -147,39 +146,39 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
             _loading = false;
             _loadErrorShown = false;
 
-            final isActive = _pickBool(map, ['isActive', 'enabled', 'active']);
-            if (isActive != null) smtpEnabled = isActive;
+            smtpEnabled =
+                _pickBool(map, ['isActive', 'enabled', 'active']) ?? false;
 
             final type = _pickString(map, ['type', 'encryption']);
-            if (type.isNotEmpty) {
-              final t = type.toLowerCase();
-              tlsEnabled = t.contains('ssl') || t.contains('tls');
-            }
+            final t = type.toLowerCase();
+            tlsEnabled = t.contains('ssl') || t.contains('tls');
 
-            final host = _pickString(map, ['host', 'smtpHost']);
-            if (host.isNotEmpty) _hostController.text = host;
+            _hostController.text = _pickString(map, ['host', 'smtpHost']);
 
-            final port = _pickString(map, ['port', 'smtpPort']);
-            if (port.isNotEmpty) _portController.text = port;
+            _portController.text = _pickString(map, ['port', 'smtpPort']);
 
-            final username = _pickString(map, ['username', 'user']);
-            if (username.isNotEmpty) _usernameController.text = username;
+            _usernameController.text = _pickString(map, ['username', 'user']);
 
-            final password = _pickString(map, ['password', 'appPassword']);
-            if (password.isNotEmpty) _passwordController.text = password;
+            _passwordController.text = _pickString(map, [
+              'password',
+              'appPassword',
+            ]);
 
-            final email = _pickString(map, [
+            _fromEmailController.text = _pickString(map, [
               'email',
               'fromEmail',
               'senderEmail',
             ]);
-            if (email.isNotEmpty) _fromEmailController.text = email;
 
-            final senderName = _pickString(map, ['senderName', 'fromName']);
-            if (senderName.isNotEmpty) _fromNameController.text = senderName;
+            _fromNameController.text = _pickString(map, [
+              'senderName',
+              'fromName',
+            ]);
 
-            final replyTo = _pickString(map, ['replyTo', 'replyToEmail']);
-            if (replyTo.isNotEmpty) _replyToController.text = replyTo;
+            _replyToController.text = _pickString(map, [
+              'replyTo',
+              'replyToEmail',
+            ]);
           });
         },
         failure: (err) {
@@ -190,7 +189,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load SMTP settings.'
-              : "Couldn't load SMTP settings. Showing fallback values.";
+              : "Couldn't load SMTP settings.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -202,11 +201,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
       if (_loadErrorShown) return;
       _loadErrorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Couldn't load SMTP settings. Showing fallback values.",
-          ),
-        ),
+        const SnackBar(content: Text("Couldn't load SMTP settings.")),
       );
     }
   }
@@ -364,6 +359,37 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
+    if (_loading) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                AppShimmer(width: 170, height: 40, radius: 10),
+                SizedBox(width: 12),
+                AppShimmer(width: 170, height: 40, radius: 10),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const AppShimmer(width: 190, height: 20, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: 280, height: 24, radius: 8),
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ],
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(hp),
@@ -482,15 +508,6 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               color: colorScheme.onSurface.withOpacity(0.9),
             ),
           ),
-          if (_loading)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
 
           const SizedBox(height: 24),
 
@@ -681,6 +698,65 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerCard(width: width, titleWidth: 230, fields: 1),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 260, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 300, fields: 6),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 190, fields: 3),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard({
+    required double width,
+    required double titleWidth,
+    required int fields,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double labelWidth = (width * 0.24).clamp(90, 180).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppShimmer(width: titleWidth, height: 24, radius: 8),
+              const AppShimmer(width: 46, height: 26, radius: 14),
+            ],
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
         ],
       ),
     );

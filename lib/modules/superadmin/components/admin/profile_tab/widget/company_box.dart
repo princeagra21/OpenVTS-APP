@@ -1,4 +1,5 @@
 // components/admin/company_box.dart
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -20,36 +21,16 @@ class CompanyBox extends StatelessWidget {
     final double subheaderFontSize =
         AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
 
-    const fallbackCompanyName = "Fleet Stack Global Pvt. Ltd.";
-    const fallbackWebsite = "fleetstackglobal.com";
-    const fallbackAddressLine = "42, Indus Tech Park";
-    const fallbackCity = "Bengaluru";
-    const fallbackState = "Karnataka";
-    const fallbackPostal = "560001";
-    const fallbackCountry = "India (IN)";
-    const fallbackEmail = "aarav.sharma@fleetstackglobal.com";
-    const fallbackPhone = "+91 8987675654";
-
     final p = profile;
-    final companyName = (p != null && p.companyName.isNotEmpty)
-        ? p.companyName
-        : fallbackCompanyName;
-    final website = (p != null && p.website.isNotEmpty)
-        ? p.website
-        : fallbackWebsite;
-    final addressLine = (p != null && p.addressLine.isNotEmpty)
-        ? p.addressLine
-        : fallbackAddressLine;
-    final city = (p != null && p.city.isNotEmpty) ? p.city : fallbackCity;
-    final state = (p != null && p.state.isNotEmpty) ? p.state : fallbackState;
-    final postal = (p != null && p.pincode.isNotEmpty)
-        ? p.pincode
-        : fallbackPostal;
-    final country = (p != null && p.country.isNotEmpty)
-        ? p.country
-        : fallbackCountry;
-    final email = (p != null && p.email.isNotEmpty) ? p.email : fallbackEmail;
-    final phone = (p != null && p.phone.isNotEmpty) ? p.phone : fallbackPhone;
+    final companyName = _display(p?.companyName);
+    final website = _display(p?.website);
+    final addressLine = _display(p?.addressLine);
+    final city = _display(p?.city);
+    final state = _display(p?.state);
+    final postal = _display(p?.pincode);
+    final country = _display(p?.country);
+    final email = _display(p?.email);
+    final phone = _display(p?.phone);
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -99,30 +80,43 @@ class CompanyBox extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                companyName,
-                style: GoogleFonts.inter(
-                  fontSize: titleFontSize,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+              Expanded(
+                child: loading
+                    ? const AppShimmer(
+                        width: double.infinity,
+                        height: 22,
+                        radius: 8,
+                      )
+                    : Text(
+                        companyName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
               ),
+              const SizedBox(width: 10),
               CircleAvatar(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 radius: 20,
-                child: const Text("FS"),
+                child: Text(_initials(companyName)),
               ),
             ],
           ),
           const SizedBox(height: 2),
-          Text(
-            website,
-            style: GoogleFonts.inter(
-              fontSize: subheaderFontSize,
-              color: colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
+          loading
+              ? const AppShimmer(width: 180, height: 16, radius: 8)
+              : Text(
+                  website,
+                  style: GoogleFonts.inter(
+                    fontSize: subheaderFontSize,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
 
           const SizedBox(height: 24),
 
@@ -170,17 +164,31 @@ class CompanyBox extends StatelessWidget {
                 addressLine,
                 subheaderFontSize,
                 colorScheme,
+                loading,
               ),
               const SizedBox(height: 8),
-              _buildAddressRow("City", city, subheaderFontSize, colorScheme),
+              _buildAddressRow(
+                "City",
+                city,
+                subheaderFontSize,
+                colorScheme,
+                loading,
+              ),
               const SizedBox(height: 8),
-              _buildAddressRow("State", state, subheaderFontSize, colorScheme),
+              _buildAddressRow(
+                "State",
+                state,
+                subheaderFontSize,
+                colorScheme,
+                loading,
+              ),
               const SizedBox(height: 8),
               _buildAddressRow(
                 "Postal",
                 postal,
                 subheaderFontSize,
                 colorScheme,
+                loading,
               ),
               const SizedBox(height: 8),
               _buildAddressRow(
@@ -188,6 +196,7 @@ class CompanyBox extends StatelessWidget {
                 country,
                 subheaderFontSize,
                 colorScheme,
+                loading,
               ),
             ],
           ),
@@ -208,29 +217,39 @@ class CompanyBox extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                email,
-                style: GoogleFonts.inter(
-                  fontSize: subheaderFontSize,
-                  color: colorScheme.onSurface.withOpacity(0.87),
-                ),
-              ),
+              loading
+                  ? const AppShimmer(
+                      width: double.infinity,
+                      height: 16,
+                      radius: 8,
+                    )
+                  : Text(
+                      email,
+                      style: GoogleFonts.inter(
+                        fontSize: subheaderFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.87),
+                      ),
+                    ),
               const SizedBox(height: 8),
-              Text(
-                phone,
-                style: GoogleFonts.inter(
-                  fontSize: subheaderFontSize,
-                  color: colorScheme.onSurface.withOpacity(0.87),
-                ),
-              ),
+              loading
+                  ? const AppShimmer(width: 220, height: 16, radius: 8)
+                  : Text(
+                      phone,
+                      style: GoogleFonts.inter(
+                        fontSize: subheaderFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.87),
+                      ),
+                    ),
               const SizedBox(height: 8),
-              Text(
-                website,
-                style: GoogleFonts.inter(
-                  fontSize: subheaderFontSize,
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
+              loading
+                  ? const AppShimmer(width: 180, height: 16, radius: 8)
+                  : Text(
+                      website,
+                      style: GoogleFonts.inter(
+                        fontSize: subheaderFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
             ],
           ),
         ],
@@ -243,6 +262,7 @@ class CompanyBox extends StatelessWidget {
     String value,
     double fontSize,
     ColorScheme colorScheme,
+    bool loading,
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -254,14 +274,41 @@ class CompanyBox extends StatelessWidget {
             color: colorScheme.onSurface.withOpacity(0.87),
           ),
         ),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: fontSize,
-            color: colorScheme.onSurface.withOpacity(0.87),
-          ),
+        Flexible(
+          child: loading
+              ? const Align(
+                  alignment: Alignment.centerRight,
+                  child: AppShimmer(width: 120, height: 14, radius: 8),
+                )
+              : Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: fontSize,
+                    color: colorScheme.onSurface.withOpacity(0.87),
+                  ),
+                ),
         ),
       ],
     );
+  }
+
+  String _display(String? value) {
+    if (value == null) return '-';
+    final text = value.trim();
+    return text.isEmpty ? '-' : text;
+  }
+
+  String _initials(String value) {
+    final clean = _display(value);
+    if (clean == '-') return '--';
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '--';
+    final out = parts.take(2).map((e) => e[0]).join();
+    return out.toUpperCase();
   }
 }

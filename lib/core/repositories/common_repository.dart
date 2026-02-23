@@ -147,14 +147,35 @@ class CommonRepository {
   }
 
   List? _extractList(Object? data) {
-    if (data is List) return data;
-    if (data is Map) {
-      final candidates = [data['data'], data['items'], data['result']];
-      for (final c in candidates) {
-        if (c is List) return c;
+    List? walk(Object? node, int depth) {
+      if (depth > 5) return null;
+      if (node is List) return node;
+      if (node is! Map) return null;
+
+      final map = node is Map<String, dynamic>
+          ? node
+          : Map<String, dynamic>.from(node.cast());
+
+      final candidates = [map['data'], map['items'], map['result']];
+      for (final candidate in candidates) {
+        if (candidate is List) return candidate;
+        if (candidate is Map || candidate is List) {
+          final found = walk(candidate, depth + 1);
+          if (found != null) return found;
+        }
       }
+
+      for (final value in map.values) {
+        if (value is Map || value is List) {
+          final found = walk(value, depth + 1);
+          if (found != null) return found;
+        }
+      }
+
+      return null;
     }
-    return null;
+
+    return walk(data, 0);
   }
 
   String _labelForString(String v) {

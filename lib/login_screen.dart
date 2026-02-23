@@ -7,7 +7,6 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isForgot = false;
-  String _selectedRole = 'User';
   bool _isLoggingIn = false;
 
   CancelToken? _loginToken;
@@ -42,19 +40,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return _authRepo!;
   }
 
-  String _targetPathForRole() {
-    switch (_selectedRole) {
-      case 'Super Admin':
-        return '/superadmin/home';
-      case 'Admin':
-        return '/admin/home';
-      case 'User':
-        return '/user/home';
-      case 'Driver':
-        return '/user/home';
-      default:
-        return '/user/home';
-    }
+  String _targetPathForRole(String? backendRole) {
+    final normalized = (backendRole ?? '').trim().toLowerCase();
+    if (normalized.contains('super')) return '/superadmin/home';
+    if (normalized.contains('admin')) return '/admin/home';
+    if (normalized.contains('driver')) return '/user/home';
+    if (normalized.contains('user')) return '/user/home';
+    return '/user/home';
   }
 
   void _showSnack(String message) {
@@ -83,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoggingIn = true);
 
     try {
-      final res = await _repoOrCreate().login(
+      final res = await _repoOrCreate().loginWithContext(
         identifier: identifier,
         password: password,
         cancelToken: token,
@@ -92,9 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       res.when(
-        success: (_) {
+        success: (ctx) {
           setState(() => _isLoggingIn = false);
-          context.go(_targetPathForRole());
+          context.go(_targetPathForRole(ctx.role));
         },
         failure: (error) {
           setState(() => _isLoggingIn = false);
@@ -164,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title with Dropdown
+        // Title
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -176,29 +168,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: colorScheme.onSurface,
               ),
             ),
-            if (kDebugMode)
-              DropdownButton<String>(
-                value: _selectedRole,
-                icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
-                style: GoogleFonts.inter(
-                  fontSize: labelSize,
-                  color: colorScheme.onSurface,
-                ),
-                underline: const SizedBox(),
-                items: ['Super Admin', 'Admin', 'User', 'Driver'].map((
-                  String value,
-                ) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedRole = newValue!;
-                  });
-                },
-              ),
           ],
         ),
         const SizedBox(height: 8),

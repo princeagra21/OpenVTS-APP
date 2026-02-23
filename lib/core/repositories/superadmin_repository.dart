@@ -16,6 +16,8 @@ import 'package:fleet_stack/core/models/server_overall_status.dart';
 import 'package:fleet_stack/core/models/server_postgres_status.dart';
 import 'package:fleet_stack/core/models/server_service_item.dart';
 import 'package:fleet_stack/core/models/superadmin_adoption_graph.dart';
+import 'package:fleet_stack/core/models/superadmin_profile.dart';
+import 'package:fleet_stack/core/models/superadmin_recent_transaction.dart';
 import 'package:fleet_stack/core/models/superadmin_recent_vehicle.dart';
 import 'package:fleet_stack/core/models/superadmin_recent_user.dart';
 import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
@@ -82,6 +84,17 @@ class SuperadminRepository {
 
     return res.when(
       success: (data) => Result.ok(AdminProfile(_coerceMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<SuperadminProfile>> getSuperadminProfile({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/superadmin/profile', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) => Result.ok(SuperadminProfile(_coerceMap(data))),
       failure: (err) => Result.fail(err),
     );
   }
@@ -514,8 +527,13 @@ class SuperadminRepository {
       cancelToken: cancelToken,
     );
     return res.when(
-      success: (data) =>
-          Result.ok(LocalizationSettings(_extractMapFromNested(data))),
+      success: (data) {
+        final level1 = _extractMapFromNested(data);
+        final level2 = _extractMapFromNested(level1);
+        return Result.ok(
+          LocalizationSettings(level2.isNotEmpty ? level2 : level1),
+        );
+      },
       failure: (err) => Result.fail(err),
     );
   }
@@ -543,7 +561,11 @@ class SuperadminRepository {
       cancelToken: cancelToken,
     );
     return res.when(
-      success: (data) => Result.ok(_extractMapFromNested(data)),
+      success: (data) {
+        final level1 = _extractMapFromNested(data);
+        final level2 = _extractMapFromNested(level1);
+        return Result.ok(level2.isNotEmpty ? level2 : level1);
+      },
       failure: (err) => Result.fail(err),
     );
   }
@@ -650,7 +672,18 @@ class SuperadminRepository {
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['vehicles']);
+        final root = _coerceMap(data);
+        final payload = _extractMap(data);
+
+        List? list = payload['vehicles'] is List
+            ? payload['vehicles'] as List
+            : null;
+        list ??= root['vehicles'] is List ? root['vehicles'] as List : null;
+        list ??= _extractList(
+          data,
+          extraKeys: const ['vehicles', 'items', 'data'],
+        );
+
         final out = <VehicleListItem>[];
         if (list != null) {
           for (final it in list) {
@@ -914,6 +947,78 @@ class SuperadminRepository {
     );
   }
 
+  /// Roles endpoint is not stable across deployments.
+  /// Probe known candidates and normalize into a list of role maps.
+  Future<Result<List<Map<String, dynamic>>>> getRoles({
+    CancelToken? cancelToken,
+  }) async {
+    const endpoints = <String>[
+      '/superadmin/roles',
+      '/superadmin/rolelist',
+      '/admin/roles',
+      '/admin/rolelist',
+    ];
+
+    for (final endpoint in endpoints) {
+      final res = await api.get(endpoint, cancelToken: cancelToken);
+
+      if (res.isSuccess) {
+        final data = res.data;
+        final list = _extractList(
+          data,
+          extraKeys: const ['roles', 'items', 'rows', 'permissions'],
+        );
+
+        final out = <Map<String, dynamic>>[];
+        if (list != null) {
+          for (final it in list) {
+            if (it is Map<String, dynamic>) {
+              out.add(it);
+            } else if (it is Map) {
+              out.add(Map<String, dynamic>.from(it.cast()));
+            }
+          }
+          return Result.ok(out);
+        }
+
+        final single = _extractMapFromNested(data);
+        if (single.isNotEmpty) {
+          return Result.ok(<Map<String, dynamic>>[single]);
+        }
+        return Result.ok(const <Map<String, dynamic>>[]);
+      }
+
+      final err = res.error;
+      if (err is ApiException && err.statusCode == 404) {
+        continue;
+      }
+      if (err != null) return Result.fail(err);
+      return Result.fail(const ApiException(message: 'Failed to load roles.'));
+    }
+
+    return Result.ok(const <Map<String, dynamic>>[]);
+  }
+
+  Future<Result<Map<String, dynamic>>> getTicketDetails(
+    String ticketId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/support/tickets/$ticketId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final level1 = _extractMap(data);
+        final level2 = _extractMapFromNested(level1);
+        final payload = level2.isNotEmpty ? level2 : level1;
+        return Result.ok(payload);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<TicketMessageItem?>> sendTicketMessage(
     String ticketId,
     String message, {
@@ -1045,23 +1150,80 @@ class SuperadminRepository {
     );
   }
 
+  Future<Result<List<SuperadminRecentTransaction>>> getRecentTransactions({
+    int? page,
+    int? limit,
+    CancelToken? cancelToken,
+  }) async {
+    final qp = <String, dynamic>{};
+    if (page != null) qp['page'] = page;
+    if (limit != null) qp['limit'] = limit;
+
+    final res = await api.get(
+      '/superadmin/transactions',
+      queryParameters: qp.isEmpty ? null : qp,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['transactions', 'records'],
+        );
+        final transactions = <SuperadminRecentTransaction>[];
+        if (list != null) {
+          for (final it in list) {
+            if (it is Map<String, dynamic>) {
+              transactions.add(SuperadminRecentTransaction(it));
+            } else if (it is Map) {
+              transactions.add(
+                SuperadminRecentTransaction(
+                  Map<String, dynamic>.from(it.cast()),
+                ),
+              );
+            }
+          }
+        }
+        return Result.ok(transactions);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   List? _extractList(Object? data, {List<String> extraKeys = const []}) {
     if (data is List) return data;
-    if (data is Map) {
-      final keys = <String>[
-        'data',
-        'items',
-        'result',
-        'results',
-        ...extraKeys,
-        'vehicles',
-      ];
-      for (final k in keys) {
-        final v = data[k];
-        if (v is List) return v;
+
+    final keys = <String>[
+      'data',
+      'items',
+      'result',
+      'results',
+      ...extraKeys,
+      'vehicles',
+    ];
+
+    List? walk(Object? node, int depth) {
+      if (depth > 5) return null;
+      if (node is List) return node;
+      if (node is! Map) return null;
+
+      final m = _coerceMap(node);
+      for (final key in keys) {
+        final value = m[key];
+        if (value is List) return value;
       }
+
+      for (final value in m.values) {
+        if (value is Map || value is List) {
+          final found = walk(value, depth + 1);
+          if (found != null) return found;
+        }
+      }
+      return null;
     }
-    return null;
+
+    return walk(data, 0);
   }
 
   Map<String, dynamic> _coerceMap(Object? data) {

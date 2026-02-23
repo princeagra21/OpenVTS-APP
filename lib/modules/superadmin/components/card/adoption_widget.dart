@@ -6,6 +6,8 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -74,49 +76,6 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   String monthTab = "12M";
   Set<String> selectedStats = {"Vehicles", "Users", "Licenses"};
 
-  final List<double> _fallbackVehicles = [
-    12,
-    22,
-    18,
-    30,
-    34,
-    20,
-    15,
-    25,
-    28,
-    32,
-    38,
-    40,
-  ];
-  final List<double> _fallbackUsers = [
-    10,
-    15,
-    12,
-    21,
-    25,
-    19,
-    22,
-    27,
-    30,
-    35,
-    37,
-    39,
-  ];
-  final List<double> _fallbackLicenses = [
-    5,
-    10,
-    15,
-    14,
-    16,
-    18,
-    20,
-    22,
-    24,
-    26,
-    29,
-    30,
-  ];
-
   SuperadminAdoptionGraph? _graph;
   bool _loadingGraph = false;
   bool _graphErrorShown = false;
@@ -157,6 +116,13 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
 
       res.when(
         success: (graph) {
+          if (kDebugMode) {
+            debugPrint(
+              '[Home] GET /superadmin/dashboard/adoptiongraph status=2xx '
+              'vehicles=${graph.vehicles().length} users=${graph.users().length} '
+              'licenses=${graph.licenses().length}',
+            );
+          }
           if (!mounted) return;
           setState(() {
             _graph = graph;
@@ -165,6 +131,12 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
           });
         },
         failure: (err) {
+          if (kDebugMode) {
+            final status = err is ApiException ? err.statusCode : null;
+            debugPrint(
+              '[Home] GET /superadmin/dashboard/adoptiongraph status=${status ?? 'error'}',
+            );
+          }
           if (!mounted) return;
           setState(() => _loadingGraph = false);
           if (_graphErrorShown) return;
@@ -174,21 +146,24 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? "Not authorized to view growth data."
-              : "Couldn't load growth data. Showing fallback chart.";
+              : "Couldn't load growth data.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
         },
       );
     } catch (_) {
+      if (kDebugMode) {
+        debugPrint(
+          '[Home] GET /superadmin/dashboard/adoptiongraph status=error',
+        );
+      }
       if (!mounted) return;
       setState(() => _loadingGraph = false);
       if (_graphErrorShown) return;
       _graphErrorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load growth data. Showing fallback chart."),
-        ),
+        const SnackBar(content: Text("Couldn't load growth data.")),
       );
     }
   }
@@ -205,9 +180,9 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   List<double> getDataFor(String stat) {
     final graph = _graph;
     final base = switch (stat) {
-      "Vehicles" => graph?.vehicles() ?? _fallbackVehicles,
-      "Users" => graph?.users() ?? _fallbackUsers,
-      _ => graph?.licenses() ?? _fallbackLicenses,
+      "Vehicles" => graph?.vehicles() ?? List<double>.filled(12, 0),
+      "Users" => graph?.users() ?? List<double>.filled(12, 0),
+      _ => graph?.licenses() ?? List<double>.filled(12, 0),
     };
 
     return switch (monthTab) {
@@ -227,7 +202,18 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     if (selectedStats.isEmpty) return 10;
     final allValues = selectedStats.expand((s) => getDataFor(s));
     final maxVal = allValues.reduce((a, b) => a > b ? a : b);
-    return (maxVal / 10).ceil() * 10 + 5;
+    if (maxVal <= 10) return 10;
+    return (maxVal / 10).ceil() * 10;
+  }
+
+  String _formatYAxisValue(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(value % 1000000 == 0 ? 0 : 1)}M';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
+    }
+    return value.toInt().toString();
   }
 
   @override
@@ -261,6 +247,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       fontWeight: FontWeight.bold,
       color: colorScheme.onSurface,
     );
+    final showSkeleton = _loadingGraph;
 
     final statColors = getStatColors(context);
 
@@ -303,15 +290,11 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                   children: [
                     TextSpan(text: "Adoption and growth", style: titleStyle),
                     if (_loadingGraph)
-                      const WidgetSpan(
+                      WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          padding: const EdgeInsets.only(left: 8),
+                          child: AppShimmer(width: 14, height: 14, radius: 7),
                         ),
                       ),
                   ],
@@ -329,15 +312,11 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                   children: [
                     TextSpan(text: "Adoption and growth", style: titleStyle),
                     if (_loadingGraph)
-                      const WidgetSpan(
+                      WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          padding: const EdgeInsets.only(left: 8),
+                          child: AppShimmer(width: 14, height: 14, radius: 7),
                         ),
                       ),
                   ],
@@ -365,143 +344,171 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         children: [
           header,
           SizedBox(height: padding),
-          Text(
-            "Last $monthTab months",
-            style: GoogleFonts.inter(
-              fontSize: subheaderFontSize,
-              color: colorScheme.onSurface.withOpacity(0.87),
-              fontWeight: FontWeight.w500,
+          if (showSkeleton) ...[
+            AppShimmer(
+              width: screenWidth * 0.34,
+              height: subheaderFontSize + 8,
+              radius: 8,
             ),
-          ),
-          SizedBox(height: padding),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SmallTab(
-                label: "Vehicles",
-                selected: selectedStats.contains("Vehicles"),
-                selectedBackground: statColors["Vehicles"],
-                onTap: () => setState(() {
-                  selectedStats.contains("Vehicles")
-                      ? selectedStats.remove("Vehicles")
-                      : selectedStats.add("Vehicles");
-                }),
+            SizedBox(height: padding),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppShimmer(width: screenWidth * 0.2, height: 32, radius: 12),
+                SizedBox(width: spacing),
+                AppShimmer(width: screenWidth * 0.2, height: 32, radius: 12),
+                SizedBox(width: spacing),
+                AppShimmer(width: screenWidth * 0.2, height: 32, radius: 12),
+              ],
+            ),
+            SizedBox(height: padding + 4),
+            SizedBox(
+              height: chartHeight,
+              child: AppShimmer(
+                width: double.infinity,
+                height: chartHeight,
+                radius: 18,
               ),
-              SizedBox(width: spacing),
-              SmallTab(
-                label: "Users",
-                selected: selectedStats.contains("Users"),
-                selectedBackground: statColors["Users"],
-                onTap: () => setState(() {
-                  selectedStats.contains("Users")
-                      ? selectedStats.remove("Users")
-                      : selectedStats.add("Users");
-                }),
+            ),
+          ] else ...[
+            Text(
+              "Last $monthTab months",
+              style: GoogleFonts.inter(
+                fontSize: subheaderFontSize,
+                color: colorScheme.onSurface.withOpacity(0.87),
+                fontWeight: FontWeight.w500,
               ),
-              SizedBox(width: spacing),
-              SmallTab(
-                label: "Licenses",
-                selected: selectedStats.contains("Licenses"),
-                selectedBackground: statColors["Licenses"],
-                onTap: () => setState(() {
-                  selectedStats.contains("Licenses")
-                      ? selectedStats.remove("Licenses")
-                      : selectedStats.add("Licenses");
-                }),
-              ),
-            ],
-          ),
-          SizedBox(height: padding + 4),
-          SizedBox(
-            height: chartHeight,
-            child: LineChart(
-              LineChartData(
-                minY: 0,
-                maxY: yMax,
-                lineTouchData: const LineTouchData(enabled: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: yMax / 3,
-                      reservedSize: screenWidth < 420 ? 32 : 40,
-                      getTitlesWidget: (value, meta) => SideTitleWidget(
-                        meta: meta, // pass the required argument
-                        child: Text(
-                          "${value.toInt()}K",
-                          style: GoogleFonts.inter(
-                            fontSize: leftTitleFontSize,
-                            color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+            SizedBox(height: padding),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SmallTab(
+                  label: "Vehicles",
+                  selected: selectedStats.contains("Vehicles"),
+                  selectedBackground: statColors["Vehicles"],
+                  onTap: () => setState(() {
+                    selectedStats.contains("Vehicles")
+                        ? selectedStats.remove("Vehicles")
+                        : selectedStats.add("Vehicles");
+                  }),
+                ),
+                SizedBox(width: spacing),
+                SmallTab(
+                  label: "Users",
+                  selected: selectedStats.contains("Users"),
+                  selectedBackground: statColors["Users"],
+                  onTap: () => setState(() {
+                    selectedStats.contains("Users")
+                        ? selectedStats.remove("Users")
+                        : selectedStats.add("Users");
+                  }),
+                ),
+                SizedBox(width: spacing),
+                SmallTab(
+                  label: "Licenses",
+                  selected: selectedStats.contains("Licenses"),
+                  selectedBackground: statColors["Licenses"],
+                  onTap: () => setState(() {
+                    selectedStats.contains("Licenses")
+                        ? selectedStats.remove("Licenses")
+                        : selectedStats.add("Licenses");
+                  }),
+                ),
+              ],
+            ),
+            SizedBox(height: padding + 4),
+            SizedBox(
+              height: chartHeight,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  maxY: yMax,
+                  lineTouchData: const LineTouchData(enabled: true),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: yMax / 3,
+                        reservedSize: screenWidth < 420 ? 32 : 40,
+                        getTitlesWidget: (value, meta) => SideTitleWidget(
+                          meta: meta, // pass the required argument
+                          child: Text(
+                            _formatYAxisValue(value),
+                            style: GoogleFonts.inter(
+                              fontSize: leftTitleFontSize,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      reservedSize: 22,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index >= numMonths) return const SizedBox();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            "M${index + 1}",
-                            style: GoogleFonts.inter(
-                              fontSize: bottomTitleFontSize,
-                              color: colorScheme.onSurface.withOpacity(0.54),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        reservedSize: 22,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= numMonths) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              "M${index + 1}",
+                              style: GoogleFonts.inter(
+                                fontSize: bottomTitleFontSize,
+                                color: colorScheme.onSurface.withOpacity(0.54),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  horizontalInterval: yMax / 3,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: colorScheme.onSurface.withOpacity(0.12),
-                    strokeWidth: 1,
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: selectedStats.map((stat) {
-                  final data = getDataFor(stat);
-                  final color = statColors[stat]!;
-                  return LineChartBarData(
-                    spots: data
-                        .asMap()
-                        .entries
-                        .map((e) => FlSpot(e.key.toDouble(), e.value))
-                        .toList(),
-                    isCurved: true,
-                    barWidth: lineWidth,
-                    color: color,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, bar, index) =>
-                          FlDotCirclePainter(
-                            radius: dotRadius,
-                            color: color,
-                            strokeColor: colorScheme.surface,
-                            strokeWidth: 2,
-                          ),
+                  gridData: FlGridData(
+                    show: true,
+                    horizontalInterval: yMax / 3,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                      strokeWidth: 1,
                     ),
-                  );
-                }).toList(),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: selectedStats.map((stat) {
+                    final data = getDataFor(stat);
+                    final color = statColors[stat]!;
+                    return LineChartBarData(
+                      spots: data
+                          .asMap()
+                          .entries
+                          .map((e) => FlSpot(e.key.toDouble(), e.value))
+                          .toList(),
+                      isCurved: true,
+                      barWidth: lineWidth,
+                      color: color,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) =>
+                            FlDotCirclePainter(
+                              radius: dotRadius,
+                              color: color,
+                              strokeColor: colorScheme.surface,
+                              strokeWidth: 2,
+                            ),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

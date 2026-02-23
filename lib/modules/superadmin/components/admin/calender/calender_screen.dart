@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -37,17 +38,6 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
   SuperadminRepository? _repo;
   DateTime? _loadedMonth;
 
-  final Map<DateTime, List<Map<String, dynamic>>> _fallbackEvents = {
-    DateTime(2025, 12, 8): [
-      {'title': 'Admin Created', 'type': 'admin', 'time': '09:15'},
-      {'title': 'User Created', 'type': 'user', 'time': '14:30'},
-    ],
-    DateTime(2025, 12, 12): [
-      {'title': 'Vehicle Expiry', 'type': 'vehicle', 'time': '00:00'},
-      {'title': 'Vehicle Added', 'type': 'vehicle', 'time': '11:45'},
-    ],
-  };
-
   @override
   void initState() {
     super.initState();
@@ -73,6 +63,24 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     final m = d.month.toString().padLeft(2, '0');
     final day = d.day.toString().padLeft(2, '0');
     return '${d.year}-$m-$day';
+  }
+
+  String _monthTitle(DateTime d) {
+    const monthNames = <String>[
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${monthNames[d.month - 1]} ${d.year}';
   }
 
   String _normType(String raw) {
@@ -160,7 +168,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view calendar events.'
-              : "Couldn't load calendar events. Showing fallback values.";
+              : "Couldn't load calendar events.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -172,11 +180,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
       if (_errorShown) return;
       _errorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Couldn't load calendar events. Showing fallback values.",
-          ),
-        ),
+        const SnackBar(content: Text("Couldn't load calendar events.")),
       );
     } finally {
       _loadingMonth = false;
@@ -185,7 +189,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
   Map<DateTime, List<Map<String, dynamic>>> get _effectiveEventMap {
     final byDate = _eventsByDate;
-    if (byDate.isEmpty) return _fallbackEvents;
+    if (byDate.isEmpty) return const {};
     final out = <DateTime, List<Map<String, dynamic>>>{};
     byDate.forEach((k, v) {
       out[k] = v
@@ -263,6 +267,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
     final bool isMobile = width < 650;
     final eventMap = _effectiveEventMap;
+    final currentMonth = _loadedMonth ?? _selectedDate;
+    final showSkeleton = _loading && _events.isEmpty;
 
     return AppLayout(
       title: "FLEET STACK",
@@ -296,7 +302,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "December 2025",
+                              _monthTitle(currentMonth),
                               style: GoogleFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) + 4,
@@ -369,199 +375,231 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                   const SizedBox(height: 32),
 
                   // LEGEND
-                  Wrap(
-                    spacing: 20,
-                    runSpacing: 10,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      _legendItem(
-                        "Admin Created",
-                        cs,
-                        selected: _selectedType == 'admin',
-                        onTap: () => setState(
-                          () => _selectedType = _selectedType == 'admin'
-                              ? null
-                              : 'admin',
+                  if (showSkeleton)
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 10,
+                      children: const [
+                        AppShimmer(width: 112, height: 20, radius: 10),
+                        AppShimmer(width: 104, height: 20, radius: 10),
+                        AppShimmer(width: 118, height: 20, radius: 10),
+                        AppShimmer(width: 110, height: 20, radius: 10),
+                      ],
+                    )
+                  else
+                    Wrap(
+                      spacing: 20,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _legendItem(
+                          "Admin Created",
+                          cs,
+                          selected: _selectedType == 'admin',
+                          onTap: () => setState(
+                            () => _selectedType = _selectedType == 'admin'
+                                ? null
+                                : 'admin',
+                          ),
                         ),
-                      ),
-                      _legendItem(
-                        "User Created",
-                        cs,
-                        selected: _selectedType == 'user',
-                        onTap: () => setState(
-                          () => _selectedType = _selectedType == 'user'
-                              ? null
-                              : 'user',
+                        _legendItem(
+                          "User Created",
+                          cs,
+                          selected: _selectedType == 'user',
+                          onTap: () => setState(
+                            () => _selectedType = _selectedType == 'user'
+                                ? null
+                                : 'user',
+                          ),
                         ),
-                      ),
-                      _legendItem(
-                        "Vehicle Expiry",
-                        cs,
-                        selected:
-                            _selectedType == 'vehicle_expiry' ||
-                            _selectedType == 'vehicle',
-                        onTap: () => setState(
-                          () =>
-                              _selectedType = _selectedType == 'vehicle_expiry'
-                              ? null
-                              : 'vehicle_expiry',
+                        _legendItem(
+                          "Vehicle Expiry",
+                          cs,
+                          selected:
+                              _selectedType == 'vehicle_expiry' ||
+                              _selectedType == 'vehicle',
+                          onTap: () => setState(
+                            () => _selectedType =
+                                _selectedType == 'vehicle_expiry'
+                                ? null
+                                : 'vehicle_expiry',
+                          ),
                         ),
-                      ),
-                      _legendItem(
-                        "Vehicle Added",
-                        cs,
-                        selected:
-                            _selectedType == 'vehicle_added' ||
-                            _selectedType == 'vehicle',
-                        onTap: () => setState(
-                          () => _selectedType = _selectedType == 'vehicle_added'
-                              ? null
-                              : 'vehicle_added',
+                        _legendItem(
+                          "Vehicle Added",
+                          cs,
+                          selected:
+                              _selectedType == 'vehicle_added' ||
+                              _selectedType == 'vehicle',
+                          onTap: () => setState(
+                            () => _selectedType == 'vehicle_added'
+                                ? null
+                                : 'vehicle_added',
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
                   const SizedBox(height: 32),
 
                   // CALENDAR
-                  CalendarDatePicker2(
-                    config: CalendarDatePicker2Config(
-                      calendarType: CalendarDatePicker2Type.single,
-                      selectedDayHighlightColor: cs.primary,
+                  if (showSkeleton)
+                    AppShimmer(
+                      width: double.infinity,
+                      height: isMobile ? 300 : 340,
+                      radius: 16,
+                    )
+                  else
+                    CalendarDatePicker2(
+                      config: CalendarDatePicker2Config(
+                        calendarType: CalendarDatePicker2Type.single,
+                        selectedDayHighlightColor: cs.primary,
 
-                      // Weekdays
-                      weekdayLabelTextStyle: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
+                        // Weekdays
+                        weekdayLabelTextStyle: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
 
-                      // Normal day
-                      dayTextStyle: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: cs.onSurface,
-                      ),
+                        // Normal day
+                        dayTextStyle: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface,
+                        ),
 
-                      // Selected day
-                      selectedDayTextStyle: GoogleFonts.inter(
-                        color: cs.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                        // Selected day
+                        selectedDayTextStyle: GoogleFonts.inter(
+                          color: cs.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
 
-                      // Today
-                      todayTextStyle: GoogleFonts.inter(
-                        color: cs.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                        // Today
+                        todayTextStyle: GoogleFonts.inter(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
 
-                      // Month navigation arrows + month text
-                      controlsTextStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
+                        // Month navigation arrows + month text
+                        controlsTextStyle: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
 
-                      // Day cell builder
-                      dayBuilder:
-                          ({
-                            required DateTime date,
-                            bool? isSelected,
-                            bool? isToday,
-                            TextStyle? textStyle,
-                            BoxDecoration? decoration,
-                            bool? isDisabled,
-                          }) {
-                            final hasEvent = eventMap.containsKey(
-                              _dayKey(date),
-                            );
+                        // Day cell builder
+                        dayBuilder:
+                            ({
+                              required DateTime date,
+                              bool? isSelected,
+                              bool? isToday,
+                              TextStyle? textStyle,
+                              BoxDecoration? decoration,
+                              bool? isDisabled,
+                            }) {
+                              final hasEvent = eventMap.containsKey(
+                                _dayKey(date),
+                              );
 
-                            return Center(
-                              child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: isSelected == true
-                                      ? cs.primary
-                                      : isToday == true
-                                      ? cs.primary.withOpacity(0.08)
-                                      : null,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Text(
-                                      "${date.day}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected == true
-                                            ? cs.onPrimary
-                                            : cs.onSurface,
-                                      ),
-                                    ),
-
-                                    if (hasEvent)
-                                      Positioned(
-                                        bottom: 3,
-                                        child: Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                            color: cs.primary,
-                                            shape: BoxShape.circle,
-                                          ),
+                              return Center(
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isSelected == true
+                                        ? cs.primary
+                                        : isToday == true
+                                        ? cs.primary.withOpacity(0.08)
+                                        : null,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Text(
+                                        "${date.day}",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected == true
+                                              ? cs.onPrimary
+                                              : cs.onSurface,
                                         ),
                                       ),
-                                  ],
+
+                                      if (hasEvent)
+                                        Positioned(
+                                          bottom: 3,
+                                          child: Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: cs.primary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                    ),
-                    value: [_selectedDate],
-                    onValueChanged: (dates) {
-                      if (dates.isNotEmpty) {
-                        final nextDate = dates.first;
-                        final nextMonth = _monthStart(nextDate);
-                        setState(() {
-                          _selectedDate = nextDate;
-                          _selectedEvent = null;
-                        });
-                        if (_loadedMonth == null ||
-                            _monthStart(_loadedMonth!) != nextMonth) {
-                          _loadMonth(nextDate);
+                              );
+                            },
+                      ),
+                      value: [_selectedDate],
+                      onValueChanged: (dates) {
+                        if (dates.isNotEmpty) {
+                          final nextDate = dates.first;
+                          final nextMonth = _monthStart(nextDate);
+                          setState(() {
+                            _selectedDate = nextDate;
+                            _selectedEvent = null;
+                          });
+                          if (_loadedMonth == null ||
+                              _monthStart(_loadedMonth!) != nextMonth) {
+                            _loadMonth(nextDate);
+                          }
                         }
-                      }
-                    },
-                  ),
+                      },
+                    ),
 
                   const SizedBox(height: 40),
 
                   // SELECTED DATE CARD
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cs.onSurface.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      "${_selectedDate.day} / ${_selectedDate.month} / ${_selectedDate.year}",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
+                  if (showSkeleton)
+                    const AppShimmer(
+                      width: double.infinity,
+                      height: 56,
+                      radius: 12,
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "${_selectedDate.day} / ${_selectedDate.month} / ${_selectedDate.year}",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
                       ),
                     ),
-                  ),
 
                   const SizedBox(height: 24),
 
                   // EVENTS LIST
-                  ..._buildEventList(context, cs, width, eventMap),
+                  ..._buildEventList(
+                    context,
+                    cs,
+                    width,
+                    eventMap,
+                    showSkeleton,
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -590,14 +628,27 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Text(
-                          _eventDetailText(_selectedEvent),
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            color: cs.onSurface.withOpacity(0.6),
+                        if (showSkeleton)
+                          Column(
+                            children: const [
+                              AppShimmer(
+                                width: double.infinity,
+                                height: 14,
+                                radius: 8,
+                              ),
+                              SizedBox(height: 8),
+                              AppShimmer(width: 220, height: 14, radius: 8),
+                            ],
+                          )
+                        else
+                          Text(
+                            _eventDetailText(_selectedEvent),
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              color: cs.onSurface.withOpacity(0.6),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -616,7 +667,32 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     ColorScheme cs,
     double width,
     Map<DateTime, List<Map<String, dynamic>>> eventMap,
+    bool loading,
   ) {
+    if (loading) {
+      return List<Widget>.generate(
+        3,
+        (index) => Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: cs.onSurface.withOpacity(0.05)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppShimmer(width: 160, height: 16, radius: 8),
+              SizedBox(height: 8),
+              AppShimmer(width: 90, height: 12, radius: 8),
+            ],
+          ),
+        ),
+      );
+    }
+
     final events = eventMap[_dayKey(_selectedDate)] ?? [];
 
     if (events.isEmpty) {

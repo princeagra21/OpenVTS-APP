@@ -4,9 +4,34 @@ class SuperadminTotalCounts {
   const SuperadminTotalCounts(this.raw);
 
   Map<String, dynamic> get data {
-    final d = raw['data'];
-    if (d is Map) return Map<String, dynamic>.from(d.cast());
-    return raw;
+    Map<String, dynamic> asMap(Object? value) {
+      if (value is Map<String, dynamic>) return value;
+      if (value is Map) return Map<String, dynamic>.from(value.cast());
+      return const <String, dynamic>{};
+    }
+
+    final root = asMap(raw);
+    final first = asMap(root['data']);
+    final second = asMap(first['data']);
+
+    bool hasCountKeys(Map<String, dynamic> m) {
+      if (m.isEmpty) return false;
+      const keys = <String>{
+        'totalVehicles',
+        'activeVehicles',
+        'totalUsers',
+        'totalAdmins',
+        'licensedCredits',
+        'usedCredits',
+        'licensesUsed',
+      };
+      return m.keys.any(keys.contains);
+    }
+
+    if (hasCountKeys(second)) return second;
+    if (hasCountKeys(first)) return first;
+    if (hasCountKeys(root)) return root;
+    return second.isNotEmpty ? second : (first.isNotEmpty ? first : root);
   }
 
   List<String> get keys => data.keys.map((k) => k.toString()).toList()..sort();
@@ -46,6 +71,8 @@ class SuperadminTotalCounts {
   int get licensesIssued => _int(
     data['licensesIssued'] ??
         data['licenseIssued'] ??
+        data['licensedCredits'] ??
+        data['licensed_credits'] ??
         data['licenseIssuedCount'] ??
         data['license_issued'] ??
         data['licenses_issued'],
@@ -54,6 +81,8 @@ class SuperadminTotalCounts {
   int get licensesUsed => _int(
     data['licensesUsed'] ??
         data['licenseUsed'] ??
+        data['usedCredits'] ??
+        data['used_credits'] ??
         data['licenseUsedCount'] ??
         data['license_used'] ??
         data['licenses_used'],

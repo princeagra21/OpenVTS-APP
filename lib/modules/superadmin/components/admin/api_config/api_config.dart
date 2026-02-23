@@ -4,6 +4,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/api_config_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -55,49 +56,38 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
   // - GET /superadmin/softwareconfig
   // - PATCH /superadmin/softwareconfig
   // No dedicated test endpoints found for Firebase/Geocoding/SSO/OpenAI tests.
-  bool firebaseEnabled = true;
-  bool geoEnabled = true;
+  bool firebaseEnabled = false;
+  bool geoEnabled = false;
   String selectedProvider = "OSM Nominatim(FREE - No key)";
-  bool providerActive = true;
-  bool ssoEnabled = true;
-  bool openAiEnabled = true;
+  bool providerActive = false;
+  bool ssoEnabled = false;
+  bool openAiEnabled = false;
   String selectedModel = "GPT-4 TURBO (Recommended)";
   int maxTokens = 2048;
-  final TextEditingController firebaseApiKeyController = TextEditingController(
-    text: "fleetstack-project.firebaseapp.com",
-  );
+  final TextEditingController firebaseApiKeyController =
+      TextEditingController();
   final TextEditingController firebaseAuthDomainController =
-      TextEditingController(text: "fleetstack-project.firebaseapp.com");
+      TextEditingController();
   final TextEditingController firebaseProjectIdController =
-      TextEditingController(text: "fleetstack-project");
+      TextEditingController();
   final TextEditingController firebaseStorageBucketController =
-      TextEditingController(text: "fleetstack-project.appspot.com");
+      TextEditingController();
   final TextEditingController firebaseMessagingSenderIdController =
-      TextEditingController(text: "123456789012");
-  final TextEditingController firebaseAppIdController = TextEditingController(
-    text: "1:123456789012:web:abcdef1234567890",
-  );
+      TextEditingController();
+  final TextEditingController firebaseAppIdController = TextEditingController();
   final TextEditingController firebaseMeasurementIdController =
-      TextEditingController(text: "G-XXXXXXXXXX");
+      TextEditingController();
   final TextEditingController reverseGeoApiKeyController =
       TextEditingController();
   final TextEditingController userAgentController = TextEditingController();
-  final TextEditingController googleClientIdController = TextEditingController(
-    text:
-        "123456789012-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-  );
+  final TextEditingController googleClientIdController =
+      TextEditingController();
   final TextEditingController googleClientSecretController =
-      TextEditingController(text: "GOCSPX-xxxxxxxxxxxxxxxxxxxx");
+      TextEditingController();
   final TextEditingController googleRedirectUrlController =
-      TextEditingController(
-        text: "https://app.fleetstack.com/auth/google/callback",
-      );
-  final TextEditingController openAiApiKeyController = TextEditingController(
-    text: "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  );
-  final TextEditingController openAiOrgIdController = TextEditingController(
-    text: "org-xxxxxxxxxxxxxxxx",
-  );
+      TextEditingController();
+  final TextEditingController openAiApiKeyController = TextEditingController();
+  final TextEditingController openAiOrgIdController = TextEditingController();
   bool _loadingConfig = false;
   bool _saving = false;
   bool _testFirebaseLoading = false;
@@ -227,162 +217,124 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
           setState(() {
             _loadingConfig = false;
             _loadErrorShown = false;
-            final firebase = _pickBool(cfg, [
-              'firebaseEnabled',
-              'firebaseConfigEnabled',
-              'isFirebaseEnabled',
-            ]);
-            if (firebase != null) firebaseEnabled = firebase;
+            firebaseEnabled =
+                _pickBool(cfg, [
+                  'firebaseEnabled',
+                  'firebaseConfigEnabled',
+                  'isFirebaseEnabled',
+                ]) ??
+                false;
 
-            final geo = _pickBool(cfg, [
-              'geocodingEnabled',
-              'isReverseGeoEnabled',
-            ]);
-            if (geo != null) geoEnabled = geo;
+            geoEnabled =
+                _pickBool(cfg, ['geocodingEnabled', 'isReverseGeoEnabled']) ??
+                false;
 
-            final geoProviderActive = _pickBool(cfg, [
-              'geocodingProviderActive',
-              'reverseGeoProviderActive',
-              'providerActive',
-            ]);
-            if (geoProviderActive != null) providerActive = geoProviderActive;
+            providerActive =
+                _pickBool(cfg, [
+                  'geocodingProviderActive',
+                  'reverseGeoProviderActive',
+                  'providerActive',
+                ]) ??
+                false;
 
-            final sso = _pickBool(cfg, [
-              'googleSsoEnabled',
-              'isGoogleSsoEnabled',
-            ]);
-            if (sso != null) ssoEnabled = sso;
+            ssoEnabled =
+                _pickBool(cfg, ['googleSsoEnabled', 'isGoogleSsoEnabled']) ??
+                false;
 
-            final openai = _pickBool(cfg, ['openaiEnabled', 'isOpenAiEnabled']);
-            if (openai != null) openAiEnabled = openai;
+            openAiEnabled =
+                _pickBool(cfg, ['openaiEnabled', 'isOpenAiEnabled']) ?? false;
 
-            final firebaseApiKey = _pickString(cfg, [
+            firebaseApiKeyController.text = _pickString(cfg, [
               'firebaseApiKey',
               'apiKey',
             ]);
-            if (firebaseApiKey.isNotEmpty) {
-              firebaseApiKeyController.text = firebaseApiKey;
-            }
 
-            final firebaseAuthDomain = _pickString(cfg, [
+            firebaseAuthDomainController.text = _pickString(cfg, [
               'firebaseAuthDomain',
               'authDomain',
             ]);
-            if (firebaseAuthDomain.isNotEmpty) {
-              firebaseAuthDomainController.text = firebaseAuthDomain;
-            }
 
-            final firebaseProjectId = _pickString(cfg, [
+            firebaseProjectIdController.text = _pickString(cfg, [
               'firebaseProjectId',
               'projectId',
             ]);
-            if (firebaseProjectId.isNotEmpty) {
-              firebaseProjectIdController.text = firebaseProjectId;
-            }
 
-            final firebaseStorageBucket = _pickString(cfg, [
+            firebaseStorageBucketController.text = _pickString(cfg, [
               'firebaseStorageBucket',
               'storageBucket',
             ]);
-            if (firebaseStorageBucket.isNotEmpty) {
-              firebaseStorageBucketController.text = firebaseStorageBucket;
-            }
 
-            final senderId = _pickString(cfg, [
+            firebaseMessagingSenderIdController.text = _pickString(cfg, [
               'firebaseMessagingSenderId',
               'messagingSenderId',
             ]);
-            if (senderId.isNotEmpty) {
-              firebaseMessagingSenderIdController.text = senderId;
-            }
 
-            final appId = _pickString(cfg, ['firebaseAppId', 'appId']);
-            if (appId.isNotEmpty) {
-              firebaseAppIdController.text = appId;
-            }
+            firebaseAppIdController.text = _pickString(cfg, [
+              'firebaseAppId',
+              'appId',
+            ]);
 
-            final measurementId = _pickString(cfg, [
+            firebaseMeasurementIdController.text = _pickString(cfg, [
               'firebaseMeasurementId',
               'measurementId',
             ]);
-            if (measurementId.isNotEmpty) {
-              firebaseMeasurementIdController.text = measurementId;
-            }
 
             final provider = _pickString(cfg, [
               'geocodingProvider',
               'reverseGeoProvider',
             ]);
-            if (provider.isNotEmpty) {
-              selectedProvider = _providerUiValue(provider);
-            }
+            selectedProvider = provider.isEmpty
+                ? "OSM Nominatim(FREE - No key)"
+                : _providerUiValue(provider);
 
-            final userAgent = _pickString(cfg, [
+            userAgentController.text = _pickString(cfg, [
               'geocodingUserAgent',
               'userAgent',
             ]);
-            if (userAgent.isNotEmpty) {
-              userAgentController.text = userAgent;
-            }
 
-            final reverseGeoApiKey = _pickString(cfg, [
+            reverseGeoApiKeyController.text = _pickString(cfg, [
               'reverseGeoApiKey',
               'geocodingApiKey',
             ]);
-            if (reverseGeoApiKey.isNotEmpty) {
-              reverseGeoApiKeyController.text = reverseGeoApiKey;
-            }
 
-            final clientId = _pickString(cfg, ['googleClientId']);
-            if (clientId.isNotEmpty) {
-              googleClientIdController.text = clientId;
-            }
-
-            final clientSecret = _pickString(cfg, ['googleClientSecret']);
-            if (clientSecret.isNotEmpty) {
-              googleClientSecretController.text = clientSecret;
-            }
-
-            final redirect = _pickString(cfg, [
+            googleClientIdController.text = _pickString(cfg, [
+              'googleClientId',
+            ]);
+            googleClientSecretController.text = _pickString(cfg, [
+              'googleClientSecret',
+            ]);
+            googleRedirectUrlController.text = _pickString(cfg, [
               'googleRedirectUrl',
               'googleRedirectUri',
             ]);
-            if (redirect.isNotEmpty) {
-              googleRedirectUrlController.text = redirect;
-            }
 
-            final openAiApiKey = _pickString(cfg, [
+            openAiApiKeyController.text = _pickString(cfg, [
               'openaiApiKey',
               'openAiApiKey',
             ]);
-            if (openAiApiKey.isNotEmpty) {
-              openAiApiKeyController.text = openAiApiKey;
-            }
 
-            final openAiOrgId = _pickString(cfg, [
+            openAiOrgIdController.text = _pickString(cfg, [
               'openaiOrgId',
               'openAiOrgId',
             ]);
-            if (openAiOrgId.isNotEmpty) {
-              openAiOrgIdController.text = openAiOrgId;
-            }
 
             final openAiModel = _pickString(cfg, [
               'openaiModel',
               'openAiModel',
             ]);
-            if (openAiModel.isNotEmpty) {
-              selectedModel = _openAiUiModel(openAiModel);
-            }
+            selectedModel = openAiModel.isEmpty
+                ? 'GPT-4 TURBO (Recommended)'
+                : _openAiUiModel(openAiModel);
 
             final tokenLimit = _pickInt(cfg, [
               'openaiMaxTokens',
               'openAiMaxTokens',
               'maxTokens',
             ]);
-            if (tokenLimit != null && tokenLimit >= 1 && tokenLimit <= 4096) {
-              maxTokens = tokenLimit;
-            }
+            maxTokens =
+                (tokenLimit != null && tokenLimit >= 1 && tokenLimit <= 4096)
+                ? tokenLimit
+                : 2048;
           });
         },
         failure: (err) {
@@ -393,7 +345,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view API config.'
-              : "Couldn't load API config. Showing fallback values.";
+              : "Couldn't load API config.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -405,9 +357,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
       if (_loadErrorShown) return;
       _loadErrorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load API config. Showing fallback values."),
-        ),
+        const SnackBar(content: Text("Couldn't load API config.")),
       );
     }
   }
@@ -599,7 +549,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
               // SAVE BUTTON (MATCHES 'SAVE CHANGES')
               // -----------------------------------------
               ElevatedButton.icon(
-                onPressed: _saving
+                onPressed: (_saving || _loadingConfig)
                     ? null
                     : () => _saveApiConfig(showSuccess: true),
                 style: ElevatedButton.styleFrom(
@@ -640,489 +590,566 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
             ],
           ),
 
-          SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12), // a bit more breathing room
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(
-                color: colorScheme.onSurface.withOpacity(0.05),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==================== Firebase Configuration Header ====================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.fireplace_rounded,
-                          size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                          color: colorScheme.onSurface.withOpacity(0.87),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Firebase Configuration",
-                          style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        value: firebaseEnabled,
-                        activeColor: colorScheme.onPrimary,
-                        activeTrackColor: colorScheme.primary,
-                        inactiveThumbColor: colorScheme.onPrimary,
-                        inactiveTrackColor: colorScheme.primary.withOpacity(
-                          0.3,
-                        ),
-                        onChanged: _saving
-                            ? null
-                            : (v) => _toggleAndPersist(
-                                currentValue: firebaseEnabled,
-                                nextValue: v,
-                                setLocalValue: (value) =>
-                                    firebaseEnabled = value,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24), // space between the two sections
-                // ==================== Setup Instructions ====================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(
-                    16,
-                  ), // a bit more breathing room
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.05),
-                    ),
+          if (_loadingConfig) ...[
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ] else ...[
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12), // a bit more breathing room
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================== Firebase Configuration Header ====================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           Icon(
-                            Icons.integration_instructions,
-                            size: 22,
+                            Icons.fireplace_rounded,
+                            size: AdaptiveUtils.getTitleFontSize(width) + 5,
                             color: colorScheme.onSurface.withOpacity(0.87),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "Setup Instructions",
+                            "Firebase Configuration",
                             style: GoogleFonts.inter(
                               fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface.withOpacity(0.87),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Go to",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: () async {
-                          final url = Uri.parse(
-                            "https://console.firebase.google.com/",
-                          );
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(
-                              url,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        child: Text(
-                          "Firebase Console",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight
-                                .w600, // a bit bolder so it feels clickable
-                            color: colorScheme.primary,
-                            //decoration: TextDecoration.underline,
-                            decorationColor: colorScheme.primary,
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: firebaseEnabled,
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "→ Project Settings → General → Your apps → SDK setup and configuration",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
+                          onChanged: _saving
+                              ? null
+                              : (v) => _toggleAndPersist(
+                                  currentValue: firebaseEnabled,
+                                  nextValue: v,
+                                  setLocalValue: (value) =>
+                                      firebaseEnabled = value,
+                                ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: 24),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // API KEY
-                    Text(
-                      "API KEY",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseApiKeyController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // AUTH DOMAIN
-                    Text(
-                      "AUTH DOMAIN",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseAuthDomainController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // PROJECT ID
-                    Text(
-                      "PROJECT ID",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseProjectIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // STORAGE BUCKET
-                    Text(
-                      "STORAGE BUCKET",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseStorageBucketController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // MESSAGING SENDER ID
-                    Text(
-                      "MESSAGING SENDER ID",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseMessagingSenderIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // APP ID
-                    Text(
-                      "APP ID",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseAppIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // MEASUREMENT ID (Optional)
-                    Text(
-                      "MEASUREMENT ID (Optional)",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: firebaseMeasurementIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => _showUnavailableTest(
-                    setLoading: (v) => _testFirebaseLoading = v,
-                  ),
-                  child: Container(
+                  const SizedBox(height: 24), // space between the two sections
+                  // ==================== Setup Instructions ====================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(
+                      16,
+                    ), // a bit more breathing room
                     decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Check icon chip
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: _testFirebaseLoading
-                                  ? CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          // Button Text
-                          Text(
-                            "Test Connection",
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withOpacity(0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12), // a bit more breathing room
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(
-                color: colorScheme.onSurface.withOpacity(0.05),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==================== Reverse Geocoding Service Header ====================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_rounded,
-                          size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                          color: colorScheme.onSurface.withOpacity(0.87),
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
                         ),
-                        const SizedBox(width: 8),
+                      ],
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.integration_instructions,
+                              size: 22,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Setup Instructions",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    3,
+                                fontWeight: FontWeight.w800,
+                                color: colorScheme.onSurface.withOpacity(0.87),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                         Text(
-                          "Reverse Geocoding Service",
+                          "Go to",
                           style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () async {
+                            final url = Uri.parse(
+                              "https://console.firebase.google.com/",
+                            );
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
+                          child: Text(
+                            "Firebase Console",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight
+                                  .w600, // a bit bolder so it feels clickable
+                              color: colorScheme.primary,
+                              //decoration: TextDecoration.underline,
+                              decorationColor: colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "→ Project Settings → General → Your apps → SDK setup and configuration",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
                           ),
                         ),
                       ],
                     ),
-                    Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        value: geoEnabled,
-                        activeColor: colorScheme.onPrimary,
-                        activeTrackColor: colorScheme.primary,
-                        inactiveThumbColor: colorScheme.onPrimary,
-                        inactiveTrackColor: colorScheme.primary.withOpacity(
-                          0.3,
-                        ),
-                        onChanged: _saving
-                            ? null
-                            : (v) => _toggleAndPersist(
-                                currentValue: geoEnabled,
-                                nextValue: v,
-                                setLocalValue: (value) => geoEnabled = value,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 24),
 
-                const SizedBox(height: 24), // space between the two sections
-                // ==================== Configure Instructions ====================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(
-                    16,
-                  ), // a bit more breathing room
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // API KEY
+                      Text(
+                        "API KEY",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseApiKeyController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // AUTH DOMAIN
+                      Text(
+                        "AUTH DOMAIN",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseAuthDomainController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // PROJECT ID
+                      Text(
+                        "PROJECT ID",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseProjectIdController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // STORAGE BUCKET
+                      Text(
+                        "STORAGE BUCKET",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseStorageBucketController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // MESSAGING SENDER ID
+                      Text(
+                        "MESSAGING SENDER ID",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseMessagingSenderIdController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // APP ID
+                      Text(
+                        "APP ID",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseAppIdController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // MEASUREMENT ID (Optional)
+                      Text(
+                        "MEASUREMENT ID (Optional)",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: firebaseMeasurementIdController,
+                        decoration: _inputDecoration(context),
                       ),
                     ],
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.05),
+                  ),
+                  SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () => _showUnavailableTest(
+                      setLoading: (v) => _testFirebaseLoading = v,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Check icon chip
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: _testFirebaseLoading
+                                    ? CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              colorScheme.onPrimary,
+                                            ),
+                                      )
+                                    : Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            // Button Text
+                            Text(
+                              "Test Connection",
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12), // a bit more breathing room
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================== Reverse Geocoding Service Header ====================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           Icon(
-                            Icons.integration_instructions,
-                            size: 22,
+                            Icons.location_on_rounded,
+                            size: AdaptiveUtils.getTitleFontSize(width) + 5,
                             color: colorScheme.onSurface.withOpacity(0.87),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "Configure Your Geocoding Provider",
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                            "Reverse Geocoding Service",
                             style: GoogleFonts.inter(
                               fontSize:
-                                  AdaptiveUtils.getTitleFontSize(width) + 1,
-                              fontWeight: FontWeight.w600,
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface.withOpacity(0.87),
                             ),
                           ),
                         ],
                       ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: geoEnabled,
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
+                          ),
+                          onChanged: _saving
+                              ? null
+                              : (v) => _toggleAndPersist(
+                                  currentValue: geoEnabled,
+                                  nextValue: v,
+                                  setLocalValue: (value) => geoEnabled = value,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24), // space between the two sections
+                  // ==================== Configure Instructions ====================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(
+                      16,
+                    ), // a bit more breathing room
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.integration_instructions,
+                              size: 22,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Configure Your Geocoding Provider",
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getTitleFontSize(width) + 1,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.87),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Select a provider, enter credentials, and activate it to start using reverse geocoding services.",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // SELECT PROVIDER
+                      Text(
+                        "SELECT PROVIDER",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.1),
+                          ),
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedProvider,
+                          isExpanded: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          underline: const SizedBox(),
+                          style: GoogleFonts.inter(
+                            color: colorScheme.onSurface,
+                            fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          ),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() => selectedProvider = newValue);
+                            }
+                          },
+                          items:
+                              <String>[
+                                "Google map (Paid - 5\$/100req)",
+                                "HERE Map(FREE - 250K/Month)",
+                                "TomTom(FREE - 250o/day)",
+                                "MapBox(FREE - 100/Month)",
+                                "Location IQ(FREE - 1000/day)",
+                                "OSM Nominatim(FREE - No key)",
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Text(
-                        "Select a provider, enter credentials, and activate it to start using reverse geocoding services.",
+                        "Selected: $selectedProvider",
                         style: GoogleFonts.inter(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 5,
@@ -1130,286 +1157,35 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           color: colorScheme.onSurface.withOpacity(0.8),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // SELECT PROVIDER
-                    Text(
-                      "SELECT PROVIDER",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: colorScheme.onSurface.withOpacity(0.1),
-                        ),
-                      ),
-                      child: DropdownButton<String>(
-                        value: selectedProvider,
-                        isExpanded: true,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        underline: const SizedBox(),
-                        style: GoogleFonts.inter(
-                          color: colorScheme.onSurface,
-                          fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        ),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() => selectedProvider = newValue);
-                          }
-                        },
-                        items:
-                            <String>[
-                              "Google map (Paid - 5\$/100req)",
-                              "HERE Map(FREE - 250K/Month)",
-                              "TomTom(FREE - 250o/day)",
-                              "MapBox(FREE - 100/Month)",
-                              "Location IQ(FREE - 1000/day)",
-                              "OSM Nominatim(FREE - No key)",
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "Selected: $selectedProvider",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // ==================== Activate Provider ====================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(
-                        16,
-                      ), // a bit more breathing room
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: colorScheme.onSurface.withOpacity(0.05),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Activate Provider",
-                                style: GoogleFonts.inter(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                      3,
-                                  fontWeight: FontWeight.w800,
-                                  color: colorScheme.onSurface.withOpacity(
-                                    0.87,
-                                  ),
-                                ),
-                              ),
-                              Transform.scale(
-                                scale: 0.7,
-                                child: Switch(
-                                  value: providerActive,
-                                  activeColor: colorScheme.onPrimary,
-                                  activeTrackColor: colorScheme.primary,
-                                  inactiveThumbColor: colorScheme.onPrimary,
-                                  inactiveTrackColor: colorScheme.primary
-                                      .withOpacity(0.3),
-                                  onChanged: _saving
-                                      ? null
-                                      : (v) => _toggleAndPersist(
-                                          currentValue: providerActive,
-                                          nextValue: v,
-                                          setLocalValue: (value) =>
-                                              providerActive = value,
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            providerActive
-                                ? "This provider is now active and handling all reverse geocoding requests."
-                                : "Activate this provider to begin using it for reverse geocoding.",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withOpacity(0.8),
+                      const SizedBox(height: 24),
+                      // ==================== Activate Provider ====================
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(
+                          16,
+                        ), // a bit more breathing room
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
                             ),
+                          ],
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.05),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // ==================== Provider Documentation & Setup ====================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(
-                        16,
-                      ), // a bit more breathing room
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: colorScheme.onSurface.withOpacity(0.05),
                         ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.integration_instructions,
-                                size: 22,
-                                color: colorScheme.onSurface.withOpacity(0.87),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Provider Documentation & Setup",
-                                style: GoogleFonts.inter(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                      3,
-                                  fontWeight: FontWeight.w800,
-                                  color: colorScheme.onSurface.withOpacity(
-                                    0.87,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8, // space between items
-                            runSpacing: 6, // space between lines
-                            children: [
-                              _buildLink(
-                                context,
-                                "→ Google Cloud Console",
-                                "https://console.cloud.google.com/",
-                              ),
-                              _buildLink(
-                                context,
-                                "→ HERE Developer",
-                                "https://developer.here.com/",
-                              ),
-                              _buildLink(
-                                context,
-                                "→ TomTom Developer",
-                                "https://developer.tomtom.com/",
-                              ),
-                              _buildLink(
-                                context,
-                                "→ Mapbox Account",
-                                "https://account.mapbox.com/",
-                              ),
-                              _buildLink(
-                                context,
-                                "→ LocationIQ",
-                                "https://locationiq.com/",
-                              ),
-                              _buildLink(
-                                context,
-                                "→ OSM Nominatim",
-                                "https://nominatim.org/",
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // ==================== API Key or User Agent ====================
-                    if (selectedProvider != "OSM Nominatim(FREE - No key)")
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${selectedProvider.split('(')[0].trim()} API KEY",
-                            style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getTitleFontSize(width),
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withOpacity(0.87),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            style: GoogleFonts.inter(
-                              color: colorScheme.onSurface,
-                              fontSize: AdaptiveUtils.getTitleFontSize(width),
-                            ),
-                            controller: reverseGeoApiKeyController,
-                            decoration: _inputDecoration(context),
-                          ),
-                        ],
-                      )
-                    else
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                              border: Border.all(
-                                color: colorScheme.onSurface.withOpacity(0.05),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "OpenStreetMap Nominatim - Free Service",
+                                  "Activate Provider",
                                   style: GoogleFonts.inter(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(
@@ -1422,1182 +1198,1447 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                Transform.scale(
+                                  scale: 0.7,
+                                  child: Switch(
+                                    value: providerActive,
+                                    activeColor: colorScheme.onPrimary,
+                                    activeTrackColor: colorScheme.primary,
+                                    inactiveThumbColor: colorScheme.onPrimary,
+                                    inactiveTrackColor: colorScheme.primary
+                                        .withOpacity(0.3),
+                                    onChanged: _saving
+                                        ? null
+                                        : (v) => _toggleAndPersist(
+                                            currentValue: providerActive,
+                                            nextValue: v,
+                                            setLocalValue: (value) =>
+                                                providerActive = value,
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              providerActive
+                                  ? "This provider is now active and handling all reverse geocoding requests."
+                                  : "Activate this provider to begin using it for reverse geocoding.",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    5,
+                                fontWeight: FontWeight.w400,
+                                color: colorScheme.onSurface.withOpacity(0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // ==================== Provider Documentation & Setup ====================
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(
+                          16,
+                        ), // a bit more breathing room
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.05),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.integration_instructions,
+                                  size: 22,
+                                  color: colorScheme.onSurface.withOpacity(
+                                    0.87,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  "No API key required. Only User-Agent string needed.",
+                                  "Provider Documentation & Setup",
                                   style: GoogleFonts.inter(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(
                                           width,
                                         ) -
-                                        5,
-                                    fontWeight: FontWeight.w400,
+                                        3,
+                                    fontWeight: FontWeight.w800,
                                     color: colorScheme.onSurface.withOpacity(
-                                      0.8,
+                                      0.87,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "USER AGENT STRING",
-                            style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getTitleFontSize(width),
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withOpacity(0.87),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8, // space between items
+                              runSpacing: 6, // space between lines
+                              children: [
+                                _buildLink(
+                                  context,
+                                  "→ Google Cloud Console",
+                                  "https://console.cloud.google.com/",
+                                ),
+                                _buildLink(
+                                  context,
+                                  "→ HERE Developer",
+                                  "https://developer.here.com/",
+                                ),
+                                _buildLink(
+                                  context,
+                                  "→ TomTom Developer",
+                                  "https://developer.tomtom.com/",
+                                ),
+                                _buildLink(
+                                  context,
+                                  "→ Mapbox Account",
+                                  "https://account.mapbox.com/",
+                                ),
+                                _buildLink(
+                                  context,
+                                  "→ LocationIQ",
+                                  "https://locationiq.com/",
+                                ),
+                                _buildLink(
+                                  context,
+                                  "→ OSM Nominatim",
+                                  "https://nominatim.org/",
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            style: GoogleFonts.inter(
-                              color: colorScheme.onSurface,
-                              fontSize: AdaptiveUtils.getTitleFontSize(width),
-                            ),
-                            controller: userAgentController,
-                            decoration: _inputDecoration(context),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Required by OSM usage policy",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => _showUnavailableTest(
-                    setLoading: (v) => _testGeoLoading = v,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Check icon chip
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: _testGeoLoading
-                                  ? CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          // Button Text
-                          Text(
-                            "Test Geocoding",
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withOpacity(0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12), // a bit more breathing room
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(
-                color: colorScheme.onSurface.withOpacity(0.05),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==================== SSO - Google OAuth 2.0 Header ====================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.security_rounded,
-                          size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                          color: colorScheme.onSurface.withOpacity(0.87),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "SSO - Google OAuth 2.0",
-                          style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        value: ssoEnabled,
-                        activeColor: colorScheme.onPrimary,
-                        activeTrackColor: colorScheme.primary,
-                        inactiveThumbColor: colorScheme.onPrimary,
-                        inactiveTrackColor: colorScheme.primary.withOpacity(
-                          0.3,
-                        ),
-                        onChanged: _saving
-                            ? null
-                            : (v) => _toggleAndPersist(
-                                currentValue: ssoEnabled,
-                                nextValue: v,
-                                setLocalValue: (value) => ssoEnabled = value,
+                      ),
+                      const SizedBox(height: 24),
+                      // ==================== API Key or User Agent ====================
+                      if (selectedProvider != "OSM Nominatim(FREE - No key)")
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${selectedProvider.split('(')[0].trim()} API KEY",
+                              style: GoogleFonts.inter(
+                                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.87),
                               ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24), // space between the two sections
-                // ==================== Setup Instructions ====================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(
-                    16,
-                  ), // a bit more breathing room
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.05),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.integration_instructions,
-                            size: 22,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Setup Instructions",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              fontWeight: FontWeight.w800,
-                              color: colorScheme.onSurface.withOpacity(0.87),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Text(
-                            "1. Go to ",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withOpacity(0.8),
+                            const SizedBox(height: 8),
+                            TextField(
+                              style: GoogleFonts.inter(
+                                color: colorScheme.onSurface,
+                                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                              ),
+                              controller: reverseGeoApiKeyController,
+                              decoration: _inputDecoration(context),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () async {
-                              final url = Uri.parse(
-                                "https://console.cloud.google.com/",
-                              );
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(
-                                  url,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
-                            },
-                            child: Text(
-                              "Google Cloud Console",
+                          ],
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: colorScheme.onSurface.withOpacity(
+                                    0.05,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "OpenStreetMap Nominatim - Free Service",
+                                    style: GoogleFonts.inter(
+                                      fontSize:
+                                          AdaptiveUtils.getSubtitleFontSize(
+                                            width,
+                                          ) -
+                                          3,
+                                      fontWeight: FontWeight.w800,
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.87,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    "No API key required. Only User-Agent string needed.",
+                                    style: GoogleFonts.inter(
+                                      fontSize:
+                                          AdaptiveUtils.getSubtitleFontSize(
+                                            width,
+                                          ) -
+                                          5,
+                                      fontWeight: FontWeight.w400,
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              "USER AGENT STRING",
+                              style: GoogleFonts.inter(
+                                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.87),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              style: GoogleFonts.inter(
+                                color: colorScheme.onSurface,
+                                fontSize: AdaptiveUtils.getTitleFontSize(width),
+                              ),
+                              controller: userAgentController,
+                              decoration: _inputDecoration(context),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Required by OSM usage policy",
                               style: GoogleFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     5,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w400,
+                                color: colorScheme.onSurface.withOpacity(0.8),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "2. Create OAuth 2.0 Client ID (Application type: Web application)",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "3. Add authorized redirect URI: https://app.fleetstack.com/auth/google/callback",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "4. Copy Client ID and Client Secret",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
                     ],
                   ),
-                ),
-                SizedBox(height: 24),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // GOOGLE CLIENT ID
-                    Text(
-                      "GOOGLE CLIENT ID",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
+                  SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () => _showUnavailableTest(
+                      setLoading: (v) => _testGeoLoading = v,
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: googleClientIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // GOOGLE CLIENT SECRET
-                    Text(
-                      "GOOGLE CLIENT SECRET",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: googleClientSecretController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // REDIRECT URL
-                    Text(
-                      "REDIRECT URL",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: googleRedirectUrlController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Add this URL to authorized redirect URIs in Google Console",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => _showUnavailableTest(
-                    setLoading: (v) => _testSsoLoading = v,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Check icon chip
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: _testSsoLoading
-                                  ? CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          // Button Text
-                          Text(
-                            "Test SSO Connection",
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withOpacity(0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12), // a bit more breathing room
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(
-                color: colorScheme.onSurface.withOpacity(0.05),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==================== OpenAI Integration Header ====================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          size: AdaptiveUtils.getTitleFontSize(width) + 5,
-                          color: colorScheme.onSurface.withOpacity(0.87),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "OpenAI Integration",
-                          style: GoogleFonts.inter(
-                            fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        value: openAiEnabled,
-                        activeColor: colorScheme.onPrimary,
-                        activeTrackColor: colorScheme.primary,
-                        inactiveThumbColor: colorScheme.onPrimary,
-                        inactiveTrackColor: colorScheme.primary.withOpacity(
-                          0.3,
-                        ),
-                        onChanged: _saving
-                            ? null
-                            : (v) => _toggleAndPersist(
-                                currentValue: openAiEnabled,
-                                nextValue: v,
-                                setLocalValue: (value) => openAiEnabled = value,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24), // space between the two sections
-                // ==================== Setup Instructions ====================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(
-                    16,
-                  ), // a bit more breathing room
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.05),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.integration_instructions,
-                            size: 22,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Setup Instructions",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              fontWeight: FontWeight.w800,
-                              color: colorScheme.onSurface.withOpacity(0.87),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Text(
-                            "1. Go to ",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () async {
-                              final url = Uri.parse(
-                                "https://platform.openai.com/api-keys",
-                              );
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(
-                                  url,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
-                            },
-                            child: Text(
-                              "OpenAI API Keys",
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                    5,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "2. Create new secret key (starts with sk-proj-...)",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "3. Optional: Get Organization ID from Settings",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "4. Set usage limits in Billing",
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                          fontWeight: FontWeight.w400,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // API KEY
-                    Text(
-                      "API KEY",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: openAiApiKeyController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ORGANIZATION ID (Optional)
-                    Text(
-                      "ORGANIZATION ID (Optional)",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onSurface,
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                      ),
-                      controller: openAiOrgIdController,
-                      decoration: _inputDecoration(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // MODEL
-                    Text(
-                      "MODEL",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
+                    child: Container(
                       decoration: BoxDecoration(
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: colorScheme.onSurface.withOpacity(0.1),
+                          width: 1,
                         ),
                       ),
-                      child: DropdownButton<String>(
-                        value: selectedModel,
-                        isExpanded: true,
+                      child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        underline: const SizedBox(),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Check icon chip
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: _testGeoLoading
+                                    ? CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              colorScheme.onPrimary,
+                                            ),
+                                      )
+                                    : Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            // Button Text
+                            Text(
+                              "Test Geocoding",
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12), // a bit more breathing room
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================== SSO - Google OAuth 2.0 Header ====================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.security_rounded,
+                            size: AdaptiveUtils.getTitleFontSize(width) + 5,
+                            color: colorScheme.onSurface.withOpacity(0.87),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "SSO - Google OAuth 2.0",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: ssoEnabled,
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
+                          ),
+                          onChanged: _saving
+                              ? null
+                              : (v) => _toggleAndPersist(
+                                  currentValue: ssoEnabled,
+                                  nextValue: v,
+                                  setLocalValue: (value) => ssoEnabled = value,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24), // space between the two sections
+                  // ==================== Setup Instructions ====================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(
+                      16,
+                    ), // a bit more breathing room
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.integration_instructions,
+                              size: 22,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Setup Instructions",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    3,
+                                fontWeight: FontWeight.w800,
+                                color: colorScheme.onSurface.withOpacity(0.87),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Text(
+                              "1. Go to ",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    5,
+                                fontWeight: FontWeight.w400,
+                                color: colorScheme.onSurface.withOpacity(0.8),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                final url = Uri.parse(
+                                  "https://console.cloud.google.com/",
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(
+                                    url,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              },
+                              child: Text(
+                                "Google Cloud Console",
+                                style: GoogleFonts.inter(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(width) -
+                                      5,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "2. Create OAuth 2.0 Client ID (Application type: Web application)",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "3. Add authorized redirect URI: https://app.fleetstack.com/auth/google/callback",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "4. Copy Client ID and Client Secret",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // GOOGLE CLIENT ID
+                      Text(
+                        "GOOGLE CLIENT ID",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
                         style: GoogleFonts.inter(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() => selectedModel = newValue);
-                          }
-                        },
-                        items: <String>["GPT-4", "GPT-4 TURBO (Recommended)"]
-                            .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            })
-                            .toList(),
+                        controller: googleClientIdController,
+                        decoration: _inputDecoration(context),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // MAX-TOKEN
-                    Text(
-                      "MAX-TOKEN",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
+                      // GOOGLE CLIENT SECRET
+                      Text(
+                        "GOOGLE CLIENT SECRET",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: maxTokens.toDouble(),
-                      min: 1,
-                      max: 4096,
-                      divisions: 4095,
-                      label: maxTokens.toString(),
-                      activeColor: colorScheme.primary,
-                      onChanged: (double value) {
-                        setState(() {
-                          maxTokens = value.toInt();
-                        });
-                      },
-                    ),
-                    Text(
-                      "Range: 1–4096 tokens",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurface.withOpacity(0.8),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: googleClientSecretController,
+                        decoration: _inputDecoration(context),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () => _showUnavailableTest(
-                    setLoading: (v) => _testOpenAiLoading = v,
+                      const SizedBox(height: 12),
+
+                      // REDIRECT URL
+                      Text(
+                        "REDIRECT URL",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: googleRedirectUrlController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Add this URL to authorized redirect URIs in Google Console",
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                        width: 1,
+                  SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () => _showUnavailableTest(
+                      setLoading: (v) => _testSsoLoading = v,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Check icon chip
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: _testSsoLoading
+                                    ? CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              colorScheme.onPrimary,
+                                            ),
+                                      )
+                                    : Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            // Button Text
+                            Text(
+                              "Test SSO Connection",
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12), // a bit more breathing room
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================== OpenAI Integration Header ====================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
                         children: [
-                          // Check icon chip
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: _testOpenAiLoading
-                                  ? CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: colorScheme.onPrimary,
-                                    ),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: AdaptiveUtils.getTitleFontSize(width) + 5,
+                            color: colorScheme.onSurface.withOpacity(0.87),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "OpenAI Integration",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
                             ),
                           ),
+                        ],
+                      ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: openAiEnabled,
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
+                          ),
+                          onChanged: _saving
+                              ? null
+                              : (v) => _toggleAndPersist(
+                                  currentValue: openAiEnabled,
+                                  nextValue: v,
+                                  setLocalValue: (value) =>
+                                      openAiEnabled = value,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
 
-                          const SizedBox(width: 12),
+                  const SizedBox(height: 24), // space between the two sections
+                  // ==================== Setup Instructions ====================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(
+                      16,
+                    ), // a bit more breathing room
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.05),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.integration_instructions,
+                              size: 22,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Setup Instructions",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    3,
+                                fontWeight: FontWeight.w800,
+                                color: colorScheme.onSurface.withOpacity(0.87),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Text(
+                              "1. Go to ",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    5,
+                                fontWeight: FontWeight.w400,
+                                color: colorScheme.onSurface.withOpacity(0.8),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                final url = Uri.parse(
+                                  "https://platform.openai.com/api-keys",
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(
+                                    url,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              },
+                              child: Text(
+                                "OpenAI API Keys",
+                                style: GoogleFonts.inter(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(width) -
+                                      5,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "2. Create new secret key (starts with sk-proj-...)",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "3. Optional: Get Organization ID from Settings",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "4. Set usage limits in Billing",
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                            fontWeight: FontWeight.w400,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24),
 
-                          // Button Text
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // API KEY
+                      Text(
+                        "API KEY",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: openAiApiKeyController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // ORGANIZATION ID (Optional)
+                      Text(
+                        "ORGANIZATION ID (Optional)",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onSurface,
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        ),
+                        controller: openAiOrgIdController,
+                        decoration: _inputDecoration(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // MODEL
+                      Text(
+                        "MODEL",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.1),
+                          ),
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedModel,
+                          isExpanded: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          underline: const SizedBox(),
+                          style: GoogleFonts.inter(
+                            color: colorScheme.onSurface,
+                            fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          ),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() => selectedModel = newValue);
+                            }
+                          },
+                          items: <String>["GPT-4", "GPT-4 TURBO (Recommended)"]
+                              .map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // MAX-TOKEN
+                      Text(
+                        "MAX-TOKEN",
+                        style: GoogleFonts.inter(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width),
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Slider(
+                        value: maxTokens.toDouble(),
+                        min: 1,
+                        max: 4096,
+                        divisions: 4095,
+                        label: maxTokens.toString(),
+                        activeColor: colorScheme.primary,
+                        onChanged: (double value) {
+                          setState(() {
+                            maxTokens = value.toInt();
+                          });
+                        },
+                      ),
+                      Text(
+                        "Range: 1–4096 tokens",
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () => _showUnavailableTest(
+                      setLoading: (v) => _testOpenAiLoading = v,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Check icon chip
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: _testOpenAiLoading
+                                    ? CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              colorScheme.onPrimary,
+                                            ),
+                                      )
+                                    : Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            // Button Text
+                            Text(
+                              "Test Openai Connection",
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12), // a bit more breathing room
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ==================== Useful Documentation Header ====================
+                  Text(
+                    "Useful Documentation",
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface.withOpacity(0.87),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16), // space between the two sections
+
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://firebase.google.com/docs/web/setup",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            "Test Openai Connection",
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withOpacity(0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            "Firebase setup",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Web SDK Documentation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12), // a bit more breathing room
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              border: Border.all(
-                color: colorScheme.onSurface.withOpacity(0.05),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://developers.google.com/maps/documentation/geocoding/overview",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Google geocoding",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "API Documentation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://developers.google.com/identity/protocols/oauth2",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Google OAuth 2.0",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "SSO implementation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://www.twilio.com/docs/whatsapp/api",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Twilio Whatsapp",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "API Documentation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://developers.facebook.com/docs/whatsapp",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Whatsapp Business",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Meta Documentation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(
+                        "https://platform.openai.com/docs/api-reference",
+                      );
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "OpenAI API",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Platform documentation",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ==================== Useful Documentation Header ====================
-                Text(
-                  "Useful Documentation",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
+          ],
+        ],
+      ),
+    );
+  }
 
-                const SizedBox(height: 16), // space between the two sections
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerSection(width: width, titleWidth: 210, fields: 7),
+        const SizedBox(height: 24),
+        _buildShimmerSection(width: width, titleWidth: 240, fields: 4),
+        const SizedBox(height: 24),
+        _buildShimmerSection(width: width, titleWidth: 190, fields: 3),
+        const SizedBox(height: 24),
+        _buildShimmerSection(width: width, titleWidth: 180, fields: 3),
+      ],
+    );
+  }
 
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://firebase.google.com/docs/web/setup",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Firebase setup",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Web SDK Documentation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://developers.google.com/maps/documentation/geocoding/overview",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Google geocoding",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "API Documentation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://developers.google.com/identity/protocols/oauth2",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Google OAuth 2.0",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "SSO implementation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://www.twilio.com/docs/whatsapp/api",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Twilio Whatsapp",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "API Documentation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://developers.facebook.com/docs/whatsapp",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Whatsapp Business",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Meta Documentation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      "https://platform.openai.com/docs/api-reference",
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.05),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "OpenAI API",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Platform documentation",
-                          style: GoogleFonts.inter(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 5,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildShimmerSection({
+    required double width,
+    required double titleWidth,
+    required int fields,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double labelWidth = (width * 0.22).clamp(90, 180).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
+        ],
+        border: Border.all(color: colorScheme.onSurface.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppShimmer(width: titleWidth, height: 24, radius: 8),
+              const AppShimmer(width: 46, height: 26, radius: 14),
+            ],
+          ),
+          const SizedBox(height: 20),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
         ],
       ),
     );

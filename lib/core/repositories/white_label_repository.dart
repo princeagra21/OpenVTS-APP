@@ -99,14 +99,23 @@ class WhiteLabelRepository {
   }
 
   Map<String, dynamic> _extractMap(Object? data) {
-    if (data is Map<String, dynamic>) {
-      final nested = data['data'];
-      if (nested is Map<String, dynamic>) return nested;
-      if (nested is Map) return Map<String, dynamic>.from(nested.cast());
-      return data;
+    if (data is! Map) return const <String, dynamic>{};
+
+    final level0 = data is Map<String, dynamic>
+        ? data
+        : Map<String, dynamic>.from(data.cast());
+
+    final level1Raw = level0['data'];
+    if (level1Raw is Map) {
+      final level1 = Map<String, dynamic>.from(level1Raw.cast());
+      final level2Raw = level1['data'];
+      if (level2Raw is Map) {
+        return Map<String, dynamic>.from(level2Raw.cast());
+      }
+      return level1;
     }
-    if (data is Map) return Map<String, dynamic>.from(data.cast());
-    return const <String, dynamic>{};
+
+    return level0;
   }
 
   String _s(Object? v) => v == null ? '' : v.toString();

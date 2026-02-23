@@ -43,29 +43,51 @@ class AppPreferencesRepository {
   }
 
   Map<String, dynamic> _extractMap(Object? data) {
-    if (data is Map<String, dynamic>) {
+    if (data is! Map) {
+      if (data is List && data.isNotEmpty) {
+        final first = data.first;
+        if (first is Map<String, dynamic>) return first;
+        if (first is Map) return Map<String, dynamic>.from(first.cast());
+      }
+      return const <String, dynamic>{};
+    }
+
+    final level0 = data is Map<String, dynamic>
+        ? data
+        : Map<String, dynamic>.from(data.cast());
+
+    final level1Raw = level0['data'];
+    if (level1Raw is Map) {
+      final level1 = Map<String, dynamic>.from(level1Raw.cast());
+      final level2Raw = level1['data'];
+      if (level2Raw is Map) {
+        return Map<String, dynamic>.from(level2Raw.cast());
+      }
+
       final candidates = [
-        data['data'],
-        data['result'],
-        data['items'],
-        data['config'],
-        data['settings'],
+        level1['result'],
+        level1['items'],
+        level1['config'],
+        level1['settings'],
       ];
       for (final c in candidates) {
         if (c is Map<String, dynamic>) return c;
         if (c is Map) return Map<String, dynamic>.from(c.cast());
       }
-      return data;
+      return level1;
     }
 
-    if (data is Map) return Map<String, dynamic>.from(data.cast());
-
-    if (data is List && data.isNotEmpty) {
-      final first = data.first;
-      if (first is Map<String, dynamic>) return first;
-      if (first is Map) return Map<String, dynamic>.from(first.cast());
+    final candidates = [
+      level0['result'],
+      level0['items'],
+      level0['config'],
+      level0['settings'],
+    ];
+    for (final c in candidates) {
+      if (c is Map<String, dynamic>) return c;
+      if (c is Map) return Map<String, dynamic>.from(c.cast());
     }
 
-    return const <String, dynamic>{};
+    return level0;
   }
 }

@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -53,14 +54,14 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   // - PATCH /superadmin/localization
   final bool _hasLocalizationSettingsEndpoint = true;
 
-  String selectedLanguage = "EN";
+  String selectedLanguage = '';
   String textDirection = "LTR";
-  String dateFormat = "dd MMM yyyy";
+  String dateFormat = '';
   String timeFormat = "24-hour";
-  String timezone = "+01:00";
+  String timezone = '';
   String units = "KM";
-  double lat = 19.0760;
-  double lng = 72.8777;
+  double lat = 0;
+  double lng = 0;
   int zoom = 10;
 
   final DateTime previewDate = DateTime(2025, 12, 7, 15, 28);
@@ -80,9 +81,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     'Dec',
   ];
 
-  List<String> _languages = ['EN', 'FR', 'ES', 'DE'];
-  List<String> _dateFormats = ['dd MMM yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'];
-  List<String> _timezones = ['+00:00', '+01:00', '+02:00', '-05:00'];
+  List<String> _languages = const [];
+  List<String> _dateFormats = const [];
+  List<String> _timezones = const [];
 
   bool _loading = false;
   bool _saving = false;
@@ -139,9 +140,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     String monthName = months[previewDate.month];
 
     return switch (dateFormat) {
-      "dd MMM yyyy" => "$day $monthName $year",
-      "MM/dd/yyyy" => "$month/$day/$year",
-      "yyyy-MM-dd" => "$year-$month-$day",
+      "dd MMM yyyy" || "DD MMM YYYY" => "$day $monthName $year",
+      "MM/dd/yyyy" || "MM/DD/YYYY" => "$month/$day/$year",
+      "yyyy-MM-dd" || "YYYY-MM-DD" => "$year-$month-$day",
       _ => "$day $monthName $year",
     };
   }
@@ -159,14 +160,14 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
 
   _LocalizationSnapshot _defaultsSnapshot() {
     return const _LocalizationSnapshot(
-      selectedLanguage: 'EN',
+      selectedLanguage: '',
       textDirection: 'LTR',
-      dateFormat: 'dd MMM yyyy',
+      dateFormat: '',
       timeFormat: '24-hour',
-      timezone: '+01:00',
+      timezone: '',
       units: 'KM',
-      lat: 19.0760,
-      lng: 72.8777,
+      lat: 0,
+      lng: 0,
       zoom: 10,
     );
   }
@@ -251,6 +252,17 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return [...values, current];
   }
 
+  String _firstOrEmpty(List<String> values) {
+    if (values.isEmpty) return '';
+    return values.first;
+  }
+
+  String? _dropdownValueOrNull(List<String> options, String current) {
+    if (current.trim().isEmpty) return null;
+    final has = options.any((e) => e.toLowerCase() == current.toLowerCase());
+    return has ? current : null;
+  }
+
   Future<void> _loadLocalizationData() async {
     _loadToken?.cancel('Reload localization');
     final token = CancelToken();
@@ -290,7 +302,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load reference data.'
-              : "Couldn't load all localization reference data. Showing fallback values.";
+              : "Couldn't load localization reference data.";
           _showLoadErrorOnce(message);
         },
       );
@@ -309,7 +321,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load reference data.'
-              : "Couldn't load all localization reference data. Showing fallback values.";
+              : "Couldn't load localization reference data.";
           _showLoadErrorOnce(message);
         },
       );
@@ -326,7 +338,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load reference data.'
-              : "Couldn't load all localization reference data. Showing fallback values.";
+              : "Couldn't load localization reference data.";
           _showLoadErrorOnce(message);
         },
       );
@@ -386,7 +398,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             if (settings.mapLng != null) nextLng = settings.mapLng!;
             if (settings.mapZoom != null &&
                 settings.mapZoom! >= 1 &&
-                settings.mapZoom! <= 20) {
+                settings.mapZoom! <= 22) {
               nextZoom = settings.mapZoom!;
             }
 
@@ -409,15 +421,13 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 (err is ApiException &&
                     (err.statusCode == 401 || err.statusCode == 403))
                 ? 'Not authorized to load localization settings.'
-                : "Couldn't load localization settings. Showing fallback values.";
+                : "Couldn't load localization settings.";
             _showLoadErrorOnce(message);
           },
         );
       }
     } catch (_) {
-      _showLoadErrorOnce(
-        "Couldn't load localization data. Showing fallback values.",
-      );
+      _showLoadErrorOnce("Couldn't load localization data.");
     }
 
     if (!mounted) return;
@@ -429,16 +439,20 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       selectedLanguage = _matchChoice(
         nextSelectedLanguage,
         _languages,
-        _languages.first,
+        _firstOrEmpty(_languages),
       );
       textDirection = nextTextDirection;
       dateFormat = _matchChoice(
         nextDateFormat,
         _dateFormats,
-        _dateFormats.first,
+        _firstOrEmpty(_dateFormats),
       );
       timeFormat = nextTimeFormat;
-      timezone = _matchChoice(nextTimezone, _timezones, _timezones.first);
+      timezone = _matchChoice(
+        nextTimezone,
+        _timezones,
+        _firstOrEmpty(_timezones),
+      );
       units = nextUnits;
       lat = nextLat;
       lng = nextLng;
@@ -478,13 +492,19 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
 
     final payload = <String, dynamic>{
       'language': selectedLanguage,
+      'languageCode': selectedLanguage,
       'dateFormat': dateFormat,
       'use24Hour': timeFormat == '24-hour',
+      'timeFormat': timeFormat == '24-hour' ? '24H' : '12H',
       'layoutDirection': textDirection,
+      'direction': textDirection,
       'timezoneOffset': timezone,
+      'timezone': timezone,
       'units': units,
+      'distanceUnit': units,
       'defaultLat': lat.toStringAsFixed(6),
       'defaultLon': lng.toStringAsFixed(6),
+      'defaultLng': lng.toStringAsFixed(6),
       'mapZoom': zoom.toString(),
     };
 
@@ -549,6 +569,37 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
+    if (_loading) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                AppShimmer(width: 100, height: 36, radius: 8),
+                SizedBox(width: 12),
+                AppShimmer(width: 92, height: 36, radius: 8),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const AppShimmer(width: 240, height: 24, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 16, radius: 8),
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ],
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(hp),
@@ -565,7 +616,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               ElevatedButton.icon(
-                onPressed: _saving ? null : _resetPressed,
+                onPressed: (_saving || _loading) ? null : _resetPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(
@@ -703,18 +754,24 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             title: "Default Language",
             subtitle: "Primary language",
             child: DropdownButtonFormField<String>(
-              value: selectedLanguage,
+              value: _dropdownValueOrNull(_languages, selectedLanguage),
+              hint: Text(
+                _languages.isEmpty ? 'No language options' : 'Select language',
+                style: GoogleFonts.inter(),
+              ),
               decoration: _dropdownDecoration(context),
               items: _languages
                   .map(
                     (lang) => DropdownMenuItem(value: lang, child: Text(lang)),
                   )
                   .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => selectedLanguage = v);
-                }
-              },
+              onChanged: _languages.isEmpty
+                  ? null
+                  : (v) {
+                      if (v != null) {
+                        setState(() => selectedLanguage = v);
+                      }
+                    },
             ),
           ),
 
@@ -761,16 +818,24 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             title: "Date Format",
             subtitle: "Display style",
             child: DropdownButtonFormField<String>(
-              value: dateFormat,
+              value: _dropdownValueOrNull(_dateFormats, dateFormat),
+              hint: Text(
+                _dateFormats.isEmpty
+                    ? 'No date format options'
+                    : 'Select date format',
+                style: GoogleFonts.inter(),
+              ),
               decoration: _dropdownDecoration(context),
               items: _dateFormats
                   .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                   .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => dateFormat = v);
-                }
-              },
+              onChanged: _dateFormats.isEmpty
+                  ? null
+                  : (v) {
+                      if (v != null) {
+                        setState(() => dateFormat = v);
+                      }
+                    },
             ),
           ),
 
@@ -828,16 +893,22 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             context: context,
             title: "Timezone",
             child: DropdownButtonFormField<String>(
-              value: timezone,
+              value: _dropdownValueOrNull(_timezones, timezone),
+              hint: Text(
+                _timezones.isEmpty ? 'No timezone options' : 'Select timezone',
+                style: GoogleFonts.inter(),
+              ),
               decoration: _dropdownDecoration(context),
               items: _timezones
                   .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
                   .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => timezone = v);
-                }
-              },
+              onChanged: _timezones.isEmpty
+                  ? null
+                  : (v) {
+                      if (v != null) {
+                        setState(() => timezone = v);
+                      }
+                    },
             ),
           ),
 
@@ -917,8 +988,8 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 Slider(
                   value: zoom.toDouble(),
                   min: 1,
-                  max: 20,
-                  divisions: 19,
+                  max: 22,
+                  divisions: 21,
                   activeColor: colorScheme.primary,
                   label: zoom.toString(),
                   onChanged: (v) => setState(() => zoom = v.toInt()),
@@ -926,6 +997,59 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerCard(width: width, titleWidth: 180, fields: 3),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 200, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 170, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 130, fields: 3),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard({
+    required double width,
+    required double titleWidth,
+    required int fields,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double labelWidth = (width * 0.24).clamp(90, 180).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: titleWidth, height: 24, radius: 8),
+          const SizedBox(height: 16),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
         ],
       ),
     );

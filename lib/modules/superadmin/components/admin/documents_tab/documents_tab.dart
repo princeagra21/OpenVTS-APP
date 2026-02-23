@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/widget/add_document.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/widget/file_card.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
@@ -23,81 +24,25 @@ class DocumentsTab extends StatefulWidget {
 }
 
 class _DocumentsTabState extends State<DocumentsTab> {
-  late List<Map<String, dynamic>> _files;
+  final List<Map<String, dynamic>> _files = <Map<String, dynamic>>[];
   bool _loading = false;
   bool _errorShown = false;
+  bool _loadFailed = false;
   CancelToken? _token;
 
   ApiClient? _api;
   SuperadminRepository? _repo;
 
-  double _usedStorageGb = 2.62;
-  double _totalStorageGb = 5;
-  int _totalDocs = 411;
-  int _validCount = 1;
-  int _warningCount = 4;
-  int _expiredCount = 2;
-
-  final double _fallbackUsedStorageGb = 2.62;
-  final double _fallbackTotalStorageGb = 5;
-  final int _fallbackTotalDocs = 411;
-  final int _fallbackValidCount = 1;
-  final int _fallbackWarningCount = 4;
-  final int _fallbackExpiredCount = 2;
-
-  final List<Map<String, dynamic>> _fallbackFiles = [
-    {
-      "fileName": "Company PAN Certificate.pdf",
-      "version": "v3",
-      "fileSize": "340.41 KB",
-      "type": "PAN Card",
-      "tags": ["finance", "compliance"],
-      "uploadedDate": "19 Nov 2025",
-      "expiryDate": "15 Jan 2026",
-      "status": "Valid · 45d",
-    },
-    {
-      "fileName": "Driver Employment Contract – Aarav Sharma.pdf",
-      "version": "v1",
-      "fileSize": "1023.55 KB",
-      "type": "Employment Contract",
-      "tags": ["hr", "driver"],
-      "uploadedDate": "28 Nov 2025",
-      "expiryDate": "16 Dec 2025",
-      "status": "Expiring · 15d",
-    },
-    {
-      "fileName": "Vendor NDA (Traccar Integration).pdf",
-      "version": "v2",
-      "fileSize": "793.94 KB",
-      "type": "NDA / Confidentiality Agreement",
-      "tags": ["legal", "nda"],
-      "uploadedDate": "29 Nov 2025",
-      "expiryDate": "30 Nov 2025",
-      "status": "Expired",
-    },
-    {
-      "fileName": "Insurance Policy – HQ Servers.docx",
-      "version": "v5",
-      "fileSize": "520 KB",
-      "type": "Insurance Policy",
-      "tags": ["ops", "infra"],
-      "uploadedDate": "01 Nov 2025",
-      "expiryDate": "—",
-      "status": "Valid",
-    },
-  ];
+  double _usedStorageGb = 0;
+  final double _totalStorageGb = 5;
+  int _totalDocs = 0;
+  int _validCount = 0;
+  int _warningCount = 0;
+  int _expiredCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _files = List<Map<String, dynamic>>.from(_fallbackFiles);
-    _usedStorageGb = _fallbackUsedStorageGb;
-    _totalStorageGb = _fallbackTotalStorageGb;
-    _totalDocs = _fallbackTotalDocs;
-    _validCount = _fallbackValidCount;
-    _warningCount = _fallbackWarningCount;
-    _expiredCount = _fallbackExpiredCount;
     _loadDocs();
   }
 
@@ -177,7 +122,10 @@ class _DocumentsTabState extends State<DocumentsTab> {
           setState(() {
             _loading = false;
             _errorShown = false;
-            _files = mapped;
+            _loadFailed = false;
+            _files
+              ..clear()
+              ..addAll(mapped);
             _totalDocs = mapped.length;
             _validCount = valid;
             _warningCount = warning;
@@ -187,7 +135,16 @@ class _DocumentsTabState extends State<DocumentsTab> {
         },
         failure: (err) {
           if (!mounted) return;
-          setState(() => _loading = false);
+          setState(() {
+            _loading = false;
+            _loadFailed = true;
+            _files.clear();
+            _totalDocs = 0;
+            _validCount = 0;
+            _warningCount = 0;
+            _expiredCount = 0;
+            _usedStorageGb = 0;
+          });
           if (_errorShown) return;
           _errorShown = true;
 
@@ -195,20 +152,33 @@ class _DocumentsTabState extends State<DocumentsTab> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view documents.'
-              : "Couldn't load documents. Showing fallback list.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+              : "Couldn't load documents.";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
+            ),
+          );
         },
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+        _files.clear();
+        _totalDocs = 0;
+        _validCount = 0;
+        _warningCount = 0;
+        _expiredCount = 0;
+        _usedStorageGb = 0;
+      });
       if (_errorShown) return;
       _errorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load documents. Showing fallback list."),
+        SnackBar(
+          content: const Text("Couldn't load documents."),
+          action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
         ),
       );
     }
@@ -221,20 +191,6 @@ class _DocumentsTabState extends State<DocumentsTab> {
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
 
     final showNoData = !_loading && _files.isEmpty;
-    final displayFiles = showNoData
-        ? <Map<String, dynamic>>[
-            {
-              "fileName": "No documents",
-              "version": "",
-              "fileSize": "",
-              "type": "",
-              "tags": <String>[],
-              "uploadedDate": "",
-              "expiryDate": "",
-              "status": "",
-            },
-          ]
-        : _files;
 
     return Column(
       children: [
@@ -278,16 +234,14 @@ class _DocumentsTabState extends State<DocumentsTab> {
                               ),
                             ),
                             if (_loading)
-                              const WidgetSpan(
+                              WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Padding(
-                                  padding: EdgeInsets.only(left: 8),
-                                  child: SizedBox(
-                                    width: 14,
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: AppShimmer(
+                                    width: 64,
                                     height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
+                                    radius: 8,
                                   ),
                                 ),
                               ),
@@ -530,20 +484,50 @@ class _DocumentsTabState extends State<DocumentsTab> {
           ),
         ),
         const SizedBox(height: 24),
-        ...displayFiles
-            .map(
-              (file) => FileCard(
-                fileName: file['fileName'],
-                version: file['version'],
-                fileSize: file['fileSize'],
-                type: file['type'],
-                tags: List<String>.from(file['tags']),
-                uploadedDate: file['uploadedDate'],
-                expiryDate: file['expiryDate'],
-                status: file['status'],
+        if (_loading)
+          ...List<Widget>.generate(3, (_) => _buildFileSkeleton(colorScheme)),
+        if (showNoData && !_loadFailed)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'No documents found.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.75),
               ),
-            )
-            .toList(),
+            ),
+          ),
+        if (showNoData && _loadFailed)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Couldn't load documents.",
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: colorScheme.onSurface.withOpacity(0.75),
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: _loadDocs, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        if (!showNoData && !_loading)
+          ..._files.map(
+            (file) => FileCard(
+              fileName: file['fileName'],
+              version: file['version'],
+              fileSize: file['fileSize'],
+              type: file['type'],
+              tags: List<String>.from(file['tags']),
+              uploadedDate: file['uploadedDate'],
+              expiryDate: file['expiryDate'],
+              status: file['status'],
+            ),
+          ),
       ],
     );
   }
@@ -567,6 +551,37 @@ class _DocumentsTabState extends State<DocumentsTab> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFileSkeleton(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: 200, height: 16, radius: 8),
+          SizedBox(height: 10),
+          AppShimmer(width: 130, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: double.infinity, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 170, height: 14, radius: 8),
+        ],
+      ),
     );
   }
 }

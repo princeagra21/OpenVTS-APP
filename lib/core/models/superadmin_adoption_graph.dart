@@ -36,11 +36,27 @@ class SuperadminAdoptionGraph {
       final out = <double>[];
       for (final it in rows) {
         if (it is Map) {
-          final v =
+          Object? v =
               it[metric] ??
               it['${metric}Count'] ??
               it['${metric}_count'] ??
               it['total${_cap(metric)}'];
+
+          if (v == null && metric == 'vehicles') {
+            v = it['vehicleCount'] ?? it['vehicle_count'];
+          }
+          if (v == null && metric == 'users') {
+            v = it['userCount'] ?? it['user_count'];
+          }
+          if (v == null && metric == 'licenses') {
+            v =
+                it['licensesUsed'] ??
+                it['licenses_used'] ??
+                it['licensesAssigned'] ??
+                it['licenses_assigned'] ??
+                it['licenseCount'] ??
+                it['license_count'];
+          }
           out.add(_num(v));
         }
       }
