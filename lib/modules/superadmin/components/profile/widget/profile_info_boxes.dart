@@ -1,27 +1,40 @@
-// components/profile/profile_info_boxes.dart
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileInfoBoxes extends StatelessWidget {
-  const ProfileInfoBoxes({super.key});
+  final String lastLogin;
+  final String createdAt;
+  final bool loading;
+
+  const ProfileInfoBoxes({
+    super.key,
+    this.lastLogin = '-',
+    this.createdAt = '-',
+    this.loading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double contentFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(
+      screenWidth,
+    );
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double contentFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     return Row(
       children: [
         Expanded(
           child: _buildInfoBox(
             context: context,
-            title: "Last Login",
-            content: "20 Nov 2025, 7:30pm\n17 hours ago",
+            title: 'Last Login',
+            content: lastLogin,
             titleFontSize: titleFontSize,
             contentFontSize: contentFontSize,
             padding: horizontalPadding,
@@ -32,8 +45,8 @@ class ProfileInfoBoxes extends StatelessWidget {
         Expanded(
           child: _buildInfoBox(
             context: context,
-            title: "Created",
-            content: "10 Sept 2025",
+            title: 'Created',
+            content: createdAt,
             titleFontSize: titleFontSize,
             contentFontSize: contentFontSize,
             padding: horizontalPadding,
@@ -80,16 +93,25 @@ class ProfileInfoBoxes extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Text(
-              content,
-              style: GoogleFonts.inter(
-                fontSize: contentFontSize,
-                color: colorScheme.onSurface.withOpacity(0.6),
-                height: 1.3,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: loading
+                ? const Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: 20,
+                      radius: 8,
+                    ),
+                  )
+                : Text(
+                    content,
+                    style: GoogleFonts.inter(
+                      fontSize: contentFontSize,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                      height: 1.3,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
           ),
         ],
       ),

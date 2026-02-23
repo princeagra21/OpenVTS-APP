@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -38,31 +39,6 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   ApiClient? _api;
   SuperadminRepository? _repo;
 
-  final List<Map<String, dynamic>> _fallbackServices = const [
-    {"name": "HTTP API", "status": "running", "since": "08/12/2025, 05:43:51"},
-    {
-      "name": "Device Ingest",
-      "status": "running",
-      "since": "08/12/2025, 00:43:51",
-    },
-    {
-      "name": "WebSocket",
-      "status": "degraded",
-      "since": "08/12/2025, 06:13:51",
-    },
-    {
-      "name": "Background Jobs",
-      "status": "running",
-      "since": "07/12/2025, 06:43:51",
-    },
-    {
-      "name": "Notifications",
-      "status": "stopped",
-      "since": "08/12/2025, 06:38:51",
-    },
-    {"name": "Redis", "status": "running", "since": "08/12/2025, 04:43:51"},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -77,6 +53,9 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   Color _serviceColor(String status) {
     final s = status.toLowerCase();
+    if (s.isEmpty || s == 'unknown' || s == 'n/a') {
+      return Colors.grey;
+    }
     if (s == 'running' || s == 'up' || s == 'ok' || s == 'healthy') {
       return Colors.green;
     }
@@ -88,9 +67,9 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   String _uptimeText() {
     final o = _overall;
-    if (o == null) return "5d 13h 59m 5s";
+    if (o == null) return "—";
     if (o.uptimeText.trim().isNotEmpty) return o.uptimeText;
-    if (o.uptimeSeconds <= 0) return "5d 13h 59m 5s";
+    if (o.uptimeSeconds <= 0) return "—";
     final d = Duration(seconds: o.uptimeSeconds);
     final days = d.inDays;
     final hours = d.inHours % 24;
@@ -100,13 +79,13 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   }
 
   String _pgSizeText(ServerPostgresStatus? p) {
-    if (p == null) return "86 GB";
+    if (p == null) return "—";
     if (p.sizeGb > 0) return "${p.sizeGb.toStringAsFixed(0)} GB";
     if (p.sizeBytes > 0) {
       final gb = p.sizeBytes / (1024 * 1024 * 1024);
       return "${gb.toStringAsFixed(1)} GB";
     }
-    return "86 GB";
+    return "—";
   }
 
   Map<String, dynamic> _asMap(Object? v) {
@@ -116,6 +95,11 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   }
 
   String _asString(Object? v) => v == null ? '' : v.toString();
+
+  String _valueOrDash(Object? v) {
+    final text = _asString(v).trim();
+    return text.isEmpty ? '—' : text;
+  }
 
   Object? _readPath(Map<String, dynamic> root, String path) {
     Object? cur = root;
@@ -222,11 +206,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       if (hadFailure && !_errorShown) {
         _errorShown = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Couldn't fully load server status. Showing fallback values.",
-            ),
-          ),
+          const SnackBar(content: Text("Couldn't fully load server status.")),
         );
       }
     } catch (e) {
@@ -237,7 +217,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       final msg =
           (e is ApiException && (e.statusCode == 401 || e.statusCode == 403))
           ? 'Not authorized to view server status.'
-          : "Couldn't load server status. Showing fallback values.";
+          : "Couldn't load server status.";
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
@@ -248,21 +228,25 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
     final double fs = AdaptiveUtils.getTitleFontSize(width);
-    final overallUp = _overall?.isUp ?? false;
-    final overallStatusText = overallUp ? "Up" : "Down";
-    final overallStatusColor = overallUp ? Colors.green : Colors.red;
-    final cpu = _overall != null ? _overall!.cpuPercent.round() : 41;
-    final mem = _overall != null ? _overall!.memPercent.round() : 63;
-    final disk = _overall != null ? _overall!.diskPercent.round() : 72;
-    final load1 = _overall != null ? _overall!.loadAvg1 : 0.52;
-    final load5 = _overall != null ? _overall!.loadAvg5 : 0.61;
-    final load15 = _overall != null ? _overall!.loadAvg15 : 0.73;
+    final overallUp = _overall?.isUp == true;
+    final overallStatusText = _overall == null
+        ? "Unknown"
+        : (overallUp ? "Up" : "Down");
+    final overallStatusColor = _overall == null
+        ? Colors.grey
+        : (overallUp ? Colors.green : Colors.red);
+    final int? cpu = _overall != null ? _overall!.cpuPercent.round() : null;
+    final int? mem = _overall != null ? _overall!.memPercent.round() : null;
+    final int? disk = _overall != null ? _overall!.diskPercent.round() : null;
+    final double? load1 = _overall != null ? _overall!.loadAvg1 : null;
+    final double? load5 = _overall != null ? _overall!.loadAvg5 : null;
+    final double? load15 = _overall != null ? _overall!.loadAvg15 : null;
     final pgPrimary = _logsDb ?? _postgres ?? _addressDb;
     final pgName = (pgPrimary?.dbName.isNotEmpty == true)
         ? pgPrimary!.dbName
-        : "fleetstack";
-    final pgConnections = pgPrimary != null ? pgPrimary.connections : 38;
-    final pgDeadTuples = pgPrimary != null ? pgPrimary.deadTuples : 120000;
+        : "—";
+    final pgConnections = pgPrimary?.connections;
+    final pgDeadTuples = pgPrimary?.deadTuples;
     final addressDb = _addressDb;
     final healthData = _asMap(_healthRaw['data']);
     final health = healthData.isNotEmpty ? healthData : _healthRaw;
@@ -271,7 +255,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       'redis.status',
       'redis.connectionState',
     ]);
-    final redisState = _statusFromAny(redisStateRaw, 'connected');
+    final redisState = _statusFromAny(redisStateRaw, 'unknown');
     final redisUsedRaw = _firstPathValue(health, const [
       'redis.used',
       'redis.usedMB',
@@ -279,21 +263,15 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       'redis.memoryMb',
       'redis.memoryMB',
     ]);
-    final redisUsed = _asString(redisUsedRaw).trim().isNotEmpty
-        ? _asString(redisUsedRaw)
-        : '977 MB';
+    final redisUsed = _valueOrDash(redisUsedRaw);
     final redisHitRateRaw = _firstPathValue(health, const [
       'redis.hitRate',
       'redis.hitrate',
       'redis.hit_rate',
     ]);
-    final redisHitRate = _asString(redisHitRateRaw).trim().isNotEmpty
-        ? _asString(redisHitRateRaw)
-        : '91%';
+    final redisHitRate = _valueOrDash(redisHitRateRaw);
     final redisKeysRaw = _firstPathValue(health, const ['redis.keys']);
-    final redisKeys = _asString(redisKeysRaw).trim().isNotEmpty
-        ? _asString(redisKeysRaw)
-        : '785,123';
+    final redisKeys = _valueOrDash(redisKeysRaw);
     final redisColor = _serviceColor(redisState);
 
     final socketClientsRaw = _firstPathValue(health, const [
@@ -301,37 +279,31 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       'socketio.clients',
       'socketIo.clients',
     ]);
-    final socketClients = _asString(socketClientsRaw).trim().isNotEmpty
-        ? _asString(socketClientsRaw)
-        : '1,420';
+    final socketClients = _valueOrDash(socketClientsRaw);
     final socketRoomsRaw = _firstPathValue(health, const [
       'socket.rooms',
       'socketio.rooms',
       'socketIo.rooms',
     ]);
-    final socketRooms = _asString(socketRoomsRaw).trim().isNotEmpty
-        ? _asString(socketRoomsRaw)
-        : '220';
+    final socketRooms = _valueOrDash(socketRoomsRaw);
     final socketEventsRaw = _firstPathValue(health, const [
       'socket.eventsPerSec',
       'socket.events_sec',
       'socketio.eventsPerSec',
       'socketIo.eventsPerSec',
     ]);
-    final socketEvents = _asString(socketEventsRaw).trim().isNotEmpty
-        ? _asString(socketEventsRaw)
-        : '340';
+    final socketEvents = _valueOrDash(socketEventsRaw);
 
     final bullIngest = _statusFromAny(
       _firstPathValue(health, const ['bullmq.ingest', 'bull.ingest']),
-      'Active',
+      'unknown',
     );
     final bullNotifications = _statusFromAny(
       _firstPathValue(health, const [
         'bullmq.notifications',
         'bull.notifications',
       ]),
-      'paused',
+      'unknown',
     );
     final bullGeocode = _statusFromAny(
       _firstPathValue(health, const [
@@ -339,7 +311,104 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         'bullmq.geocoder',
         'bull.geocode',
       ]),
-      'Active',
+      'unknown',
+    );
+    final bullIngestWait = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.ingest.wait',
+        'bullmq.ingest.waiting',
+        'bull.ingest.wait',
+        'bull.ingest.waiting',
+      ]),
+    );
+    final bullIngestAct = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.ingest.active',
+        'bull.ingest.active',
+      ]),
+    );
+    final bullIngestDelay = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.ingest.delay',
+        'bullmq.ingest.delayed',
+        'bull.ingest.delay',
+        'bull.ingest.delayed',
+      ]),
+    );
+    final bullIngestFail = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.ingest.fail',
+        'bullmq.ingest.failed',
+        'bull.ingest.fail',
+        'bull.ingest.failed',
+      ]),
+    );
+    final bullNotificationsWait = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.notifications.wait',
+        'bullmq.notifications.waiting',
+        'bull.notifications.wait',
+        'bull.notifications.waiting',
+      ]),
+    );
+    final bullNotificationsAct = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.notifications.active',
+        'bull.notifications.active',
+      ]),
+    );
+    final bullNotificationsDelay = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.notifications.delay',
+        'bullmq.notifications.delayed',
+        'bull.notifications.delay',
+        'bull.notifications.delayed',
+      ]),
+    );
+    final bullNotificationsFail = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.notifications.fail',
+        'bullmq.notifications.failed',
+        'bull.notifications.fail',
+        'bull.notifications.failed',
+      ]),
+    );
+    final bullGeocodeWait = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.geocode.wait',
+        'bullmq.geocode.waiting',
+        'bullmq.geocoder.wait',
+        'bullmq.geocoder.waiting',
+        'bull.geocode.wait',
+        'bull.geocode.waiting',
+      ]),
+    );
+    final bullGeocodeAct = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.geocode.active',
+        'bullmq.geocoder.active',
+        'bull.geocode.active',
+      ]),
+    );
+    final bullGeocodeDelay = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.geocode.delay',
+        'bullmq.geocode.delayed',
+        'bullmq.geocoder.delay',
+        'bullmq.geocoder.delayed',
+        'bull.geocode.delay',
+        'bull.geocode.delayed',
+      ]),
+    );
+    final bullGeocodeFail = _valueOrDash(
+      _firstPathValue(health, const [
+        'bullmq.geocode.fail',
+        'bullmq.geocode.failed',
+        'bullmq.geocoder.fail',
+        'bullmq.geocoder.failed',
+        'bull.geocode.fail',
+        'bull.geocode.failed',
+      ]),
     );
 
     final firebaseFcmRaw = _firstPathValue(health, const [
@@ -347,29 +416,34 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       'firebase.status',
       'firebase.reachable',
     ]);
-    final firebaseFcm = _statusFromAny(firebaseFcmRaw, 'reachable');
+    final firebaseFcm = _statusFromAny(firebaseFcmRaw, 'unknown');
     final firebasePingRaw = _firstPathValue(health, const [
       'firebase.lastPing',
       'firebase.last_ping',
     ]);
-    final firebaseLastPing = _asString(firebasePingRaw).trim().isNotEmpty
-        ? _asString(firebasePingRaw)
-        : "08/12/2025, 06:44:46";
-    final serviceRows = _services.isNotEmpty
-        ? _services
-              .map(
-                (s) => <String, dynamic>{
-                  'name': s.name.isNotEmpty ? s.name : 'Service',
-                  'status': s.status.isNotEmpty ? s.status : 'unknown',
-                  'since': s.since.isNotEmpty ? s.since : "—",
-                  'color': _serviceColor(s.status),
-                },
-              )
-              .toList()
-        : _fallbackServices;
+    final firebaseLastPing = _valueOrDash(firebasePingRaw);
+    final serviceRows = _services
+        .map(
+          (s) => <String, dynamic>{
+            'name': s.name.isNotEmpty ? s.name : 'Service',
+            'status': s.status.isNotEmpty ? s.status : 'unknown',
+            'since': s.since.isNotEmpty ? s.since : "—",
+            'color': _serviceColor(s.status),
+          },
+        )
+        .toList();
     final runningCount = serviceRows
         .where((e) => e['status'].toString().toLowerCase() == 'running')
         .length;
+    final hasServerData =
+        _overall != null ||
+        pgPrimary != null ||
+        health.isNotEmpty ||
+        serviceRows.isNotEmpty;
+    final showSkeleton = _loading && !hasServerData;
+    final loadAvgText = (load1 != null && load5 != null && load15 != null)
+        ? "${load1.toStringAsFixed(2)} / ${load5.toStringAsFixed(2)} / ${load15.toStringAsFixed(2)}"
+        : "—";
 
     return AppLayout(
       title: "FLEET STACK",
@@ -461,159 +535,268 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // OVERALL
-                  _buildSection(
-                    context: context,
-                    title: "Overall",
-                    status: overallStatusText,
-                    statusColor: overallStatusColor,
-                    children: [
-                      _buildInfoRow("Uptime", _uptimeText()),
-                      _buildInfoRow(
-                        "Started",
-                        (_overall?.startedAt.isNotEmpty == true)
-                            ? _overall!.startedAt
-                            : "02/12/2025, 16:44:46",
-                      ),
-                      const SizedBox(height: 20),
-                      _buildProgress("CPU", cpu),
-                      _buildProgress("Memory", mem),
-                      _buildProgress("Disk", disk),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Load avg: ${load1.toStringAsFixed(2)} / ${load5.toStringAsFixed(2)} / ${load15.toStringAsFixed(2)}",
-                        style: GoogleFonts.inter(
-                          fontSize: fs - 2,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildSection(
-                    context: context,
-                    title: "PostgreSQL",
-                    subtitle: pgName,
-                    children: [
-                      _buildInfoRow("Size", _pgSizeText(pgPrimary)),
-                      _buildInfoRow("Connections", "$pgConnections"),
-                      _buildInfoRow("Dead tuples", "$pgDeadTuples"),
-                      if (addressDb != null) ...[
+                  if (showSkeleton) ...[
+                    _buildSection(
+                      context: context,
+                      title: "Overall",
+                      children: [
+                        _buildShimmerLine(context, 0.36),
                         const SizedBox(height: 10),
-                        _buildInfoRow(
-                          "Address DB size",
-                          _pgSizeText(addressDb),
-                          color: addressDb.isUp ? null : Colors.red,
-                        ),
-                        _buildInfoRow(
-                          "Address DB connections",
-                          "${addressDb.connections}",
-                          color: addressDb.isUp ? null : Colors.red,
+                        _buildShimmerLine(context, 0.52),
+                        const SizedBox(height: 20),
+                        _buildShimmerProgress(context),
+                        _buildShimmerProgress(context),
+                        _buildShimmerProgress(context),
+                        const SizedBox(height: 8),
+                        _buildShimmerLine(context, 0.66),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "PostgreSQL",
+                      children: [
+                        _buildShimmerLine(context, 0.4),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.34),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.32),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: const [
+                            AppShimmer(width: 82, height: 28, radius: 14),
+                            AppShimmer(width: 76, height: 28, radius: 14),
+                            AppShimmer(width: 96, height: 28, radius: 14),
+                          ],
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
-                        children: [
-                          _actionChip("Refresh"),
-                          _actionChip("Vacuum"),
-                          _actionChip("Diagnostics"),
-                        ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Services",
+                      children: List.generate(
+                        4,
+                        (_) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: _buildShimmerLine(context, 0.72),
+                        ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildSection(
-                    context: context,
-                    title: "Services",
-                    subtitle: "$runningCount/${serviceRows.length} running",
-                    children: serviceRows
-                        .map(
-                          (s) => _serviceRow(
-                            s['name'].toString(),
-                            s['status'].toString(),
-                            s['since'].toString(),
-                            s['color'] as Color,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Redis",
+                      children: [
+                        _buildShimmerLine(context, 0.3),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.25),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.22),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Socket.io",
+                      children: [
+                        _buildShimmerLine(context, 0.28),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.26),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.24),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "BullMQ",
+                      children: List.generate(
+                        3,
+                        (_) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: _buildShimmerLine(context, 0.78),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Firebase",
+                      children: [
+                        _buildShimmerLine(context, 0.27),
+                        const SizedBox(height: 10),
+                        _buildShimmerLine(context, 0.45),
+                      ],
+                    ),
+                  ] else ...[
+                    // OVERALL
+                    _buildSection(
+                      context: context,
+                      title: "Overall",
+                      status: overallStatusText,
+                      statusColor: overallStatusColor,
+                      children: [
+                        _buildInfoRow("Uptime", _uptimeText()),
+                        _buildInfoRow(
+                          "Started",
+                          _valueOrDash(_overall?.startedAt),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildProgress("CPU", cpu),
+                        _buildProgress("Memory", mem),
+                        _buildProgress("Disk", disk),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Load avg: $loadAvgText",
+                          style: GoogleFonts.inter(
+                            fontSize: fs - 2,
+                            color: colorScheme.onSurface.withOpacity(0.8),
                           ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 24),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
 
-                  _buildSection(
-                    context: context,
-                    title: "Redis",
-                    children: [
-                      _buildInfoRow("State", redisState, color: redisColor),
-                      _buildInfoRow("Used", redisUsed),
-                      _buildInfoRow("Hit rate", redisHitRate),
-                      _buildInfoRow("Keys", redisKeys),
-                      const SizedBox(height: 16),
-                      _actionChip("Restart Redis", color: Colors.orange),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "PostgreSQL",
+                      subtitle: pgName,
+                      children: [
+                        _buildInfoRow("Size", _pgSizeText(pgPrimary)),
+                        _buildInfoRow(
+                          "Connections",
+                          pgConnections != null ? "$pgConnections" : "—",
+                        ),
+                        _buildInfoRow(
+                          "Dead tuples",
+                          pgDeadTuples != null ? "$pgDeadTuples" : "—",
+                        ),
+                        if (addressDb != null) ...[
+                          const SizedBox(height: 10),
+                          _buildInfoRow(
+                            "Address DB size",
+                            _pgSizeText(addressDb),
+                            color: addressDb.isUp ? null : Colors.red,
+                          ),
+                          _buildInfoRow(
+                            "Address DB connections",
+                            "${addressDb.connections}",
+                            color: addressDb.isUp ? null : Colors.red,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            _actionChip("Refresh"),
+                            _actionChip("Vacuum"),
+                            _actionChip("Diagnostics"),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
 
-                  _buildSection(
-                    context: context,
-                    title: "Socket.io",
-                    children: [
-                      _buildInfoRow("Clients", socketClients),
-                      _buildInfoRow("Rooms", socketRooms),
-                      _buildInfoRow("Events/sec", socketEvents),
-                      const SizedBox(height: 16),
-                      _actionChip("Restart Socket", color: Colors.orange),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Services",
+                      subtitle: serviceRows.isEmpty
+                          ? "No data"
+                          : "$runningCount/${serviceRows.length} running",
+                      children: serviceRows.isEmpty
+                          ? [_buildInfoRow("Status", "No services data")]
+                          : serviceRows.map((s) {
+                              final statusText = s['status'].toString();
+                              final colorValue = s['color'];
+                              final rowColor = colorValue is Color
+                                  ? colorValue
+                                  : _serviceColor(statusText);
+                              return _serviceRow(
+                                s['name'].toString(),
+                                statusText,
+                                s['since'].toString(),
+                                rowColor,
+                              );
+                            }).toList(),
+                    ),
+                    const SizedBox(height: 24),
 
-                  _buildSection(
-                    context: context,
-                    title: "BullMQ",
-                    children: [
-                      _queueRow(
-                        "ingest",
-                        bullIngest,
-                        wait: 42,
-                        act: 6,
-                        delay: 3,
-                        fail: 1,
-                      ),
-                      _queueRow(
-                        "notifications",
-                        bullNotifications,
-                        wait: 0,
-                        act: 0,
-                        delay: 0,
-                        fail: 0,
-                      ),
-                      _queueRow(
-                        "geocoder",
-                        bullGeocode,
-                        wait: 12,
-                        act: 2,
-                        delay: 1,
-                        fail: 0,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    _buildSection(
+                      context: context,
+                      title: "Redis",
+                      children: [
+                        _buildInfoRow("State", redisState, color: redisColor),
+                        _buildInfoRow("Used", redisUsed),
+                        _buildInfoRow("Hit rate", redisHitRate),
+                        _buildInfoRow("Keys", redisKeys),
+                        const SizedBox(height: 16),
+                        _actionChip("Restart Redis", color: Colors.orange),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
 
-                  _buildSection(
-                    context: context,
-                    title: "Firebase",
-                    children: [
-                      _buildInfoRow(
-                        "FCM",
-                        firebaseFcm,
-                        color: _serviceColor(firebaseFcm),
-                      ),
-                      _buildInfoRow("Last ping", firebaseLastPing),
-                    ],
-                  ),
+                    _buildSection(
+                      context: context,
+                      title: "Socket.io",
+                      children: [
+                        _buildInfoRow("Clients", socketClients),
+                        _buildInfoRow("Rooms", socketRooms),
+                        _buildInfoRow("Events/sec", socketEvents),
+                        const SizedBox(height: 16),
+                        _actionChip("Restart Socket", color: Colors.orange),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildSection(
+                      context: context,
+                      title: "BullMQ",
+                      children: [
+                        _queueRow(
+                          "ingest",
+                          bullIngest,
+                          wait: bullIngestWait,
+                          act: bullIngestAct,
+                          delay: bullIngestDelay,
+                          fail: bullIngestFail,
+                        ),
+                        _queueRow(
+                          "notifications",
+                          bullNotifications,
+                          wait: bullNotificationsWait,
+                          act: bullNotificationsAct,
+                          delay: bullNotificationsDelay,
+                          fail: bullNotificationsFail,
+                        ),
+                        _queueRow(
+                          "geocoder",
+                          bullGeocode,
+                          wait: bullGeocodeWait,
+                          act: bullGeocodeAct,
+                          delay: bullGeocodeDelay,
+                          fail: bullGeocodeFail,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildSection(
+                      context: context,
+                      title: "Firebase",
+                      children: [
+                        _buildInfoRow(
+                          "FCM",
+                          firebaseFcm,
+                          color: _serviceColor(firebaseFcm),
+                        ),
+                        _buildInfoRow("Last ping", firebaseLastPing),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 32),
 
                   // DANGER ZONE: DELETE LOGS
@@ -825,11 +1008,37 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     );
   }
 
-  Widget _buildProgress(String label, int percent) {
+  Widget _buildShimmerLine(
+    BuildContext context,
+    double widthFactor, {
+    double height = 14,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final clamped = widthFactor.clamp(0.15, 1.0).toDouble();
+    return AppShimmer(width: width * clamped, height: height, radius: 8);
+  }
+
+  Widget _buildShimmerProgress(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppShimmer(width: width * 0.28, height: 14, radius: 8),
+        const SizedBox(height: 8),
+        AppShimmer(width: double.infinity, height: 8, radius: 8),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildProgress(String label, int? percent) {
     final colorScheme = Theme.of(context).colorScheme;
     final double fs = AdaptiveUtils.getTitleFontSize(
       MediaQuery.of(context).size.width,
     );
+    final int? clampedPercent = percent == null
+        ? null
+        : percent.clamp(0, 100).toInt();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -844,7 +1053,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               ),
             ),
             Text(
-              "$percent%",
+              clampedPercent == null ? "—" : "$clampedPercent%",
               style: GoogleFonts.inter(
                 fontSize: fs - 1,
                 fontWeight: FontWeight.w600,
@@ -853,18 +1062,28 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: percent / 100,
-          backgroundColor: colorScheme.surfaceVariant,
-          valueColor: AlwaysStoppedAnimation(
-            percent > 80
-                ? Colors.red
-                : percent > 60
-                ? Colors.orange
-                : colorScheme.primary,
+        if (clampedPercent == null)
+          Container(
+            width: double.infinity,
+            height: 8,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          )
+        else
+          LinearProgressIndicator(
+            value: clampedPercent / 100,
+            backgroundColor: colorScheme.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation(
+              clampedPercent > 80
+                  ? Colors.red
+                  : clampedPercent > 60
+                  ? Colors.orange
+                  : colorScheme.primary,
+            ),
+            minHeight: 8,
           ),
-          minHeight: 8,
-        ),
         const SizedBox(height: 16),
       ],
     );
@@ -874,6 +1093,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final double fs = AdaptiveUtils.getTitleFontSize(
       MediaQuery.of(context).size.width,
     );
+    final normalizedStatus = status.toLowerCase();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -907,10 +1127,10 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               ],
             ),
           ),
-          if (status != "running")
+          if (normalizedStatus != "running")
             _actionChip(
               "Restart",
-              color: status == "stopped" ? Colors.red : Colors.orange,
+              color: normalizedStatus == "stopped" ? Colors.red : Colors.orange,
             ),
         ],
       ),
@@ -920,14 +1140,20 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   Widget _queueRow(
     String name,
     String state, {
-    required int wait,
-    required int act,
-    required int delay,
-    required int fail,
+    required String wait,
+    required String act,
+    required String delay,
+    required String fail,
   }) {
     final double fs = AdaptiveUtils.getTitleFontSize(
       MediaQuery.of(context).size.width,
     );
+    final normalizedState = state.toLowerCase();
+    final stateColor = normalizedState == 'unknown'
+        ? Colors.grey
+        : normalizedState == "paused"
+        ? Colors.orange
+        : _serviceColor(state);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -941,10 +1167,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           ),
           Text(
             state,
-            style: GoogleFonts.inter(
-              fontSize: fs - 3,
-              color: state == "paused" ? Colors.orange : Colors.green,
-            ),
+            style: GoogleFonts.inter(fontSize: fs - 3, color: stateColor),
           ),
           const Spacer(),
           Text(

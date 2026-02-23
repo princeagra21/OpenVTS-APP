@@ -7,8 +7,10 @@ class VehicleCard extends StatelessWidget {
   final String name;
   final String type;
   final bool isActive;
+  final String plate;
   final String imei;
   final String vin;
+  final String simNumber;
   final String model;
   final String lastSeenDate;
   final String lastSeenTime;
@@ -21,8 +23,10 @@ class VehicleCard extends StatelessWidget {
     required this.name,
     required this.type,
     required this.isActive,
+    required this.plate,
     required this.imei,
     required this.vin,
+    required this.simNumber,
     required this.model,
     required this.lastSeenDate,
     required this.lastSeenTime,
@@ -35,8 +39,10 @@ class VehicleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double subtitleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double subtitleFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 2;
     final double labelFontSize = subtitleFontSize - 2;
 
     return Container(
@@ -100,7 +106,11 @@ class VehicleCard extends StatelessWidget {
           // Vehicle Information Section
           Row(
             children: [
-              Icon(Icons.directions_car_filled, size: 16, color: colorScheme.primary.withOpacity(0.6)),
+              Icon(
+                Icons.directions_car_filled,
+                size: 16,
+                color: colorScheme.primary.withOpacity(0.6),
+              ),
               const SizedBox(width: 8),
               Text(
                 "Vehicle Information",
@@ -113,6 +123,8 @@ class VehicleCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+          _infoRow("Plate Number", plate, labelFontSize, colorScheme),
+          _infoRow("SIM Number", simNumber, labelFontSize, colorScheme),
           _infoRow("Type", type, labelFontSize, colorScheme),
           _infoRow("IMEI", imei, labelFontSize, colorScheme),
           _infoRow("VIN / Chassis No.", vin, labelFontSize, colorScheme),
@@ -122,7 +134,11 @@ class VehicleCard extends StatelessWidget {
           // Activity Section
           Row(
             children: [
-              Icon(Icons.access_time_rounded, size: 16, color: colorScheme.primary.withOpacity(0.6)),
+              Icon(
+                Icons.access_time_rounded,
+                size: 16,
+                color: colorScheme.primary.withOpacity(0.6),
+              ),
               const SizedBox(width: 8),
               Text(
                 "Activity",
@@ -136,13 +152,22 @@ class VehicleCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _infoRow("Last Seen", lastSeenDate, labelFontSize, colorScheme),
-          _infoRow("Time", "$lastSeenTime ($timezone)", labelFontSize, colorScheme),
+          _infoRow(
+            "Time",
+            "$lastSeenTime ($timezone)",
+            labelFontSize,
+            colorScheme,
+          ),
           const SizedBox(height: 12),
 
           // Licence Section
           Row(
             children: [
-              Icon(Icons.verified_outlined, size: 16, color: colorScheme.primary.withOpacity(0.6)),
+              Icon(
+                Icons.verified_outlined,
+                size: 16,
+                color: colorScheme.primary.withOpacity(0.6),
+              ),
               const SizedBox(width: 8),
               Text(
                 "Licence Status",
@@ -162,7 +187,12 @@ class VehicleCard extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String title, String value, double fontSize, ColorScheme colorScheme) {
+  Widget _infoRow(
+    String title,
+    String value,
+    double fontSize,
+    ColorScheme colorScheme,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(

@@ -6,9 +6,11 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -44,221 +46,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
     }
   }
 
-  late List<Map<String, dynamic>> _vehicles;
-  final List<Map<String, dynamic>> _fallbackVehicles = [
-    {
-      "id": 0,
-      "plate": "MH12 CD 9042",
-      "type": "Car",
-      "imei": "352094560123789",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "RS",
-      "primary_user_name": "Riya Sharma",
-      "primary_user_username": "@riya.s",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:25",
-      "license_pri": "2026-07-15",
-      "license_sec": "2026-10-15",
-      "last_activity_date": "12 Jan 2025",
-      "last_activity_time": "09:35",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 1,
-      "plate": "UP14 JK 5501",
-      "type": "Truck",
-      "imei": "861234598765432",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "PM",
-      "primary_user_name": "Pooja Mishra",
-      "primary_user_username": "@pooja.m",
-      "added_by_initials": "SG",
-      "added_by_name": "Seema Gupta",
-      "added_by_username": "@seema.g",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:39",
-      "license_pri": "2026-11-01",
-      "license_sec": "2027-02-01",
-      "last_activity_date": "22 Dec 2024",
-      "last_activity_time": "07:25",
-      "status": "Inactive",
-      "active": false,
-    },
-    {
-      "id": 2,
-      "plate": "WB20 QR 3310",
-      "type": "Car",
-      "imei": "352099887654321",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "AS",
-      "primary_user_name": "Aditi Sen",
-      "primary_user_username": "@aditi.s",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:34",
-      "license_pri": "2026-12-20",
-      "license_sec": "2027-03-20",
-      "last_activity_date": "05 Oct 2024",
-      "last_activity_time": "14:15",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 3,
-      "plate": "PB08 WX 7780",
-      "type": "Tractor",
-      "imei": "352198760054321",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "GS",
-      "primary_user_name": "Gurpreet Singh",
-      "primary_user_username": "@gurpreet.s",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:12",
-      "license_pri": "2026-03-19",
-      "license_sec": "2026-06-19",
-      "last_activity_date": "19 Aug 2024",
-      "last_activity_time": "05:35",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 4,
-      "plate": "CG04 BB 5566",
-      "type": "Bus",
-      "imei": "861234507894561",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "TR",
-      "primary_user_name": "Tanvi Rao",
-      "primary_user_username": "@tanvi.r",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:14",
-      "license_pri": "2026-09-09",
-      "license_sec": "2026-12-09",
-      "last_activity_date": "02 Aug 2025",
-      "last_activity_time": "10:30",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 5,
-      "plate": "KL07 EE 1230",
-      "type": "Car",
-      "imei": "352067890123456",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "VM",
-      "primary_user_name": "Vivek Menon",
-      "primary_user_username": "@vivek.m",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:16",
-      "license_pri": "2026-01-12",
-      "license_sec": "2026-04-12",
-      "last_activity_date": "21 Sep 2025",
-      "last_activity_time": "06:41",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 6,
-      "plate": "UK07 HH 9909",
-      "type": "SUV",
-      "imei": "863450987601234",
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": "DJ",
-      "primary_user_name": "Divya Joshi",
-      "primary_user_username": "@divya.j",
-      "added_by_initials": "VS",
-      "added_by_name": "Vinod Singh",
-      "added_by_username": "@vinod.s",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:37",
-      "license_pri": "2026-12-31",
-      "license_sec": "2027-03-31",
-      "last_activity_date": "15 Oct 2025",
-      "last_activity_time": "04:39",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 7,
-      "plate": "AS01 DD 9900",
-      "type": "Truck",
-      "imei": "863401298765432",
-      "motion": "Running",
-      "speed": "80km/h",
-      "engine": "ON",
-      "primary_user_initials": "IA",
-      "primary_user_name": "Imran Ali",
-      "primary_user_username": "@imran.a",
-      "added_by_initials": "SG",
-      "added_by_name": "Seema Gupta",
-      "added_by_username": "@seema.g",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:30",
-      "license_pri": "2027-06-25",
-      "license_sec": "2027-09-25",
-      "last_activity_date": "03 Sep 2025",
-      "last_activity_time": "05:00",
-      "status": "Active",
-      "active": true,
-    },
-    {
-      "id": 8,
-      "plate": "TN09 NP 6611",
-      "type": "Van",
-      "imei": "861205479012346",
-      "motion": "Running",
-      "speed": "71km/h",
-      "engine": "ON",
-      "primary_user_initials": "HK",
-      "primary_user_name": "Harish K",
-      "primary_user_username": "@harish.k",
-      "added_by_initials": "SG",
-      "added_by_name": "Seema Gupta",
-      "added_by_username": "@seema.g",
-      "created_date": "17 Oct 2025",
-      "created_time": "03:20",
-      "license_pri": "2027-03-05",
-      "license_sec": "2027-06-05",
-      "last_activity_date": "11 Apr 2025",
-      "last_activity_time": "07:30",
-      "status": "Active",
-      "active": true,
-    },
-  ];
+  final List<Map<String, dynamic>> _vehicles = <Map<String, dynamic>>[];
+  bool _vehiclesLoadFailed = false;
 
   @override
   void initState() {
     super.initState();
-    _vehicles = List<Map<String, dynamic>>.from(_fallbackVehicles);
     _searchController.addListener(() => setState(() {}));
     _loadVehicles();
   }
@@ -270,56 +63,120 @@ class _VehicleScreenState extends State<VehicleScreen> {
     super.dispose();
   }
 
-  DateTime _tryParseUpdatedAt(String s) {
-    final dt = DateTime.tryParse(s);
-    return dt ?? DateTime.now();
+  DateTime _tryParseUpdatedAt(String s) =>
+      DateTime.tryParse(s) ?? DateTime.now();
+
+  String safe(String? v) {
+    if (v == null) return '-';
+    final t = v.trim();
+    return t.isEmpty ? '-' : t;
   }
 
+  String _safeAny(Object? v) => safe(v?.toString());
+
   String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\\s+'));
+    final parts = safe(name).split(RegExp(r'\s+'));
     if (parts.isEmpty) return '—';
     final out = parts.where((p) => p.isNotEmpty).take(2).map((p) => p[0]);
     final initials = out.join();
     return initials.isEmpty ? '—' : initials.toUpperCase();
   }
 
+  DateTime? _tryParseAnyDate(String input) {
+    final value = input.trim();
+    if (value.isEmpty || value == '-') return null;
+    final parsedIso = DateTime.tryParse(value);
+    if (parsedIso != null) return parsedIso;
+    try {
+      return DateFormat('dd MMM yyyy').parseStrict(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _firstNonEmpty(List<String> candidates) {
+    for (final value in candidates) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return '';
+  }
+
+  String _formatDateLabel(String raw) {
+    final dt = _tryParseAnyDate(raw);
+    if (dt == null) return safe(raw);
+    return DateFormat('dd MMM yyyy').format(dt);
+  }
+
   Map<String, dynamic> _mapVehicleItem(VehicleListItem v) {
     final now = DateTime.now();
-    final updated = v.updatedAt.isNotEmpty
-        ? _tryParseUpdatedAt(v.updatedAt)
+    final raw = v.raw;
+    final activityRaw = _firstNonEmpty([v.updatedAt, v.createdAt]);
+    final createdRaw = _firstNonEmpty([v.createdAt, v.updatedAt]);
+    final activityAt = activityRaw.isNotEmpty
+        ? _tryParseUpdatedAt(activityRaw)
         : now;
+    final createdAt = createdRaw.isNotEmpty
+        ? _tryParseUpdatedAt(createdRaw)
+        : activityAt;
 
-    final plate = v.plateNumber.isNotEmpty
-        ? v.plateNumber
-        : (v.name.isNotEmpty ? v.name : '—');
-    final driverName = v.driverName.isNotEmpty ? v.driverName : '—';
+    final plate = safe(v.plateNumber);
+    final name = safe(v.name);
+    final vin = safe(v.vin);
+    final imei = safe(v.imei);
+    final simNumber = safe(v.simNumber);
+    final primaryName = safe(
+      v.userPrimaryName.isNotEmpty ? v.userPrimaryName : v.driverName,
+    );
+    final addedByName = safe(v.userAddedByName);
+    final primaryUsername = safe(v.userPrimaryUsername);
+    final addedByUsername = safe(v.userAddedByUsername);
     final isActive = v.isActive;
-    final status = v.status.isNotEmpty
-        ? v.status
-        : (isActive ? 'Active' : 'Inactive');
+    final status = safe(
+      v.status.isNotEmpty ? v.status : (isActive ? 'Active' : 'Inactive'),
+    );
+    final motion = safe(
+      raw['motion']?.toString() ??
+          raw['movement']?.toString() ??
+          raw['movementStatus']?.toString(),
+    );
+    final speed = safe(raw['speed']?.toString() ?? raw['speedKph']?.toString());
+    final engine = safe(
+      raw['engine']?.toString() ??
+          raw['engineStatus']?.toString() ??
+          raw['ignition']?.toString() ??
+          raw['ignitionStatus']?.toString(),
+    );
+    final licensePri = _formatDateLabel(v.primaryExpiry);
+    final licenseSec = _formatDateLabel(v.secondaryExpiry);
+    final timezone = safe(v.gmtOffset);
 
     return <String, dynamic>{
-      "id": v.id.isNotEmpty ? v.id : 0,
+      "id": safe(v.id),
+      "name": name,
+      "vin": vin,
       "plate": plate,
-      "type": v.type.isNotEmpty ? v.type : "Vehicle",
-      "imei": v.imei,
-      "motion": "Stop",
-      "speed": "0km/h",
-      "engine": "OFF",
-      "primary_user_initials": _initials(driverName),
-      "primary_user_name": driverName,
-      "primary_user_username": "",
-      "added_by_initials": "—",
-      "added_by_name": "—",
-      "added_by_username": "",
-      "created_date": DateFormat('dd MMM yyyy').format(updated),
-      "created_time": DateFormat('HH:mm').format(updated),
-      "license_pri": "2099-01-01",
-      "license_sec": "2099-01-01",
-      "last_activity_date": DateFormat('dd MMM yyyy').format(updated),
-      "last_activity_time": DateFormat('HH:mm').format(updated),
+      "type": safe(v.type.isNotEmpty ? v.type : "Vehicle"),
+      "imei": imei,
+      "sim_number": simNumber,
+      "primary_user_initials": _initials(primaryName),
+      "primary_user_name": primaryName,
+      "primary_user_username": primaryUsername,
+      "added_by_initials": _initials(addedByName),
+      "added_by_name": addedByName,
+      "added_by_username": addedByUsername,
+      "motion": motion,
+      "speed": speed,
+      "engine": engine,
+      "created_date": DateFormat('dd MMM yyyy').format(createdAt),
+      "created_time": DateFormat('HH:mm').format(createdAt),
+      "license_pri": licensePri,
+      "license_sec": licenseSec,
+      "last_activity_date": DateFormat('dd MMM yyyy').format(activityAt),
+      "last_activity_time": DateFormat('HH:mm').format(activityAt),
       "status": status,
       "active": isActive,
+      "timezone": timezone,
     };
   }
 
@@ -338,6 +195,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
       );
       _repo ??= SuperadminRepository(api: _api!);
 
+      if (kDebugMode) {
+        final url =
+            '${_api!.dio.options.baseUrl}/superadmin/vehicles?page=1&limit=50';
+        debugPrint('[Vehicles] endpoint=$url');
+      }
+
       final res = await _repo!.getVehicles(
         page: 1,
         limit: 50,
@@ -347,17 +210,30 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
       res.when(
         success: (items) {
+          if (kDebugMode) {
+            debugPrint('[Vehicles] status=200 vehicles=${items.length}');
+          }
           if (!mounted) return;
           final mapped = items.map(_mapVehicleItem).toList();
           setState(() {
             _loadingVehicles = false;
             _vehiclesErrorShown = false;
-            _vehicles = mapped;
+            _vehiclesLoadFailed = false;
+            _vehicles
+              ..clear()
+              ..addAll(mapped);
           });
         },
         failure: (err) {
+          if (kDebugMode) {
+            final status = err is ApiException ? err.statusCode : null;
+            debugPrint('[Vehicles] status=${status ?? 'error'} vehicles=0');
+          }
           if (!mounted) return;
-          setState(() => _loadingVehicles = false);
+          setState(() {
+            _loadingVehicles = false;
+            _vehiclesLoadFailed = true;
+          });
           if (_vehiclesErrorShown) return;
           _vehiclesErrorShown = true;
 
@@ -365,20 +241,42 @@ class _VehicleScreenState extends State<VehicleScreen> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view vehicles.'
-              : "Couldn't load vehicles. Showing fallback list.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+              : "Couldn't load vehicles.";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () {
+                  _vehiclesErrorShown = false;
+                  _loadVehicles();
+                },
+              ),
+            ),
+          );
         },
       );
     } catch (_) {
+      if (kDebugMode) {
+        debugPrint('[Vehicles] status=error vehicles=0');
+      }
       if (!mounted) return;
-      setState(() => _loadingVehicles = false);
+      setState(() {
+        _loadingVehicles = false;
+        _vehiclesLoadFailed = true;
+      });
       if (_vehiclesErrorShown) return;
       _vehiclesErrorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load vehicles. Showing fallback list."),
+        SnackBar(
+          content: const Text("Couldn't load vehicles."),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () {
+              _vehiclesErrorShown = false;
+              _loadVehicles();
+            },
+          ),
         ),
       );
     }
@@ -403,15 +301,16 @@ class _VehicleScreenState extends State<VehicleScreen> {
         _vehicles.where((v) {
           final matchesSearch =
               searchQuery.isEmpty ||
-              v['plate'].toString().toLowerCase().contains(searchQuery) ||
-              v['type'].toString().toLowerCase().contains(searchQuery) ||
-              v['imei'].toString().toLowerCase().contains(searchQuery) ||
-              (v['primary_user_name'] as String).toLowerCase().contains(
-                searchQuery,
-              ) ||
-              (v['added_by_name'] as String).toLowerCase().contains(
-                searchQuery,
-              );
+              _safeAny(v['plate']).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['name']).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['vin']).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['sim_number']).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['type']).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['imei']).toLowerCase().contains(searchQuery) ||
+              _safeAny(
+                v['primary_user_name'],
+              ).toLowerCase().contains(searchQuery) ||
+              _safeAny(v['added_by_name']).toLowerCase().contains(searchQuery);
 
           final matchesTab =
               selectedTab == "All" ||
@@ -421,38 +320,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
           return matchesSearch && matchesTab;
         }).toList()..sort(
           (a, b) => _safeParseDate(
-            b['last_activity_date'],
-          ).compareTo(_safeParseDate(a['last_activity_date'])),
+            _safeAny(b['last_activity_date']),
+          ).compareTo(_safeParseDate(_safeAny(a['last_activity_date']))),
         );
 
     final showNoData = !_loadingVehicles && filteredVehicles.isEmpty;
-    final displayVehicles = showNoData
-        ? <Map<String, dynamic>>[
-            {
-              "id": "—",
-              "plate": "No data",
-              "type": "",
-              "imei": "",
-              "motion": "",
-              "speed": "",
-              "engine": "",
-              "primary_user_initials": "—",
-              "primary_user_name": "—",
-              "primary_user_username": "",
-              "added_by_initials": "—",
-              "added_by_name": "—",
-              "added_by_username": "",
-              "created_date": "",
-              "created_time": "",
-              "license_pri": "2099-01-01",
-              "license_sec": "2099-01-01",
-              "last_activity_date": "",
-              "last_activity_time": "",
-              "status": "",
-              "active": false,
-            },
-          ]
-        : filteredVehicles;
+    final showSkeletonCards = _loadingVehicles;
 
     return AppLayout(
       title: "SUPER ADMIN",
@@ -522,32 +395,19 @@ class _VehicleScreenState extends State<VehicleScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text:
-                            "Showing ${showNoData ? 0 : filteredVehicles.length} of ${_vehicles.length} vehicles",
+                _loadingVehicles
+                    ? AppShimmer(
+                        width: width * 0.45,
+                        height: bodyFs + 10,
+                        radius: 8,
+                      )
+                    : Text(
+                        "Showing ${filteredVehicles.length} of ${_vehicles.length} vehicles",
                         style: GoogleFonts.inter(
                           fontSize: bodyFs,
                           color: colorScheme.onSurface.withOpacity(0.87),
                         ),
                       ),
-                      if (_loadingVehicles)
-                        const WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
                 GestureDetector(
                   onTap: () => context.push("/superadmin/vehicles/add"),
                   child: Container(
@@ -573,306 +433,451 @@ class _VehicleScreenState extends State<VehicleScreen> {
             ),
             SizedBox(height: spacing * 1.5),
 
-            // VEHICLE CARDS
-            ...displayVehicles.asMap().entries.map((entry) {
-              final index = entry.key;
-              final vehicle = entry.value;
-
-              final priDate = _safeParseDate(vehicle["license_pri"]);
-              final secDate = _safeParseDate(vehicle["license_sec"]);
-              final isPriExpiring = priDate.difference(now).inDays < 30;
-              final isSecExpiring = secDate.difference(now).inDays < 30;
-
-              return AnimatedContainer(
-                duration: Duration(milliseconds: 300 + index * 50),
-                curve: Curves.easeOut,
-                margin: EdgeInsets.only(bottom: hp),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+            if (showNoData && _vehiclesLoadFailed)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: hp),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Couldn\'t load vehicles.',
+                        style: GoogleFonts.inter(
+                          fontSize: bodyFs,
+                          color: colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
-                    ],
+                    ),
+                    SizedBox(width: spacing),
+                    TextButton(
+                      onPressed: _loadVehicles,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            if (showNoData && !_vehiclesLoadFailed)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: hp),
+                child: Text(
+                  'No vehicles found.',
+                  style: GoogleFonts.inter(
+                    fontSize: bodyFs,
+                    color: colorScheme.onSurface.withOpacity(0.8),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
+                ),
+              ),
+
+            if (showSkeletonCards)
+              ...List<Widget>.generate(
+                3,
+                (index) => _buildVehicleSkeletonCard(
+                  index: index,
+                  hp: hp,
+                  spacing: spacing,
+                  cardPadding: cardPadding,
+                  width: width,
+                  iconSize: iconSize,
+                  bodyFs: bodyFs,
+                  smallFs: smallFs,
+                  colorScheme: colorScheme,
+                ),
+              ),
+
+            if (!showNoData && !showSkeletonCards)
+              // VEHICLE CARDS
+              ...filteredVehicles.asMap().entries.map((entry) {
+                final index = entry.key;
+                final vehicle = entry.value;
+
+                final plate = _safeAny(vehicle["plate"]);
+                final name = _safeAny(vehicle["name"]);
+                final type = _safeAny(vehicle["type"]);
+                final vin = _safeAny(vehicle["vin"]);
+                final imei = _safeAny(vehicle["imei"]);
+                final simNumber = _safeAny(vehicle["sim_number"]);
+                final status = _safeAny(vehicle["status"]);
+                final primaryInitials = _safeAny(
+                  vehicle["primary_user_initials"],
+                );
+                final primaryName = _safeAny(vehicle["primary_user_name"]);
+                final primaryUsername = _safeAny(
+                  vehicle["primary_user_username"],
+                );
+                final addedByInitials = _safeAny(vehicle["added_by_initials"]);
+                final addedByName = _safeAny(vehicle["added_by_name"]);
+                final addedByUsername = _safeAny(vehicle["added_by_username"]);
+                final lastSeenDate = _safeAny(vehicle["last_activity_date"]);
+                final lastSeenTime = _safeAny(vehicle["last_activity_time"]);
+                final createdDate = _safeAny(vehicle["created_date"]);
+                final createdTime = _safeAny(vehicle["created_time"]);
+                final isActive = vehicle["active"] == true;
+                final displayTitle = name == '-' ? type : name;
+
+                final licensePri = _safeAny(vehicle["license_pri"]);
+                final licenseSec = _safeAny(vehicle["license_sec"]);
+                final priDate = _tryParseAnyDate(licensePri);
+                final secDate = _tryParseAnyDate(licenseSec);
+                final isPriExpiring =
+                    priDate != null && priDate.difference(now).inDays < 30;
+                final isSecExpiring =
+                    secDate != null && secDate.difference(now).inDays < 30;
+                final priStatus = priDate == null
+                    ? ''
+                    : (isPriExpiring ? '(Expiring soon)' : '(Valid)');
+                final secStatus = secDate == null
+                    ? ''
+                    : (isSecExpiring ? '(Expiring soon)' : '(Valid)');
+
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 300 + index * 50),
+                  curve: Curves.easeOut,
+                  margin: EdgeInsets.only(bottom: hp),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(25),
-                      onTap: () async {
-                        final result = await context.push<bool>(
-                          "/superadmin/vehicles/details/${vehicle['id']}",
-                        );
-                        if (!context.mounted) return;
-                        if (result == true) {
-                          await _loadVehicles();
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vehicle deleted')),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: () async {
+                          final result = await context.push<bool>(
+                            "/superadmin/vehicles/details/${vehicle['id']}",
                           );
-                        }
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.all(cardPadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // TOP ROW
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: AdaptiveUtils.getAvatarSize(width),
-                                  height: AdaptiveUtils.getAvatarSize(width),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: colorScheme.outline.withOpacity(
-                                        0.3,
+                          if (!context.mounted) return;
+                          if (result == true) {
+                            await _loadVehicles();
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Vehicle deleted')),
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.all(cardPadding),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // TOP ROW
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: AdaptiveUtils.getAvatarSize(width),
+                                    height: AdaptiveUtils.getAvatarSize(width),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: colorScheme.outline.withOpacity(
+                                          0.3,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  child: Icon(
-                                    CupertinoIcons.car_detailed,
-                                    size: AdaptiveUtils.getFsAvatarFontSize(
-                                      width,
+                                    child: Icon(
+                                      CupertinoIcons.car_detailed,
+                                      size: AdaptiveUtils.getFsAvatarFontSize(
+                                        width,
+                                      ),
+                                      color: colorScheme.primary,
                                     ),
-                                    color: colorScheme.primary,
                                   ),
-                                ),
-                                SizedBox(width: spacing * 1.5),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                vehicle["plate"],
+                                  SizedBox(width: spacing * 1.5),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      plate,
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: bodyFs + 2,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: colorScheme
+                                                            .onSurface,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      softWrap: false,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: spacing),
+                                                  Flexible(
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                spacing + 4,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: isActive
+                                                            ? colorScheme
+                                                                  .primary
+                                                                  .withOpacity(
+                                                                    0.15,
+                                                                  )
+                                                            : colorScheme.error
+                                                                  .withOpacity(
+                                                                    0.15,
+                                                                  ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              16,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        status,
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                              fontSize: smallFs,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: isActive
+                                                                  ? colorScheme
+                                                                        .primary
+                                                                  : colorScheme
+                                                                        .error,
+                                                            ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        softWrap: false,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            Flexible(
+                                              child: Text(
+                                                displayTitle,
                                                 style: GoogleFonts.inter(
-                                                  fontSize: bodyFs + 2,
-                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: smallFs + 2,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.87),
+                                                ),
+                                                maxLines: 1,
+                                                textAlign: TextAlign.end,
+                                                overflow: TextOverflow.ellipsis,
+                                                softWrap: false,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              CupertinoIcons
+                                                  .device_phone_portrait,
+                                              size: iconSize,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.6),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            Expanded(
+                                              child: Text(
+                                                imei,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: bodyFs,
+                                                  fontWeight: FontWeight.w500,
                                                   color: colorScheme.onSurface,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                softWrap: false,
                                               ),
-                                              SizedBox(width: spacing),
-                                              Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: spacing + 4,
-                                                  vertical: 4,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: vehicle["active"]
-                                                      ? colorScheme.primary
-                                                            .withOpacity(0.15)
-                                                      : colorScheme.error
-                                                            .withOpacity(0.15),
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Text(
-                                                  vehicle["status"],
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: smallFs,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: vehicle["active"]
-                                                        ? colorScheme.primary
-                                                        : colorScheme.error,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            left: iconSize + spacing,
                                           ),
-                                          Text(
-                                            vehicle["type"],
+                                          child: Text(
+                                            "Type: $type • VIN: $vin • SIM: $simNumber",
                                             style: GoogleFonts.inter(
-                                              fontSize: smallFs + 2,
-                                              fontWeight: FontWeight.w600,
+                                              fontSize: bodyFs - 1,
                                               color: colorScheme.onSurface
-                                                  .withOpacity(0.87),
+                                                  .withOpacity(0.7),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            CupertinoIcons
-                                                .device_phone_portrait,
-                                            size: iconSize,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.6),
-                                          ),
-                                          SizedBox(width: spacing),
-                                          Text(
-                                            vehicle["imei"],
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs,
-                                              fontWeight: FontWeight.w500,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          left: iconSize + spacing,
-                                        ),
-                                        child: Text(
-                                          "${vehicle["motion"]} • ${vehicle["speed"]} • ${vehicle["engine"]}",
-                                          style: GoogleFonts.inter(
-                                            fontSize: bodyFs - 1,
-                                            color: vehicle["engine"] == "ON"
-                                                ? colorScheme.primary
-                                                : colorScheme.onSurface
-                                                      .withOpacity(0.7),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: spacing * 2),
-
-                            // PRIMARY USER & ADDED BY
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _userInfo(
-                                    vehicle["primary_user_initials"],
-                                    vehicle["primary_user_name"],
-                                    vehicle["primary_user_username"],
-                                    width,
-                                    colorScheme,
-                                    spacing,
-                                    bodyFs,
-                                    smallFs,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _userInfo(
-                                    vehicle["added_by_initials"],
-                                    vehicle["added_by_name"],
-                                    vehicle["added_by_username"],
-                                    width,
-                                    colorScheme,
-                                    spacing,
-                                    bodyFs,
-                                    smallFs,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: spacing * 2),
-
-                            // LAST SEEN + SWITCH
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Last Seen: ${vehicle["last_activity_date"]} ${vehicle["last_activity_time"]}",
-                                  style: GoogleFonts.inter(
-                                    fontSize: smallFs + 1,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.87,
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.85,
-                                  child: Switch(
-                                    value: vehicle["active"],
-                                    activeColor: colorScheme.onPrimary,
-                                    activeTrackColor: colorScheme.primary,
-                                    inactiveThumbColor:
-                                        colorScheme.onSurfaceVariant,
-                                    inactiveTrackColor:
-                                        colorScheme.surfaceVariant,
-                                    onChanged: (v) => setState(() {
-                                      vehicle["active"] = v;
-                                      vehicle["status"] = v
-                                          ? "Active"
-                                          : "Inactive";
-                                    }),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: spacing),
-
-                            // LICENSE INFO
-                            Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.doc_checkmark_fill,
-                                  size: iconSize,
-                                  color: colorScheme.primary,
-                                ),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    "Primary: ${vehicle["license_pri"]} ${isPriExpiring ? '(Expiring soon)' : '(Valid)'}",
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs - 1,
-                                      color: isPriExpiring
-                                          ? colorScheme.error
-                                          : colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Secondary: ${vehicle["license_sec"]} ${isSecExpiring ? '(Expiring soon)' : '(Valid)'}",
-                                    textAlign: TextAlign.end,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs - 1,
-                                      color: isSecExpiring
-                                          ? colorScheme.error
-                                          : colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: spacing),
-                            Divider(
-                              color: colorScheme.outline.withOpacity(0.3),
-                            ),
-                            SizedBox(height: spacing),
-                            Text(
-                              "Created: ${vehicle["created_date"]} ${vehicle["created_time"]}",
-                              style: GoogleFonts.inter(
-                                fontSize: smallFs,
-                                color: colorScheme.onSurface.withOpacity(0.54),
+                                ],
                               ),
-                            ),
-                          ],
+
+                              SizedBox(height: spacing * 2),
+
+                              // PRIMARY USER & ADDED BY
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _userInfo(
+                                      "Primary User",
+                                      primaryInitials,
+                                      primaryName,
+                                      primaryUsername,
+                                      width,
+                                      colorScheme,
+                                      spacing,
+                                      bodyFs,
+                                      smallFs,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _userInfo(
+                                      "Added by",
+                                      addedByInitials,
+                                      addedByName,
+                                      addedByUsername,
+                                      width,
+                                      colorScheme,
+                                      spacing,
+                                      bodyFs,
+                                      smallFs,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: spacing * 2),
+
+                              // LAST SEEN + SWITCH
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      "Last Seen: $lastSeenDate $lastSeenTime",
+                                      style: GoogleFonts.inter(
+                                        fontSize: smallFs + 1,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.87),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: false,
+                                    ),
+                                  ),
+                                  Transform.scale(
+                                    scale: 0.85,
+                                    child: Switch(
+                                      value: isActive,
+                                      activeColor: colorScheme.onPrimary,
+                                      activeTrackColor: colorScheme.primary,
+                                      inactiveThumbColor:
+                                          colorScheme.onSurfaceVariant,
+                                      inactiveTrackColor:
+                                          colorScheme.surfaceVariant,
+                                      onChanged: (v) => setState(() {
+                                        vehicle["active"] = v;
+                                        vehicle["status"] = v
+                                            ? "Active"
+                                            : "Inactive";
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: spacing),
+
+                              // LICENSE INFO
+                              Row(
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.doc_checkmark_fill,
+                                    size: iconSize,
+                                    color: colorScheme.primary,
+                                  ),
+                                  SizedBox(width: spacing),
+                                  Expanded(
+                                    child: Text(
+                                      "Primary: $licensePri ${priStatus.isEmpty ? '' : priStatus}",
+                                      style: GoogleFonts.inter(
+                                        fontSize: bodyFs - 1,
+                                        color: isPriExpiring
+                                            ? colorScheme.error
+                                            : colorScheme.onSurface,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: false,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      "Secondary: $licenseSec ${secStatus.isEmpty ? '' : secStatus}",
+                                      textAlign: TextAlign.end,
+                                      style: GoogleFonts.inter(
+                                        fontSize: bodyFs - 1,
+                                        color: isSecExpiring
+                                            ? colorScheme.error
+                                            : colorScheme.onSurface,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: false,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: spacing),
+                              Divider(
+                                color: colorScheme.outline.withOpacity(0.3),
+                              ),
+                              SizedBox(height: spacing),
+                              Text(
+                                "Created: $createdDate $createdTime",
+                                style: GoogleFonts.inter(
+                                  fontSize: smallFs,
+                                  color: colorScheme.onSurface.withOpacity(
+                                    0.54,
+                                  ),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }),
 
             SizedBox(height: hp * 3),
           ],
@@ -882,6 +887,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   }
 
   Widget _userInfo(
+    String label,
     String initials,
     String name,
     String username,
@@ -910,11 +916,14 @@ class _VehicleScreenState extends State<VehicleScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Primary User",
+                label,
                 style: GoogleFonts.inter(
                   fontSize: smallFs - 1,
                   color: scheme.onSurface.withOpacity(0.6),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
               Text(
                 name,
@@ -923,6 +932,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
               Text(
                 username,
@@ -930,11 +942,128 @@ class _VehicleScreenState extends State<VehicleScreen> {
                   fontSize: smallFs,
                   color: scheme.onSurface.withOpacity(0.6),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildVehicleSkeletonCard({
+    required int index,
+    required double hp,
+    required double spacing,
+    required double cardPadding,
+    required double width,
+    required double iconSize,
+    required double bodyFs,
+    required double smallFs,
+    required ColorScheme colorScheme,
+  }) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300 + index * 50),
+      curve: Curves.easeOut,
+      margin: EdgeInsets.only(bottom: hp),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmer(
+                    width: AdaptiveUtils.getAvatarSize(width),
+                    height: AdaptiveUtils.getAvatarSize(width),
+                    radius: AdaptiveUtils.getAvatarSize(width),
+                  ),
+                  SizedBox(width: spacing * 1.5),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppShimmer(
+                                width: double.infinity,
+                                height: bodyFs + 8,
+                                radius: 8,
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            AppShimmer(
+                              width: 70,
+                              height: smallFs + 10,
+                              radius: 999,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: width * 0.35,
+                          height: bodyFs + 8,
+                          radius: 8,
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: width * 0.45,
+                          height: bodyFs + 6,
+                          radius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: spacing * 2),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: iconSize + bodyFs + 8,
+                      radius: 12,
+                    ),
+                  ),
+                  SizedBox(width: spacing),
+                  Expanded(
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: iconSize + bodyFs + 8,
+                      radius: 12,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: spacing * 2),
+              AppShimmer(width: width * 0.5, height: smallFs + 10, radius: 8),
+              SizedBox(height: spacing),
+              AppShimmer(
+                width: double.infinity,
+                height: smallFs + 10,
+                radius: 8,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

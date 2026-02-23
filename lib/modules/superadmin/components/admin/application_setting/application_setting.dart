@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/app_preferences_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +53,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
   bool demoEnabled = false;
   String geocodingPrecision = "2 Digits";
   String backupRetention = "3 Months";
-  int freeCredits = 100;
+  int freeCredits = 0;
   bool signupAllowed = true;
 
   bool _loading = false;
@@ -97,7 +98,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
       demoEnabled: false,
       geocodingPrecision: '2 Digits',
       backupRetention: '3 Months',
-      freeCredits: 100,
+      freeCredits: 0,
       signupAllowed: true,
     );
   }
@@ -165,14 +166,14 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load settings.'
-              : "Couldn't load settings. Showing fallback values.";
+              : "Couldn't load settings.";
           _showLoadErrorOnce(message);
         },
       );
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _showLoadErrorOnce("Couldn't load settings. Showing fallback values.");
+      _showLoadErrorOnce("Couldn't load settings.");
     }
   }
 
@@ -263,6 +264,37 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
+    if (_loading) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                AppShimmer(width: 90, height: 36, radius: 8),
+                SizedBox(width: 12),
+                AppShimmer(width: 86, height: 36, radius: 8),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const AppShimmer(width: 220, height: 24, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: 320, height: 16, radius: 8),
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ],
+        ),
+      );
+    }
+
     String demoStatus = demoEnabled ? "ON" : "OFF";
     String signupStatus = signupAllowed ? "ALLOWED" : "DISABLED";
 
@@ -282,7 +314,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               ElevatedButton.icon(
-                onPressed: _saving ? null : _resetPressed,
+                onPressed: (_saving || _loading) ? null : _resetPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(
@@ -539,6 +571,59 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerCard(width: width, titleWidth: 220, fields: 1),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 180, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 170, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 230, fields: 3),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard({
+    required double width,
+    required double titleWidth,
+    required int fields,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double labelWidth = (width * 0.24).clamp(90, 180).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: titleWidth, height: 24, radius: 8),
+          const SizedBox(height: 16),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
         ],
       ),
     );

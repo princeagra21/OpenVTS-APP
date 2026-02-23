@@ -24,6 +24,7 @@ class _ProfileTabState extends State<ProfileTab> {
   AdminProfile? _profile;
   bool _loading = false;
   bool _errorShown = false;
+  bool _loadFailed = false;
   CancelToken? _token;
 
   ApiClient? _api;
@@ -69,11 +70,15 @@ class _ProfileTabState extends State<ProfileTab> {
             _profile = profile;
             _loading = false;
             _errorShown = false;
+            _loadFailed = false;
           });
         },
         failure: (err) {
           if (!mounted) return;
-          setState(() => _loading = false);
+          setState(() {
+            _loading = false;
+            _loadFailed = true;
+          });
           if (_errorShown) return;
           _errorShown = true;
 
@@ -81,20 +86,27 @@ class _ProfileTabState extends State<ProfileTab> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view admin profile.'
-              : "Couldn't load admin profile. Showing fallback info.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+              : "Couldn't load admin profile.";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              action: SnackBarAction(label: 'Retry', onPressed: _loadProfile),
+            ),
+          );
         },
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+      });
       if (_errorShown) return;
       _errorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load admin profile. Showing fallback info."),
+        SnackBar(
+          content: const Text("Couldn't load admin profile."),
+          action: SnackBarAction(label: 'Retry', onPressed: _loadProfile),
         ),
       );
     }
@@ -105,9 +117,13 @@ class _ProfileTabState extends State<ProfileTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        AdminInfoBoxes(profile: _profile),
+        AdminInfoBoxes(profile: _profile, loading: _loading),
         const SizedBox(height: 24),
         CompanyBox(profile: _profile, loading: _loading),
+        if (_loadFailed) ...[
+          const SizedBox(height: 16),
+          TextButton(onPressed: _loadProfile, child: const Text('Retry')),
+        ],
         const SizedBox(height: 24),
         DeleteAccountBox(adminId: widget.adminId),
       ],

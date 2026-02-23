@@ -4,8 +4,15 @@ class AdminProfile {
   const AdminProfile(this.raw);
 
   Map<String, dynamic> get data {
-    final d = raw['data'];
-    if (d is Map) return Map<String, dynamic>.from(d.cast());
+    final level1 = raw['data'];
+    if (level1 is Map) {
+      final l1 = Map<String, dynamic>.from(level1.cast());
+      final level2 = l1['data'];
+      if (level2 is Map) {
+        return Map<String, dynamic>.from(level2.cast());
+      }
+      return l1;
+    }
     return raw;
   }
 
@@ -16,7 +23,8 @@ class AdminProfile {
         data['adminId'] ??
         data['admin_id'] ??
         data['userId'] ??
-        data['user_id'],
+        data['user_id'] ??
+        data['uid'],
   );
 
   String get fullName =>
@@ -47,7 +55,8 @@ class AdminProfile {
     data['status'] ??
         data['state'] ??
         data['verificationStatus'] ??
-        data['verifiedStatus'],
+        data['verifiedStatus'] ??
+        data['isActive'],
   );
 
   bool get isVerified {
@@ -55,7 +64,8 @@ class AdminProfile {
         data['isVerified'] ??
         data['emailVerified'] ??
         data['isEmailVerified'] ??
-        data['verified'];
+        data['verified'] ??
+        data['isemailvarified'];
     if (v is bool) return v;
     if (v is num) return v != 0;
     if (v is String) {
@@ -69,7 +79,11 @@ class AdminProfile {
   }
 
   bool get isActive {
-    final v = data['isActive'] ?? data['active'] ?? data['is_active'];
+    final v =
+        data['isActive'] ??
+        data['active'] ??
+        data['is_active'] ??
+        data['status'];
     if (v is bool) return v;
     if (v is num) return v != 0;
     if (v is String) {
@@ -80,18 +94,42 @@ class AdminProfile {
     final s = status.trim().toLowerCase();
     if (s == 'active') return true;
     if (s == 'disabled' || s == 'inactive') return false;
-    return false;
+    // Some admin profile payloads omit explicit status fields.
+    return true;
   }
 
-  String get companyName => _string(data['companyName'] ?? data['company']);
+  String get companyName {
+    final direct = _string(data['companyName'] ?? data['company']);
+    if (direct.isNotEmpty) return direct;
+    final companies = data['companies'];
+    if (companies is List && companies.isNotEmpty) {
+      final first = companies.first;
+      if (first is Map) {
+        return _string(first['name'] ?? first['companyName']);
+      }
+    }
+    return '';
+  }
 
-  String get website => _string(data['website'] ?? data['domain']);
+  String get website {
+    final direct = _string(data['website'] ?? data['domain']);
+    if (direct.isNotEmpty) return direct;
+    final companies = data['companies'];
+    if (companies is List && companies.isNotEmpty) {
+      final first = companies.first;
+      if (first is Map) {
+        return _string(first['websiteUrl'] ?? first['customDomain']);
+      }
+    }
+    return '';
+  }
 
   int get vehiclesCount => _int(
     data['vehicles'] ??
         data['vehicleCount'] ??
         data['vehiclesCount'] ??
-        data['vehicles_count'],
+        data['vehicles_count'] ??
+        data['totalvehicles'],
   );
 
   int get credits => _int(data['credits'] ?? data['creditBalance']);
@@ -103,20 +141,49 @@ class AdminProfile {
     data['lastLogin'] ??
         data['last_login'] ??
         data['lastLoginAt'] ??
-        data['recentLogin'],
+        data['recentLogin'] ??
+        data['Lastlogin'] ??
+        data['updatedAt'] ??
+        data['updated_at'],
   );
 
   String get addressLine => _string(
     data['addressLine'] ??
         data['address'] ??
         data['address1'] ??
-        data['address_line'],
+        data['address_line'] ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['addressLine']
+            : null),
   );
 
-  String get city => _string(data['cityName'] ?? data['city']);
-  String get state => _string(data['stateCode'] ?? data['state']);
-  String get country => _string(data['countryCode'] ?? data['country']);
-  String get pincode => _string(data['pincode'] ?? data['postalCode']);
+  String get city => _string(
+    data['cityName'] ??
+        data['city'] ??
+        (data['address'] is Map ? (data['address'] as Map)['city'] : null) ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['cityName']
+            : null) ??
+        (data['address'] is Map ? (data['address'] as Map)['cityId'] : null),
+  );
+  String get state => _string(
+    data['stateCode'] ??
+        data['state'] ??
+        (data['address'] is Map ? (data['address'] as Map)['state'] : null) ??
+        (data['address'] is Map ? (data['address'] as Map)['stateCode'] : null),
+  );
+  String get country => _string(
+    data['countryCode'] ??
+        data['country'] ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['countryCode']
+            : null),
+  );
+  String get pincode => _string(
+    data['pincode'] ??
+        data['postalCode'] ??
+        (data['address'] is Map ? (data['address'] as Map)['pincode'] : null),
+  );
 
   String get roleId =>
       _string(data['roleId'] ?? data['role_id'] ?? data['roleID']);

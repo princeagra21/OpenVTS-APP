@@ -3,8 +3,14 @@ class LocalizationSettings {
 
   const LocalizationSettings(this.raw);
 
-  String get languageCode =>
-      _firstString(const ['language', 'lang', 'locale', 'defaultLanguage']);
+  String get languageCode => _firstString(const [
+    'languageCode',
+    'language_code',
+    'language',
+    'lang',
+    'locale',
+    'defaultLanguage',
+  ]);
 
   String get textDirection {
     final explicit = _firstString(const [
@@ -52,7 +58,13 @@ class LocalizationSettings {
     'offset',
   ]);
 
-  String get units => _firstString(const ['units', 'unitSystem', 'kmMiles']);
+  String get units => _firstString(const [
+    'units',
+    'distanceUnit',
+    'distance_unit',
+    'unitSystem',
+    'kmMiles',
+  ]);
 
   double? get mapLat =>
       _firstDouble(const ['mapLat', 'defaultLat', 'latitude', 'lat']);

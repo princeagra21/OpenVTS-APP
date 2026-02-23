@@ -7,8 +7,8 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -22,30 +22,16 @@ class RolesTab extends StatefulWidget {
 }
 
 class _RolesTabState extends State<RolesTab> {
-  String _selectedRole = 'Full Admin';
-  final Map<String, String> _permissions = {};
+  String? _selectedRole;
+  final Map<String, String> _permissions = <String, String>{};
+  final List<RoleItem> _roles = <RoleItem>[];
 
-  // Fallback-first roles list.
-  List<RoleItem> _roles = const [
-    RoleItem({'id': 'full_admin', 'name': 'Full Admin'}),
-  ];
-
-  final List<String> modules = [
-    "Tenants",
-    "Users",
-    "Roles",
-    "Vehicles",
-    "Devices",
-    "SIM/APN",
-    "Live Tracking",
-    "Geofences",
-    "Alerts",
-    "Commands",
-    "Reports",
-    "Billing",
-    "Integrations",
-    "Support",
-    "SSL"
+  static const List<String> _permissionLevels = <String>[
+    'Full',
+    'Manage',
+    'Edit',
+    'View',
+    'None',
   ];
 
   bool _loading = false;
@@ -60,9 +46,6 @@ class _RolesTabState extends State<RolesTab> {
   @override
   void initState() {
     super.initState();
-    for (var module in modules) {
-      _permissions[module] = 'Full';
-    }
     _loadRoleAndPermissions();
   }
 
@@ -86,98 +69,189 @@ class _RolesTabState extends State<RolesTab> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value.cast());
+    return const <String, dynamic>{};
+  }
+
+  String _pickString(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  List<RoleItem> _normalizeRoles(List<Map<String, dynamic>> rows) {
+    final out = <RoleItem>[];
+    final seen = <String>{};
+
+    for (final raw in rows) {
+      final roleMap = _asMap(raw['role']);
+      final dataMap = _asMap(raw['data']);
+      final merged = <String, dynamic>{...raw, ...dataMap, ...roleMap};
+
+      final name = _pickString(merged, const [
+        'name',
+        'title',
+        'roleName',
+        'role',
+        'label',
+      ]);
+      if (name.isEmpty) continue;
+
+      final id = _pickString(merged, const [
+        'id',
+        'roleId',
+        'role_id',
+        'uid',
+        'code',
+        'slug',
+      ]);
+
+      final fingerprint = '${id.toLowerCase()}|${name.toLowerCase()}';
+      if (!seen.add(fingerprint)) continue;
+      out.add(RoleItem({'id': id.isEmpty ? name : id, 'name': name}));
+    }
+
+    out.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return out;
+  }
+
   Future<void> _loadRoleAndPermissions() async {
     _ensureRepo();
 
     _token?.cancel('reload');
-    _token = CancelToken();
+    final token = CancelToken();
+    _token = token;
 
     if (!mounted) return;
     setState(() => _loading = true);
 
     try {
-      // Postman-confirmed source of truth:
-      // only use GET /superadmin/admin/{adminId} for role + permissions hydration.
-      final res = await _repo!.getAdminProfile(
+      final rolesFuture = _repo!.getRoles(cancelToken: token);
+      final profileFuture = _repo!.getAdminProfile(
         widget.adminId,
-        cancelToken: _token,
+        cancelToken: token,
       );
+      final profileRes = await profileFuture;
+      final rolesRes = await rolesFuture;
 
       if (!mounted) return;
 
       String adminRoleId = '';
       String adminRoleName = '';
+      final nextRoles = <RoleItem>[];
+      final nextPermissions = <String, String>{};
 
-      if (res.isSuccess) {
-        final AdminProfile p = res.data!;
+      if (rolesRes.isSuccess) {
+        nextRoles.addAll(
+          _normalizeRoles(rolesRes.data ?? const <Map<String, dynamic>>[]),
+        );
+      } else {
+        final err = rolesRes.error;
+        if (err is ApiException && err.statusCode == 404) {
+          // Roles endpoint unavailable on this backend version.
+        } else if (!_errorShown) {
+          _errorShown = true;
+          _snackOnce("Couldn't load role list.");
+        }
+      }
+
+      if (profileRes.isSuccess) {
+        final AdminProfile p = profileRes.data!;
 
         adminRoleId = p.roleId.trim();
         adminRoleName = p.roleName.trim();
 
         final matrix = PermissionMatrix.fromRaw(p.permissionsRaw);
         if (matrix.levelsByModule.isNotEmpty) {
-          // Normalize/hydrate only the stable core module rows.
-          const stableModules = <String>[
-            'Tenants',
-            'Users',
-            'Roles',
-            'Vehicles',
-            'Devices',
-            'SIM/APN',
-          ];
-          for (final module in stableModules) {
-            final lvl = matrix.levelForModule(module);
-            if (lvl != null) _permissions[module] = lvl.uiLabel;
-          }
-        } else if (kDebugMode) {
-          debugPrint(
-            'RolesTab: permissions missing in admin payload for adminId=${widget.adminId}',
-          );
+          matrix.levelsByModule.forEach((module, level) {
+            nextPermissions[module] = level.uiLabel;
+          });
         }
-      } else {
-        if (!_errorShown) {
-          _errorShown = true;
-          final err = res.error;
-          if (err is ApiException &&
-              (err.statusCode == 401 || err.statusCode == 403)) {
-            _snackOnce("Not authorized to view roles.");
-          } else {
-            _snackOnce("Couldn't load roles. Showing defaults.");
-          }
+      } else if (!_errorShown) {
+        _errorShown = true;
+        final err = profileRes.error;
+        if (err is ApiException &&
+            (err.statusCode == 401 || err.statusCode == 403)) {
+          _snackOnce('Not authorized to view roles.');
+        } else {
+          _snackOnce("Couldn't load roles.");
         }
       }
 
-      // Preselect role based on admin profile if possible.
       if (adminRoleName.isNotEmpty) {
-        final match = _roles.firstWhere(
+        final roleExists = nextRoles.any(
           (r) => r.name.trim().toLowerCase() == adminRoleName.toLowerCase(),
-          orElse: () => const RoleItem({'id': '', 'name': ''}),
         );
-        if (match.name.isNotEmpty) {
-          _selectedRole = match.name;
-        } else {
-          _selectedRole = adminRoleName;
-          final exists = _roles.any(
-            (r) => r.name.trim().toLowerCase() == adminRoleName.toLowerCase(),
+        if (!roleExists) {
+          nextRoles.add(
+            RoleItem({
+              'id': adminRoleId.isEmpty ? adminRoleName : adminRoleId,
+              'name': adminRoleName,
+            }),
           );
-          if (!exists) {
-            _roles = [
-              ..._roles,
-              RoleItem({
-                'id': adminRoleId.isEmpty ? adminRoleName : adminRoleId,
-                'name': adminRoleName,
-              }),
-            ];
-          }
+          nextRoles.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
         }
       }
+
+      final roleNames =
+          nextRoles
+              .map((r) => r.name.trim())
+              .where((n) => n.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort();
+
+      String? selected = _selectedRole;
+      if (adminRoleName.isNotEmpty && roleNames.contains(adminRoleName)) {
+        selected = adminRoleName;
+      } else if (selected != null && roleNames.contains(selected)) {
+        // keep current selection
+      } else if (roleNames.isNotEmpty) {
+        selected = roleNames.first;
+      } else {
+        selected = null;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _errorShown = false;
+        _loading = false;
+        _roles
+          ..clear()
+          ..addAll(nextRoles);
+        _permissions
+          ..clear()
+          ..addAll(nextPermissions);
+        _selectedRole = selected;
+      });
     } catch (_) {
       if (!_errorShown) {
         _errorShown = true;
-        _snackOnce("Couldn't load roles. Showing defaults.");
+        _snackOnce("Couldn't load roles.");
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  void _updatePermission(String module, String level) {
+    setState(() {
+      _permissions[module] = level;
+    });
+    if (!_saveNotEnabledShown) {
+      _saveNotEnabledShown = true;
+      _snackOnce('Editing roles not available yet.');
     }
   }
 
@@ -190,6 +264,10 @@ class _RolesTabState extends State<RolesTab> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+
+    final selectedValue = items.any((item) => item.value == _selectedRole)
+        ? _selectedRole
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,14 +290,27 @@ class _RolesTabState extends State<RolesTab> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 16,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: colorScheme.primary.withOpacity(0.1),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: colorScheme.primary.withOpacity(0.2),
+              ),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.onSurface.withOpacity(0.08),
+              ),
             ),
             filled: true,
             fillColor: colorScheme.surfaceVariant,
@@ -239,12 +330,14 @@ class _RolesTabState extends State<RolesTab> {
             ),
           ),
           items: items,
-          value: _selectedRole,
-          onChanged: (value) {
-            setState(() {
-              _selectedRole = value!;
-            });
-          },
+          value: selectedValue,
+          onChanged: items.isEmpty
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedRole = value;
+                  });
+                },
         ),
       ],
     );
@@ -263,189 +356,45 @@ class _RolesTabState extends State<RolesTab> {
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
-            letterSpacing: 0.8,
+            letterSpacing: 0.6,
           ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Full",
-                    style: GoogleFonts.inter(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Radio<String>(
-                    activeColor: colorScheme.primary,
-                    value: "Full",
-                    groupValue: _permissions[module],
-                    onChanged: (value) {
-                      setState(() {
-                        _permissions[module] = value!;
-                      });
-                      if (kDebugMode && !_saveNotEnabledShown) {
-                        _saveNotEnabledShown = true;
-                        _snackOnce("Editing roles not available yet.");
-                      }
-                    },
-                  ),
-                ],
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _permissionLevels.map((level) {
+            return ChoiceChip(
+              showCheckmark: false,
+              label: Text(
+                level,
+                style: GoogleFonts.inter(fontSize: fontSize - 1),
               ),
-            ),
-            Text(
-              "⟶",
-              style: GoogleFonts.inter(
-                fontSize: fontSize,
-                color: colorScheme.onSurface,
+              selected: _permissions[module] == level,
+              selectedColor: colorScheme.primary.withOpacity(0.18),
+              backgroundColor: colorScheme.surfaceVariant.withOpacity(0.55),
+              side: BorderSide(
+                color: _permissions[module] == level
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withOpacity(0.08),
               ),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Manage",
-                    style: GoogleFonts.inter(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Radio<String>(
-                    activeColor: colorScheme.primary,
-                    value: "Manage",
-                    groupValue: _permissions[module],
-                    onChanged: (value) {
-                      setState(() {
-                        _permissions[module] = value!;
-                      });
-                      if (kDebugMode && !_saveNotEnabledShown) {
-                        _saveNotEnabledShown = true;
-                        _snackOnce("Editing roles not available yet.");
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              "⟶",
-              style: GoogleFonts.inter(
-                fontSize: fontSize,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Edit",
-                    style: GoogleFonts.inter(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Radio<String>(
-                    activeColor: colorScheme.primary,
-                    value: "Edit",
-                    groupValue: _permissions[module],
-                    onChanged: (value) {
-                      setState(() {
-                        _permissions[module] = value!;
-                      });
-                      if (kDebugMode && !_saveNotEnabledShown) {
-                        _saveNotEnabledShown = true;
-                        _snackOnce("Editing roles not available yet.");
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              "⟶",
-              style: GoogleFonts.inter(
-                fontSize: fontSize,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "View",
-                    style: GoogleFonts.inter(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Radio<String>(
-                    activeColor: colorScheme.primary,
-                    value: "View",
-                    groupValue: _permissions[module],
-                    onChanged: (value) {
-                      setState(() {
-                        _permissions[module] = value!;
-                      });
-                      if (kDebugMode && !_saveNotEnabledShown) {
-                        _saveNotEnabledShown = true;
-                        _snackOnce("Editing roles not available yet.");
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              "⟶",
-              style: GoogleFonts.inter(
-                fontSize: fontSize,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "None",
-                    style: GoogleFonts.inter(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Radio<String>(
-                    activeColor: colorScheme.primary,
-                    value: "None",
-                    groupValue: _permissions[module],
-                    onChanged: (value) {
-                      setState(() {
-                        _permissions[module] = value!;
-                      });
-                      if (kDebugMode && !_saveNotEnabledShown) {
-                        _saveNotEnabledShown = true;
-                        _snackOnce("Editing roles not available yet.");
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+              onSelected: (_) => _updatePermission(module, level),
+            );
+          }).toList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildPermissionSkeleton() {
+    return Column(
+      children: List<Widget>.generate(
+        5,
+        (_) => const Padding(
+          padding: EdgeInsets.only(bottom: 14),
+          child: AppShimmer(width: double.infinity, height: 56, radius: 12),
+        ),
+      ),
     );
   }
 
@@ -455,31 +404,20 @@ class _RolesTabState extends State<RolesTab> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
 
-    final roleNames = _roles
-        .map((r) => r.name.trim())
-        .where((n) => n.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
-
-    if (_selectedRole.trim().isNotEmpty && !roleNames.contains(_selectedRole)) {
-      roleNames.insert(0, _selectedRole);
-    }
+    final roleNames =
+        _roles
+            .map((r) => r.name.trim())
+            .where((n) => n.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
 
     final roleItems = roleNames
-        .map(
-          (n) => DropdownMenuItem<String>(value: n, child: Text(n)),
-        )
+        .map((n) => DropdownMenuItem<String>(value: n, child: Text(n)))
         .toList();
 
-    List<Widget> permissionRows = [];
-    for (var module in modules) {
-      permissionRows.add(_buildPermissionRow(module, screenWidth));
-      permissionRows.add(const SizedBox(height: 20));
-    }
-    if (permissionRows.isNotEmpty) {
-      permissionRows.removeLast();
-    }
+    final modules = _permissions.keys.toList()..sort();
+    final showNoPermissions = !_loading && modules.isEmpty;
 
     return Container(
       width: double.infinity,
@@ -500,13 +438,16 @@ class _RolesTabState extends State<RolesTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Roles Header
             Row(
               children: [
-                Icon(Icons.admin_panel_settings, size: 24, color: colorScheme.primary),
+                Icon(
+                  Icons.admin_panel_settings,
+                  size: 24,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  "Roles",
+                  'Roles',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -521,23 +462,27 @@ class _RolesTabState extends State<RolesTab> {
                   child: _loading
                       ? CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
+                          ),
                         )
                       : const SizedBox.shrink(),
                 ),
               ],
             ),
             const SizedBox(height: 30),
-            _buildSettingField(
-              icon: Icons.person,
-              label: "Select Role",
-              hint: "Select Role",
-              items: roleItems,
-            ),
+            if (_loading && roleItems.isEmpty)
+              const AppShimmer(width: double.infinity, height: 54, radius: 16)
+            else
+              _buildSettingField(
+                icon: Icons.person,
+                label: 'Select Role',
+                hint: roleItems.isEmpty ? 'No roles from API' : 'Select Role',
+                items: roleItems,
+              ),
             const SizedBox(height: 20),
             Text(
-              "Permissions overview for this role",
+              'Permissions overview for this role',
               style: GoogleFonts.inter(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
@@ -546,7 +491,36 @@ class _RolesTabState extends State<RolesTab> {
               ),
             ),
             const SizedBox(height: 20),
-            ...permissionRows,
+            if (_loading && modules.isEmpty)
+              _buildPermissionSkeleton()
+            else if (showNoPermissions)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.08),
+                  ),
+                ),
+                child: Text(
+                  'No permissions data from API.',
+                  style: GoogleFonts.inter(
+                    fontSize: fontSize - 1,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  for (int i = 0; i < modules.length; i++) ...[
+                    _buildPermissionRow(modules[i], screenWidth),
+                    if (i != modules.length - 1) const SizedBox(height: 18),
+                  ],
+                ],
+              ),
           ],
         ),
       ),

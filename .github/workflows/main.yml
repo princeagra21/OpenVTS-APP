@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      API_BASE_URL: http://15.206.76.175
+      API_BASE_URL: http://15.206.76.175:4000
 
     steps:
       # 1️⃣ Checkout Code

@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/add_deduct_credit_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/credit_history_details_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/email_screen.dart';
@@ -26,9 +27,10 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
   DateTime? _startDate;
   DateTime? _endDate;
 
-  late List<_CreditRow> _rows;
+  final List<_CreditRow> _rows = <_CreditRow>[];
   bool _loading = false;
   bool _errorShown = false;
+  bool _loadFailed = false;
   CancelToken? _token;
 
   ApiClient? _api;
@@ -55,35 +57,6 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
   @override
   void initState() {
     super.initState();
-    _rows = const [
-      _CreditRow(
-        description: "Credit Added By Super Admin",
-        date: "19 Oct 2023, 10:57 am",
-        amount: "+8000",
-        isCredit: true,
-      ),
-      _CreditRow(
-        description:
-            "1 credit used to add new Device MH05DK7183 (358980100912667)",
-        date: "19 Oct 2023, 11:09 am",
-        amount: "-1",
-        isCredit: false,
-      ),
-      _CreditRow(
-        description:
-            "1 credit used to add new Device chasis no-33174 (358980100919886)",
-        date: "19 Oct 2023, 1:17 pm",
-        amount: "-1",
-        isCredit: false,
-      ),
-      _CreditRow(
-        description:
-            "1 credit used for device CHASSIS NO 27004 (358980100868752)",
-        date: "19 Oct 2023, 1:25 pm",
-        amount: "-1",
-        isCredit: false,
-      ),
-    ];
     _loadLogs();
   }
 
@@ -133,12 +106,19 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
           setState(() {
             _loading = false;
             _errorShown = false;
-            _rows = mapped;
+            _loadFailed = false;
+            _rows
+              ..clear()
+              ..addAll(mapped);
           });
         },
         failure: (err) {
           if (!mounted) return;
-          setState(() => _loading = false);
+          setState(() {
+            _loading = false;
+            _loadFailed = true;
+            _rows.clear();
+          });
           if (_errorShown) return;
           _errorShown = true;
 
@@ -146,20 +126,28 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view credit history.'
-              : "Couldn't load credit history. Showing fallback list.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+              : "Couldn't load credit history.";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              action: SnackBarAction(label: 'Retry', onPressed: _loadLogs),
+            ),
+          );
         },
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+        _rows.clear();
+      });
       if (_errorShown) return;
       _errorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load credit history. Showing fallback list."),
+        SnackBar(
+          content: const Text("Couldn't load credit history."),
+          action: SnackBarAction(label: 'Retry', onPressed: _loadLogs),
         ),
       );
     }
@@ -175,16 +163,6 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
         AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
 
     final showNoData = !_loading && _rows.isEmpty;
-    final displayRows = showNoData
-        ? const <_CreditRow>[
-            _CreditRow(
-              description: "No history",
-              date: "",
-              amount: "",
-              isCredit: true,
-            ),
-          ]
-        : _rows;
 
     return Container(
       width: double.infinity,
@@ -241,7 +219,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                 child: Row(
                   children: [
                     Text(
-                      _startDate == null
+                      _startDate == null || _endDate == null
                           ? "Select Date Range"
                           : "${_startDate!.toIso8601String().substring(0, 10)} - ${_endDate!.toIso8601String().substring(0, 10)}",
                       style: GoogleFonts.inter(
@@ -359,20 +337,86 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
           Divider(color: colorScheme.onSurface.withOpacity(0.1)),
           const SizedBox(height: 12),
 
-          // TRANSACTION LIST
-          Column(
-            children: [
-              ...displayRows.map(
-                (r) => _buildTransactionItem(
-                  description: r.description,
-                  date: r.date,
-                  amount: r.amount,
-                  color: r.isCredit ? colorScheme.primary : colorScheme.error,
-                  descFontSize: descFontSize,
+          if (_loading)
+            Column(
+              children: List<Widget>.generate(
+                3,
+                (_) => _buildHistorySkeleton(colorScheme),
+              ),
+            ),
+          if (showNoData && !_loadFailed)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No credit history found.',
+                style: GoogleFonts.inter(
+                  fontSize: descFontSize,
+                  color: colorScheme.onSurface.withOpacity(0.75),
                 ),
               ),
-            ],
+            ),
+          if (showNoData && _loadFailed)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Couldn't load credit history.",
+                      style: GoogleFonts.inter(
+                        fontSize: descFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.75),
+                      ),
+                    ),
+                  ),
+                  TextButton(onPressed: _loadLogs, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          if (!showNoData && !_loading)
+            Column(
+              children: _rows
+                  .map(
+                    (r) => _buildTransactionItem(
+                      description: r.description,
+                      date: r.date,
+                      amount: r.amount,
+                      color: r.isCredit
+                          ? colorScheme.primary
+                          : colorScheme.error,
+                      descFontSize: descFontSize,
+                    ),
+                  )
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistorySkeleton(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colorScheme.onSurface.withOpacity(0.05)),
+        ),
+      ),
+      child: const Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(width: double.infinity, height: 14, radius: 8),
+                SizedBox(height: 6),
+                AppShimmer(width: 160, height: 12, radius: 8),
+              ],
+            ),
           ),
+          SizedBox(width: 12),
+          AppShimmer(width: 46, height: 16, radius: 8),
         ],
       ),
     );

@@ -230,6 +230,9 @@ class _MapScreenState extends State<MapScreen> {
                   urlTemplate:
                       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                   subdomains: const ['a', 'b', 'c'],
+                  tileProvider: NetworkTileProvider(
+                    cachingProvider: const DisabledMapCachingProvider(),
+                  ),
                 ),
                 MarkerLayer(markers: markers),
               ],

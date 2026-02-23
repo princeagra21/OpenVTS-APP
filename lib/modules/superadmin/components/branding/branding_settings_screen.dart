@@ -1,20 +1,8 @@
-// screens/settings/branding_settings_screen.dart
-// Recon summary:
-// - File: lib/modules/superadmin/components/branding/branding_settings_screen.dart
-// - Mocked fields previously in UI: base url ("app.fleetstack.com"), server ip ("192.168.1.100"),
-//   static upload handlers (no-op), static previews ("Preview"), save handler (no-op).
-// - Related file (theme presets, separate screen): lib/modules/superadmin/components/admin/branding/branding_screen.dart
-//
-// Postman endpoint scan (method + path):
-// - GET branding endpoint: GET /superadmin/whitelabel
-// - SAVE branding endpoint: PATCH /superadmin/whitelabel
-//   form-data keys in collection: customDomain, primaryColor, logoLightUrl, logoDarkUrl, faviconUrl
-// - UPLOAD endpoint(s): POST /superadmin/upload/2 (keys: type, file)
-
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/white_label_branding.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/white_label_repository.dart';
@@ -41,12 +29,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
       true; // PATCH /superadmin/whitelabel
   static const bool _hasUploadEndpoint = true; // POST /superadmin/upload/2
 
-  static const String _fallbackBaseUrl = 'app.fleetstack.com';
-  static const String _fallbackServerIp = '192.168.1.100';
-
-  final TextEditingController _baseUrlController = TextEditingController(
-    text: _fallbackBaseUrl,
-  );
+  final TextEditingController _baseUrlController = TextEditingController();
 
   WhiteLabelBranding? _branding;
   bool _loadingBranding = false;
@@ -127,9 +110,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
             _branding = data;
             _loadingBranding = false;
             _loadErrorShown = false;
-            if (data.baseUrl.trim().isNotEmpty) {
-              _baseUrlController.text = data.baseUrl;
-            }
+            _baseUrlController.text = data.baseUrl.trim();
             _faviconUrl = data.faviconUrl;
             _darkLogoUrl = data.darkLogoUrl;
             _lightLogoUrl = data.lightLogoUrl;
@@ -143,7 +124,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view white label settings.'
-              : "Couldn't load white label settings. Showing fallback values.";
+              : "Couldn't load white label settings.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -155,11 +136,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
       if (_loadErrorShown) return;
       _loadErrorShown = true;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Couldn't load white label settings. Showing fallback values.",
-          ),
-        ),
+        const SnackBar(content: Text("Couldn't load white label settings.")),
       );
     }
   }
@@ -399,9 +376,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
               baseUrlController: _baseUrlController,
               loadingBranding: _loadingBranding,
               saving: _saving,
-              serverIp: _branding?.serverIp.isNotEmpty == true
-                  ? _branding!.serverIp
-                  : _fallbackServerIp,
+              serverIp: _branding?.serverIp ?? '',
               faviconUrl: _faviconUrl,
               darkLogoUrl: _darkLogoUrl,
               lightLogoUrl: _lightLogoUrl,
@@ -589,37 +564,52 @@ class _BrandingSettingsBox extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: baseUrlController,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 12,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.outline),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: colorScheme.primary,
-                        width: 2,
+                if (loadingBranding && baseUrlController.text.trim().isEmpty)
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmer(
+                        width: double.infinity,
+                        height: 44,
+                        radius: 12,
+                      ),
+                      SizedBox(height: 6),
+                      AppShimmer(width: 250, height: 12, radius: 8),
+                    ],
+                  )
+                else ...[
+                  TextField(
+                    controller: baseUrlController,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 12,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
+                    style: GoogleFonts.inter(color: colorScheme.onSurface),
                   ),
-                  style: GoogleFonts.inter(color: colorScheme.onSurface),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Enter your custom domain without http:// or https://",
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.54),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Enter your custom domain without http:// or https://",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withOpacity(0.54),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -631,23 +621,33 @@ class _BrandingSettingsBox extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      "Server IP:",
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 6,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.87),
+                if (loadingBranding && serverIp.trim().isEmpty)
+                  const AppShimmer(width: 220, height: 30, radius: 12)
+                else
+                  Row(
+                    children: [
+                      Text(
+                        "Server IP:",
+                        style: GoogleFonts.inter(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 6,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    SmallTab(label: serverIp, selected: false, onTap: () {}),
-                  ],
-                ),
+                      const SizedBox(width: 6),
+                      SmallTab(
+                        label: serverIp.trim().isEmpty ? '-' : serverIp.trim(),
+                        selected: false,
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 8),
                 Text(
-                  "Use this IP address for DNS configuration",
+                  serverIp.trim().isEmpty
+                      ? "Server IP not provided by API."
+                      : "Use this IP address for DNS configuration",
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: colorScheme.onSurface.withOpacity(0.54),
@@ -668,6 +668,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 _buildSingleUploadContainer(
                   context: context,
                   width: width,
+                  loadingBranding: loadingBranding,
                   title: "Favicon",
                   smallTabLabel: "16×16 or 32×32 px",
                   previewUrl: faviconUrl,
@@ -680,6 +681,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 _buildSingleUploadContainer(
                   context: context,
                   width: width,
+                  loadingBranding: loadingBranding,
                   title: "Dark Logo",
                   smallTabLabel: "For light backgrounds",
                   previewUrl: darkLogoUrl,
@@ -692,6 +694,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 _buildSingleUploadContainer(
                   context: context,
                   width: width,
+                  loadingBranding: loadingBranding,
                   title: "Light Logo",
                   smallTabLabel: "For dark backgrounds",
                   previewUrl: lightLogoUrl,
@@ -758,6 +761,7 @@ class _BrandingSettingsBox extends StatelessWidget {
   Widget _buildSingleUploadContainer({
     required BuildContext context,
     required double width,
+    required bool loadingBranding,
     required String title,
     required String smallTabLabel,
     required String previewUrl,
@@ -796,93 +800,118 @@ class _BrandingSettingsBox extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              SmallTab(label: smallTabLabel, selected: false, onTap: () {}),
+              if (loadingBranding)
+                const AppShimmer(width: 130, height: 28, radius: 12)
+              else
+                SmallTab(label: smallTabLabel, selected: false, onTap: () {}),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                child: InkWell(
-                  onTap: uploading ? null : onUpload,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    height: boxHeight,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.5),
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: uploading
-                          ? SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary,
-                                ),
-                              ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.upload_file,
-                                  size: 26,
-                                  color: colorScheme.onSurface.withOpacity(
-                                    0.54,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Click to upload\nICO, PNG (max 2MB)",
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(
-                                    fontSize:
-                                        AdaptiveUtils.getSubtitleFontSize(
-                                          width,
-                                        ) -
-                                        6,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.54,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                child: loadingBranding
+                    ? AppShimmer(
+                        width: double.infinity,
+                        height: boxHeight,
+                        radius: 12,
+                      )
+                    : InkWell(
+                        onTap: uploading ? null : onUpload,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: boxHeight,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: colorScheme.outline.withOpacity(0.5),
                             ),
-                    ),
-                  ),
-                ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: uploading
+                                ? SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.upload_file,
+                                        size: 26,
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.54),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "Click to upload\nICO, PNG (max 2MB)",
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.inter(
+                                          fontSize:
+                                              AdaptiveUtils.getSubtitleFontSize(
+                                                width,
+                                              ) -
+                                              6,
+                                          color: colorScheme.onSurface
+                                              .withOpacity(0.54),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Stack(
                   children: [
-                    Container(
-                      height: boxHeight,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: colorScheme.surfaceVariant,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: previewBytes != null
-                            ? Image.memory(
-                                previewBytes,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                            : (previewUrl.trim().isNotEmpty
-                                  ? Image.network(
-                                      previewUrl,
-                                      fit: BoxFit.contain,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      errorBuilder: (_, __, ___) => Center(
+                    if (loadingBranding)
+                      AppShimmer(
+                        width: double.infinity,
+                        height: boxHeight,
+                        radius: 12,
+                      )
+                    else
+                      Container(
+                        height: boxHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: colorScheme.surfaceVariant,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: previewBytes != null
+                              ? Image.memory(
+                                  previewBytes,
+                                  fit: BoxFit.contain,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : (previewUrl.trim().isNotEmpty
+                                    ? Image.network(
+                                        previewUrl,
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Text(
+                                            "Preview",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.54),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Center(
                                         child: Text(
                                           "Preview",
                                           style: GoogleFonts.inter(
@@ -891,39 +920,29 @@ class _BrandingSettingsBox extends StatelessWidget {
                                                 .withOpacity(0.54),
                                           ),
                                         ),
-                                      ),
-                                    )
-                                  : Center(
-                                      child: Text(
-                                        "Preview",
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          color: colorScheme.onSurface
-                                              .withOpacity(0.54),
-                                        ),
-                                      ),
-                                    )),
+                                      )),
+                        ),
                       ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: InkWell(
-                        onTap: onClear,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            size: 14,
-                            color: colorScheme.onPrimary,
+                    if (!loadingBranding)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: InkWell(
+                          onTap: onClear,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 14,
+                              color: colorScheme.onPrimary,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

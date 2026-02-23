@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +56,7 @@ class Message {
 // --- Status Color Helper ---
 
 Color _statusColor(String status, ColorScheme colorScheme) {
-  switch (status) {
+  switch (_normalizeTicketStatus(status)) {
     case "Open":
       return colorScheme.primary;
     case "In Process":
@@ -71,84 +72,21 @@ Color _statusColor(String status, ColorScheme colorScheme) {
   }
 }
 
-// --- Dummy Data ---
-
-final List<Ticket> dummyTickets = [
-  Ticket(
-    title: "SFTP Export Setup",
-    id: "FS-1041",
-    name: "Contoso Ops",
-    owner: "Contoso Ops",
-    status: "Closed",
-    desc: "Need daily CSV at 02:00 IST...",
-    created: "Yesterday",
-    updated: "1d",
-    messages: [
-      Message(
-        sender: "Contoso Ops",
-        content:
-            "Hi Team, we need to set up a daily SFTP export of vehicle data (trip summary, current location) to our server. We require the file every day at 02:00 IST. Please let us know the required credentials.",
-        timestamp: "Yesterday, 10:30 AM",
-      ),
-      Message(
-        sender: "Fleet Stack Support",
-        content:
-            "Hello Contoso Ops, we have provisioned the SFTP export. Please find your credentials and configuration details attached. The daily CSV export will begin tomorrow at 02:00 IST. We are marking this ticket as Answered and will close it in 24 hours if no further issues are reported.",
-        timestamp: "Yesterday, 04:45 PM",
-      ),
-      Message(
-        sender: "Fleet Stack Support",
-        content:
-            "Configuration confirmed by Contoso Ops, closing ticket. [Internal Note]",
-        timestamp: "Today, 10:00 AM",
-        isInternalNote: true,
-      ),
-    ],
-  ),
-  Ticket(
-    title: "API key not working after rotation",
-    id: "FS-1046",
-    name: "Priya Sharma",
-    owner: "Priya Sharma",
-    status: "In Process",
-    desc: "Regenerated key still 401…",
-    created: "2 hours ago",
-    updated: "10 mins ago",
-    messages: [
-      Message(
-        sender: "Priya Sharma",
-        content:
-            "I rotated my API key, but the new key is still returning a 401 Unauthorized error. I've double-checked the header format. The old key stopped working as expected.",
-        timestamp: "2 hours ago",
-      ),
-      Message(
-        sender: "Fleet Stack Support",
-        content:
-            "We are looking into the key rotation logs and investigating the issue with the 401 error. Will update you shortly. [In Process]",
-        timestamp: "10 mins ago",
-      ),
-    ],
-  ),
-  Ticket(
-    title: "Unable to add new device (IMEI blocked?)",
-    id: "FS-1045",
-    name: "Rahul Verma",
-    owner: "Rahul Verma",
-    status: "Open",
-    desc: "Adding GT06 shows validation error…",
-    created: "2 days ago",
-    updated: "2 days ago",
-    messages: [
-      Message(
-        sender: "Rahul Verma",
-        content:
-            "When trying to add a new GT06 device with IMEI 123456789012345, I get a validation error 'IMEI already in use or blocked'. This is a new device.",
-        timestamp: "2 days ago, 9:00 AM",
-      ),
-    ],
-  ),
-  // ... (Other dummy tickets can be added here)
-];
+String _normalizeTicketStatus(String raw) {
+  final status = raw.trim();
+  final s = status.toLowerCase().replaceAll('_', ' ').replaceAll('-', ' ');
+  if (s.isEmpty) return 'Open';
+  if (s.contains('close')) return 'Closed';
+  if (s.contains('answer') || s.contains('resolve')) return 'Answered';
+  if (s.contains('hold')) return 'Hold';
+  if (s.contains('process') ||
+      s.contains('progress') ||
+      s.contains('pending')) {
+    return 'In Process';
+  }
+  if (s.contains('open') || s.contains('new')) return 'Open';
+  return status;
+}
 
 // --- Support Screen State and Widgets ---
 
@@ -160,7 +98,7 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  late List<Ticket> _tickets;
+  List<Ticket> _tickets = <Ticket>[];
   bool _loadingTickets = false;
   bool _ticketsErrorShown = false;
   CancelToken? _ticketsCancelToken;
@@ -171,7 +109,6 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
-    _tickets = List<Ticket>.from(dummyTickets);
     _loadTickets();
   }
 
@@ -189,7 +126,7 @@ class _SupportScreenState extends State<SupportScreen> {
     final name = t.ownerName.isNotEmpty
         ? t.ownerName
         : (t.userName.isNotEmpty ? t.userName : '—');
-    final status = t.status.isNotEmpty ? t.status : 'Open';
+    final status = _normalizeTicketStatus(t.status);
     final created = t.createdAt.isNotEmpty ? t.createdAt : '';
     final updated = '';
     final desc = t.snippet.isNotEmpty
@@ -251,7 +188,7 @@ class _SupportScreenState extends State<SupportScreen> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view tickets.'
-              : "Couldn't load tickets. Showing fallback list.";
+              : "Couldn't load tickets.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -262,11 +199,9 @@ class _SupportScreenState extends State<SupportScreen> {
       setState(() => _loadingTickets = false);
       if (_ticketsErrorShown) return;
       _ticketsErrorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load tickets. Showing fallback list."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load tickets.")));
     }
   }
 
@@ -276,22 +211,8 @@ class _SupportScreenState extends State<SupportScreen> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
+    final showListSkeleton = _loadingTickets && _tickets.isEmpty;
     final showNoData = !_loadingTickets && _tickets.isEmpty;
-    final displayTickets = showNoData
-        ? <Ticket>[
-            const Ticket(
-              title: "No tickets",
-              id: "—",
-              name: "—",
-              owner: "—",
-              status: "Open",
-              desc: "",
-              created: "",
-              updated: "",
-              messages: <Message>[],
-            ),
-          ]
-        : _tickets;
 
     return AppLayout(
       title: "FLEET STACK",
@@ -333,37 +254,61 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              "${showNoData ? 0 : _tickets.length} tickets",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width),
-                color: colorScheme.onSurface.withOpacity(0.54),
+            if (showListSkeleton)
+              const AppShimmer(width: 96, height: 14, radius: 8)
+            else
+              Text(
+                "${_tickets.length} tickets",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width),
+                  color: colorScheme.onSurface.withOpacity(0.54),
+                ),
+                overflow: TextOverflow.ellipsis, // adds the "..."
+                maxLines: 1, // ensures single-line text
               ),
-              overflow: TextOverflow.ellipsis, // adds the "..."
-              maxLines: 1, // ensures single-line text
-            ),
 
             const SizedBox(height: 16),
 
             // TICKET CARDS LIST
-            ...displayTickets
-                .map(
-                  (ticket) => _TicketCard(
-                    ticket: ticket,
-                    onTap: () async {
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TicketDetailsScreen(ticket: ticket),
-                        ),
-                      );
-                      if (changed == true && mounted) {
-                        _loadTickets();
-                      }
-                    },
+            if (showListSkeleton)
+              ...List<Widget>.generate(4, (_) => const _TicketCardShimmer())
+            else if (showNoData)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.1),
                   ),
-                )
-                .toList(),
+                ),
+                child: Text(
+                  "No tickets found.",
+                  style: GoogleFonts.inter(
+                    fontSize: AdaptiveUtils.getTitleFontSize(width),
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              )
+            else
+              ..._tickets.map(
+                (ticket) => _TicketCard(
+                  ticket: ticket,
+                  onTap: () async {
+                    final changed = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TicketDetailsScreen(ticket: ticket),
+                      ),
+                    );
+                    if (changed == true && mounted) {
+                      _loadTickets();
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -396,18 +341,24 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   ];
   bool _sending = false;
   bool _updatingStatus = false;
+  bool _loadingDetails = false;
   bool _sendErrorShown = false;
   bool _statusErrorShown = false;
+  bool _detailsErrorShown = false;
   bool _hasChanges = false;
   CancelToken? _sendToken;
   CancelToken? _statusToken;
+  CancelToken? _detailsToken;
   ApiClient? _api;
   SuperadminRepository? _repo;
 
   @override
   void initState() {
     super.initState();
-    selectedDropdownStatus = widget.ticket.status;
+    selectedDropdownStatus = _normalizeTicketStatus(widget.ticket.status);
+    if (!statusOptions.contains(selectedDropdownStatus)) {
+      statusOptions.insert(0, selectedDropdownStatus);
+    }
     _messages.addAll(
       widget.ticket.messages.map(
         (m) => TicketMessageItem(<String, dynamic>{
@@ -418,20 +369,121 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         }),
       ),
     );
+    _loadTicketDetails();
   }
 
   @override
   void dispose() {
     _sendToken?.cancel('TicketDetailsScreen disposed');
     _statusToken?.cancel('TicketDetailsScreen disposed');
+    _detailsToken?.cancel('TicketDetailsScreen disposed');
     messageController.dispose();
     super.dispose();
   }
 
+  Future<void> _loadTicketDetails() async {
+    _detailsToken?.cancel('Reload ticket details');
+    final token = CancelToken();
+    _detailsToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingDetails = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+      final res = await _repo!.getTicketDetails(
+        widget.ticket.id,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (payload) {
+          final normalizedStatus = _normalizeTicketStatus(
+            (payload['status'] ?? '').toString(),
+          );
+
+          final nextMessages = <TicketMessageItem>[];
+          final rawMessages = payload['messages'];
+          if (rawMessages is List) {
+            for (final raw in rawMessages) {
+              if (raw is! Map) continue;
+              final m = Map<String, dynamic>.from(raw.cast());
+              final sender = m['sender'];
+              if (sender is Map && m['senderName'] == null) {
+                final senderMap = Map<String, dynamic>.from(sender.cast());
+                final name = senderMap['name']?.toString();
+                if (name != null && name.trim().isNotEmpty) {
+                  m['senderName'] = name.trim();
+                }
+                m['user'] = senderMap;
+              }
+              if (m['isInternal'] == null && m['type'] is String) {
+                final t = (m['type'] as String).toLowerCase();
+                m['isInternal'] = t == 'internal' || t == 'note';
+              }
+              nextMessages.add(TicketMessageItem(m));
+            }
+          }
+
+          setState(() {
+            _loadingDetails = false;
+            _detailsErrorShown = false;
+            if (normalizedStatus.isNotEmpty) {
+              if (!statusOptions.contains(normalizedStatus)) {
+                statusOptions.insert(0, normalizedStatus);
+              }
+              selectedDropdownStatus = normalizedStatus;
+            }
+            _messages
+              ..clear()
+              ..addAll(nextMessages);
+          });
+        },
+        failure: (err) {
+          setState(() => _loadingDetails = false);
+          if (_detailsErrorShown) return;
+          _detailsErrorShown = true;
+          final msg =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to view ticket details.'
+              : "Couldn't load ticket details.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingDetails = false);
+      if (_detailsErrorShown) return;
+      _detailsErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't load ticket details.")),
+      );
+    }
+  }
+
   String _wireStatus(String status) {
-    final s = status.trim().toLowerCase();
-    if (s == 'in process') return 'In Progress';
-    return status;
+    switch (_normalizeTicketStatus(status)) {
+      case 'Open':
+        return 'OPEN';
+      case 'In Process':
+        return 'IN_PROGRESS';
+      case 'Answered':
+        return 'ANSWERED';
+      case 'Hold':
+        return 'HOLD';
+      case 'Closed':
+        return 'CLOSED';
+      default:
+        return status.trim().toUpperCase().replaceAll(' ', '_');
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -616,6 +668,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               ),
             )
             .toList();
+    final showDetailsSkeleton = _loadingDetails && _messages.isEmpty;
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -671,53 +724,72 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Status Dropdown
-                      DropdownButtonFormField<String>(
-                        decoration: _dropdownDecoration(context),
-                        value: selectedDropdownStatus,
-                        items: statusOptions
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: _updatingStatus
-                            ? null
-                            : (value) {
-                                if (value != null) _changeStatus(value);
-                              },
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                      if (showDetailsSkeleton)
+                        const AppShimmer(
+                          width: double.infinity,
+                          height: 52,
+                          radius: 16,
+                        )
+                      else
+                        DropdownButtonFormField<String>(
+                          decoration: _dropdownDecoration(context),
+                          value: statusOptions.contains(selectedDropdownStatus)
+                              ? selectedDropdownStatus
+                              : null,
+                          items: statusOptions
+                              .map(
+                                (status) => DropdownMenuItem(
+                                  value: status,
+                                  child: Text(status),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _updatingStatus
+                              ? null
+                              : (value) {
+                                  if (value != null) _changeStatus(value);
+                                },
+                          style: GoogleFonts.inter(
+                            fontSize: labelSize,
+                            color: colorScheme.onSurface,
+                          ),
+                          icon: Icon(
+                            Icons.arrow_drop_down,
+                            color: colorScheme.primary,
+                          ),
                         ),
-                        icon: Icon(
-                          Icons.arrow_drop_down,
-                          color: colorScheme.primary,
-                        ),
-                      ),
 
                       const SizedBox(height: 16),
 
                       // Owner info
-                      Text(
-                        "Ticket owner: ${widget.ticket.owner}",
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize - 2,
-                          color: colorScheme.onSurface.withOpacity(0.7),
+                      if (showDetailsSkeleton)
+                        const AppShimmer(width: 180, height: 14, radius: 8)
+                      else
+                        Text(
+                          "Ticket owner: ${widget.ticket.owner}",
+                          style: GoogleFonts.inter(
+                            fontSize: labelSize - 2,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
                         ),
-                      ),
 
                       const SizedBox(height: 16),
 
                       // Created/Updated info
-                      Text(
-                        "Created: ${widget.ticket.created} • Updated: ${widget.ticket.updated}",
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize - 2,
-                          color: colorScheme.onSurface.withOpacity(0.54),
+                      if (showDetailsSkeleton)
+                        const AppShimmer(
+                          width: double.infinity,
+                          height: 14,
+                          radius: 8,
+                        )
+                      else
+                        Text(
+                          "Created: ${widget.ticket.created} • Updated: ${widget.ticket.updated}",
+                          style: GoogleFonts.inter(
+                            fontSize: labelSize - 2,
+                            color: colorScheme.onSurface.withOpacity(0.54),
+                          ),
                         ),
-                      ),
 
                       const SizedBox(height: 32),
 
@@ -736,10 +808,60 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       const SizedBox(height: 16),
 
                       // Messages
-                      _MessagesContainer(
-                        messages: filteredMessages,
-                        selectedTab: selectedLocalTab,
-                      ),
+                      if (showDetailsSkeleton)
+                        Container(
+                          width: double.infinity,
+                          height: MediaQuery.of(context).size.height * 0.4,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.outline.withOpacity(0.2),
+                            ),
+                          ),
+                          child: ListView(
+                            physics: const NeverScrollableScrollPhysics(),
+                            children: const [
+                              AppShimmer(
+                                width: 180,
+                                height: 12,
+                                radius: 8,
+                                margin: EdgeInsets.only(bottom: 10),
+                              ),
+                              AppShimmer(
+                                width: double.infinity,
+                                height: 14,
+                                radius: 8,
+                                margin: EdgeInsets.only(bottom: 6),
+                              ),
+                              AppShimmer(
+                                width: 230,
+                                height: 14,
+                                radius: 8,
+                                margin: EdgeInsets.only(bottom: 16),
+                              ),
+                              AppShimmer(
+                                width: 150,
+                                height: 12,
+                                radius: 8,
+                                margin: EdgeInsets.only(bottom: 10),
+                              ),
+                              AppShimmer(
+                                width: double.infinity,
+                                height: 14,
+                                radius: 8,
+                                margin: EdgeInsets.only(bottom: 6),
+                              ),
+                              AppShimmer(width: 260, height: 14, radius: 8),
+                            ],
+                          ),
+                        )
+                      else
+                        _MessagesContainer(
+                          messages: filteredMessages,
+                          selectedTab: selectedLocalTab,
+                        ),
 
                       const SizedBox(height: 16),
 
@@ -998,6 +1120,40 @@ class _LocalTab extends StatelessWidget {
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TicketCardShimmer extends StatelessWidget {
+  const _TicketCardShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: 220, height: 16, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 170, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 78, height: 14, radius: 8),
+          SizedBox(height: 12),
+          AppShimmer(width: double.infinity, height: 14, radius: 8),
+        ],
       ),
     );
   }

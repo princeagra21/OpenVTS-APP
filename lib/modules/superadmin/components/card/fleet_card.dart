@@ -3,8 +3,11 @@ import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
@@ -96,6 +99,14 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
 
       res.when(
         success: (counts) {
+          if (kDebugMode) {
+            debugPrint(
+              '[Home] GET /superadmin/dashboard/totalcounts status=2xx '
+              'vehicles=${counts.totalVehicles} active=${counts.activeVehicles} '
+              'users=${counts.totalUsers} admins=${counts.totalAdmins} '
+              'issued=${counts.licensesIssued} used=${counts.licensesUsed}',
+            );
+          }
           if (!mounted) return;
           setState(() {
             _counts = counts;
@@ -103,15 +114,19 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
             _countsErrorShown = false;
           });
         },
-        failure: (_) {
+        failure: (err) {
+          if (kDebugMode) {
+            final status = err is ApiException ? err.statusCode : null;
+            debugPrint(
+              '[Home] GET /superadmin/dashboard/totalcounts status=${status ?? 'error'}',
+            );
+          }
           if (!mounted) return;
           setState(() => _loadingCounts = false);
           if (_countsErrorShown) return;
           _countsErrorShown = true;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Couldn't load counts. Showing fallback data."),
-            ),
+            const SnackBar(content: Text("Couldn't load counts.")),
           );
         },
       );
@@ -120,11 +135,9 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
       setState(() => _loadingCounts = false);
       if (_countsErrorShown) return;
       _countsErrorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load counts. Showing fallback data."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load counts.")));
     }
   }
 
@@ -150,26 +163,14 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
       screenWidth,
     ); // 6–10
 
-    const fallbackTotalVehicles = 3579;
-    const fallbackActiveVehicles = 2300;
-    const fallbackTotalUsers = 2097;
-    const fallbackTotalAdmins = 234;
-    const fallbackLicensesUsed = 34298;
-
     final counts = _counts;
-    final totalVehicles = counts == null
-        ? fallbackTotalVehicles
-        : counts.totalVehicles;
-    final activeVehicles = counts == null
-        ? fallbackActiveVehicles
-        : counts.activeVehicles;
-    final totalUsers = counts == null ? fallbackTotalUsers : counts.totalUsers;
-    final totalAdmins = counts == null
-        ? fallbackTotalAdmins
-        : counts.totalAdmins;
-    final licensesUsed = counts == null
-        ? fallbackLicensesUsed
-        : counts.licensesUsed;
+    final totalVehicles = counts?.totalVehicles ?? 0;
+    final activeVehicles = counts?.activeVehicles ?? 0;
+    final totalUsers = counts?.totalUsers ?? 0;
+    final totalAdmins = counts?.totalAdmins ?? 0;
+    final licensesIssued = counts?.licensesIssued ?? 0;
+    final licensesUsed = counts?.licensesUsed ?? 0;
+    final showSkeleton = _loadingCounts;
 
     return CustomBox(
       radius: 25.0,
@@ -192,15 +193,11 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
                       ),
                     ),
                     if (_loadingCounts)
-                      const WidgetSpan(
+                      WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          padding: const EdgeInsets.only(left: 8),
+                          child: AppShimmer(width: 14, height: 14, radius: 7),
                         ),
                       ),
                   ],
@@ -230,62 +227,115 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
           SizedBox(height: spacing + 4),
 
           // Big Number
-          Text(
-            _fmtInt(totalVehicles),
-            style: GoogleFonts.inter(
-              fontSize: bigNumberFontSize,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-              height: 1.1,
-              letterSpacing: -1.5,
+          if (showSkeleton)
+            AppShimmer(
+              width: bigNumberFontSize * 2.1,
+              height: bigNumberFontSize * 0.95,
+              radius: 12,
+            )
+          else
+            Text(
+              _fmtInt(totalVehicles),
+              style: GoogleFonts.inter(
+                fontSize: bigNumberFontSize,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+                height: 1.1,
+                letterSpacing: -1.5,
+              ),
             ),
-          ),
 
           SizedBox(height: spacing),
 
           // Description
-          Text(
-            "Total Vehicles across all admins",
-            style: GoogleFonts.inter(
-              fontSize: descriptionFontSize,
-              fontWeight: FontWeight.w400,
-              color: colorScheme.onSurface.withOpacity(0.8),
+          if (showSkeleton)
+            AppShimmer(
+              width: screenWidth * 0.56,
+              height: descriptionFontSize + 4,
+              radius: 8,
+            )
+          else
+            Text(
+              "Total Vehicles across all admins",
+              style: GoogleFonts.inter(
+                fontSize: descriptionFontSize,
+                fontWeight: FontWeight.w400,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
             ),
-          ),
 
           SizedBox(height: spacing + 6),
 
           // Capsules
-          Wrap(
-            spacing: spacing + 4,
-            runSpacing: spacing + 2,
-            children: [
-              _capsule(
-                context,
-                "Active ${_fmtInt(activeVehicles)}",
-                capsuleFontSize,
-                spacing,
-              ),
-              _capsule(
-                context,
-                "Users ${_fmtInt(totalUsers)}",
-                capsuleFontSize,
-                spacing,
-              ),
-              _capsule(
-                context,
-                "Admins ${_fmtInt(totalAdmins)}",
-                capsuleFontSize,
-                spacing,
-              ),
-              _capsule(
-                context,
-                "Licenses used ${_fmtInt(licensesUsed)}",
-                capsuleFontSize,
-                spacing,
-              ),
-            ],
-          ),
+          if (showSkeleton)
+            Wrap(
+              spacing: spacing + 4,
+              runSpacing: spacing + 2,
+              children: [
+                AppShimmer(
+                  width: screenWidth * 0.23,
+                  height: capsuleFontSize + spacing * 2.2,
+                  radius: 999,
+                ),
+                AppShimmer(
+                  width: screenWidth * 0.22,
+                  height: capsuleFontSize + spacing * 2.2,
+                  radius: 999,
+                ),
+                AppShimmer(
+                  width: screenWidth * 0.25,
+                  height: capsuleFontSize + spacing * 2.2,
+                  radius: 999,
+                ),
+                AppShimmer(
+                  width: screenWidth * 0.34,
+                  height: capsuleFontSize + spacing * 2.2,
+                  radius: 999,
+                ),
+                AppShimmer(
+                  width: screenWidth * 0.32,
+                  height: capsuleFontSize + spacing * 2.2,
+                  radius: 999,
+                ),
+              ],
+            )
+          else
+            Wrap(
+              spacing: spacing + 4,
+              runSpacing: spacing + 2,
+              children: [
+                _capsule(
+                  context,
+                  "Active ${_fmtInt(activeVehicles)}",
+                  capsuleFontSize,
+                  spacing,
+                ),
+                _capsule(
+                  context,
+                  "Users ${_fmtInt(totalUsers)}",
+                  capsuleFontSize,
+                  spacing,
+                ),
+                _capsule(
+                  context,
+                  "Admins ${_fmtInt(totalAdmins)}",
+                  capsuleFontSize,
+                  spacing,
+                ),
+                _capsule(
+                  context,
+                  "Licenses issued ${_fmtInt(licensesIssued)}",
+                  capsuleFontSize,
+                  spacing,
+                ),
+                _capsule(
+                  context,
+                  "Licenses used ${_fmtInt(licensesUsed)}",
+                  capsuleFontSize,
+                  spacing,
+                ),
+              ],
+            ),
         ],
       ),
     );
