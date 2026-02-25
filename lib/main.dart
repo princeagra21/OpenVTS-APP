@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
@@ -231,37 +230,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await themeController.loadTheme();
   final initialLocation = await _resolveInitialLocation();
-  final enableDevicePreview =
-      !kReleaseMode ||
-      kIsWeb ||
-      defaultTargetPlatform == TargetPlatform.android;
   if (kDebugMode) {
     debugPrint('[AuthBootstrap] initialLocation=$initialLocation');
   }
   final appRouter = buildRouter(initialLocation);
 
-  runApp(
-    enableDevicePreview
-        ? DevicePreview(
-            enabled: true,
-            builder: (context) => MyApp(
-              router: appRouter,
-              enableDevicePreview: enableDevicePreview,
-            ),
-          )
-        : MyApp(router: appRouter, enableDevicePreview: enableDevicePreview),
-  );
+  runApp(MyApp(router: appRouter));
 }
 
 class MyApp extends StatelessWidget {
   final GoRouter router;
-  final bool enableDevicePreview;
 
-  const MyApp({
-    super.key,
-    required this.router,
-    this.enableDevicePreview = false,
-  });
+  const MyApp({super.key, required this.router});
 
   @override
   Widget build(BuildContext context) {
@@ -275,13 +255,6 @@ class MyApp extends StatelessWidget {
           builder: (_, mode, brand, __) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-              useInheritedMediaQuery: true,
-
-              locale: enableDevicePreview
-                  ? DevicePreview.locale(context)
-                  : null,
-              builder: enableDevicePreview ? DevicePreview.appBuilder : null,
-
               routerConfig: router,
               theme: AppTheme.light(brand),
               darkTheme: AppTheme.dark(brand),
