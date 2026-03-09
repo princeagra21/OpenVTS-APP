@@ -1,12 +1,22 @@
-// screens/vehicles/vehicle_screen.dart
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
+import 'package:fleet_stack/core/models/map_vehicle_point.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_vehicles_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
@@ -16,206 +26,415 @@ class VehicleScreen extends StatefulWidget {
 }
 
 class _VehicleScreenState extends State<VehicleScreen> {
-  String selectedTab = "All";
+  // Endpoint truth table (FleetStack-API-Reference.md):
+  // - GET /admin/vehicles (query: search, status, page, limit)
+  //   Key mapping: data.data.vehicles | data.vehicles | vehicles
+  // - GET /admin/map-telemetry
+  //   Key mapping: data.data | data.points | telemetry
+  // - PATCH /admin/vehicles/:id  body: { isActive: bool }
+  //   Used for switch toggle persistence.
+
+  String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
 
-  DateTime _safeParseDateTime(String dateStr, {bool hasTime = true}) {
-    try {
-      String format = hasTime ? 'dd MMM hh:mma yyyy' : 'd MMM yyyy';
-      String fullStr = hasTime ? '$dateStr 2025' : dateStr;
-      return DateFormat(format).parse(fullStr);
-    } catch (e) {
-      try {
-        return DateTime.parse(dateStr);
-      } catch (_) {
-        return DateTime.now();
-      }
-    }
-  }
+  List<AdminVehicleListItem>? _items;
+  bool _loading = false;
+  bool _errorShown = false;
 
-  final List<Map<String, dynamic>> vehicles = [
-    {
-      "id": 0,
-      "model": "Ashok Leyland 4000XL #04",
-      "imei": "365859021048097",
-      "vin": "YBLCYP0V147FS57DE",
-      "motion": "RUNNING",
-      "duration": "3h 50m",
-      "speed": "88km/h",
-      "last_activity": "22 Dec 07:09PM",
-      "initials": "AK",
-      "name": "Aanya Khan",
-      "expiry": "9 Dec 2025",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 1,
-      "model": "Ashok Leyland Ace #18",
-      "imei": "543316123438161",
-      "vin": "VNDXGEVGS3TB7NYLD",
-      "motion": "RUNNING",
-      "duration": "3h 17m",
-      "speed": "38km/h",
-      "last_activity": "22 Dec 09:27PM",
-      "initials": "IV",
-      "name": "Isha Verma",
-      "expiry": "9 Dec 2025",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 2,
-      "model": "Ashok Leyland Ace #39",
-      "imei": "037511543933158",
-      "vin": "HX2VGHPK3W72NB3RX",
-      "motion": "RUNNING",
-      "duration": "0h 54m",
-      "speed": "12km/h",
-      "last_activity": "22 Dec 06:06PM",
-      "initials": "MK",
-      "name": "Mira Khan",
-      "expiry": "17 Oct 2027",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 3,
-      "model": "Ashok Leyland Bolero #20",
-      "imei": "250623010204931",
-      "vin": "G13R9XUGS5XJ44SYC",
-      "motion": "RUNNING",
-      "duration": "3h 0m",
-      "speed": "84km/h",
-      "last_activity": "22 Dec 08:15PM",
-      "initials": "MI",
-      "name": "Mira Iyer",
-      "expiry": "12 Nov 2027",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 4,
-      "model": "Ashok Leyland Bolero #34",
-      "imei": "902966568006996",
-      "vin": "NXMYRR4AXK8X55VHV",
-      "motion": "RUNNING",
-      "duration": "2h 42m",
-      "speed": "75km/h",
-      "last_activity": "22 Dec 05:33PM",
-      "initials": "AP",
-      "name": "Arjun Patel",
-      "expiry": "5 Dec 2027",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 5,
-      "model": "Ashok Leyland Bolero #50",
-      "imei": "514953645205108",
-      "vin": "3UWT8BW30A3KE6UPN",
-      "motion": "STOPPED",
-      "duration": "4h 38m",
-      "speed": "60km/h",
-      "last_activity": "22 Dec 06:19PM",
-      "initials": "AN",
-      "name": "Arjun Nair",
-      "expiry": "15 Nov 2026",
-      "enabled": true,
-      "ignition": false,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 6,
-      "model": "Ashok Leyland Intra #40",
-      "imei": "286918269145627",
-      "vin": "J677L9HLJTSNTDDL0",
-      "motion": "STOPPED",
-      "duration": "0h 29m",
-      "speed": "81km/h",
-      "last_activity": "22 Dec 05:48PM",
-      "initials": "DP",
-      "name": "Diya Patel",
-      "expiry": "27 Dec 2025",
-      "enabled": true,
-      "ignition": false,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 7,
-      "model": "Ashok Leyland Pro 3015 #28",
-      "imei": "594524637216868",
-      "vin": "U8GGSMAAR9NHYBHYE",
-      "motion": "RUNNING",
-      "duration": "0h 42m",
-      "speed": "38km/h",
-      "last_activity": "22 Dec 07:49PM",
-      "initials": "KI",
-      "name": "Kabir Iyer",
-      "expiry": "28 Nov 2025",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 8,
-      "model": "Ashok Leyland XUV700 #09",
-      "imei": "793252438741596",
-      "vin": "RJLMRKF348MB35AC7",
-      "motion": "RUNNING",
-      "duration": "1h 18m",
-      "speed": "3km/h",
-      "last_activity": "22 Dec 07:35PM",
-      "initials": "AI",
-      "name": "Aarav Iyer",
-      "expiry": "11 Oct 2026",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-    {
-      "id": 9,
-      "model": "Eicher 4000XL #03",
-      "imei": "429121575103195",
-      "vin": "5PFDM4NUTEB5WD7B2",
-      "motion": "RUNNING",
-      "duration": "3h 43m",
-      "speed": "35km/h",
-      "last_activity": "22 Dec 06:33PM",
-      "initials": "AV",
-      "name": "Arjun Verma",
-      "expiry": "26 Oct 2027",
-      "enabled": true,
-      "ignition": true,
-      "gps": true,
-      "locked": true,
-    },
-  ];
+  CancelToken? _loadToken;
+  final Map<String, bool> _updatingVehicle = <String, bool>{};
+  final Map<String, CancelToken> _toggleTokens = <String, CancelToken>{};
+
+  Timer? _searchDebounce;
+
+  ApiClient? _apiClient;
+  AdminVehiclesRepository? _repo;
+
+  AdminVehiclesRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= AdminVehiclesRepository(api: _apiClient!);
+    return _repo!;
+  }
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() => setState(() {}));
+    _searchController.addListener(_onSearchChanged);
+    _loadVehicles();
   }
 
   @override
   void dispose() {
+    _loadToken?.cancel('Vehicles screen disposed');
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+
+    for (final token in _toggleTokens.values) {
+      token.cancel('Vehicles screen disposed');
+    }
+    _toggleTokens.clear();
+
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      _loadVehicles();
+    });
+  }
+
+  String? _statusQueryForTab(String tab) {
+    switch (tab) {
+      case 'Running':
+        return 'running';
+      case 'Stopped':
+        return 'stopped';
+      default:
+        return null;
+    }
+  }
+
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  void _showLoadErrorOnce(String message) {
+    if (_errorShown || !mounted) return;
+    _errorShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadVehicles() async {
+    _loadToken?.cancel('Reload vehicles');
+    final token = CancelToken();
+    _loadToken = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      final result = await _repoOrCreate().getVehicles(
+        search: _searchController.text.trim(),
+        status: _statusQueryForTab(selectedTab),
+        page: 1,
+        limit: 100,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      await result.when(
+        success: (items) async {
+          var merged = items;
+          if (items.isNotEmpty) {
+            final telemetryResult = await _repoOrCreate().getTelemetry(
+              cancelToken: token,
+            );
+
+            merged = telemetryResult.when(
+              success: (points) => _mergeTelemetry(items, points),
+              failure: (_) => items,
+            );
+          }
+
+          if (kDebugMode) {
+            debugPrint(
+              '[Admin Vehicles] GET /admin/vehicles + /admin/map-telemetry '
+              'status=2xx count=${merged.length}',
+            );
+          }
+
+          if (!mounted) return;
+          setState(() {
+            _items = merged;
+            _loading = false;
+            _errorShown = false;
+          });
+        },
+        failure: (err) async {
+          if (!mounted) return;
+          setState(() {
+            _items = const <AdminVehicleListItem>[];
+            _loading = false;
+          });
+
+          if (_isCancelled(err)) return;
+
+          final message =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to load vehicles.'
+              : "Couldn't load vehicles.";
+          _showLoadErrorOnce(message);
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _items = const <AdminVehicleListItem>[];
+        _loading = false;
+      });
+      _showLoadErrorOnce("Couldn't load vehicles.");
+    }
+  }
+
+  List<AdminVehicleListItem> _mergeTelemetry(
+    List<AdminVehicleListItem> source,
+    List<MapVehiclePoint> points,
+  ) {
+    final byVehicleId = <String, MapVehiclePoint>{};
+    final byImei = <String, MapVehiclePoint>{};
+
+    for (final point in points) {
+      final id = point.vehicleId.trim();
+      if (id.isNotEmpty) {
+        byVehicleId[id] = point;
+      }
+      final imei = point.imei.trim();
+      if (imei.isNotEmpty) {
+        byImei[imei] = point;
+      }
+    }
+
+    return source.map((item) {
+      final id = item.id.trim();
+      final imei = item.imei.trim();
+      final point = byVehicleId[id] ?? byImei[imei];
+      if (point == null) return item;
+
+      final raw = Map<String, dynamic>.from(item.raw);
+
+      final mappedStatus = _normalizeTelemetryStatus(point.status);
+      if (mappedStatus.isNotEmpty) {
+        raw['motion'] = mappedStatus;
+        raw['status'] = mappedStatus;
+      }
+
+      if (point.speed != null) {
+        final speed = point.speed!;
+        final text = speed == speed.roundToDouble()
+            ? '${speed.toInt()} km/h'
+            : '${speed.toStringAsFixed(1)} km/h';
+        raw['speed'] = text;
+      }
+
+      final seen = point.updatedAt.trim();
+      if (seen.isNotEmpty) {
+        raw['lastActivityAt'] = seen;
+        raw['last_activity'] = seen;
+        raw['lastSeenAt'] = seen;
+      }
+
+      return AdminVehicleListItem.fromRaw(raw);
+    }).toList();
+  }
+
+  String _normalizeTelemetryStatus(String raw) {
+    final value = raw.trim().toLowerCase();
+    if (value.isEmpty) return '';
+
+    if (value.contains('run') || value.contains('move') || value == 'active') {
+      return 'RUNNING';
+    }
+    if (value.contains('stop') ||
+        value.contains('idle') ||
+        value == 'inactive') {
+      return 'STOPPED';
+    }
+
+    return raw.trim().toUpperCase();
+  }
+
+  List<AdminVehicleListItem> _applyLocalFilters(
+    List<AdminVehicleListItem> source,
+  ) {
+    final query = _searchController.text.trim().toLowerCase();
+
+    bool tabMatch(AdminVehicleListItem item) {
+      if (selectedTab == 'All') return true;
+      final expected = selectedTab.toLowerCase();
+      final actual = item.statusLabel.toLowerCase();
+      if (expected == 'running') return actual.contains('running');
+      if (expected == 'stopped') {
+        return actual.contains('stop') || actual.contains('idle');
+      }
+      return true;
+    }
+
+    bool queryMatch(AdminVehicleListItem item) {
+      if (query.isEmpty) return true;
+      final fields = [
+        item.nameModel,
+        item.plateNumber,
+        item.imei,
+        item.vin,
+        item.statusLabel,
+        item.durationLabel,
+        item.speedLabel,
+        item.userDisplayName,
+        item.primaryUserName,
+        item.driverName,
+        item.lastActivityAt,
+        item.expiry,
+      ];
+      return fields.any((v) => v.toLowerCase().contains(query));
+    }
+
+    return source.where((v) => tabMatch(v) && queryMatch(v)).toList()..sort(
+      (a, b) => _safeParseDateTime(
+        b.lastActivityAt,
+      ).compareTo(_safeParseDateTime(a.lastActivityAt)),
+    );
+  }
+
+  DateTime _safeParseDateTime(String dateStr) {
+    final text = dateStr.trim();
+    if (text.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+
+    final parsed = DateTime.tryParse(text);
+    if (parsed != null) return parsed;
+
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  String _safe(String? value) {
+    final trimmed = (value ?? '').trim();
+    if (trimmed.isEmpty) return '—';
+    if (trimmed.toLowerCase() == 'null') return '—';
+    return trimmed;
+  }
+
+  Color _statusBgColor(String status) {
+    final s = status.toLowerCase();
+    if (s.contains('run') || s.contains('active')) {
+      return Colors.green.withOpacity(0.15);
+    }
+    if (s.contains('stop') || s.contains('idle') || s.contains('inactive')) {
+      return Colors.red.withOpacity(0.15);
+    }
+    return Colors.orange.withOpacity(0.15);
+  }
+
+  Color _statusTextColor(String status, ColorScheme scheme) {
+    final s = status.toLowerCase();
+    if (s.contains('run') || s.contains('active')) {
+      return Colors.green;
+    }
+    if (s.contains('stop') || s.contains('idle') || s.contains('inactive')) {
+      return Colors.red;
+    }
+    return scheme.primary;
+  }
+
+  Future<void> _toggleVehicleActive(
+    AdminVehicleListItem item,
+    bool nextValue,
+  ) async {
+    final vehicleId = item.id.trim();
+    if (vehicleId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Vehicle ID is missing.')));
+      return;
+    }
+
+    if (_updatingVehicle[vehicleId] == true) return;
+
+    final previousValue = item.isActive ?? false;
+    _setVehicleActiveOptimistic(vehicleId, nextValue);
+
+    if (mounted) {
+      setState(() {
+        _updatingVehicle[vehicleId] = true;
+      });
+    }
+
+    _toggleTokens[vehicleId]?.cancel('Replace vehicle toggle request');
+    final token = CancelToken();
+    _toggleTokens[vehicleId] = token;
+
+    try {
+      final result = await _repoOrCreate().updateVehicleStatus(
+        vehicleId,
+        nextValue,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      result.when(
+        success: (_) {
+          if (!mounted) return;
+          setState(() {
+            _updatingVehicle.remove(vehicleId);
+            _toggleTokens.remove(vehicleId);
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          setState(() {
+            _setVehicleActiveOptimistic(vehicleId, previousValue);
+            _updatingVehicle.remove(vehicleId);
+            _toggleTokens.remove(vehicleId);
+          });
+
+          if (_isCancelled(err)) return;
+
+          final message =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to update vehicle status.'
+              : "Couldn't update vehicle status.";
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _setVehicleActiveOptimistic(vehicleId, previousValue);
+        _updatingVehicle.remove(vehicleId);
+        _toggleTokens.remove(vehicleId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't update vehicle status.")),
+      );
+    }
+  }
+
+  void _setVehicleActiveOptimistic(String vehicleId, bool isActive) {
+    final list = _items;
+    if (list == null) return;
+
+    final updated = list.map((item) {
+      if (item.id != vehicleId) return item;
+
+      final raw = Map<String, dynamic>.from(item.raw);
+      raw['isActive'] = isActive;
+      raw['active'] = isActive;
+      raw['enabled'] = isActive;
+      if (!isActive) {
+        raw['motion'] = 'STOPPED';
+        raw['status'] = 'STOPPED';
+      }
+
+      return AdminVehicleListItem.fromRaw(raw);
+    }).toList();
+
+    _items = updated;
   }
 
   @override
@@ -230,27 +449,12 @@ class _VehicleScreenState extends State<VehicleScreen> {
     final double iconSize = titleFs + 2;
     final double cardPadding = hp + 4;
 
-    final searchQuery = _searchController.text.toLowerCase();
-
-    var filteredVehicles = vehicles.where((v) {
-      final matchesSearch = searchQuery.isEmpty ||
-          v['model'].toString().toLowerCase().contains(searchQuery) ||
-          v['imei'].toString().toLowerCase().contains(searchQuery) ||
-          v['vin'].toString().toLowerCase().contains(searchQuery) ||
-          v['name'].toString().toLowerCase().contains(searchQuery) ||
-          v['expiry'].toString().toLowerCase().contains(searchQuery);
-
-      final matchesTab = selectedTab == "All" ||
-          (selectedTab == "Running" && v['motion'] == "RUNNING") ||
-          (selectedTab == "Stopped" && v['motion'] == "STOPPED");
-
-      return matchesSearch && matchesTab;
-    }).toList()
-      ..sort((a, b) => _safeParseDateTime(b['last_activity']).compareTo(_safeParseDateTime(a['last_activity'])));
+    final allItems = _items ?? const <AdminVehicleListItem>[];
+    final filteredVehicles = _applyLocalFilters(allItems);
 
     return AppLayout(
-      title: "ADMIN",
-      subtitle: "Vehicles Management",
+      title: 'ADMIN',
+      subtitle: 'Vehicles Management',
       actionIcons: const [CupertinoIcons.add],
       showLeftAvatar: false,
       leftAvatarText: 'SA',
@@ -258,273 +462,134 @@ class _VehicleScreenState extends State<VehicleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SEARCH BAR
             Container(
               height: hp * 3.5,
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+                style: GoogleFonts.inter(
+                  fontSize: bodyFs,
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: "Search model, IMEI, VIN, user...",
-                  hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.primary.withOpacity(0.7)),
+                  hintText: 'Search model, IMEI, VIN, user...',
+                  hintStyle: GoogleFonts.inter(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: bodyFs,
+                  ),
+                  prefixIcon: Icon(
+                    CupertinoIcons.search,
+                    size: iconSize,
+                    color: colorScheme.primary.withOpacity(0.7),
+                  ),
                   border: InputBorder.none,
-                    focusColor: colorScheme.primary,
-                    enabledBorder: OutlineInputBorder(
+                  focusColor: colorScheme.primary,
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.transparent, width: 0),
+                    borderSide: const BorderSide(
+                      color: Colors.transparent,
+                      width: 0,
                     ),
-                    focusedBorder: OutlineInputBorder(
+                  ),
+                  focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
                     ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: hp,
+                    vertical: hp,
+                  ),
                 ),
               ),
             ),
             SizedBox(height: hp),
 
-            // TABS
             Wrap(
               spacing: spacing,
               runSpacing: spacing,
-              children: ["All", "Running", "Stopped"].map((tab) {
+              children: ['All', 'Running', 'Stopped'].map((tab) {
                 return SmallTab(
                   label: tab,
                   selected: selectedTab == tab,
-                  onTap: () => setState(() => selectedTab = tab),
+                  onTap: () {
+                    if (selectedTab == tab) return;
+                    setState(() => selectedTab = tab);
+                    _loadVehicles();
+                  },
                 );
               }).toList(),
             ),
             SizedBox(height: hp),
 
-            // COUNT + ADD BUTTON
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Showing ${filteredVehicles.length} of ${vehicles.length} vehicles",
-                  style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface.withOpacity(0.87)),
-                ),
-                /*
-                GestureDetector(
-                  onTap: () => context.push("/admin/vehicles/add"),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: hp * 1.5, vertical: spacing),
-                    decoration: BoxDecoration(color: colorScheme.primary.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: colorScheme.primary, width: 1)),
-                    child: Text(
-                      "Add Vehicle",
-                      style: GoogleFonts.inter(fontSize: bodyFs - 3, fontWeight: FontWeight.w600, color: colorScheme.primary),
-                    ),
+                  'Showing ${filteredVehicles.length} of ${allItems.length} vehicles',
+                  style: GoogleFonts.inter(
+                    fontSize: bodyFs,
+                    color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
-                */
               ],
             ),
             SizedBox(height: spacing * 1.5),
 
-            // VEHICLE CARDS
-            ...filteredVehicles.asMap().entries.map((entry) {
-              final index = entry.key;
-              final vehicle = entry.value;
+            ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _loading
+                  ? 3
+                  : (filteredVehicles.isEmpty ? 1 : filteredVehicles.length),
+              itemBuilder: (context, index) {
+                if (_loading) {
+                  return _buildShimmerCard(
+                    colorScheme,
+                    width,
+                    hp,
+                    spacing,
+                    cardPadding,
+                  );
+                }
 
-              return AnimatedContainer(
-                duration: Duration(milliseconds: 300 + index * 50),
-                curve: Curves.easeOut,
-                margin: EdgeInsets.only(bottom: hp),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(25),
-                      onTap: () => context.push("/admin/vehicles/details/${vehicle['id']}"),
-                      child: Padding(
-                        padding: EdgeInsets.all(cardPadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // TOP ROW
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: AdaptiveUtils.getAvatarSize(width),
-                                  height: AdaptiveUtils.getAvatarSize(width),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
-                                  ),
-                                  child: Icon(CupertinoIcons.car_detailed, size: AdaptiveUtils.getFsAvatarFontSize(width), color: colorScheme.primary),
-                                ),
-                                SizedBox(width: spacing * 1.5),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(vehicle["model"], style: GoogleFonts.inter(fontSize: bodyFs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-                                              SizedBox(width: spacing),
-                                              Container(
-                                                padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: vehicle["motion"] == "RUNNING" ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
-                                                  borderRadius: BorderRadius.circular(16),
-                                                ),
-                                                child: Text(
-                                                  vehicle["motion"],
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: smallFs,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: vehicle["motion"] == "RUNNING" ? Colors.green : Colors.red,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Icon(CupertinoIcons.device_laptop, size: iconSize, color: colorScheme.primary.withOpacity(0.6)),
-                                          SizedBox(width: spacing),
-                                          Text("IMEI: ${vehicle["imei"]}", style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Icon(CupertinoIcons.tag, size: iconSize, color: colorScheme.primary.withOpacity(0.6)),
-                                          SizedBox(width: spacing),
-                                          Text("VIN: ${vehicle["vin"]}", style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Icon(vehicle["motion"] == "RUNNING" ? CupertinoIcons.arrow_right : CupertinoIcons.stop, size: iconSize, color: vehicle["motion"] == "RUNNING" ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.7)),
-                                          SizedBox(width: spacing),
-                                          Text(
-                                            "${vehicle["motion"]} • ${vehicle["duration"]} • ${vehicle["speed"]}",
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs - 1,
-                                              color: vehicle["motion"] == "RUNNING" ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.7),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing * 2),
-                            Row(
-  mainAxisSize: MainAxisSize.min,
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  crossAxisAlignment: CrossAxisAlignment.center,
-  children: [
-    // PRIMARY USER (DO NOT use Expanded here)
-    Flexible(
-      fit: FlexFit.loose,
-      child: _userInfo(
-        vehicle["initials"],
-        vehicle["name"],
-        width,
-        colorScheme,
-        spacing,
-        bodyFs,
-        smallFs,
-      ),
-    ),
+                if (filteredVehicles.isEmpty) {
+                  return _buildEmptyStateCard(
+                    colorScheme: colorScheme,
+                    bodyFs: bodyFs,
+                    smallFs: smallFs,
+                    cardPadding: cardPadding,
+                    hp: hp,
+                  );
+                }
 
-    SizedBox(width: spacing * 3),
-
-    // ICONS
-    Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          vehicle["ignition"]
-              ? CupertinoIcons.bolt_fill
-              : CupertinoIcons.bolt_slash_fill,
-          size: iconSize,
-          color: vehicle["ignition"] ? Theme.of(context).colorScheme.primary : Colors.red,
-        ),
-        SizedBox(width: spacing * 2),
-        Icon(
-          vehicle["gps"]
-              ? CupertinoIcons.location_fill
-              : CupertinoIcons.location_slash_fill,
-          size: iconSize,
-          color: vehicle["gps"] ? Theme.of(context).colorScheme.primary : Colors.red,
-        ),
-        SizedBox(width: spacing * 2),
-        Icon(
-          vehicle["locked"]
-              ? CupertinoIcons.lock_fill
-              : CupertinoIcons.lock_open_fill,
-          size: iconSize,
-          color: vehicle["locked"] ? Theme.of(context).colorScheme.primary : Colors.red,
-        ),
-      ],
-    ),
-  ],
-),
-                            SizedBox(height: spacing * 2),
-                            // LAST SEEN + SWITCH
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Last Activity: ${vehicle["last_activity"]}",
-                                  style: GoogleFonts.inter(fontSize: smallFs + 1, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
-                                ),
-                                Transform.scale(
-                                  scale: 0.85,
-                                  child: Switch(
-                                    value: vehicle["enabled"],
-                                    activeColor: colorScheme.onPrimary,
-                                    activeTrackColor: colorScheme.primary,
-                                    inactiveThumbColor: colorScheme.onSurfaceVariant,
-                                    inactiveTrackColor: colorScheme.surfaceVariant,
-                                    onChanged: (v) => setState(() {
-                                      vehicle["enabled"] = v;
-                                    }),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing),
-                            Divider(color: colorScheme.outline.withOpacity(0.3)),
-                            SizedBox(height: spacing),
-                            Text(
-                              "Expiry: ${vehicle["expiry"]}",
-                              style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.54)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+                final vehicle = filteredVehicles[index];
+                return _buildVehicleCardBody(
+                  vehicle: vehicle,
+                  colorScheme: colorScheme,
+                  width: width,
+                  spacing: spacing,
+                  bodyFs: bodyFs,
+                  smallFs: smallFs,
+                  iconSize: iconSize,
+                  cardPadding: cardPadding,
+                  hp: hp,
+                );
+              },
+            ),
 
             SizedBox(height: hp * 3),
           ],
@@ -533,21 +598,526 @@ class _VehicleScreenState extends State<VehicleScreen> {
     );
   }
 
-  Widget _userInfo(String initials, String name, double width, ColorScheme scheme, double spacing, double bodyFs, double smallFs) {
+  Widget _buildEmptyStateCard({
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double smallFs,
+    required double cardPadding,
+    required double hp,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      margin: EdgeInsets.only(bottom: hp),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+          child: Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No vehicles found',
+                  style: GoogleFonts.inter(
+                    fontSize: bodyFs + 1,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ask superadmin to assign vehicles.',
+                  style: GoogleFonts.inter(
+                    fontSize: smallFs + 1,
+                    color: colorScheme.onSurface.withOpacity(0.72),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerCard(
+    ColorScheme colorScheme,
+    double width,
+    double hp,
+    double spacing,
+    double cardPadding,
+  ) {
+    final avatarSize = AdaptiveUtils.getAvatarSize(width);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(
+                  width: avatarSize,
+                  height: avatarSize,
+                  radius: avatarSize / 2,
+                ),
+                SizedBox(width: spacing * 1.5),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppShimmer(
+                              width: 180,
+                              height: 16,
+                              radius: 8,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          AppShimmer(width: 82, height: 24, radius: 12),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      AppShimmer(width: 250, height: 14, radius: 7),
+                      SizedBox(height: 8),
+                      AppShimmer(width: 250, height: 14, radius: 7),
+                      SizedBox(height: 8),
+                      AppShimmer(width: 220, height: 14, radius: 7),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: spacing * 2),
+            Row(
+              children: const [
+                Expanded(child: AppShimmer(width: 140, height: 34, radius: 17)),
+                SizedBox(width: 12),
+                AppShimmer(width: 20, height: 20, radius: 10),
+                SizedBox(width: 8),
+                AppShimmer(width: 20, height: 20, radius: 10),
+                SizedBox(width: 8),
+                AppShimmer(width: 20, height: 20, radius: 10),
+              ],
+            ),
+            SizedBox(height: spacing * 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                AppShimmer(width: 180, height: 12, radius: 6),
+                AppShimmer(width: 42, height: 22, radius: 11),
+              ],
+            ),
+            SizedBox(height: spacing),
+            Divider(color: colorScheme.outline.withOpacity(0.3)),
+            SizedBox(height: spacing),
+            const AppShimmer(width: 140, height: 12, radius: 6),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVehicleCardBody({
+    required AdminVehicleListItem? vehicle,
+    required ColorScheme colorScheme,
+    required double width,
+    required double spacing,
+    required double bodyFs,
+    required double smallFs,
+    required double iconSize,
+    required double cardPadding,
+    required double hp,
+  }) {
+    final isPlaceholder = vehicle == null;
+
+    final vehicleId = vehicle?.id.trim() ?? '';
+    final isUpdating = _updatingVehicle[vehicleId] == true;
+
+    final model = _safe(vehicle?.nameModel);
+    final motion = _safe(vehicle?.statusLabel);
+    final imei = _safe(vehicle?.imei);
+    final vin = _safe(vehicle?.vin);
+    final duration = _safe(vehicle?.durationLabel);
+    final speed = _safe(vehicle?.speedLabel);
+    final initials = _safe(vehicle?.userInitials);
+    final userName = _safe(vehicle?.userDisplayName);
+    final lastActivity = _safe(vehicle?.lastActivityAt);
+    final expiry = _safe(vehicle?.expiry);
+
+    final ignition = vehicle?.ignitionOk;
+    final gps = vehicle?.gpsOk;
+    final locked = vehicle?.lockOk;
+
+    final enabled = vehicle?.isActive ?? false;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      margin: EdgeInsets.only(bottom: hp),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(25),
+            onTap: isPlaceholder || vehicleId.isEmpty
+                ? null
+                : () => context.push('/admin/vehicles/details/$vehicleId'),
+            child: Padding(
+              padding: EdgeInsets.all(cardPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: AdaptiveUtils.getAvatarSize(width),
+                        height: AdaptiveUtils.getAvatarSize(width),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.car_detailed,
+                          size: AdaptiveUtils.getFsAvatarFontSize(width),
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      SizedBox(width: spacing * 1.5),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    model,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: bodyFs + 2,
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: spacing),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: spacing + 4,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _statusBgColor(motion),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    motion,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs,
+                                      fontWeight: FontWeight.w600,
+                                      color: _statusTextColor(
+                                        motion,
+                                        colorScheme,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.device_laptop,
+                                  size: iconSize,
+                                  color: colorScheme.primary.withOpacity(0.6),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    'IMEI: $imei',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                    style: GoogleFonts.inter(
+                                      fontSize: bodyFs,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.tag,
+                                  size: iconSize,
+                                  color: colorScheme.primary.withOpacity(0.6),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    'VIN: $vin',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                    style: GoogleFonts.inter(
+                                      fontSize: bodyFs,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  motion.toLowerCase().contains('run')
+                                      ? CupertinoIcons.arrow_right
+                                      : CupertinoIcons.stop,
+                                  size: iconSize,
+                                  color: motion.toLowerCase().contains('run')
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    '$motion • $duration • $speed',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                    style: GoogleFonts.inter(
+                                      fontSize: bodyFs - 1,
+                                      color:
+                                          motion.toLowerCase().contains('run')
+                                          ? colorScheme.onSurface
+                                          : colorScheme.onSurface.withOpacity(
+                                              0.7,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: spacing * 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: _userInfo(
+                          initials,
+                          userName,
+                          width,
+                          colorScheme,
+                          spacing,
+                          bodyFs,
+                          smallFs,
+                        ),
+                      ),
+                      SizedBox(width: spacing * 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            ignition == null
+                                ? CupertinoIcons.bolt_slash
+                                : (ignition
+                                      ? CupertinoIcons.bolt_fill
+                                      : CupertinoIcons.bolt_slash_fill),
+                            size: iconSize,
+                            color: ignition == null
+                                ? colorScheme.onSurface.withOpacity(0.45)
+                                : (ignition ? colorScheme.primary : Colors.red),
+                          ),
+                          SizedBox(width: spacing * 2),
+                          Icon(
+                            gps == null
+                                ? CupertinoIcons.location_slash
+                                : (gps
+                                      ? CupertinoIcons.location_fill
+                                      : CupertinoIcons.location_slash_fill),
+                            size: iconSize,
+                            color: gps == null
+                                ? colorScheme.onSurface.withOpacity(0.45)
+                                : (gps ? colorScheme.primary : Colors.red),
+                          ),
+                          SizedBox(width: spacing * 2),
+                          Icon(
+                            locked == null
+                                ? CupertinoIcons.lock_open
+                                : (locked
+                                      ? CupertinoIcons.lock_fill
+                                      : CupertinoIcons.lock_open_fill),
+                            size: iconSize,
+                            color: locked == null
+                                ? colorScheme.onSurface.withOpacity(0.45)
+                                : (locked ? colorScheme.primary : Colors.red),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: spacing * 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Last Activity: $lastActivity',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: smallFs + 1,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface.withOpacity(0.87),
+                          ),
+                        ),
+                      ),
+                      Transform.scale(
+                        scale: 0.85,
+                        child: IgnorePointer(
+                          ignoring: isPlaceholder || isUpdating,
+                          child: Switch(
+                            value: enabled,
+                            activeColor: colorScheme.onPrimary,
+                            activeTrackColor: colorScheme.primary,
+                            inactiveThumbColor: colorScheme.onSurfaceVariant,
+                            inactiveTrackColor: colorScheme.surfaceVariant,
+                            onChanged: isPlaceholder
+                                ? null
+                                : (v) => _toggleVehicleActive(vehicle, v),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  Divider(color: colorScheme.outline.withOpacity(0.3)),
+                  SizedBox(height: spacing),
+                  Text(
+                    'Expiry: $expiry',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: smallFs,
+                      color: colorScheme.onSurface.withOpacity(0.54),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _userInfo(
+    String initials,
+    String name,
+    double width,
+    ColorScheme scheme,
+    double spacing,
+    double bodyFs,
+    double smallFs,
+  ) {
     return Row(
       children: [
         CircleAvatar(
           radius: 18,
           backgroundColor: scheme.primary,
-          child: Text(initials, style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: scheme.onPrimary)),
+          child: Text(
+            _safe(initials),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              color: scheme.onPrimary,
+            ),
+          ),
         ),
         SizedBox(width: spacing),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Driver", style: GoogleFonts.inter(fontSize: smallFs - 1, color: scheme.onSurface.withOpacity(0.6))),
-              Text(name, style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+              Text(
+                'Driver',
+                style: GoogleFonts.inter(
+                  fontSize: smallFs - 1,
+                  color: scheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              Text(
+                _safe(name),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: GoogleFonts.inter(
+                  fontSize: bodyFs,
+                  fontWeight: FontWeight.bold,
+                  color: scheme.onSurface,
+                ),
+              ),
             ],
           ),
         ),

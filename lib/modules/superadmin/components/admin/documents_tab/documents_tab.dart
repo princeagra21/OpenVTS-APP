@@ -487,14 +487,35 @@ class _DocumentsTabState extends State<DocumentsTab> {
         if (_loading)
           ...List<Widget>.generate(3, (_) => _buildFileSkeleton(colorScheme)),
         if (showNoData && !_loadFailed)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              'No documents found.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: colorScheme.onSurface.withOpacity(0.75),
-              ),
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No documents found',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Try adjusting search.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: colorScheme.onSurface.withOpacity(0.72),
+                  ),
+                ),
+              ],
             ),
           ),
         if (showNoData && _loadFailed)
