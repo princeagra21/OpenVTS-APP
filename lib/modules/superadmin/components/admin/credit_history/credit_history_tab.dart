@@ -202,11 +202,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(
                           padding: EdgeInsets.only(left: 8),
-                          child: SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          child: AppShimmer(width: 14, height: 14, radius: 7),
                         ),
                       ),
                   ],
@@ -345,14 +341,35 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
               ),
             ),
           if (showNoData && !_loadFailed)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No credit history found.',
-                style: GoogleFonts.inter(
-                  fontSize: descFontSize,
-                  color: colorScheme.onSurface.withOpacity(0.75),
-                ),
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No logs found',
+                    style: GoogleFonts.inter(
+                      fontSize: descFontSize,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Try adjusting search.',
+                    style: GoogleFonts.inter(
+                      fontSize: (descFontSize - 1).clamp(12, 14).toDouble(),
+                      color: colorScheme.onSurface.withOpacity(0.72),
+                    ),
+                  ),
+                ],
               ),
             ),
           if (showNoData && _loadFailed)

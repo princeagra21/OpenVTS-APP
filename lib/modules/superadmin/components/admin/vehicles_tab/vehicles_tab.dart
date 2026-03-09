@@ -246,15 +246,37 @@ class _VehiclesTabState extends State<VehiclesTab> {
         _buildOverviewCard(context, colorScheme),
         const SizedBox(height: 24),
         if (showNoData)
-          Padding(
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             padding: const EdgeInsets.all(16),
-            child: Text(
-              _loadFailed ? "Couldn't load vehicles." : 'No vehicles found.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface.withOpacity(0.75),
-              ),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _loadFailed ? "Couldn't load vehicles." : 'No vehicles found',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+                if (!_loadFailed) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Try adjusting search or ask superadmin to assign vehicles.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: colorScheme.onSurface.withOpacity(0.72),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         if (_loading)

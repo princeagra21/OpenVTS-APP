@@ -423,25 +423,41 @@ class _AdminScreenState extends State<AdminScreen> {
             if (showNoData)
               Padding(
                 padding: EdgeInsets.symmetric(vertical: padding),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _adminsLoadFailed
-                            ? "Couldn't load admins."
-                            : "No admins found.",
-                        style: GoogleFonts.inter(
-                          fontSize: bodyFs,
-                          color: colorScheme.onSurface.withOpacity(0.8),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _adminsLoadFailed
+                              ? "Couldn't load admins."
+                              : "No admins found",
+                          style: GoogleFonts.inter(
+                            fontSize: bodyFs,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    if (_adminsLoadFailed)
-                      TextButton(
-                        onPressed: _loadAdmins,
-                        child: const Text('Retry'),
-                      ),
-                  ],
+                      if (_adminsLoadFailed)
+                        TextButton(
+                          onPressed: _loadAdmins,
+                          child: const Text('Retry'),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             if (_loadingAdmins)

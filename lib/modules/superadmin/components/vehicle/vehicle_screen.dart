@@ -461,12 +461,26 @@ class _VehicleScreenState extends State<VehicleScreen> {
             if (showNoData && !_vehiclesLoadFailed)
               Padding(
                 padding: EdgeInsets.symmetric(vertical: hp),
-                child: Text(
-                  'No vehicles found.',
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs,
-                    color: colorScheme.onSurface.withOpacity(0.8),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No vehicles found',
+                      style: GoogleFonts.inter(
+                        fontSize: bodyFs,
+                        color: colorScheme.onSurface.withOpacity(0.8),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Ask superadmin to assign vehicles.',
+                      style: GoogleFonts.inter(
+                        fontSize: smallFs + 1,
+                        color: colorScheme.onSurface.withOpacity(0.72),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 

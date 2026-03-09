@@ -243,11 +243,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       alignment: PlaceholderAlignment.middle,
                       child: Padding(
                         padding: EdgeInsets.only(left: 8),
-                        child: SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        child: AppShimmer(width: 14, height: 14, radius: 7),
                       ),
                     ),
                 ],
@@ -284,11 +280,11 @@ class _SupportScreenState extends State<SupportScreen> {
                   ),
                 ),
                 child: Text(
-                  "No tickets found.",
+                  "No tickets found",
                   style: GoogleFonts.inter(
                     fontSize: AdaptiveUtils.getTitleFontSize(width),
                     color: colorScheme.onSurface.withOpacity(0.7),
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               )
@@ -952,12 +948,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                     width: 18,
                                     height: 18,
                                     child: _sending
-                                        ? CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  colorScheme.onPrimary,
-                                                ),
+                                        ? const AppShimmer(
+                                            width: 18,
+                                            height: 18,
+                                            radius: 9,
                                           )
                                         : Icon(
                                             Icons.send,
