@@ -1,5 +1,14 @@
 // lib/screens/home/home_screen.dart
 // -----------------------------
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_dashboard_summary.dart';
+import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_dashboard_repository.dart';
+import 'package:fleet_stack/core/repositories/admin_vehicle_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/main.dart';
 import 'package:fleet_stack/modules/admin/components/card/actions_buttons.dart';
 import 'package:fleet_stack/modules/admin/components/card/fleet_card.dart';
@@ -7,11 +16,12 @@ import 'package:fleet_stack/modules/admin/components/card/recent_activity_box.da
 import 'package:fleet_stack/modules/admin/components/card/search_bar.dart';
 import 'package:fleet_stack/modules/admin/components/card/vehicle_status_box.dart';
 import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../layout/app_layout.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +32,214 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedLanguage = 'EN';
+  AdminDashboardSummary? _summary;
+  List<AdminVehiclePreviewItem>? _vehiclePreview;
+  bool _loading = false;
+  bool _loadingVehiclesPreview = false;
+  bool _errorShown = false;
+  bool _vehiclesErrorShown = false;
+  CancelToken? _token;
+  CancelToken? _vehiclesToken;
+
+  ApiClient? _api;
+  AdminDashboardRepository? _repo;
+  AdminVehicleRepository? _vehicleRepo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSummary();
+    _loadVehiclePreview();
+  }
+
+  @override
+  void dispose() {
+    _token?.cancel('Admin home disposed');
+    _vehiclesToken?.cancel('Admin home disposed');
+    super.dispose();
+  }
+
+  /// Confirmed API source (FleetStack-API-Reference.md):
+  /// - GET /admin/dashboard/summary
+  /// Keys used:
+  /// - totals.totalVehicles
+  /// - totals.totalUsers
+  /// - expiry.thisMonth
+  /// - expired / expiredCount (if present)
+  /// - vehicleLiveStatus.running/stop/inactive/noData
+  Future<void> _loadSummary() async {
+    _token?.cancel('Reload dashboard summary');
+    final token = CancelToken();
+    _token = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= AdminDashboardRepository(api: _api!);
+
+      final res = await _repo!.getAdminDashboardSummary(cancelToken: token);
+      if (!mounted) return;
+
+      res.when(
+        success: (data) {
+          if (kDebugMode) {
+            debugPrint(
+              '[Admin Home] GET /admin/dashboard/summary status=2xx '
+              'vehicles=${data.totalVehicles} users=${data.totalUsers} '
+              'expiring30d=${data.expiring30d} expired=${data.expired} '
+              'running=${data.running} stop=${data.stop} '
+              'notWorking=${data.notWorking48h} noData=${data.noData}',
+            );
+          }
+
+          if (!mounted) return;
+          setState(() {
+            _summary = data;
+            _loading = false;
+            _errorShown = false;
+          });
+        },
+        failure: (error) {
+          if (kDebugMode) {
+            final status = error is ApiException ? error.statusCode : null;
+            debugPrint(
+              '[Admin Home] GET /admin/dashboard/summary status=${status ?? 'error'}',
+            );
+          }
+
+          if (!mounted) return;
+          setState(() {
+            _summary = null;
+            _loading = false;
+          });
+
+          if (_errorShown) return;
+          _errorShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Couldn't load dashboard summary.")),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _summary = null;
+        _loading = false;
+      });
+      if (_errorShown) return;
+      _errorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't load dashboard summary.")),
+      );
+    }
+  }
+
+  Future<void> _loadVehiclePreview() async {
+    _vehiclesToken?.cancel('Reload vehicle preview');
+    final token = CancelToken();
+    _vehiclesToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingVehiclesPreview = true);
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _vehicleRepo ??= AdminVehicleRepository(api: _api!);
+
+      final listRes = await _vehicleRepo!.getVehiclePreviewList(
+        limit: 5,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      await listRes.when(
+        success: (items) async {
+          var merged = items;
+
+          if (items.isNotEmpty) {
+            final ids = items
+                .map((e) => e.id.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+            final imeis = items
+                .map((e) => e.imei.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+
+            final liveRes = await _vehicleRepo!.getVehicleLiveStatus(
+              vehicleIds: ids,
+              imeis: imeis,
+              cancelToken: token,
+            );
+
+            merged = liveRes.when(
+              success: (statusMap) {
+                return items.map((item) {
+                  final byId = statusMap[item.id.trim()];
+                  final byImei = statusMap[item.imei.trim()];
+                  return item.withLiveStatus(byId ?? byImei);
+                }).toList();
+              },
+              failure: (_) => items,
+            );
+          }
+
+          if (kDebugMode) {
+            debugPrint(
+              '[Admin Home] GET /admin/vehicles + /admin/map-telemetry '
+              'status=2xx count=${merged.length}',
+            );
+          }
+
+          if (!mounted) return;
+          setState(() {
+            _vehiclePreview = merged;
+            _loadingVehiclesPreview = false;
+            _vehiclesErrorShown = false;
+          });
+        },
+        failure: (error) async {
+          if (kDebugMode) {
+            final status = error is ApiException ? error.statusCode : null;
+            debugPrint(
+              '[Admin Home] GET /admin/vehicles status=${status ?? 'error'}',
+            );
+          }
+
+          if (!mounted) return;
+          setState(() {
+            _vehiclePreview = null;
+            _loadingVehiclesPreview = false;
+          });
+
+          if (_vehiclesErrorShown) return;
+          _vehiclesErrorShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Couldn't load vehicles preview.")),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _vehiclePreview = null;
+        _loadingVehiclesPreview = false;
+      });
+      if (_vehiclesErrorShown) return;
+      _vehiclesErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't load vehicles preview.")),
+      );
+    }
+  }
 
   /// Stylish popup (top-right card). Uses showGeneralDialog for custom animation.
   Future<void> _showLanguagePicker(BuildContext context) async {
@@ -46,14 +264,18 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FadeTransition(
                 opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
                 child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.97, end: 1.0)
-                      .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutBack)),
+                  scale: Tween<double>(begin: 0.97, end: 1.0).animate(
+                    CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                  ),
                   child: Material(
                     color: theme.colorScheme.surface,
                     elevation: 18,
                     borderRadius: BorderRadius.circular(12),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 220, maxWidth: 260),
+                      constraints: const BoxConstraints(
+                        minWidth: 220,
+                        maxWidth: 260,
+                      ),
                       child: IntrinsicWidth(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -61,12 +283,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             // Header
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               child: Row(
                                 children: [
                                   Text(
                                     'Language',
-                                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
                                   ),
                                   const Spacer(),
                                   GestureDetector(
@@ -75,10 +301,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                       height: 32,
                                       width: 32,
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary.withOpacity(0.08),
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.08),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Icon(Icons.close, size: 18, color: theme.colorScheme.primary),
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -92,10 +323,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 8),
                             // Optional footer / small caption
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               child: Text(
                                 'App language will update after selection.',
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                ),
                               ),
                             ),
                           ],
@@ -120,7 +357,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _languageTile(BuildContext ctx, String code, String label, String flag) {
+  Widget _languageTile(
+    BuildContext ctx,
+    String code,
+    String label,
+    String flag,
+  ) {
     final theme = Theme.of(ctx);
     final bool selected = code == _selectedLanguage;
 
@@ -147,9 +389,19 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(code, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                  Text(
+                    code,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -161,7 +413,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check, size: 16, color: theme.colorScheme.onPrimary),
+                child: Icon(
+                  Icons.check,
+                  size: 16,
+                  color: theme.colorScheme.onPrimary,
+                ),
               ),
           ],
         ),
@@ -179,11 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
       title: "FLEET STACK",
       subtitle: "Overview",
       // action icons: language, theme toggle, notifications
-      actionIcons: [
-        Icons.language,
-        themeIcon,
-        CupertinoIcons.bell,
-      ],
+      actionIcons: [Icons.language, themeIcon, CupertinoIcons.bell],
 
       // onActionTaps must map 1:1 with actionIcons order
       onActionTaps: [
@@ -192,7 +444,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Theme tap -> toggle light/dark immediately (non-blocking)
         () {
-          final isCurrentlyDark = Theme.of(context).brightness == Brightness.dark;
+          final isCurrentlyDark =
+              Theme.of(context).brightness == Brightness.dark;
           final newDarkMode = !isCurrentlyDark;
 
           // update controller (instant UI update if your controller notifies listeners)
@@ -204,30 +457,35 @@ class _HomeScreenState extends State<HomeScreen> {
           // If using the Default brand, ensure brand matches mode
           if (AppTheme.brandColor == AppTheme.defaultBrand ||
               AppTheme.brandColor == AppTheme.defaultDarkBrand) {
-            final forcedBrand = newDarkMode ? AppTheme.defaultDarkBrand : AppTheme.defaultBrand;
+            final forcedBrand = newDarkMode
+                ? AppTheme.defaultDarkBrand
+                : AppTheme.defaultBrand;
             themeController.setBrand(forcedBrand);
             AppTheme.setBrand(forcedBrand);
           }
         },
 
         // Notifications tap
-      //  () => context.push('/admin/notifications'),
+        () => context.push('/admin/notifications'),
       ],
 
       leftAvatarText: 'FS',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          AppSearchBar(),
-          SizedBox(height: 12),
-          ActionsButtons(),
-          SizedBox(height: 24),
-          FleetOverviewBox(),
-          SizedBox(height: 24),
-          VehicleStatusBox(),
-          SizedBox(height: 24),
-          RecentActivityBox(),
-          SizedBox(height: 24),
+        children: [
+          const AppSearchBar(),
+          const SizedBox(height: 12),
+          const ActionsButtons(),
+          const SizedBox(height: 24),
+          FleetOverviewBox(summary: _summary, loading: _loading),
+          const SizedBox(height: 24),
+          VehicleStatusBox(summary: _summary, loading: _loading),
+          const SizedBox(height: 24),
+          RecentActivityBox(
+            vehicles: _vehiclePreview,
+            loading: _loadingVehiclesPreview,
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

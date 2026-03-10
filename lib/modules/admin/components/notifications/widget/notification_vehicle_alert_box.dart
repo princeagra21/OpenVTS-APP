@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'notification_toggle_tile.dart';
 
 class NotificationVehicleAlertBox extends StatefulWidget {
-  const NotificationVehicleAlertBox({super.key});
+  const NotificationVehicleAlertBox({super.key, this.onAttemptPersist});
+
+  final VoidCallback? onAttemptPersist;
 
   @override
   State<NotificationVehicleAlertBox> createState() =>
@@ -28,16 +30,20 @@ class _NotificationVehicleAlertBoxState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Vehicle Alerts",
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: titleFont)),
+        Text(
+          "Vehicle Alerts",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: titleFont),
+        ),
         SizedBox(height: spacing),
         NotificationToggleTile(
           icon: Icons.signal_wifi_off,
           title: "Vehicle Offline",
           subtitle: "Alert when vehicle goes offline",
           value: offline,
-          onChanged: (v) => setState(() => offline = v),
+          onChanged: (v) {
+            setState(() => offline = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
         SizedBox(height: spacing),
         NotificationToggleTile(
@@ -45,7 +51,10 @@ class _NotificationVehicleAlertBoxState
           title: "Overspeed",
           subtitle: "Speed limit exceeded",
           value: overspeed,
-          onChanged: (v) => setState(() => overspeed = v),
+          onChanged: (v) {
+            setState(() => overspeed = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
         SizedBox(height: spacing),
         NotificationToggleTile(
@@ -53,7 +62,10 @@ class _NotificationVehicleAlertBoxState
           title: "Ignition",
           subtitle: "Vehicle ignition status",
           value: ignition,
-          onChanged: (v) => setState(() => ignition = v),
+          onChanged: (v) {
+            setState(() => ignition = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
         SizedBox(height: spacing),
         NotificationToggleTile(
@@ -61,7 +73,10 @@ class _NotificationVehicleAlertBoxState
           title: "Geofence",
           subtitle: "Enter or exit geofence area",
           value: geofence,
-          onChanged: (v) => setState(() => geofence = v),
+          onChanged: (v) {
+            setState(() => geofence = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
         SizedBox(height: spacing),
         NotificationToggleTile(
@@ -69,7 +84,10 @@ class _NotificationVehicleAlertBoxState
           title: "SOS",
           subtitle: "Emergency SOS alerts",
           value: sos,
-          onChanged: (v) => setState(() => sos = v),
+          onChanged: (v) {
+            setState(() => sos = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
       ],
     );

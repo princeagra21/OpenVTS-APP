@@ -1,3 +1,5 @@
+import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +25,8 @@ class SmallTab extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4;
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2;
+    final double vPadding =
+        AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2;
     final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
 
     return InkWell(
@@ -43,9 +46,7 @@ class SmallTab extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
-            color: selected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
       ),
@@ -54,225 +55,143 @@ class SmallTab extends StatelessWidget {
 }
 
 class RecentActivityBox extends StatefulWidget {
-  const RecentActivityBox({super.key});
+  /// Endpoints used for vehicles preview (FleetStack-API-Reference.md):
+  /// - GET /admin/vehicles (limit=5)
+  ///   keys: vehicles[].id, plateNumber/name, status/motion, updatedAt/lastSeen
+  /// - GET /admin/map-telemetry
+  ///   keys: data[].vehicleId|imei + status/motion for live-status enrichment
+  final List<AdminVehiclePreviewItem>? vehicles;
+  final bool loading;
+
+  const RecentActivityBox({
+    super.key,
+    required this.vehicles,
+    required this.loading,
+  });
 
   @override
   State<RecentActivityBox> createState() => _RecentActivityBoxState();
 }
 
 class _RecentActivityBoxState extends State<RecentActivityBox> {
-  String activityTab = "Vehicles";
+  String activityTab = 'Vehicles';
 
   Map<String, Color> getStatusColors(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return {
-      "Active": colorScheme.primary,
-      "Idle": colorScheme.primary.withOpacity(0.7),
-      "Completed": colorScheme.primary,
-      "Pending": colorScheme.primary.withOpacity(0.7),
-      "Failed": colorScheme.error,
+      'Active': colorScheme.primary,
+      'Idle': colorScheme.primary.withOpacity(0.7),
+      'Running': Colors.green,
+      'Stop': Colors.orange,
+      'Inactive': colorScheme.error,
+      '—': colorScheme.onSurface.withOpacity(0.35),
     };
   }
 
-  late final List<Map<String, dynamic>> vehicleActivities;
-  late final List<Map<String, dynamic>> activityActivities;
-  late final List<Map<String, dynamic>> userActivities;
-
-  @override
-  void initState() {
-    super.initState();
-
-    /// VEHICLE
-    vehicleActivities = List.generate(10, (i) => {
-          "id": "MH-12-AB-${1000 + i}",
-          "name": ["Tata Ace", "Maruti Swift", "Hyundai Creta"][i % 3],
-          "status": ["Active", "Idle"][i % 2],
-          "time":
-              "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${10 + i % 12}:${(i * 3 % 60).toString().padLeft(2, '0')}",
-        });
-
-    /// ACTIVITY
-    activityActivities = List.generate(10, (i) => {
-          "id": "ACT-2024-${100 + i}",
-          "title": ["Login", "Order Created", "Payment Verified"][i % 3],
-          "description":
-              "${["Aarav", "Vihaan", "Aditya"][i % 3]} performed an action",
-          "status": ["Completed", "Pending", "Failed"][i % 3],
-        });
-
-    /// USER
-    userActivities = List.generate(10, (i) => {
-          "name": [
-            "Aarav Sharma",
-            "Vihaan Patel",
-            "Aditya Singh",
-            "Reyansh Kumar",
-            "Arjun Reddy"
-          ][i % 5],
-          "email":
-              "${["aarav.s", "vihaan.p", "aditya.s", "reyansh.k", "arjun.r"][i % 5]}@example.com",
-          "time":
-              "${["Today", "Yesterday", "2 days ago"][i % 3]}, ${13 + i % 12}:${(i * 5 % 60).toString().padLeft(2, '0')}",
-        });
-  }
-
-  List<Map<String, dynamic>> get currentActivities {
-    switch (activityTab) {
-      case "Vehicles":
-        return vehicleActivities;
-      case "Activities":
-        return activityActivities;
-      default:
-        return userActivities;
-    }
-  }
-
-  Widget buildActivityItem(Map<String, dynamic> activity) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildLoadingRow(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double mainFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double subFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double itemPadding =
-        AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-
-    final statusColors = getStatusColors(context);
-
-    Widget avatar;
-    Widget content;
-    Widget right = const SizedBox.shrink();
-
-    switch (activityTab) {
-      /// VEHICLE
-      case "Vehicles":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.directions_car,
-              color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["id"],
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-                    /*
-            Text(activity["name"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-                    */
-            Text(activity["time"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: itemPadding + 2,
-              vertical: itemPadding - 2),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(activity["status"],
-              style: GoogleFonts.inter(
-                  color: colorScheme.onPrimary,
-                  fontSize: badgeFontSize)),
-        );
-        break;
-
-      /// ACTIVITY
-      case "Activities":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.timeline,
-              color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(activity["title"],
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-            Text(activity["description"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: itemPadding,
-              vertical: itemPadding - 3),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(activity["status"],
-              style: GoogleFonts.inter(
-                  color: colorScheme.onPrimary,
-                  fontSize: badgeFontSize)),
-        );
-        break;
-
-      /// USER
-      default:
-        final name = activity["name"] as String;
-        final initials =
-            name.split(" ").map((e) => e[0]).take(2).join();
-
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.primary.withOpacity(0.1),
-          child: Text(initials,
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary)),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name,
-                style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600)),
-            Text(activity["email"],
-                style: GoogleFonts.inter(
-                    fontSize: subFontSize,
-                    color: colorScheme.onSurface.withOpacity(0.54))),
-          ],
-        );
-
-        right = Text(activity["time"],
-            style: GoogleFonts.inter(
-                fontSize: subFontSize,
-                color: colorScheme.onSurface.withOpacity(0.54)));
-    }
+    final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2.4;
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: itemPadding),
       child: Row(
         children: [
-          avatar,
+          AppShimmer(
+            width: avatarRadius * 2,
+            height: avatarRadius * 2,
+            radius: avatarRadius,
+          ),
           SizedBox(width: itemPadding + 2),
-          Expanded(child: content),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(width: 140, height: 14, radius: 7),
+                SizedBox(height: 8),
+                AppShimmer(width: 110, height: 12, radius: 6),
+              ],
+            ),
+          ),
           SizedBox(width: itemPadding + 2),
-          right,
+          const AppShimmer(width: 72, height: 28, radius: 14),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleRow(
+    BuildContext context,
+    AdminVehiclePreviewItem item, {
+    bool placeholder = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    final double mainFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final statusColors = getStatusColors(context);
+
+    final status = placeholder ? '—' : item.statusLabel;
+    final label = placeholder ? '—' : item.plateNumber;
+    final time = placeholder ? '—' : item.lastSeenLabel;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: itemPadding),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+            backgroundColor: colorScheme.surfaceVariant,
+            child: Icon(Icons.directions_car, color: colorScheme.primary),
+          ),
+          SizedBox(width: itemPadding + 2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: mainFontSize,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  time,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: subFontSize,
+                    color: colorScheme.onSurface.withOpacity(0.54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: itemPadding + 2),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: itemPadding + 2,
+              vertical: itemPadding - 2,
+            ),
+            decoration: BoxDecoration(
+              color: statusColors[status] ?? statusColors['—'],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              status,
+              style: GoogleFonts.inter(
+                color: colorScheme.onPrimary,
+                fontSize: badgeFontSize,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -283,12 +202,11 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double padding =
-        AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double linkFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+
+    final vehicles = widget.vehicles ?? const <AdminVehiclePreviewItem>[];
+    final showPlaceholders = !widget.loading && vehicles.isEmpty;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -310,17 +228,16 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Wrap(
-            spacing:
-                AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
-            runSpacing: 8,
-            children: [ "Vehicles"].map((tab) {
-              return SmallTab(
-                label: tab,
-                selected: activityTab == tab,
-                onTap: () => setState(() => activityTab = tab),
-              );
-            }).toList(),
-          ),
+                spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
+                runSpacing: 8,
+                children: ['Vehicles'].map((tab) {
+                  return SmallTab(
+                    label: tab,
+                    selected: activityTab == tab,
+                    onTap: () => setState(() => activityTab = tab),
+                  );
+                }).toList(),
+              ),
               InkWell(
                 onTap: () {
                   context.push(
@@ -328,10 +245,13 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     extra: {'type': activityTab},
                   );
                 },
-                child: Text("View all",
-                    style: GoogleFonts.inter(
-                        fontSize: linkFontSize,
-                        color: colorScheme.primary)),
+                child: Text(
+                  'View all',
+                  style: GoogleFonts.inter(
+                    fontSize: linkFontSize,
+                    color: colorScheme.primary,
+                  ),
+                ),
               ),
             ],
           ),
@@ -339,13 +259,24 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           SizedBox(
             height: 320,
             child: ListView.separated(
-              itemCount: currentActivities.length,
+              itemCount: widget.loading
+                  ? 5
+                  : (showPlaceholders ? 5 : vehicles.length),
               separatorBuilder: (_, __) => Divider(
                 height: 1,
                 color: colorScheme.onSurface.withOpacity(0.08),
               ),
-              itemBuilder: (_, i) =>
-                  buildActivityItem(currentActivities[i]),
+              itemBuilder: (_, i) {
+                if (widget.loading) return _buildLoadingRow(context);
+                if (showPlaceholders) {
+                  return _buildVehicleRow(
+                    context,
+                    const AdminVehiclePreviewItem(<String, dynamic>{}),
+                    placeholder: true,
+                  );
+                }
+                return _buildVehicleRow(context, vehicles[i]);
+              },
             ),
           ),
         ],

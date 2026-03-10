@@ -192,6 +192,72 @@ class AdminProfile {
     data['role'] ?? data['roleName'] ?? data['userType'] ?? data['type'],
   );
 
+  String get role {
+    final fromRole = roleName.trim();
+    if (fromRole.isNotEmpty) return fromRole;
+    final fromLoginType = _string(
+      data['loginType'] ?? data['login_type'],
+    ).trim();
+    if (fromLoginType.isNotEmpty) return fromLoginType;
+    return '—';
+  }
+
+  bool get emailVerified => isVerified;
+
+  bool get phoneVerified {
+    final candidates = [
+      data['phoneVerified'],
+      data['isPhoneVerified'],
+      data['mobileVerified'],
+      data['isMobileVerified'],
+      data['isWhatsappVerified'],
+      data['isWhatsAppVerified'],
+      data['whatsappVerified'],
+      data['isWhatsappVarified'],
+      data['isMobileVarified'],
+    ];
+    for (final value in candidates) {
+      final parsed = _boolOrNull(value);
+      if (parsed != null) return parsed;
+    }
+
+    final mobile = data['mobile'];
+    if (mobile is Map) {
+      final nested = [
+        mobile['verified'],
+        mobile['isVerified'],
+        mobile['isMobileVerified'],
+        mobile['isPhoneVerified'],
+      ];
+      for (final value in nested) {
+        final parsed = _boolOrNull(value);
+        if (parsed != null) return parsed;
+      }
+    }
+
+    return false;
+  }
+
+  String get phoneDisplay => phone.trim().isEmpty ? '—' : phone.trim();
+
+  String get lastLoginAt => _string(
+    data['lastLoginAt'] ??
+        data['lastLogin'] ??
+        data['last_login'] ??
+        data['recentLogin'] ??
+        data['updatedAt'] ??
+        data['updated_at'],
+  );
+
+  String get passwordChangedAt => _string(
+    data['passwordChangedAt'] ??
+        data['passwordUpdatedAt'] ??
+        data['passwordChangeAt'] ??
+        data['pwdChangedAt'] ??
+        data['updatedAt'] ??
+        data['updated_at'],
+  );
+
   Object? get permissionsRaw =>
       data['permissions'] ?? data['permission'] ?? data['access'];
 
@@ -210,5 +276,21 @@ class AdminProfile {
       return int.tryParse(cleaned) ?? 0;
     }
     return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static bool? _boolOrNull(Object? v) {
+    if (v == null) return null;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) {
+      final t = v.trim().toLowerCase();
+      if (t == 'true' || t == '1' || t == 'yes' || t == 'verified') {
+        return true;
+      }
+      if (t == 'false' || t == '0' || t == 'no' || t == 'unverified') {
+        return false;
+      }
+    }
+    return null;
   }
 }

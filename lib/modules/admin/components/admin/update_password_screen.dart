@@ -1,4 +1,11 @@
 // components/admin/update_password_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_profile_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,12 +19,116 @@ class UpdatePasswordScreen extends StatefulWidget {
 
 class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  bool _saving = false;
+  bool _submitErrorShown = false;
+  DateTime? _lastSubmitAt;
+  CancelToken? _submitToken;
+  ApiClient? _api;
+  AdminProfileRepository? _repo;
 
-  // Shared InputDecoration - same as your ApiConfigSettingsScreen
+  @override
+  void dispose() {
+    _submitToken?.cancel('Update password disposed');
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitPassword() async {
+    if (_saving) return;
+    final now = DateTime.now();
+    if (_lastSubmitAt != null &&
+        now.difference(_lastSubmitAt!).inMilliseconds < 800) {
+      return;
+    }
+    _lastSubmitAt = now;
+
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (newPassword.trim().isEmpty || confirmPassword.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill both password fields.')),
+      );
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _saving = true;
+      _submitErrorShown = false;
+    });
+
+    _submitToken?.cancel('New update password submit started');
+    final token = CancelToken();
+    _submitToken = token;
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= AdminProfileRepository(api: _api!);
+
+      final result = await _repo!.updatePassword(
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      result.when(
+        success: (_) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Password updated')));
+          Navigator.pop(context, true);
+        },
+        failure: (error) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          if (_submitErrorShown) return;
+          _submitErrorShown = true;
+
+          String msg = 'Could not update password.';
+          if (error is ApiException) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              msg = 'Not authorized to update password.';
+            } else if (error.message.trim().isNotEmpty) {
+              msg = error.message;
+            }
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      if (_submitErrorShown) return;
+      _submitErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update password.')),
+      );
+    }
+  }
+
   InputDecoration _minimalInputDecoration(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
@@ -25,7 +136,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       fillColor: Colors.transparent,
       hintText: '',
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      prefixIcon: const SizedBox(width: 12), // spacing for icon alignment
+      prefixIcon: const SizedBox(width: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
@@ -36,7 +147,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5), // subtle focus
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -61,66 +172,69 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Row: Title + Close
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Update Password",
+                    'Update Password',
                     style: GoogleFonts.inter(
-                      fontSize: titleSize + 2, fontWeight: FontWeight.w800),
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               Text(
-                "Securely update your account password",
+                'Securely update your account password',
                 style: GoogleFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // New Password Field
               TextField(
                 controller: _newPasswordController,
                 obscureText: _obscureNew,
                 style: GoogleFonts.inter(
                   color: colorScheme.onSurface,
-                  fontSize: AdaptiveUtils.getTitleFontSize(w), // matches API screen
+                  fontSize: AdaptiveUtils.getTitleFontSize(w),
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
-                  hintText: "New Password",
+                  hintText: 'New Password',
                   hintStyle: GoogleFonts.inter(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                    child: Icon(
+                      Icons.lock_outline,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureNew
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                     onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Confirm Password Field
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
@@ -129,33 +243,34 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
-                  hintText: "Confirm Password",
+                  hintText: 'Confirm Password',
                   hintStyle: GoogleFonts.inter(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                    child: Icon(
+                      Icons.lock_outline,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureConfirm
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
-                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // Update Button - matches your API screen style
               GestureDetector(
-                onTap: () {
-                  // TODO: Add validation & update logic
-                  Navigator.pop(context);
-                },
+                onTap: _submitPassword,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -164,14 +279,16 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: Text(
-                      "Update Password",
-                      style: GoogleFonts.inter(
-                        fontSize: labelSize,
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _saving
+                        ? const AppShimmer(width: 120, height: 18, radius: 8)
+                        : Text(
+                            'Update Password',
+                            style: GoogleFonts.inter(
+                              fontSize: labelSize,
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
               ),
