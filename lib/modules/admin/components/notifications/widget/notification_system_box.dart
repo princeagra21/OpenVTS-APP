@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'notification_toggle_tile.dart';
 
 class NotificationSystemBox extends StatefulWidget {
-  const NotificationSystemBox({super.key});
+  const NotificationSystemBox({super.key, this.onAttemptPersist});
+
+  final VoidCallback? onAttemptPersist;
 
   @override
-  State<NotificationSystemBox> createState() =>
-      _NotificationSystemBoxState();
+  State<NotificationSystemBox> createState() => _NotificationSystemBoxState();
 }
 
 class _NotificationSystemBoxState extends State<NotificationSystemBox> {
@@ -24,25 +25,29 @@ class _NotificationSystemBoxState extends State<NotificationSystemBox> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("System Alerts",
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: titleFont)),
+        Text(
+          "System Alerts",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: titleFont),
+        ),
         SizedBox(height: spacing),
         NotificationToggleTile(
           icon: Icons.system_update,
           title: "System Alert",
           subtitle: "App & platform updates",
           value: updates,
-          onChanged: (v) => setState(() => updates = v),
+          onChanged: (v) {
+            setState(() => updates = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
         SizedBox(height: spacing),
-      //  NotificationToggleTile(
-      //    icon: Icons.build,
-       //   title: "Maintenance",
-      //    subtitle: "Scheduled maintenance alerts",
-      //    value: maintenance,
-     //     onChanged: (v) => setState(() => maintenance = v),
-    //    ),
+        //  NotificationToggleTile(
+        //    icon: Icons.build,
+        //   title: "Maintenance",
+        //    subtitle: "Scheduled maintenance alerts",
+        //    value: maintenance,
+        //     onChanged: (v) => setState(() => maintenance = v),
+        //    ),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
@@ -230,18 +231,39 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await themeController.loadTheme();
   final initialLocation = await _resolveInitialLocation();
+  const forceDevicePreview = bool.fromEnvironment(
+    'DEVICE_PREVIEW',
+    defaultValue: false,
+  );
+  final enableDevicePreview = forceDevicePreview && !kReleaseMode;
   if (kDebugMode) {
     debugPrint('[AuthBootstrap] initialLocation=$initialLocation');
+    debugPrint('[Bootstrap] devicePreview=$enableDevicePreview');
   }
   final appRouter = buildRouter(initialLocation);
 
-  runApp(MyApp(router: appRouter));
+  runApp(
+    enableDevicePreview
+        ? DevicePreview(
+            enabled: true,
+            builder: (context) => MyApp(
+              router: appRouter,
+              enableDevicePreview: enableDevicePreview,
+            ),
+          )
+        : MyApp(router: appRouter, enableDevicePreview: enableDevicePreview),
+  );
 }
 
 class MyApp extends StatelessWidget {
   final GoRouter router;
+  final bool enableDevicePreview;
 
-  const MyApp({super.key, required this.router});
+  const MyApp({
+    super.key,
+    required this.router,
+    this.enableDevicePreview = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +277,10 @@ class MyApp extends StatelessWidget {
           builder: (_, mode, brand, __) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
+              locale: enableDevicePreview
+                  ? DevicePreview.locale(context)
+                  : null,
+              builder: enableDevicePreview ? DevicePreview.appBuilder : null,
               routerConfig: router,
               theme: AppTheme.light(brand),
               darkTheme: AppTheme.dark(brand),

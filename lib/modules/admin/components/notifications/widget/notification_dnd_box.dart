@@ -4,7 +4,9 @@ import 'package:time_range_picker/time_range_picker.dart';
 import 'notification_toggle_tile.dart';
 
 class NotificationDndBox extends StatefulWidget {
-  const NotificationDndBox({super.key});
+  const NotificationDndBox({super.key, this.onAttemptPersist});
+
+  final VoidCallback? onAttemptPersist;
 
   @override
   State<NotificationDndBox> createState() => _NotificationDndBoxState();
@@ -48,6 +50,7 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
         startTime = result.startTime ?? startTime;
         endTime = result.endTime ?? endTime;
       });
+      widget.onAttemptPersist?.call();
     }
   }
 
@@ -71,10 +74,7 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
       children: [
         Text(
           "Do Not Disturb",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: titleFont,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: titleFont),
         ),
         SizedBox(height: spacing),
         NotificationToggleTile(
@@ -90,6 +90,7 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
                 endTime = const TimeOfDay(hour: 6, minute: 0);
               }
             });
+            widget.onAttemptPersist?.call();
           },
         ),
         if (dnd) ...[
@@ -98,15 +99,13 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
             onTap: _pickTimeRange,
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding:
-                  EdgeInsets.all(AdaptiveUtils.getHorizontalPadding(width)),
+              padding: EdgeInsets.all(
+                AdaptiveUtils.getHorizontalPadding(width),
+              ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
                 ),
                 color: Theme.of(context).colorScheme.surface,
               ),
@@ -115,7 +114,11 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
                 children: [
                   Row(
                     children: [
-                       Icon(Icons.access_time, size: 20, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.access_time,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       SizedBox(width: spacing),
                       Text(
                         "Select DND Time",
@@ -143,10 +146,7 @@ class _NotificationDndBoxState extends State<NotificationDndBox> {
             "Critical alerts (like SOS) will be delivered even during this time.",
             style: TextStyle(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],

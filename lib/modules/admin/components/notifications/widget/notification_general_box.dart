@@ -4,11 +4,12 @@ import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 class NotificationGeneralBox extends StatefulWidget {
-  const NotificationGeneralBox({super.key});
+  const NotificationGeneralBox({super.key, this.onAttemptPersist});
+
+  final VoidCallback? onAttemptPersist;
 
   @override
-  State<NotificationGeneralBox> createState() =>
-      _NotificationGeneralBoxState();
+  State<NotificationGeneralBox> createState() => _NotificationGeneralBoxState();
 }
 
 class _NotificationGeneralBoxState extends State<NotificationGeneralBox> {
@@ -19,7 +20,6 @@ class _NotificationGeneralBoxState extends State<NotificationGeneralBox> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final titleFont = AdaptiveUtils.getSubtitleFontSize(width);
     final spacing = AdaptiveUtils.getLeftSectionSpacing(width);
 
     return Column(
@@ -31,7 +31,10 @@ class _NotificationGeneralBoxState extends State<NotificationGeneralBox> {
           title: "All Notifications",
           subtitle: "Receive app notifications",
           value: push,
-          onChanged: (v) => setState(() => push = v),
+          onChanged: (v) {
+            setState(() => push = v);
+            widget.onAttemptPersist?.call();
+          },
         ),
       ],
     );

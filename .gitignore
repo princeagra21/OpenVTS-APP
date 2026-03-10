@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local env and personal local media artifacts
+.fleetstack.env
+juwai.mp4
+WhatsApp Ptt*.ogg
