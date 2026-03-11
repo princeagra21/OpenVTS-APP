@@ -1,35 +1,101 @@
 // components/profile/profile_info_boxes.dart
+import 'package:fleet_stack/core/models/admin_profile.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileInfoBoxes extends StatelessWidget {
-  const ProfileInfoBoxes({super.key});
+  final AdminProfile? profile;
+  final bool loading;
+
+  const ProfileInfoBoxes({super.key, this.profile, this.loading = false});
+
+  String _safe(String? value) {
+    final trimmed = value?.trim() ?? '';
+    return trimmed.isEmpty ? '—' : trimmed;
+  }
+
+  String _formatDateTime(String? raw) {
+    final trimmed = raw?.trim() ?? '';
+    if (trimmed.isEmpty) return '—';
+    final parsed = DateTime.tryParse(trimmed);
+    if (parsed == null) return trimmed;
+    final local = parsed.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(local.day)} ${_month(local.month)} ${local.year}, '
+        '${((local.hour % 12) == 0 ? 12 : (local.hour % 12))}:${two(local.minute)} '
+        '${local.hour >= 12 ? 'PM' : 'AM'}';
+  }
+
+  String _formatDate(String? raw) {
+    final trimmed = raw?.trim() ?? '';
+    if (trimmed.isEmpty) return '—';
+    final parsed = DateTime.tryParse(trimmed);
+    if (parsed == null) return trimmed;
+    final local = parsed.toLocal();
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(local.day)} ${_month(local.month)} ${local.year}';
+  }
+
+  String _month(int month) {
+    const months = <String>[
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month.clamp(0, 12)];
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(
+      screenWidth,
+    );
     // Increased font sizes for clearer readability
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 1; // Account activity title
-    final double labelFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // left label (bigger)
-    final double valueFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // right value (largest)
-    final double smallFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 0.5; // small subtitle (if any)
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth) * 1.2;
-
-    // Example values — replace with real data when wiring up
-    const String lastLoginExact = "20 Nov 2025, 7:30 PM";
-    const String createdDate = "10 Sep 2025";
-    const String passwordChanged = "2 months ago";
+    final double titleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) -
+        1; // Account activity title
+    final double labelFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) -
+        2; // left label (bigger)
+    final double valueFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) -
+        2; // right value (largest)
+    final double smallFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) +
+        0.5; // small subtitle (if any)
+    final double spacing =
+        AdaptiveUtils.getLeftSectionSpacing(screenWidth) * 1.2;
+    final String lastLoginExact = _formatDateTime(profile?.lastLoginAt);
+    final String createdDate = _formatDate(profile?.createdAt);
+    final String passwordChanged = _formatDateTime(profile?.passwordChangedAt);
 
     return Container(
       padding: EdgeInsets.all(horizontalPadding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
         border: Border.all(color: colorScheme.outline.withOpacity(0.06)),
       ),
       child: Column(
@@ -50,43 +116,49 @@ class ProfileInfoBoxes extends StatelessWidget {
           SizedBox(height: spacing / 1.1),
 
           // Last Login (single-line format "Last login: 20 Nov ...")
-          _infoRow(
-            label: "Last login",
-            valueTitle: lastLoginExact,
-            labelFontSize: labelFontSize,
-            valueFontSize: valueFontSize,
-            subtitleFontSize: smallFontSize,
-            colorScheme: colorScheme,
-            singleLine: true,
-          ),
+          loading
+              ? const AppShimmer(width: double.infinity, height: 18, radius: 8)
+              : _infoRow(
+                  label: "Last login",
+                  valueTitle: lastLoginExact,
+                  labelFontSize: labelFontSize,
+                  valueFontSize: valueFontSize,
+                  subtitleFontSize: smallFontSize,
+                  colorScheme: colorScheme,
+                  singleLine: true,
+                ),
 
           SizedBox(height: spacing / 1.1),
 
           // Created (single-line)
-          _infoRow(
-            label: "Created",
-            valueTitle: createdDate,
-            labelFontSize: labelFontSize,
-            valueFontSize: valueFontSize,
-            subtitleFontSize: smallFontSize,
-            colorScheme: colorScheme,
-            singleLine: true,
-          ),
+          loading
+              ? const AppShimmer(width: double.infinity, height: 18, radius: 8)
+              : _infoRow(
+                  label: "Created",
+                  valueTitle: createdDate,
+                  labelFontSize: labelFontSize,
+                  valueFontSize: valueFontSize,
+                  subtitleFontSize: smallFontSize,
+                  colorScheme: colorScheme,
+                  singleLine: true,
+                ),
 
           SizedBox(height: spacing / 1.1),
 
           // Password last change — label non-bold and single-line ("Password last change: 2 months ago")
-          _infoRow(
-            label: "Password last change",
-            valueTitle: passwordChanged,
-            labelFontSize: labelFontSize,
-            valueFontSize: valueFontSize,
-            subtitleFontSize: smallFontSize,
-            colorScheme: colorScheme,
-            labelFontWeight: FontWeight.w400,
-            valueFontWeight: FontWeight.w200,
-            singleLine: true,
-          ),
+          loading
+              ? const AppShimmer(width: double.infinity, height: 18, radius: 8)
+              : _infoRow(
+                  label: "Password last change",
+                  valueTitle: _safe(passwordChanged),
+                  labelFontSize: labelFontSize,
+                  valueFontSize: valueFontSize,
+                  subtitleFontSize: smallFontSize,
+                  colorScheme: colorScheme,
+                  labelFontWeight: FontWeight.w400,
+                  valueFontWeight: FontWeight.w200,
+                  singleLine: true,
+                ),
         ],
       ),
     );

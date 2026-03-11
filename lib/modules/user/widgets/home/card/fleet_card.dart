@@ -1,10 +1,10 @@
-// lib/modules/user/widgets/home/card/overview_box.dart
-
+import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
+import 'package:fleet_stack/core/models/user_usage_last_7_days.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 
-/// A reusable styled container with the app's shadow and border radius design.
 class CustomBox extends StatelessWidget {
   final Widget child;
   final double? width;
@@ -21,8 +21,8 @@ class CustomBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
 
     return Container(
       width: width ?? double.infinity,
@@ -45,33 +45,37 @@ class CustomBox extends StatelessWidget {
 }
 
 class OverviewBox extends StatelessWidget {
-  final String mode; // 'Fleet' or 'Revenue'
-  final Function(String) onModeChanged;
+  final String mode;
+  final void Function(String) onModeChanged;
+  final bool loading;
+  final UserFleetStatusSummary? fleetStatus;
+  final UserUsageLast7Days? usage;
+  final int? alertCount;
 
   const OverviewBox({
     super.key,
     required this.mode,
     required this.onModeChanged,
+    required this.loading,
+    required this.fleetStatus,
+    required this.usage,
+    required this.alertCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
     final colorScheme = Theme.of(context).colorScheme;
-
-    // Adaptive sizing logic
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-    final double capsuleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-
-    final String title = mode == 'Fleet' ? 'Fleet Overview' : 'Revenue Ops';
+    final titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final capsuleFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final title = mode == 'Fleet' ? 'Fleet Overview' : 'Usage Overview';
 
     return CustomBox(
       radius: 25.0,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Title + Professional Dropdown
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -86,17 +90,17 @@ class OverviewBox extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // The Professional Dropdown
                   PopupMenuButton<String>(
                     tooltip: 'Switch View',
                     icon: Icon(
-                      Icons.arrow_drop_down_circle_outlined, 
+                      Icons.arrow_drop_down_circle_outlined,
                       color: colorScheme.primary.withOpacity(0.7),
                       size: 20,
                     ),
-                    // offset: Positioning the menu exactly below the trigger icon
-                    offset: const Offset(0, 40), 
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    offset: const Offset(0, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 8,
                     onSelected: onModeChanged,
                     itemBuilder: (context) => [
@@ -110,10 +114,10 @@ class OverviewBox extends StatelessWidget {
                       ),
                       _buildMenuItem(
                         context,
-                        value: 'Revenue',
-                        label: 'Revenue Ops',
-                        icon: Icons.monetization_on_rounded,
-                        isSelected: mode == 'Revenue',
+                        value: 'Usage',
+                        label: 'Usage Overview',
+                        icon: Icons.insights_rounded,
+                        isSelected: mode == 'Usage',
                       ),
                     ],
                   ),
@@ -121,46 +125,82 @@ class OverviewBox extends StatelessWidget {
               ),
             ],
           ),
-          
           SizedBox(height: spacing + 12),
-
-          // Horizontal Metrics Capsules
           _buildCapsuleRow(context, capsuleFontSize, spacing),
         ],
       ),
     );
   }
 
-  /// Builds the horizontal scrolling list of metrics based on the current mode
-  Widget _buildCapsuleRow(BuildContext context, double fontSize, double spacing) {
-    // Shared constants for capsules
-    final double labelSize = fontSize - 2;
-    final double valueSize = fontSize + 4;
+  Widget _buildCapsuleRow(
+    BuildContext context,
+    double fontSize,
+    double spacing,
+  ) {
+    final labelSize = fontSize - 2;
+    final valueSize = fontSize + 4;
+    final items = mode == 'Fleet'
+        ? [
+            _MetricItem(
+              icon: Icons.directions_car,
+              label: 'Vehicles',
+              value: _intText(fleetStatus?.totalVehicles),
+            ),
+            _MetricItem(
+              icon: Icons.memory_rounded,
+              label: 'With Device',
+              value: _intText(fleetStatus?.withDevice),
+            ),
+            _MetricItem(
+              icon: Icons.portable_wifi_off_rounded,
+              label: 'No Device',
+              value: _intText(fleetStatus?.noDevice),
+            ),
+          ]
+        : [
+            _MetricItem(
+              icon: Icons.route_rounded,
+              label: 'Distance',
+              value: _kmText(usage?.totalDrivenKm),
+            ),
+            _MetricItem(
+              icon: Icons.timer_outlined,
+              label: 'Engine Hrs',
+              value: _hoursText(usage?.totalEngineHours),
+            ),
+            _MetricItem(
+              icon: Icons.notifications_active_outlined,
+              label: 'Alerts',
+              value: _intText(alertCount),
+            ),
+          ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
-        children: mode == 'Fleet'
-            ? [
-                _capsule(context, Icons.directions_car, "Vehicles", "1,284", labelSize, valueSize, spacing),
-                SizedBox(width: spacing + 4),
-                _capsule(context, Icons.people_alt_rounded, "Active", "641", labelSize, valueSize, spacing),
-                SizedBox(width: spacing + 4),
-                _capsule(context, Icons.online_prediction, "Online", "1,012", labelSize, valueSize, spacing),
-              ]
-            : [
-                _capsule(context, Icons.attach_money, "ARR", "\$1.92M", labelSize, valueSize, spacing),
-                SizedBox(width: spacing + 4),
-                _capsule(context, Icons.calendar_today, "MRR", "\$160k", labelSize, valueSize, spacing),
-                SizedBox(width: spacing + 4),
-                _capsule(context, Icons.trending_down, "Churn", "1.2%", labelSize, valueSize, spacing),
-              ],
+        children: items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Padding(
+            padding: EdgeInsets.only(
+              right: index == items.length - 1 ? 0 : spacing + 4,
+            ),
+            child: _capsule(
+              context,
+              item.icon,
+              item.label,
+              item.value,
+              labelSize,
+              valueSize,
+              spacing,
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 
-  /// Professional Popup Header (Non-clickable label)
   PopupMenuEntry<String> _buildPopupHeader(BuildContext context, String title) {
     final theme = Theme.of(context);
     return PopupMenuItem<String>(
@@ -183,7 +223,6 @@ class OverviewBox extends StatelessWidget {
     );
   }
 
-  /// Professional Popup Menu Item with selection state
   PopupMenuItem<String> _buildMenuItem(
     BuildContext context, {
     required String value,
@@ -197,27 +236,34 @@ class OverviewBox extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            icon, 
-            size: 20, 
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant
+            icon,
+            size: 20,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 12),
           Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
             ),
           ),
           const Spacer(),
           if (isSelected)
-            Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+            Icon(
+              Icons.check_circle,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
         ],
       ),
     );
   }
 
-  /// Individual metric capsule UI
   Widget _capsule(
     BuildContext context,
     IconData icon,
@@ -226,7 +272,7 @@ class OverviewBox extends StatelessWidget {
     double labelFontSize,
     double valueFontSize,
     double spacing, {
-    double width = 100,
+    double width = 110,
   }) {
     final cs = Theme.of(context).colorScheme;
 
@@ -259,17 +305,59 @@ class OverviewBox extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: valueFontSize,
-              fontWeight: FontWeight.w800,
-              color: cs.onSurface,
+          SizedBox(height: spacing - 2),
+          if (loading)
+            AppShimmer(
+              width: width * 0.55,
+              height: valueFontSize + 2,
+              radius: 10,
+            )
+          else
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: valueFontSize,
+                fontWeight: FontWeight.w800,
+                color: cs.onSurface,
+              ),
             ),
-          ),
         ],
       ),
     );
   }
+
+  String _intText(int? value) {
+    if (value == null) return '—';
+    return value.toString();
+  }
+
+  String _kmText(double? value) {
+    if (value == null) return '—';
+    return _formatNumber(value);
+  }
+
+  String _hoursText(double? value) {
+    if (value == null) return '—';
+    return _formatNumber(value);
+  }
+
+  String _formatNumber(double value) {
+    final rounded = value.roundToDouble();
+    if (rounded == value) return value.toInt().toString();
+    return value.toStringAsFixed(1);
+  }
+}
+
+class _MetricItem {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _MetricItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 }

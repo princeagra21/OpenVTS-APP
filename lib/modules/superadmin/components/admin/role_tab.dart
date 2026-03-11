@@ -460,12 +460,7 @@ class _RolesTabState extends State<RolesTab> {
                   width: 12,
                   height: 12,
                   child: _loading
-                      ? CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.primary,
-                          ),
-                        )
+                      ? const AppShimmer(width: 12, height: 12, radius: 6)
                       : const SizedBox.shrink(),
                 ),
               ],

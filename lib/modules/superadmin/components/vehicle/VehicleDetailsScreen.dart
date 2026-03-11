@@ -68,6 +68,30 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     return '-';
   }
 
+  String _displayStatus() {
+    final raw = safe(_details?.status);
+    if (raw != '-') return raw;
+    if (_details == null) return '-';
+    return _details!.isActive ? 'Active' : 'Inactive';
+  }
+
+  String _displayPlate() {
+    final plate = safe(_details?.plate);
+    if (plate != '-') return plate;
+    final name = safe(_details?.name);
+    if (name != '-') return name;
+    return 'Vehicle ${widget.id}';
+  }
+
+  String _displayMetric(String? value, {String? suffix}) {
+    final clean = safe(value);
+    if (clean == '-') return '-';
+    if (suffix == null || clean.toLowerCase().contains(suffix.toLowerCase())) {
+      return clean;
+    }
+    return '$clean $suffix';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -116,7 +140,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view vehicle.'
-              : "Couldn't load vehicle. Showing fallback info.";
+              : "Couldn't load vehicle.";
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -127,11 +151,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       setState(() => _loadingDetails = false);
       if (_errorShown) return;
       _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load vehicle. Showing fallback info."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load vehicle.")));
     }
   }
 
@@ -142,26 +164,15 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
     final double fs = AdaptiveUtils.getTitleFontSize(width);
 
-    final plate = _details?.plate.isNotEmpty == true
-        ? _details!.plate
-        : "DL01 AB 1287";
-    final status = _details?.status.isNotEmpty == true
-        ? _details!.status
-        : "RUNNING";
-    final model = _details?.model.isNotEmpty == true ? _details!.model : "GT06";
-    final type = _details?.type.isNotEmpty == true ? _details!.type : "Truck";
+    final plate = _displayPlate();
+    final status = _displayStatus();
+    final model = safe(_details?.model);
+    final type = safe(_details?.type);
     final metaId = safe(
       _details?.id.isNotEmpty == true ? _details!.id : widget.id,
     );
     final metaImei = safe(_details?.imei);
-    final metaSim = _metaValue(const [
-      'simNumber',
-      'sim_number',
-      'sim',
-      'simNo',
-      'simCardNumber',
-      'iccid',
-    ]);
+    final metaSim = safe(_details?.simNumber);
     final metaPhone = _metaValue(const [
       'phoneNumber',
       'phone_number',
@@ -171,18 +182,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       'contactNumber',
     ]);
 
-    final lastSeen = _details?.lastSeen.isNotEmpty == true
-        ? _details!.lastSeen
-        : "2 min ago";
-    final speed = _details?.speed.isNotEmpty == true
-        ? _details!.speed
-        : "68 km/h";
-    final ignition = _details?.ignition.isNotEmpty == true
-        ? _details!.ignition
-        : "ON";
-    final location = _details?.locationName.isNotEmpty == true
-        ? _details!.locationName
-        : "Mumbai, MH";
+    final lastSeen = safe(_details?.lastSeen);
+    final speed = _displayMetric(_details?.speed, suffix: 'km/h');
+    final ignition = safe(_details?.ignition);
+    final location = safe(_details?.locationName);
 
     return AppLayout(
       title: _loadingDetails ? " " : "VEHICLE",
@@ -246,7 +249,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade600,
+                              color: status.toLowerCase() == 'inactive'
+                                  ? colorScheme.error
+                                  : Colors.green.shade600,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ConstrainedBox(
@@ -653,10 +658,12 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   Widget _buildTabContent({Key? key}) {
     Widget content;
     final imei = _details?.imei;
+    final plate = _displayPlate();
+    final model = safe(_details?.model);
 
     switch (selectedTab) {
       case "Vehicle Details":
-        content = VehicleDetailsTab(vehicleId: widget.id);
+        content = VehicleDetailsTab(vehicleId: widget.id, details: _details);
         break;
       case "Vehicle Users":
         content = VehicleUsersTab(users: _details?.users);
@@ -664,12 +671,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       case "Send Commands":
         content = SendCommandsTab(
           imei: imei,
-          vehiclePlate: _details?.plate.isNotEmpty == true
-              ? _details!.plate
-              : "DL01 AB 1287",
-          vehicleModel: _details?.model.isNotEmpty == true
-              ? _details!.model
-              : "GT06",
+          vehiclePlate: plate,
+          vehicleModel: model,
         );
         break;
       case "Logs":
@@ -678,10 +681,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       case "Maps":
         content = VehicleMapTab(
           imei: imei,
-          fallbackLocation: const LatLng(19.0760, 72.8777),
-          vehiclePlate: _details?.plate.isNotEmpty == true
-              ? _details!.plate
-              : "DL01 AB 1287",
+          fallbackLocation: const LatLng(28.6139, 77.2090),
+          vehiclePlate: plate,
         );
         break;
       case "Documents":

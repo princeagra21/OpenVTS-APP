@@ -66,7 +66,8 @@ class AdminVehiclesRepository {
     );
 
     return res.when(
-      success: (data) => Result.ok(AdminVehicleDetails.fromRaw(_extractMap(data))),
+      success: (data) =>
+          Result.ok(AdminVehicleDetails.fromRaw(_extractMap(data))),
       failure: (err) => Result.fail(err),
     );
   }
@@ -95,6 +96,81 @@ class AdminVehiclesRepository {
         return Result.ok(out);
       },
       failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<MapVehiclePoint>>> getVehicleTrailByImei(
+    String imei, {
+    int hours = 24,
+    int? maxPoints,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{'hours': hours};
+    if (maxPoints != null) query['maxPoints'] = maxPoints;
+
+    final res = await api.get(
+      '/admin/vehicles/by-imei/$imei/trail',
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
+
+    return _mapPointListResult(
+      res,
+      extraKeys: const ['points', 'trail', 'history'],
+    );
+  }
+
+  Future<Result<List<MapVehiclePoint>>> getVehicleReplayByImei(
+    String imei, {
+    required DateTime from,
+    required DateTime to,
+    int? maxPoints,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{
+      'from': from.toUtc().toIso8601String(),
+      'to': to.toUtc().toIso8601String(),
+    };
+    if (maxPoints != null) query['maxPoints'] = maxPoints;
+
+    final res = await api.get(
+      '/admin/vehicles/by-imei/$imei/replay',
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
+
+    return _mapPointListResult(
+      res,
+      extraKeys: const ['points', 'trail', 'history'],
+    );
+  }
+
+  Future<Result<List<MapVehiclePoint>>> getVehicleHistoryByImei(
+    String imei, {
+    required DateTime from,
+    required DateTime to,
+    int? maxPoints,
+    int? stopMin,
+    int? overspeedKph,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{
+      'from': from.toUtc().toIso8601String(),
+      'to': to.toUtc().toIso8601String(),
+    };
+    if (maxPoints != null) query['maxPoints'] = maxPoints;
+    if (stopMin != null) query['stopMin'] = stopMin;
+    if (overspeedKph != null) query['overspeedKph'] = overspeedKph;
+
+    final res = await api.get(
+      '/admin/vehicles/by-imei/$imei/history',
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
+
+    return _mapPointListResult(
+      res,
+      extraKeys: const ['points', 'trail', 'history'],
     );
   }
 
@@ -190,5 +266,37 @@ class AdminVehiclesRepository {
     }
 
     return walk(data, 0);
+  }
+
+  Result<List<MapVehiclePoint>> _mapPointListResult(
+    Result<dynamic> res, {
+    List<String> extraKeys = const [],
+  }) {
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: <String>[
+            'telemetry',
+            'points',
+            'vehicles',
+            'rows',
+            ...extraKeys,
+          ],
+        );
+        final out = <MapVehiclePoint>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(MapVehiclePoint(item));
+            } else if (item is Map) {
+              out.add(MapVehiclePoint(Map<String, dynamic>.from(item.cast())));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
   }
 }

@@ -1,10 +1,12 @@
 // components/vehicle/vehicle_details_tab.dart
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/vehicle_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,32 +14,180 @@ import 'package:google_fonts/google_fonts.dart';
 
 class VehicleDetailsTab extends StatelessWidget {
   final String vehicleId;
+  final VehicleDetails? details;
 
-  const VehicleDetailsTab({super.key, required this.vehicleId});
+  const VehicleDetailsTab({super.key, required this.vehicleId, this.details});
+
+  String _safe(String? value) {
+    if (value == null) return '-';
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '-' : trimmed;
+  }
+
+  String _withUnit(String? value, String unit) {
+    final safe = _safe(value);
+    if (safe == '-') return safe;
+    return safe.toLowerCase().contains(unit.toLowerCase())
+        ? safe
+        : '$safe $unit';
+  }
+
+  String _formatDate(String? value) {
+    final safe = _safe(value);
+    if (safe == '-') return safe;
+    final parsed = DateTime.tryParse(safe);
+    if (parsed == null) return safe;
+    final local = parsed.toLocal();
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = months[local.month - 1];
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = (local.hour % 12 == 0 ? 12 : local.hour % 12)
+        .toString()
+        .padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    final suffix = local.hour >= 12 ? 'PM' : 'AM';
+    return '$day $month ${local.year} • $hour:$minute $suffix';
+  }
+
+  String _daysRemaining(String? value) {
+    final safe = _safe(value);
+    if (safe == '-') return '-';
+    final parsed = DateTime.tryParse(safe);
+    if (parsed == null) return '-';
+    final days = parsed.difference(DateTime.now()).inDays;
+    if (days < 0) return 'Expired';
+    if (days == 0) return 'Expires today';
+    if (days == 1) return '1 day remaining';
+    return '$days days remaining';
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
+    final detail = details;
+
+    final speed = _withUnit(detail?.speed, 'km/h');
+    final ignition = _safe(detail?.ignition);
+    final engineHours = _withUnit(detail?.engineHours, 'h');
+    final odometer = _withUnit(detail?.odometer, 'km');
+    final vin = _safe(detail?.vin);
+    final imei = _safe(detail?.imei);
+    final timezone = _safe(detail?.gmtOffset);
+    final model = _safe(detail?.model);
+    final vehicleType = _safe(detail?.type);
+    final simNumber = _safe(detail?.simNumber);
+    final simProvider = _safe(detail?.simProviderName);
+    final ignitionSource = _safe(
+      (detail?.device ?? const <String, dynamic>{})['ignitionSource']
+          ?.toString(),
+    );
+    final planName = _safe(detail?.planName);
+    final planPrice = _safe(detail?.planPrice);
+    final planCurrency = _safe(detail?.planCurrency);
+    final planDays = _safe(detail?.planDurationDays);
+    final createdAt = _formatDate(
+      (detail?.data ?? const <String, dynamic>{})['createdAt']?.toString(),
+    );
+    final primaryExpiry = _formatDate(detail?.primaryExpiry);
+    final secondaryExpiry = _formatDate(detail?.secondaryExpiry);
+    final primaryUserName = _safe(detail?.primaryUserName);
+    final primaryUserEmail = _safe(detail?.primaryUserEmail);
+    final primaryUserUsername = _safe(detail?.primaryUserUsername);
+    final addedByName = _safe(detail?.addedByName);
+    final addedByEmail = _safe(detail?.addedByEmail);
+    final addedByUsername = _safe(detail?.addedByUsername);
+    final driverName = _safe(detail?.driverName);
+    final driverEmail = _safe(detail?.driverEmail);
+    final driverPhone = _safe(detail?.driverPhone);
+    final lastSeen = _formatDate(detail?.lastSeen);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStatsContainer(context, colorScheme, width),
+        _buildStatsContainer(
+          context,
+          colorScheme,
+          width,
+          speed: speed,
+          ignition: ignition,
+          engineHours: engineHours,
+          odometer: odometer,
+        ),
         const SizedBox(height: 20),
-        _buildIdentifiersContainer(context, colorScheme, width),
+        _buildIdentifiersContainer(
+          context,
+          colorScheme,
+          width,
+          vin: vin,
+          imei: imei,
+          timezone: timezone,
+        ),
         const SizedBox(height: 20),
-        _buildMetaContainer(colorScheme, width),
+        _buildMetaContainer(
+          colorScheme,
+          width,
+          model: model,
+          vehicleType: vehicleType,
+          simNumber: simNumber,
+          simProvider: simProvider,
+        ),
         const SizedBox(height: 20),
-        _buildSignalFixSection(colorScheme, width),
+        _buildDeviceSection(
+          colorScheme,
+          width,
+          ignitionSource: ignitionSource,
+          planName: planName,
+          planPrice: planPrice,
+          planCurrency: planCurrency,
+          planDays: planDays,
+          createdAt: createdAt,
+        ),
         const SizedBox(height: 20),
-        _buildPowerBatterySection(colorScheme, width),
+        _buildSubscriptionSection(
+          colorScheme,
+          width,
+          primaryExpiry: primaryExpiry,
+          secondaryExpiry: secondaryExpiry,
+          primaryRemaining: _daysRemaining(detail?.primaryExpiry),
+          secondaryRemaining: _daysRemaining(detail?.secondaryExpiry),
+        ),
         const SizedBox(height: 20),
-        _buildSubscriptionSection(colorScheme, width),
+        _buildPeopleSection(
+          colorScheme,
+          width,
+          primaryUserName: primaryUserName,
+          primaryUserEmail: primaryUserEmail,
+          primaryUserUsername: primaryUserUsername,
+          addedByName: addedByName,
+          addedByEmail: addedByEmail,
+          addedByUsername: addedByUsername,
+          driverName: driverName,
+          driverEmail: driverEmail,
+          driverPhone: driverPhone,
+        ),
         const SizedBox(height: 20),
-        _buildPeopleSection(colorScheme, width),
-        const SizedBox(height: 20),
-        _buildRecentEventsContainer(colorScheme, width),
+        _buildRecentEventsContainer(
+          colorScheme,
+          width,
+          createdAt: createdAt,
+          lastSeen: lastSeen,
+          primaryExpiry: primaryExpiry,
+          secondaryExpiry: secondaryExpiry,
+        ),
         const SizedBox(height: 24),
         DeleteVehicleBox(vehicleId: vehicleId),
         const SizedBox(height: 40),
@@ -92,8 +242,12 @@ class VehicleDetailsTab extends StatelessWidget {
   Widget _buildStatsContainer(
     BuildContext context,
     ColorScheme scheme,
-    double width,
-  ) {
+    double width, {
+    required String speed,
+    required String ignition,
+    required String engineHours,
+    required String odometer,
+  }) {
     return _card(
       scheme,
       Column(
@@ -104,19 +258,13 @@ class VehicleDetailsTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatItem("SPEED", "62 km/h", width, context),
-              _buildStatItem("IGNITION", "ON", width, context),
-              _buildStatItem("ENGINE HOURS", "1820.5 h", width, context),
+              _buildStatItem("SPEED", speed, width, context),
+              _buildStatItem("IGNITION", ignition, width, context),
+              _buildStatItem("ENGINE HOURS", engineHours, width, context),
             ],
           ),
           const SizedBox(height: 10),
-          _buildStatItem(
-            "ODOMETER",
-            "148,520.7 km",
-            width,
-            context,
-            fullWidth: true,
-          ),
+          _buildStatItem("ODOMETER", odometer, width, context, fullWidth: true),
         ],
       ),
     );
@@ -161,8 +309,11 @@ class VehicleDetailsTab extends StatelessWidget {
   Widget _buildIdentifiersContainer(
     BuildContext context,
     ColorScheme scheme,
-    double width,
-  ) {
+    double width, {
+    required String vin,
+    required String imei,
+    required String timezone,
+  }) {
     return _card(
       scheme,
       Column(
@@ -170,11 +321,11 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           _buildSectionHeader(Icons.badge, "IDENTIFIERS", scheme, width),
           const SizedBox(height: 12),
-          _identifier(context, "VIN", "MA1TA2C43J5K78901", width),
+          _identifier(context, "VIN", vin, width),
           const SizedBox(height: 8),
-          _identifier(context, "IMEI", "358920108765431", width),
+          _identifier(context, "IMEI", imei, width),
           const SizedBox(height: 8),
-          _identifier(context, "Timezone", "+05:30", width, showCopy: false),
+          _identifier(context, "Timezone", timezone, width, showCopy: false),
         ],
       ),
     );
@@ -234,8 +385,14 @@ class VehicleDetailsTab extends StatelessWidget {
     );
   }
 
-  // META
-  Widget _buildMetaContainer(ColorScheme scheme, double width) {
+  Widget _buildMetaContainer(
+    ColorScheme scheme,
+    double width, {
+    required String model,
+    required String vehicleType,
+    required String simNumber,
+    required String simProvider,
+  }) {
     return _card(
       scheme,
       Column(
@@ -243,20 +400,13 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           _buildSectionHeader(Icons.list_alt, "VEHICLE META", scheme, width),
           const SizedBox(height: 12),
-          _metaRow(
-            "Fuel Type",
-            "Diesel",
-            "Axle Count",
-            "2 Axles",
-            width,
-            scheme,
-          ),
+          _metaRow("Model", model, "Type", vehicleType, width, scheme),
           const SizedBox(height: 8),
           _metaRow(
-            "GPS Module",
-            "vv2.1",
-            "Custom Color",
-            "Matte Black",
+            "SIM Number",
+            simNumber,
+            "Provider",
+            simProvider,
             width,
             scheme,
           ),
@@ -318,22 +468,45 @@ class VehicleDetailsTab extends StatelessWidget {
     );
   }
 
-  // SIGNAL & FIX
-  Widget _buildSignalFixSection(ColorScheme scheme, double width) {
+  Widget _buildDeviceSection(
+    ColorScheme scheme,
+    double width, {
+    required String ignitionSource,
+    required String planName,
+    required String planPrice,
+    required String planCurrency,
+    required String planDays,
+    required String createdAt,
+  }) {
     return _card(
       scheme,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(Icons.gps_fixed, "SIGNAL & FIX", scheme, width),
+          _buildSectionHeader(Icons.memory, "DEVICE & PLAN", scheme, width),
           const SizedBox(height: 12),
-          _statRow("Satellites", "9", width, scheme),
+          _statRow("Ignition Source", ignitionSource, width, scheme),
           const SizedBox(height: 6),
-          _statRow("HDOP", "0.8", width, scheme),
+          _statRow("Plan", planName, width, scheme),
           const SizedBox(height: 6),
-          _statRow("Fix", "3D", width, scheme),
-          const SizedBox(height: 12),
-          _hdopIndicator(0.8, scheme),
+          _statRow(
+            "Price",
+            planPrice == '-'
+                ? '-'
+                : '$planPrice ${planCurrency == '-' ? '' : planCurrency}'
+                      .trim(),
+            width,
+            scheme,
+          ),
+          const SizedBox(height: 6),
+          _statRow(
+            "Duration",
+            planDays == '-' ? '-' : '$planDays days',
+            width,
+            scheme,
+          ),
+          const SizedBox(height: 6),
+          _statRow("Created", createdAt, width, scheme),
         ],
       ),
     );
@@ -347,74 +520,41 @@ class VehicleDetailsTab extends StatelessWidget {
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
-            color: scheme.onSurface.withOpacity(0.6),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
+              color: scheme.onSurface.withOpacity(0.6),
+            ),
           ),
         ),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
+              fontWeight: FontWeight.bold,
+              color: scheme.onSurface,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _hdopIndicator(double hdop, ColorScheme scheme) {
-    double percent = (2 - hdop) / 2;
-    percent = percent.clamp(0, 1);
-    return LinearProgressIndicator(
-      value: percent,
-      minHeight: 6,
-      backgroundColor: scheme.surfaceVariant,
-      color: scheme.primary,
-    );
-  }
-
-  // POWER & BATTERY
-  Widget _buildPowerBatterySection(ColorScheme scheme, double width) {
-    return _card(
-      scheme,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(
-            Icons.battery_6_bar,
-            "POWER & BATTERY",
-            scheme,
-            width,
-          ),
-          const SizedBox(height: 12),
-          _statRow("Battery (V)", "12.6", width, scheme),
-          const SizedBox(height: 6),
-          _statRow("External (V)", "13.8", width, scheme),
-          const SizedBox(height: 12),
-          _powerIndicator(12.6, scheme),
-        ],
-      ),
-    );
-  }
-
-  Widget _powerIndicator(double voltage, ColorScheme scheme) {
-    double percent = (voltage - 10) / 4;
-    percent = percent.clamp(0, 1);
-    return LinearProgressIndicator(
-      value: percent,
-      minHeight: 6,
-      backgroundColor: scheme.surfaceVariant,
-      color: scheme.primary,
-    );
-  }
-
-  // SUBSCRIPTION
-  Widget _buildSubscriptionSection(ColorScheme scheme, double width) {
+  Widget _buildSubscriptionSection(
+    ColorScheme scheme,
+    double width, {
+    required String primaryExpiry,
+    required String secondaryExpiry,
+    required String primaryRemaining,
+    required String secondaryRemaining,
+  }) {
     return _card(
       scheme,
       Column(
@@ -427,17 +567,15 @@ class VehicleDetailsTab extends StatelessWidget {
             width,
           ),
           const SizedBox(height: 12),
-          _subRow("Primary", "2026-08-31", "271 days remaining", width, scheme),
+          _subRow("Primary", primaryExpiry, primaryRemaining, width, scheme),
           const SizedBox(height: 8),
           _subRow(
             "Secondary",
-            "2026-12-31",
-            "393 days remaining",
+            secondaryExpiry,
+            secondaryRemaining,
             width,
             scheme,
           ),
-          const SizedBox(height: 12),
-          _subscriptionIndicator(271, scheme),
         ],
       ),
     );
@@ -489,18 +627,19 @@ class VehicleDetailsTab extends StatelessWidget {
     );
   }
 
-  Widget _subscriptionIndicator(int daysLeft, ColorScheme scheme) {
-    double percent = (daysLeft / 365).clamp(0, 1);
-    return LinearProgressIndicator(
-      value: percent,
-      minHeight: 6,
-      backgroundColor: scheme.surfaceVariant,
-      color: scheme.primary,
-    );
-  }
-
-  // PEOPLE
-  Widget _buildPeopleSection(ColorScheme scheme, double width) {
+  Widget _buildPeopleSection(
+    ColorScheme scheme,
+    double width, {
+    required String primaryUserName,
+    required String primaryUserEmail,
+    required String primaryUserUsername,
+    required String addedByName,
+    required String addedByEmail,
+    required String addedByUsername,
+    required String driverName,
+    required String driverEmail,
+    required String driverPhone,
+  }) {
     return _card(
       scheme,
       Column(
@@ -510,23 +649,35 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 12),
           _buildPersonBlock(
             "Primary User",
-            "Akash Kumar",
-            "akash.kumar@example.com",
-            "+91 9810012345",
-            "@akash.k",
+            primaryUserName,
+            primaryUserEmail,
+            '-',
+            primaryUserUsername == '-' ? '-' : '@$primaryUserUsername',
             width,
             scheme,
           ),
           const SizedBox(height: 16),
           _buildPersonBlock(
             "Added By",
-            "Vinod Singh",
-            "vinod.singh@example.com",
-            "+91 9899011122",
-            "@vinod.s",
+            addedByName,
+            addedByEmail,
+            '-',
+            addedByUsername == '-' ? '-' : '@$addedByUsername',
             width,
             scheme,
           ),
+          if (driverName != '-') ...[
+            const SizedBox(height: 16),
+            _buildPersonBlock(
+              "Driver",
+              driverName,
+              driverEmail,
+              driverPhone,
+              '-',
+              width,
+              scheme,
+            ),
+          ],
         ],
       ),
     );
@@ -565,29 +716,39 @@ class VehicleDetailsTab extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            email,
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
-              color: scheme.onSurface.withOpacity(0.7),
+          if (email != '-') ...[
+            const SizedBox(height: 2),
+            Text(
+              email,
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
+                color: scheme.onSurface.withOpacity(0.7),
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            "$phone • $username",
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
-              color: scheme.onSurface.withOpacity(0.7),
+          ],
+          if (phone != '-' || username != '-') ...[
+            const SizedBox(height: 2),
+            Text(
+              [phone, username].where((v) => v != '-').join(' • '),
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
+                color: scheme.onSurface.withOpacity(0.7),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  // RECENT EVENTS
-  Widget _buildRecentEventsContainer(ColorScheme scheme, double width) {
+  Widget _buildRecentEventsContainer(
+    ColorScheme scheme,
+    double width, {
+    required String createdAt,
+    required String lastSeen,
+    required String primaryExpiry,
+    required String secondaryExpiry,
+  }) {
     return _card(
       scheme,
       Column(
@@ -595,11 +756,19 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           _buildSectionHeader(Icons.history, "RECENT EVENTS", scheme, width),
           const SizedBox(height: 12),
-          _buildEventItem("Location ping", "47d ago", width, scheme),
-          const Divider(height: 16),
-          _buildEventItem("Ignition ON", "~", width, scheme),
-          const Divider(height: 16),
-          _buildEventItem("Speed updated", "", width, scheme),
+          _buildEventItem("Vehicle created", createdAt, width, scheme),
+          if (lastSeen != '-') ...[
+            const Divider(height: 16),
+            _buildEventItem("Last update", lastSeen, width, scheme),
+          ],
+          if (primaryExpiry != '-') ...[
+            const Divider(height: 16),
+            _buildEventItem("Primary expiry", primaryExpiry, width, scheme),
+          ],
+          if (secondaryExpiry != '-') ...[
+            const Divider(height: 16),
+            _buildEventItem("Secondary expiry", secondaryExpiry, width, scheme),
+          ],
         ],
       ),
     );
@@ -780,12 +949,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
                       width: 12,
                       height: 12,
                       child: _submitting
-                          ? CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.error,
-                              ),
-                            )
+                          ? const AppShimmer(width: 12, height: 12, radius: 6)
                           : const SizedBox.shrink(),
                     ),
                     if (_submitting) const SizedBox(width: 8),

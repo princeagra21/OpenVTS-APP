@@ -1,4 +1,11 @@
-// screens/drivers/add_driver_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/common_repository.dart';
+import 'package:fleet_stack/core/repositories/user_drivers_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +18,22 @@ class AddDriverScreen extends StatefulWidget {
 }
 
 class _AddDriverScreenState extends State<AddDriverScreen> {
+  // FleetStack-API-Reference.md + Postman confirmed:
+  // - GET /mobileprefix
+  // - GET /countries
+  // - POST /user/drivers
+  //
+  // Confirmed payload keys:
+  // - name
+  // - mobilePrefix
+  // - mobile
+  // - email
+  // - username
+  // - password
+  // - countryCode
+  // - stateCode
+  // - city
+  // - address
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
@@ -18,25 +41,289 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _countryController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
+  ApiClient? _apiClient;
+  CommonRepository? _commonRepo;
+  UserDriversRepository? _repo;
+  CancelToken? _refsToken;
+  CancelToken? _saveToken;
+
   bool _obscurePassword = true;
+  bool _loadingRefs = false;
+  bool _saving = false;
+  bool _refsErrorShown = false;
+  bool _saveErrorShown = false;
+  List<CountryOption> _countries = const <CountryOption>[];
+  List<MobilePrefixOption> _prefixes = const <MobilePrefixOption>[];
+  CountryOption? _selectedCountry;
+  MobilePrefixOption? _selectedPrefix;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReferences();
+  }
 
   @override
   void dispose() {
+    _refsToken?.cancel('Add driver disposed');
+    _saveToken?.cancel('Add driver disposed');
     _nameController.dispose();
     _mobileController.dispose();
     _emailController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
-    _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  UserDriversRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= UserDriversRepository(api: _apiClient!);
+    return _repo!;
+  }
+
+  CommonRepository _commonRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _commonRepo ??= CommonRepository(api: _apiClient!);
+    return _commonRepo!;
+  }
+
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  String _normalizePrefix(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return '';
+    if (trimmed.startsWith('++')) {
+      return '+${trimmed.substring(2)}';
+    }
+    return trimmed;
+  }
+
+  Future<void> _loadReferences() async {
+    _refsToken?.cancel('Reload add driver references');
+    final token = CancelToken();
+    _refsToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingRefs = true);
+
+    final common = _commonRepoOrCreate();
+    final countriesRes = await common.getCountries(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    final prefixesRes = await common.getMobilePrefixes(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+
+    if (countriesRes.isSuccess && prefixesRes.isSuccess) {
+      final countries = countriesRes.data ?? const <CountryOption>[];
+      final prefixes = prefixesRes.data ?? const <MobilePrefixOption>[];
+
+      CountryOption? selectedCountry;
+      for (final item in countries) {
+        if (item.isoCode == 'IN') {
+          selectedCountry = item;
+          break;
+        }
+      }
+      selectedCountry ??= countries.isNotEmpty ? countries.first : null;
+
+      MobilePrefixOption? selectedPrefix;
+      if (selectedCountry != null) {
+        for (final item in prefixes) {
+          if (item.countryCode == selectedCountry.isoCode) {
+            selectedPrefix = item;
+            break;
+          }
+        }
+      }
+      selectedPrefix ??= prefixes.isNotEmpty ? prefixes.first : null;
+
+      if (!mounted) return;
+      setState(() {
+        _countries = countries;
+        _prefixes = prefixes;
+        _selectedCountry = selectedCountry;
+        _selectedPrefix = selectedPrefix;
+        _loadingRefs = false;
+        _refsErrorShown = false;
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _loadingRefs = false);
+    if (_refsErrorShown) return;
+    _refsErrorShown = true;
+    final error = countriesRes.error ?? prefixesRes.error;
+    final msg = error is ApiException && error.message.trim().isNotEmpty
+        ? error.message
+        : "Couldn't load country references.";
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<T?> _showOptionPicker<T>({
+    required String title,
+    required List<T> items,
+    required String Function(T item) labelFor,
+  }) async {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) {
+        final searchController = TextEditingController();
+        String query = '';
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filtered = items.where((item) {
+              return labelFor(item).toLowerCase().contains(query.toLowerCase());
+            }).toList();
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.75,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: searchController,
+                      onChanged: (value) => setSheetState(() => query = value),
+                      decoration: const InputDecoration(
+                        hintText: 'Search',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final item = filtered[index];
+                          return ListTile(
+                            title: Text(labelFor(item)),
+                            onTap: () => Navigator.pop(ctx, item),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _pickPrefix() async {
+    if (_loadingRefs || _prefixes.isEmpty) return;
+    final picked = await _showOptionPicker<MobilePrefixOption>(
+      title: 'Select Mobile Prefix',
+      items: _prefixes,
+      labelFor: (item) =>
+          '${_normalizePrefix(item.code)} (${item.countryCode})',
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _selectedPrefix = picked;
+      for (final country in _countries) {
+        if (country.isoCode == picked.countryCode) {
+          _selectedCountry = country;
+          break;
+        }
+      }
+    });
+  }
+
+  Future<void> _pickCountry() async {
+    if (_loadingRefs || _countries.isEmpty) return;
+    final picked = await _showOptionPicker<CountryOption>(
+      title: 'Select Country',
+      items: _countries,
+      labelFor: (item) => '${item.name} (${item.isoCode})',
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _selectedCountry = picked;
+      for (final prefix in _prefixes) {
+        if (prefix.countryCode == picked.isoCode) {
+          _selectedPrefix = prefix;
+          break;
+        }
+      }
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_saving) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    final payload = <String, dynamic>{
+      'name': _nameController.text.trim(),
+      'mobilePrefix': _normalizePrefix(_selectedPrefix?.code ?? '+91'),
+      'mobile': _mobileController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+      'email': _emailController.text.trim(),
+      'username': _usernameController.text.trim(),
+      'password': _passwordController.text,
+      'countryCode': (_selectedCountry?.isoCode ?? '').trim(),
+      'stateCode': _stateController.text.trim(),
+      'city': _cityController.text.trim(),
+      'address': _addressController.text.trim(),
+    };
+
+    _saveToken?.cancel('Restart add driver');
+    final token = CancelToken();
+    _saveToken = token;
+
+    if (!mounted) return;
+    setState(() {
+      _saving = true;
+      _saveErrorShown = false;
+    });
+
+    final result = await _repoOrCreate().createDriver(
+      payload,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (_) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Driver added')));
+        Navigator.pop(context, true);
+      },
+      failure: (error) {
+        setState(() => _saving = false);
+        if (_isCancelled(error) || _saveErrorShown) return;
+        _saveErrorShown = true;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't add driver.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
   }
 
   @override
@@ -53,12 +340,11 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── HEADER ─────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Add New Driver",
+                    'Add New Driver',
                     style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
@@ -68,12 +354,10 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
                     onPressed: () => Navigator.pop(context),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // ─── FORM ───────────────────────────────
               Expanded(
                 child: Form(
                   key: _formKey,
@@ -81,63 +365,95 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                     child: Column(
                       children: [
                         StylishTextField(
-                          label: "Enter full name *",
-                          hint: "Full name",
+                          label: 'Enter full name *',
+                          hint: 'Full name',
                           controller: _nameController,
                           prefixIcon: Icons.person,
-                          validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
-                        StylishTextField(
-                          label: "Enter mobile number *",
-                          hint: "Mobile number",
-                          controller: _mobileController,
-                          prefixIcon: Icons.phone,
-                          keyboardType: TextInputType.phone,
-                          validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                          width: w,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Enter mobile number *',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600,
+                                fontSize: AdaptiveUtils.getTitleFontSize(w),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _loadingRefs
+                                    ? const AppShimmer(
+                                        width: 110,
+                                        height: 55,
+                                        radius: 16,
+                                      )
+                                    : _SelectionField(
+                                        value: _normalizePrefix(
+                                          _selectedPrefix?.code ?? '+91',
+                                        ),
+                                        icon: Icons.add_call,
+                                        width: 110,
+                                        onTap: _pickPrefix,
+                                      ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: StylishTextField(
+                                    label: '',
+                                    hint: 'Mobile number',
+                                    controller: _mobileController,
+                                    prefixIcon: Icons.phone,
+                                    keyboardType: TextInputType.phone,
+                                    validator: (v) => v == null || v.isEmpty
+                                        ? 'Required'
+                                        : null,
+                                    width: w,
+                                    hideLabel: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Enter email address *",
-                          hint: "Email address",
+                          label: 'Enter email address *',
+                          hint: 'Email address',
                           controller: _emailController,
                           prefixIcon: Icons.email,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
-                            if (v == null || v.isEmpty) return "Required";
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
-                              return "Invalid email";
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (!RegExp(
+                              r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$',
+                            ).hasMatch(v)) {
+                              return 'Invalid email';
                             }
                             return null;
                           },
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Enter username *",
-                          hint: "Username",
+                          label: 'Enter username *',
+                          hint: 'Username',
                           controller: _usernameController,
                           prefixIcon: Icons.account_circle,
-                          validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
-                        // PASSWORD FIELD WITH TOGGLE
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Enter password *",
+                              'Enter password *',
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: AdaptiveUtils.getTitleFontSize(w),
@@ -149,121 +465,155 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                               child: TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                validator: (v) =>
+                                    v == null || v.isEmpty ? 'Required' : null,
                                 decoration: InputDecoration(
                                   fillColor: cs.surface,
                                   filled: true,
-                                  hintText: "Password",
+                                  hintText: 'Password',
                                   hintStyle: GoogleFonts.inter(
                                     color: cs.onSurface.withOpacity(0.6),
                                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                                   ),
-                                  prefixIcon: Icon(Icons.lock, color: cs.primary),
+                                  prefixIcon: Icon(
+                                    Icons.lock,
+                                    color: cs.primary,
+                                  ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: cs.primary,
                                     ),
-                                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                    onPressed: () => setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    ),
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+                                    borderSide: BorderSide(
+                                      color: cs.outline.withOpacity(0.3),
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: cs.primary, width: 2),
+                                    borderSide: BorderSide(
+                                      color: cs.primary,
+                                      width: 2,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 16),
-
-                        StylishTextField(
-                          label: "Enter country",
-                          hint: "Country",
-                          controller: _countryController,
-                          prefixIcon: Icons.flag,
-                          width: w,
-                        ),
-
+                        _loadingRefs
+                            ? const AppShimmer(
+                                width: double.infinity,
+                                height: 55,
+                                radius: 16,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Country',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AdaptiveUtils.getTitleFontSize(
+                                        w,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _SelectionField(
+                                    value: _selectedCountry == null
+                                        ? 'Select country'
+                                        : '${_selectedCountry!.name} (${_selectedCountry!.isoCode})',
+                                    icon: Icons.flag,
+                                    width: double.infinity,
+                                    onTap: _pickCountry,
+                                  ),
+                                ],
+                              ),
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Enter state",
-                          hint: "State",
+                          label: 'Enter state',
+                          hint: 'State code',
                           controller: _stateController,
                           prefixIcon: Icons.location_on,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Enter city",
-                          hint: "City",
+                          label: 'Enter city',
+                          hint: 'City',
                           controller: _cityController,
                           prefixIcon: Icons.location_city,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Enter full address",
-                          hint: "Full address",
+                          label: 'Enter full address',
+                          hint: 'Full address',
                           controller: _addressController,
                           prefixIcon: Icons.home,
                           maxLines: 3,
                           width: w,
                         ),
-
                         const SizedBox(height: 32),
-
-                        // ─── ACTION BUTTONS ─────────────────
                         Row(
                           children: [
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: _saving
+                                    ? null
+                                    : () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(color: cs.primary.withOpacity(0.2)),
+                                    side: BorderSide(
+                                      color: cs.primary.withOpacity(0.2),
+                                    ),
                                   ),
                                 ),
                                 child: Text(
-                                  "Cancel",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  'Cancel',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    // SUBMIT LOGIC: Add driver
-                                    Navigator.pop(context);
-                                  }
-                                },
+                                onPressed: _saving ? null : _submit,
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                                child: Text(
-                                  "Add Driver",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                                ),
+                                child: _saving
+                                    ? const AppShimmer(
+                                        width: 62,
+                                        height: 14,
+                                        radius: 7,
+                                      )
+                                    : Text(
+                                        'Add Driver',
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                               ),
                             ),
                           ],
@@ -282,9 +632,6 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 }
 
-/// ───────────────────────────────────────────────
-/// STYLISH TEXT FIELD (Extended to support maxLines)
-/// ───────────────────────────────────────────────
 class StylishTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -294,6 +641,7 @@ class StylishTextField extends StatelessWidget {
   final double width;
   final TextInputType? keyboardType;
   final int maxLines;
+  final bool hideLabel;
 
   const StylishTextField({
     super.key,
@@ -305,6 +653,7 @@ class StylishTextField extends StatelessWidget {
     required this.width,
     this.keyboardType,
     this.maxLines = 1,
+    this.hideLabel = false,
   });
 
   @override
@@ -315,12 +664,13 @@ class StylishTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
-        ),
-        const SizedBox(height: 8),
+        if (!hideLabel) ...[
+          Text(
+            label,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          ),
+          const SizedBox(height: 8),
+        ],
         SizedBox(
           height: maxLines > 1 ? null : 55,
           child: TextFormField(
@@ -342,8 +692,7 @@ class StylishTextField extends StatelessWidget {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide:
-                    BorderSide(color: cs.outline.withOpacity(0.3)),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -353,6 +702,57 @@ class StylishTextField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SelectionField extends StatelessWidget {
+  final String value;
+  final IconData icon;
+  final double width;
+  final VoidCallback onTap;
+
+  const _SelectionField({
+    required this.value,
+    required this.icon,
+    required this.width,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: 55,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outline.withOpacity(0.3)),
+          color: cs.surface,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: cs.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width),
+                  color: cs.onSurface,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: cs.primary),
+          ],
+        ),
+      ),
     );
   }
 }

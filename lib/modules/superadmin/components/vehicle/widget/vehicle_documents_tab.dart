@@ -1,6 +1,7 @@
 // components/vehicle/vehicle_documents_tab.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fleet_stack/core/models/vehicle_document_item.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/widget/add_document.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/widget/file_card.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
@@ -19,49 +20,6 @@ class VehicleDocumentsTab extends StatefulWidget {
 
 class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
   late List<Map<String, dynamic>> _files;
-
-  final List<Map<String, dynamic>> _fallbackFiles = [
-    {
-      "fileName": "Vendor NDA (Traccar Integration).pdf",
-      "version": "v2",
-      "fileSize": "793.94 KB",
-      "type": "NDA / Confidentiality Agreement",
-      "tags": ["legal", "nda"],
-      "uploadedDate": "02 Dec 2025",
-      "expiryDate": "03 Dec 2025",
-      "status": "Expired",
-    },
-    {
-      "fileName": "Driver Employment Contract – Aarav Sharma.pdf",
-      "version": "v1",
-      "fileSize": "1023.55 KB",
-      "type": "Employment Contract",
-      "tags": ["hr", "driver"],
-      "uploadedDate": "01 Dec 2025",
-      "expiryDate": "19 Dec 2025",
-      "status": "Expiring · 15d",
-    },
-    {
-      "fileName": "Company PAN Certificate.pdf",
-      "version": "v3",
-      "fileSize": "340.41 KB",
-      "type": "PAN Card",
-      "tags": ["finance", "compliance"],
-      "uploadedDate": "22 Nov 2025",
-      "expiryDate": "18 Jan 2026",
-      "status": "Valid · 45d",
-    },
-    {
-      "fileName": "Insurance Policy – HQ Servers.docx",
-      "version": "v5",
-      "fileSize": "520 KB",
-      "type": "Insurance Policy",
-      "tags": ["ops", "infra"],
-      "uploadedDate": "04 Nov 2025",
-      "expiryDate": "—",
-      "status": "Valid",
-    },
-  ];
 
   @override
   void initState() {
@@ -84,19 +42,43 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
     final mapped = <Map<String, dynamic>>[];
     for (final d in items) {
       mapped.add({
-        "fileName": d.fileName.isNotEmpty ? d.fileName : '—',
+        "fileName": d.fileName.isNotEmpty ? d.fileName : 'Untitled document',
         "version": "v1",
-        "fileSize": d.sizeBytes > 0 ? '${d.sizeBytes} B' : '—',
-        "type": d.type,
+        "fileSize": _formatBytes(d.sizeBytes),
+        "rawSizeBytes": d.sizeBytes,
+        "type": d.type.isNotEmpty ? d.type : 'Document',
         "tags": const <String>[],
-        "uploadedDate": d.uploadedAt,
-        "expiryDate": d.expiresAt.isNotEmpty ? d.expiresAt : '—',
-        "status": d.status.isNotEmpty ? d.status : '—',
+        "uploadedDate": _displayValue(d.uploadedAt),
+        "expiryDate": _displayValue(d.expiresAt),
+        "status": _normalizedStatus(d.status),
       });
     }
-    return mapped.isEmpty
-        ? List<Map<String, dynamic>>.from(_fallbackFiles)
-        : mapped;
+    return mapped;
+  }
+
+  String _displayValue(String? value) {
+    if (value == null) return '—';
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '—' : trimmed;
+  }
+
+  String _normalizedStatus(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'Unknown';
+    return trimmed;
+  }
+
+  String _formatBytes(int sizeBytes) {
+    if (sizeBytes <= 0) return '—';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var size = sizeBytes.toDouble();
+    var unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    final decimals = size >= 100 ? 0 : 2;
+    return '${size.toStringAsFixed(decimals)} ${units[unitIndex]}';
   }
 
   @override
@@ -117,8 +99,12 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
         .where((f) => f['status'].toString().startsWith("Expired"))
         .length;
 
-    final double usedStorage = 3.12;
-    final double totalStorage = 5;
+    final int totalBytes = files.fold<int>(
+      0,
+      (sum, file) => sum + ((file['rawSizeBytes'] as int?) ?? 0),
+    );
+    final double usedStorage = totalBytes / (1024 * 1024 * 1024);
+    final double totalStorage = usedStorage;
     final int totalDocs = files.length;
 
     return Column(
@@ -159,18 +145,8 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: widget.loading
-                            ? CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary,
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                      if (widget.loading)
+                        const AppShimmer(width: 12, height: 12, radius: 6),
                     ],
                   ),
                   InkWell(
@@ -285,7 +261,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(0)} GB",
+                          "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(2)} GB",
                           style: GoogleFonts.inter(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 2,
@@ -298,20 +274,25 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                           height: 90,
                           child: PieChart(
                             PieChartData(
-                              sections: [
-                                PieChartSectionData(
-                                  value: usedStorage,
-                                  color: colorScheme.primary,
-                                  radius: 18,
-                                  showTitle: false,
-                                ),
-                                PieChartSectionData(
-                                  value: totalStorage - usedStorage,
-                                  color: colorScheme.surfaceVariant,
-                                  radius: 18,
-                                  showTitle: false,
-                                ),
-                              ],
+                              sections: totalDocs == 0
+                                  ? [
+                                      PieChartSectionData(
+                                        value: 1,
+                                        color: colorScheme.surfaceVariant,
+                                        radius: 18,
+                                        showTitle: false,
+                                      ),
+                                    ]
+                                  : [
+                                      PieChartSectionData(
+                                        value: usedStorage <= 0
+                                            ? 1
+                                            : usedStorage,
+                                        color: colorScheme.primary,
+                                        radius: 18,
+                                        showTitle: false,
+                                      ),
+                                    ],
                               startDegreeOffset: -90,
                               sectionsSpace: 0,
                               centerSpaceRadius: 0,
@@ -334,12 +315,6 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                         Row(
                           children: [
                             _legendItem(context, colorScheme.primary, "Used"),
-                            const SizedBox(width: 16),
-                            _legendItem(
-                              context,
-                              colorScheme.surfaceVariant,
-                              "Remaining",
-                            ),
                           ],
                         ),
                       ],
@@ -351,21 +326,59 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
           ),
         ),
         const SizedBox(height: 24),
-        ...files.map(
-          (file) => Padding(
-            padding: EdgeInsets.only(bottom: hp / 2),
-            child: FileCard(
-              fileName: file['fileName'],
-              version: file['version'],
-              fileSize: file['fileSize'],
-              type: file['type'],
-              tags: List<String>.from(file['tags']),
-              uploadedDate: file['uploadedDate'],
-              expiryDate: file['expiryDate'],
-              status: file['status'],
+        if (files.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No documents found',
+                  style: GoogleFonts.inter(
+                    fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'This vehicle has no uploaded documents in the current API response.',
+                  style: GoogleFonts.inter(
+                    fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...files.map(
+            (file) => Padding(
+              padding: EdgeInsets.only(bottom: hp / 2),
+              child: FileCard(
+                fileName: file['fileName'],
+                version: file['version'],
+                fileSize: file['fileSize'],
+                type: file['type'],
+                tags: List<String>.from(file['tags']),
+                uploadedDate: file['uploadedDate'],
+                expiryDate: file['expiryDate'],
+                status: file['status'],
+              ),
             ),
           ),
-        ),
       ],
     );
   }

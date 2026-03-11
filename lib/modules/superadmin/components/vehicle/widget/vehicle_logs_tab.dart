@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -242,12 +243,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                     width: 12,
                     height: 12,
                     child: _loading
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
-                          )
+                        ? const AppShimmer(width: 12, height: 12, radius: 6)
                         : const SizedBox.shrink(),
                   ),
                 ],

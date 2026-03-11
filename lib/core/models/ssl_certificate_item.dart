@@ -22,6 +22,27 @@ class SslCertificateItem {
   String get status =>
       _string(raw['status'] ?? raw['state'] ?? raw['sslStatus']);
 
+  String get issuer => _string(raw['issuer'] ?? raw['certificateIssuer']);
+
+  String get validFrom =>
+      _string(raw['validFrom'] ?? raw['issuedAt'] ?? raw['notBefore']);
+
+  String get validTo =>
+      _string(raw['validTo'] ?? raw['expiresAt'] ?? raw['notAfter']);
+
+  int? get daysRemaining {
+    final value = raw['daysRemaining'] ?? raw['remainingDays'];
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.round();
+    return int.tryParse(value.toString());
+  }
+
+  String get error => _string(raw['error'] ?? raw['message'] ?? raw['details']);
+
+  String get companyName =>
+      _string(raw['companyName'] ?? raw['company'] ?? raw['organization']);
+
   String get expiryText => _string(
     raw['expiry'] ??
         raw['expiresAt'] ??
@@ -36,7 +57,8 @@ class SslCertificateItem {
         raw['expiresAt'] ??
         raw['expirationDate'] ??
         raw['validTill'] ??
-        raw['validTo'];
+        raw['validTo'] ??
+        raw['notAfter'];
     if (rawValue == null) return null;
     if (rawValue is DateTime) return rawValue;
 

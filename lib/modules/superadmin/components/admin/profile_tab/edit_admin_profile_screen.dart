@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,17 +21,30 @@ class EditAdminProfileScreen extends StatefulWidget {
 }
 
 class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
-  final TextEditingController _nameController =
-      TextEditingController(text: "Muhammad Sani Yusuf");
-  final TextEditingController _emailController =
-      TextEditingController(text: "Muhammad@fleetstackglobal.com");
-  final TextEditingController _phoneController = TextEditingController(text: "08012345678");
-  final TextEditingController _addressController =
-      TextEditingController(text: "No4 Dawakin Tofa Science Quarters");
-  final TextEditingController _stateController = TextEditingController(text: "KANO");
-  final TextEditingController _countryController = TextEditingController(text: "NG");
-  final TextEditingController _cityController = TextEditingController(text: "Kano City");
-  final TextEditingController _pincodeController = TextEditingController(text: "700001");
+  final TextEditingController _nameController = TextEditingController(
+    text: "Muhammad Sani Yusuf",
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: "Muhammad@fleetstackglobal.com",
+  );
+  final TextEditingController _phoneController = TextEditingController(
+    text: "08012345678",
+  );
+  final TextEditingController _addressController = TextEditingController(
+    text: "No4 Dawakin Tofa Science Quarters",
+  );
+  final TextEditingController _stateController = TextEditingController(
+    text: "KANO",
+  );
+  final TextEditingController _countryController = TextEditingController(
+    text: "NG",
+  );
+  final TextEditingController _cityController = TextEditingController(
+    text: "Kano City",
+  );
+  final TextEditingController _pincodeController = TextEditingController(
+    text: "700001",
+  );
 
   Country? _selectedCountry;
   bool _submitting = false;
@@ -48,7 +62,9 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       hintText: hint,
       hintStyle: GoogleFonts.inter(
         color: colorScheme.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       prefixIconConstraints: const BoxConstraints(minWidth: 48),
@@ -161,7 +177,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       }
 
       final err = res.error;
-      if (err is ApiException && (err.statusCode == 401 || err.statusCode == 403)) {
+      if (err is ApiException &&
+          (err.statusCode == 401 || err.statusCode == 403)) {
         _snackOnce('Not authorized to update profile.');
       } else {
         _snackOnce("Couldn't update profile.");
@@ -204,7 +221,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
@@ -229,10 +250,21 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Full Name
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                        decoration: _minimalDecoration(context, hint: "Full Name").copyWith(
-                          prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary, size: 22),
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
                         ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Full Name",
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.person_outline,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 16),
@@ -240,10 +272,18 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Email
                       TextField(
                         controller: _emailController,
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                        decoration: _minimalDecoration(context, hint: "Email").copyWith(
-                          prefixIcon: Icon(Icons.email_outlined, color: colorScheme.primary, size: 22),
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
                         ),
+                        decoration: _minimalDecoration(context, hint: "Email")
+                            .copyWith(
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 16),
@@ -262,30 +302,42 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                 },
                                 countryListTheme: CountryListThemeData(
                                   backgroundColor: colorScheme.surface,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
                                   inputDecoration: InputDecoration(
                                     hintText: 'Search',
                                     filled: true,
-                                    fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                                    fillColor: colorScheme.surfaceVariant
+                                        .withOpacity(0.3),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide.none,
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               );
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                               decoration: BoxDecoration(
-                                border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
+                                border: Border.all(
+                                  color: colorScheme.onSurface.withOpacity(0.1),
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (_selectedCountry != null) Text(_selectedCountry!.flagEmoji),
+                                  if (_selectedCountry != null)
+                                    Text(_selectedCountry!.flagEmoji),
                                   const SizedBox(width: 6),
                                   Text(
                                     _selectedCountry?.phoneCode ?? "234",
@@ -304,10 +356,21 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                              decoration: _minimalDecoration(context, hint: "Phone Number").copyWith(
-                                prefixIcon: Icon(Icons.phone_outlined, color: colorScheme.primary, size: 22),
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onSurface,
                               ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "Phone Number",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.phone_outlined,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],
@@ -318,10 +381,18 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Address
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                        decoration: _minimalDecoration(context, hint: "Address").copyWith(
-                          prefixIcon: Icon(Icons.location_on_outlined, color: colorScheme.primary, size: 22),
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
                         ),
+                        decoration: _minimalDecoration(context, hint: "Address")
+                            .copyWith(
+                              prefixIcon: Icon(
+                                Icons.location_on_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 16),
@@ -332,20 +403,42 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _countryController,
-                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                              decoration: _minimalDecoration(context, hint: "Country Code").copyWith(
-                                prefixIcon: Icon(Icons.public, color: colorScheme.primary, size: 22),
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onSurface,
                               ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "Country Code",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.public,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextField(
                               controller: _stateController,
-                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                              decoration: _minimalDecoration(context, hint: "State").copyWith(
-                                prefixIcon: Icon(Icons.flag_outlined, color: colorScheme.primary, size: 22),
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onSurface,
                               ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "State",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.flag_outlined,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],
@@ -359,10 +452,21 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _cityController,
-                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                              decoration: _minimalDecoration(context, hint: "City").copyWith(
-                                prefixIcon: Icon(Icons.location_city_outlined, color: colorScheme.primary, size: 22),
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onSurface,
                               ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "City",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.location_city_outlined,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -370,10 +474,21 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _pincodeController,
                               keyboardType: TextInputType.number,
-                              style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
-                              decoration: _minimalDecoration(context, hint: "Pincode").copyWith(
-                                prefixIcon: Icon(Icons.pin_drop_outlined, color: colorScheme.primary, size: 22),
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize,
+                                color: colorScheme.onSurface,
                               ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "Pincode",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.pin_drop_outlined,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],
@@ -393,15 +508,10 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           ),
                           child: Center(
                             child: _submitting
-                                ? SizedBox(
+                                ? const AppShimmer(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    ),
+                                    radius: 9,
                                   )
                                 : Text(
                                     "Save Changes",

@@ -18,6 +18,7 @@ class CustomBottomBar extends StatelessWidget {
     const List<String> hiddenRoutes = [
       '/admins/details',
       '/admin/vehicles/details/',
+      '/admin/drivers/details/',
       '/admin/profile',
       '/admin/white-label',
       '/admin/branding',
@@ -43,10 +44,8 @@ class CustomBottomBar extends StatelessWidget {
       }
     }
 
-    final double iconSize =
-        AdaptiveUtils.getIconSize(screenWidth) * 0.85;
-    final double buttonSize =
-        AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85;
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
     final double labelFontSize =
         AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
     final double topPadding =
@@ -56,19 +55,14 @@ class CustomBottomBar extends StatelessWidget {
 
     /// UPDATED ICONS
     final List<IconData> icons = [
-      CupertinoIcons.house_fill,          // Home
-      CupertinoIcons.map_fill,            // Map
-      CupertinoIcons.settings,     // Settings
-      CupertinoIcons.ellipsis_circle_fill // More
+      CupertinoIcons.house_fill, // Home
+      CupertinoIcons.map_fill, // Map
+      CupertinoIcons.settings, // Settings
+      CupertinoIcons.ellipsis_circle_fill, // More
     ];
 
     /// UPDATED LABELS
-    final List<String> labels = [
-      'Home',
-      'Map',
-      'settings',
-      'More',
-    ];
+    final List<String> labels = ['Home', 'Map', 'settings', 'More'];
 
     /// UPDATED ROUTES
     final List<String> routes = [

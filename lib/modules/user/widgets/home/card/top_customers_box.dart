@@ -1,149 +1,128 @@
-// components/top_customers_box.dart  // New file, similar to RecentActivityBox but adapted
+import 'package:fleet_stack/core/models/user_top_asset_item.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 
-class SmallTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color? selectedBackground;
+class TopCustomersBox extends StatelessWidget {
+  final bool loading;
+  final List<UserTopAssetItem> items;
 
-  const SmallTab({
+  const TopCustomersBox({
     super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.selectedBackground,
+    required this.loading,
+    required this.items,
   });
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildShimmerItem(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4;
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2;
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
-        decoration: BoxDecoration(
-          color: selected
-              ? (selectedBackground ?? colorScheme.primary)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.onSurface, width: 1),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            color: selected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface,
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: itemPadding),
+      child: Row(
+        children: [
+          SizedBox(width: itemPadding + 2),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(width: double.infinity, height: 14, radius: 8),
+                SizedBox(height: 8),
+                AppShimmer(width: 140, height: 12, radius: 8),
+              ],
+            ),
           ),
-        ),
+          SizedBox(width: itemPadding + 2),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: itemPadding + 2,
+              vertical: itemPadding - 2,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const AppShimmer(width: 58, height: 14, radius: 10),
+          ),
+        ],
       ),
     );
   }
-}
 
-class TopCustomersBox extends StatefulWidget {
-  const TopCustomersBox({super.key});
-
-  @override
-  State<TopCustomersBox> createState() => _TopCustomersBoxState();
-}
-
-class _TopCustomersBoxState extends State<TopCustomersBox> {
-  Map<String, Color> getTierColors(BuildContext context) {
+  Widget _buildAssetItem(
+    BuildContext context,
+    UserTopAssetItem item,
+    int index,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    return {
-      "Enterprise": colorScheme.primary,
-      "Pro": colorScheme.secondary,
-      "Growth": Colors.green,
-    };
-  }
+    final screenWidth = MediaQuery.of(context).size.width;
+    final mainFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-  late final List<Map<String, dynamic>> topCustomers;
-
-  @override
-  void initState() {
-    super.initState();
-
-    topCustomers = [
-      {"name": "Acme Logistics", "vehicles": "418", "tier": "Enterprise"},
-      {"name": "Northline", "vehicles": "126", "tier": "Pro"},
-      {"name": "Sunroad", "vehicles": "88", "tier": "Growth"},
-      {"name": "IndiTrans", "vehicles": "62", "tier": "Pro"},
+    final chipColors = [
+      colorScheme.primary,
+      colorScheme.secondary,
+      Colors.green,
+      Colors.orange,
     ];
-  }
-
-  Widget buildCustomerItem(Map<String, dynamic> customer) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double mainFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-
-    final tierColors = getTierColors(context);
-
-    final name = customer["name"] as String;
-    final initials = name.split(" ").map((e) => e[0]).take(2).join();
-
-    /*
-
-    final avatar = CircleAvatar(
-      radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-      backgroundColor: colorScheme.primary.withOpacity(0.1),
-      child: Text(initials,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary)),
-    );
-    */
+    final chipColor = chipColors[index % chipColors.length];
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name,
-            style: GoogleFonts.inter(
-                fontSize: mainFontSize,
-                fontWeight: FontWeight.w600)),
-        Text("${customer["vehicles"]} Vehicles",
-            style: GoogleFonts.inter(
-                fontSize: subFontSize,
-                color: colorScheme.onSurface.withOpacity(0.54))),
+        Text(
+          item.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            fontSize: mainFontSize,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          item.subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            fontSize: subFontSize,
+            color: colorScheme.onSurface.withOpacity(0.54),
+          ),
+        ),
       ],
     );
 
     final right = Container(
       padding: EdgeInsets.symmetric(
-          horizontal: itemPadding + 2,
-          vertical: itemPadding - 2),
+        horizontal: itemPadding + 2,
+        vertical: itemPadding - 2,
+      ),
       decoration: BoxDecoration(
-        color: tierColors[customer["tier"]],
+        color: chipColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(customer["tier"],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 110),
+        child: Text(
+          item.metricLabel,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: GoogleFonts.inter(
-              color: colorScheme.onPrimary,
-              fontSize: badgeFontSize)),
+            color: colorScheme.onPrimary,
+            fontSize: badgeFontSize,
+          ),
+        ),
+      ),
     );
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: itemPadding),
       child: Row(
         children: [
-        //  avatar,
           SizedBox(width: itemPadding + 2),
           Expanded(child: content),
           SizedBox(width: itemPadding + 2),
@@ -156,11 +135,10 @@ class _TopCustomersBoxState extends State<TopCustomersBox> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -182,7 +160,7 @@ class _TopCustomersBoxState extends State<TopCustomersBox> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Top Customers",
+                'Top Assets',
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
@@ -190,29 +168,48 @@ class _TopCustomersBoxState extends State<TopCustomersBox> {
                 ),
               ),
               InkWell(
-                onTap: () {
-                  context.push(
-                    '/admin/all-customers',
-                  );
-                },
-                child: Text("View all",
-                    style: GoogleFonts.inter(
-                        fontSize: linkFontSize,
-                        color: colorScheme.primary)),
+                onTap: () => context.push('/user/vehicles'),
+                child: Text(
+                  'View all',
+                  style: GoogleFonts.inter(
+                    fontSize: linkFontSize,
+                    color: colorScheme.primary,
+                  ),
+                ),
               ),
             ],
           ),
           SizedBox(height: padding),
           SizedBox(
             height: 320,
-            child: ListView.separated(
-              itemCount: topCustomers.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: colorScheme.onSurface.withOpacity(0.08),
-              ),
-              itemBuilder: (_, i) => buildCustomerItem(topCustomers[i]),
-            ),
+            child: loading
+                ? ListView.separated(
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, __) => _buildShimmerItem(context),
+                  )
+                : items.isEmpty
+                ? Center(
+                    child: Text(
+                      'No assets found',
+                      style: GoogleFonts.inter(
+                        color: colorScheme.onSurface.withOpacity(0.65),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, i) =>
+                        _buildAssetItem(context, items[i], i),
+                  ),
           ),
         ],
       ),

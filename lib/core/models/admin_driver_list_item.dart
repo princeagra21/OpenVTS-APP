@@ -25,8 +25,12 @@ class AdminDriverListItem {
 
   String get email => _firstString(const ['email', 'emailAddress']);
 
-  String get mobilePrefix =>
-      _firstString(const ['mobilePrefix', 'phonePrefix', 'countryCode']);
+  String get mobilePrefix => _firstString(const [
+    'mobilePrefix',
+    'mobileCode',
+    'phonePrefix',
+    'countryCode',
+  ]);
 
   String get mobileNumber =>
       _firstString(const ['mobile', 'mobileNumber', 'phoneNumber', 'phone']);
@@ -65,9 +69,18 @@ class AdminDriverListItem {
   }
 
   String get addressLocation {
-    final city = _firstString(const ['city']);
-    final state = _firstString(const ['state', 'stateName']);
-    final country = _firstString(const ['country', 'countryName']);
+    final city = _nestedString(
+      const ['city', 'cityId'],
+      nestedKeys: const ['address'],
+    );
+    final state = _nestedString(
+      const ['state', 'stateName', 'stateCode'],
+      nestedKeys: const ['address'],
+    );
+    final country = _nestedString(
+      const ['country', 'countryName', 'countryCode'],
+      nestedKeys: const ['address'],
+    );
 
     final merged = [
       city,
@@ -76,7 +89,11 @@ class AdminDriverListItem {
     ].map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     if (merged.isNotEmpty) return merged.join(', ');
 
-    return _firstString(const ['address', 'location']);
+    return _nestedString(
+      const ['fullAddress', 'addressLine'],
+      nestedKeys: const ['address'],
+      fallbackKeys: const ['address', 'location'],
+    );
   }
 
   String get lastActivityAt => _firstString(const [
@@ -94,6 +111,95 @@ class AdminDriverListItem {
     'licenseExpiry',
     'planExpiry',
   ]);
+
+  String get driverVehicleLabel {
+    final nested = raw['driverVehicle'];
+    if (nested is Map<String, dynamic>) {
+      final vehicleNode = nested['vehicle'] is Map
+          ? Map<String, dynamic>.from((nested['vehicle'] as Map).cast())
+          : nested;
+      final vehicleType = vehicleNode['vehicleType'];
+      final typeName = vehicleType is Map
+          ? _cleanText(
+              vehicleType['name'] ??
+                  vehicleType['title'] ??
+                  vehicleType['type'] ??
+                  vehicleType['slug'],
+            )
+          : '';
+      final base = _cleanText(
+        vehicleNode['plateNumber'] ??
+            vehicleNode['name'] ??
+            vehicleNode['vehicleName'] ??
+            vehicleNode['plate'] ??
+            vehicleNode['registrationNumber'],
+      );
+      if (base.isNotEmpty && typeName.isNotEmpty) return '$base • $typeName';
+      if (base.isNotEmpty) return base;
+      if (typeName.isNotEmpty) return typeName;
+    } else if (nested is Map) {
+      final map = Map<String, dynamic>.from(nested.cast());
+      final vehicleNode = map['vehicle'] is Map
+          ? Map<String, dynamic>.from((map['vehicle'] as Map).cast())
+          : map;
+      final vehicleType = vehicleNode['vehicleType'];
+      final typeName = vehicleType is Map
+          ? _cleanText(
+              vehicleType['name'] ??
+                  vehicleType['title'] ??
+                  vehicleType['type'] ??
+                  vehicleType['slug'],
+            )
+          : '';
+      final base = _cleanText(
+        vehicleNode['plateNumber'] ??
+            vehicleNode['name'] ??
+            vehicleNode['vehicleName'] ??
+            vehicleNode['plate'] ??
+            vehicleNode['registrationNumber'],
+      );
+      if (base.isNotEmpty && typeName.isNotEmpty) return '$base • $typeName';
+      if (base.isNotEmpty) return base;
+      if (typeName.isNotEmpty) return typeName;
+    }
+
+    final direct = _firstString(const [
+      'driverVehicleName',
+      'assignedVehicleName',
+      'vehicleName',
+      'vehicle',
+    ]);
+    if (direct.isNotEmpty) return direct;
+
+    final directType = _firstString(const [
+      'driverVehicleType',
+      'vehicleTypeName',
+      'vehicleType',
+      'type',
+    ]);
+    return directType;
+  }
+
+  String get primaryUserId {
+    final nested = raw['userPrimary'];
+    if (nested is Map) {
+      final uid = nested['uid'] ?? nested['id'] ?? nested['userId'];
+      final text = _cleanText(uid);
+      if (text.isNotEmpty) return text;
+    }
+    return _firstString(const ['primaryUserId', 'primaryUserid']);
+  }
+
+  String get primaryUserName {
+    final nested = raw['userPrimary'];
+    if (nested is Map) {
+      final text = _cleanText(
+        nested['name'] ?? nested['fullName'] ?? nested['username'],
+      );
+      if (text.isNotEmpty) return text;
+    }
+    return _firstString(const ['primaryUserName', 'userName', 'ownerName']);
+  }
 
   String get initials {
     final name = fullName.trim();
@@ -161,5 +267,44 @@ class AdminDriverListItem {
       if (s == 'false' || s == '0' || s == 'no') return false;
     }
     return null;
+  }
+
+  String _cleanText(Object? value) {
+    if (value == null) return '';
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return '';
+    return text;
+  }
+
+  String _nestedString(
+    List<String> keys, {
+    required List<String> nestedKeys,
+    List<String> fallbackKeys = const <String>[],
+  }) {
+    for (final nestedKey in nestedKeys) {
+      final nested = raw[nestedKey];
+      if (nested is Map<String, dynamic>) {
+        for (final key in keys) {
+          final value = nested[key];
+          final text = _cleanText(value);
+          if (text.isNotEmpty) return text;
+        }
+      } else if (nested is Map) {
+        final map = Map<String, dynamic>.from(nested.cast());
+        for (final key in keys) {
+          final value = map[key];
+          final text = _cleanText(value);
+          if (text.isNotEmpty) return text;
+        }
+      }
+    }
+
+    for (final key in fallbackKeys) {
+      final value = raw[key];
+      final text = _cleanText(value);
+      if (text.isNotEmpty) return text;
+    }
+
+    return '';
   }
 }

@@ -333,15 +333,10 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                 ),
                                 if (_loading) ...[
                                   const SizedBox(width: 8),
-                                  SizedBox(
+                                  const AppShimmer(
                                     width: 12,
                                     height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        cs.primary,
-                                      ),
-                                    ),
+                                    radius: 6,
                                   ),
                                 ],
                               ],

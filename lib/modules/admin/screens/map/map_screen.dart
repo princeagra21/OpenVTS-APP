@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../layout/app_layout.dart';
 
@@ -25,8 +26,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  static const String _mapTypePrefKey = 'admin_map_type';
+
   // Endpoint truth table (FleetStack-API-Reference.md + Postman):
   // - GET /admin/map-telemetry
+  // - GET /admin/vehicles/by-imei/:imei/trail
+  // - GET /admin/vehicles/by-imei/:imei/replay
   // Response keys handled in MapVehiclePoint:
   // - id/vehicleId, imei, plate/name, lat/lng, speed/status/heading
   final MapController _mapController = MapController();
@@ -34,12 +39,12 @@ class _MapScreenState extends State<MapScreen> {
 
   bool _showSearch = false;
 
-  final LatLng _initialCenter = const LatLng(6.5244, 3.3792);
+  final LatLng _initialCenter = const LatLng(28.6139, 77.2090);
   late LatLng _currentCenter;
   double _currentZoom = 13.0;
 
   String _mapMode = 'live';
-  String _mapType = 'standard';
+  String _mapType = 'satellite';
   bool _trafficEnabled = false;
   bool _controlPanelExpanded = false;
 
@@ -47,13 +52,20 @@ class _MapScreenState extends State<MapScreen> {
   final ExpansionTileController _mapTypeController = ExpansionTileController();
 
   List<MapVehiclePoint> _points = const <MapVehiclePoint>[];
+  List<MapVehiclePoint> _modePoints = const <MapVehiclePoint>[];
   bool _loading = false;
   bool _errorShown = false;
+  bool _modeErrorShown = false;
   bool _isLoadingGuard = false;
   String _query = '';
+  String _activeModeImei = '';
+  int _playbackIndex = 0;
+  DateTime? _lastModeHintAt;
 
   CancelToken? _token;
   Timer? _refreshTimer;
+  Timer? _playbackTimer;
+  Timer? _modeDebounce;
 
   ApiClient? _apiClient;
   AdminVehiclesRepository? _repo;
@@ -84,6 +96,232 @@ class _MapScreenState extends State<MapScreen> {
     }).toList();
   }
 
+  DateTime _safeParseDate(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+
+    final numeric = int.tryParse(value);
+    if (numeric != null) {
+      if (numeric > 1000000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          numeric,
+          isUtc: true,
+        ).toLocal();
+      }
+      if (numeric > 1000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          numeric * 1000,
+          isUtc: true,
+        ).toLocal();
+      }
+    }
+
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) return parsed.toLocal();
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  MapVehiclePoint? _resolveModeTarget() {
+    final visible = _filteredPoints
+        .where((p) => p.imei.trim().isNotEmpty)
+        .toList();
+    if (visible.isEmpty) return null;
+
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) {
+      return visible.length == 1 ? visible.first : null;
+    }
+
+    final exact = visible.where((p) {
+      return p.imei.toLowerCase() == q || p.plateNumber.toLowerCase() == q;
+    }).toList();
+    if (exact.length == 1) return exact.first;
+
+    return visible.length == 1 ? visible.first : null;
+  }
+
+  void _stopPlayback() {
+    _playbackTimer?.cancel();
+    _playbackTimer = null;
+    _playbackIndex = 0;
+  }
+
+  void _focusPoints(List<MapVehiclePoint> points) {
+    if (points.isEmpty) return;
+    final target = points.last;
+    if (!target.hasValidPoint) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _mapController.move(LatLng(target.lat, target.lng), _currentZoom);
+    });
+  }
+
+  void _startPlayback(List<MapVehiclePoint> points) {
+    _stopPlayback();
+    if (points.isEmpty) return;
+
+    _playbackTimer = Timer.periodic(const Duration(milliseconds: 900), (timer) {
+      if (!mounted || _mapMode != 'playback') {
+        timer.cancel();
+        return;
+      }
+      final nextIndex = _playbackIndex + 1;
+      if (nextIndex >= points.length) {
+        timer.cancel();
+        return;
+      }
+      final nextPoint = points[nextIndex];
+      setState(() => _playbackIndex = nextIndex);
+      if (nextPoint.hasValidPoint) {
+        _mapController.move(LatLng(nextPoint.lat, nextPoint.lng), _currentZoom);
+      }
+    });
+  }
+
+  void _showModeHint(String message) {
+    if (!mounted) return;
+    final now = DateTime.now();
+    if (_lastModeHintAt != null &&
+        now.difference(_lastModeHintAt!).inMilliseconds < 1200) {
+      return;
+    }
+    _lastModeHintAt = now;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadMapPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedType = (prefs.getString(_mapTypePrefKey) ?? '').trim();
+    if (!mounted) return;
+    if (savedType == 'standard' || savedType == 'satellite') {
+      setState(() => _mapType = savedType);
+    }
+  }
+
+  Future<void> _setMapType(String nextType) async {
+    if (nextType == _mapType) return;
+    if (!mounted) return;
+    setState(() => _mapType = nextType);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_mapTypePrefKey, nextType);
+  }
+
+  Future<void> _loadModeData(String mode, String imei) async {
+    if (_isLoadingGuard) return;
+    _isLoadingGuard = true;
+
+    _stopPlayback();
+    _token?.cancel('Reload map mode data');
+    final token = CancelToken();
+    _token = token;
+
+    if (mounted) {
+      setState(() => _loading = true);
+    }
+
+    final repo = _repoOrCreate();
+    final now = DateTime.now();
+    final from = now.subtract(const Duration(hours: 24));
+
+    final result = mode == 'playback'
+        ? await repo.getVehicleReplayByImei(
+            imei,
+            from: from,
+            to: now,
+            maxPoints: 500,
+            cancelToken: token,
+          )
+        : await repo.getVehicleTrailByImei(
+            imei,
+            hours: 24,
+            maxPoints: 500,
+            cancelToken: token,
+          );
+
+    if (!mounted) {
+      _isLoadingGuard = false;
+      return;
+    }
+
+    result.when(
+      success: (items) {
+        final valid = items.where((p) => p.hasValidPoint).toList()
+          ..sort(
+            (a, b) => _safeParseDate(
+              a.updatedAt,
+            ).compareTo(_safeParseDate(b.updatedAt)),
+          );
+        setState(() {
+          _modePoints = valid;
+          _activeModeImei = imei;
+          _playbackIndex = 0;
+          _loading = false;
+          _modeErrorShown = false;
+        });
+        _focusPoints(valid);
+        if (mode == 'playback') {
+          _startPlayback(valid);
+        }
+      },
+      failure: (err) {
+        setState(() => _loading = false);
+        if (_isCancelled(err) || _modeErrorShown) {
+          _isLoadingGuard = false;
+          return;
+        }
+        _modeErrorShown = true;
+        final message = err is ApiException
+            ? err.message
+            : "Couldn't load map mode data.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
+
+    _isLoadingGuard = false;
+  }
+
+  Future<void> _setMapMode(String nextMode) async {
+    if (nextMode == _mapMode) return;
+
+    if (nextMode == 'live') {
+      _stopPlayback();
+      if (mounted) {
+        setState(() {
+          _mapMode = 'live';
+          _modePoints = const <MapVehiclePoint>[];
+          _activeModeImei = '';
+        });
+      }
+      await _loadTelemetry(showShimmer: false);
+      return;
+    }
+
+    final target = _resolveModeTarget();
+    if (target == null) {
+      if (mounted) {
+        setState(() {
+          _mapMode = 'live';
+          _modePoints = const <MapVehiclePoint>[];
+          _activeModeImei = '';
+        });
+      }
+      _showModeHint(
+        'Search a single vehicle by plate or IMEI to use ${nextMode == 'history' ? 'History' : 'Playback'}.',
+      );
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _mapMode = nextMode);
+    }
+    await _loadModeData(nextMode, target.imei.trim());
+  }
+
   Future<void> _loadTelemetry({bool showShimmer = true}) async {
     if (_isLoadingGuard) return;
     _isLoadingGuard = true;
@@ -108,6 +346,10 @@ class _MapScreenState extends State<MapScreen> {
         final valid = items.where((p) => p.hasValidPoint).toList();
         setState(() {
           _points = valid;
+          if (_mapMode == 'live') {
+            _modePoints = const <MapVehiclePoint>[];
+            _activeModeImei = '';
+          }
           _loading = false;
           _errorShown = false;
         });
@@ -136,15 +378,20 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _currentCenter = _initialCenter;
     _searchController.addListener(_onSearchChanged);
+    _loadMapPreferences();
     _loadTelemetry();
     _refreshTimer = Timer.periodic(const Duration(seconds: 25), (_) {
-      _loadTelemetry(showShimmer: false);
+      if (_mapMode == 'live') {
+        _loadTelemetry(showShimmer: false);
+      }
     });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _playbackTimer?.cancel();
+    _modeDebounce?.cancel();
     _token?.cancel('MapScreen disposed');
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -154,6 +401,26 @@ class _MapScreenState extends State<MapScreen> {
   void _onSearchChanged() {
     if (!mounted) return;
     setState(() => _query = _searchController.text);
+
+    if (_mapMode == 'live') return;
+
+    _modeDebounce?.cancel();
+    _modeDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted || _mapMode == 'live') return;
+      final target = _resolveModeTarget();
+      if (target == null) {
+        _stopPlayback();
+        setState(() {
+          _modePoints = const <MapVehiclePoint>[];
+          _activeModeImei = '';
+        });
+        return;
+      }
+      if (target.imei.trim() == _activeModeImei && _modePoints.isNotEmpty) {
+        return;
+      }
+      _loadModeData(_mapMode, target.imei.trim());
+    });
   }
 
   void _zoomIn() {
@@ -193,7 +460,41 @@ class _MapScreenState extends State<MapScreen> {
         MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
 
     final visiblePoints = _filteredPoints;
-    final markers = visiblePoints.isEmpty
+    final modePoints = _modePoints.where((p) => p.hasValidPoint).toList();
+    final bool showHistory = _mapMode == 'history' && modePoints.isNotEmpty;
+    final bool showPlayback = _mapMode == 'playback' && modePoints.isNotEmpty;
+
+    final trailCoords = showHistory
+        ? modePoints.map((p) => LatLng(p.lat, p.lng)).toList()
+        : showPlayback
+        ? modePoints
+              .take((_playbackIndex + 1).clamp(0, modePoints.length))
+              .map((p) => LatLng(p.lat, p.lng))
+              .toList()
+        : const <LatLng>[];
+
+    final markers = showHistory
+        ? <Marker>[
+            Marker(
+              point: LatLng(modePoints.last.lat, modePoints.last.lng),
+              width: 80,
+              height: 80,
+              child: Icon(Icons.location_on, size: 40, color: cs.primary),
+            ),
+          ]
+        : showPlayback
+        ? <Marker>[
+            Marker(
+              point: LatLng(
+                modePoints[_playbackIndex.clamp(0, modePoints.length - 1)].lat,
+                modePoints[_playbackIndex.clamp(0, modePoints.length - 1)].lng,
+              ),
+              width: 80,
+              height: 80,
+              child: Icon(Icons.location_on, size: 40, color: cs.primary),
+            ),
+          ]
+        : visiblePoints.isEmpty
         ? <Marker>[
             Marker(
               point: _initialCenter,
@@ -250,10 +551,20 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 TileLayer(
                   urlTemplate: _mapType == 'satellite'
-                      ? 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'
-                      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
+                      ? 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.fleek_stack_mobile',
                 ),
+                if (trailCoords.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: trailCoords,
+                        strokeWidth: 4,
+                        color: cs.primary,
+                      ),
+                    ],
+                  ),
                 MarkerLayer(markers: markers),
               ],
             ),
@@ -428,21 +739,21 @@ class _MapScreenState extends State<MapScreen> {
                       'Live Tracking',
                       'live',
                       _mapMode,
-                      (v) => setState(() => _mapMode = v),
+                      _setMapMode,
                       icon: Icons.gps_fixed,
                     ),
                     _radio(
                       'History',
                       'history',
                       _mapMode,
-                      (v) => setState(() => _mapMode = v),
+                      _setMapMode,
                       icon: Icons.history,
                     ),
                     _radio(
                       'Playback',
                       'playback',
                       _mapMode,
-                      (v) => setState(() => _mapMode = v),
+                      _setMapMode,
                       icon: Icons.play_arrow,
                     ),
                   ],
@@ -458,14 +769,14 @@ class _MapScreenState extends State<MapScreen> {
                       'Standard',
                       'standard',
                       _mapType,
-                      (v) => setState(() => _mapType = v),
+                      (v) => _setMapType(v),
                       icon: Icons.map,
                     ),
                     _radio(
                       'Satellite',
                       'satellite',
                       _mapType,
-                      (v) => setState(() => _mapType = v),
+                      (v) => _setMapType(v),
                       icon: Icons.satellite_alt,
                     ),
                   ],

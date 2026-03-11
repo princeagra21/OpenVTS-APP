@@ -1,16 +1,24 @@
-// lib/screens/home/home_screen.dart
-// -----------------------------
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
+import 'package:fleet_stack/core/models/user_recent_alert_item.dart';
+import 'package:fleet_stack/core/models/user_top_asset_item.dart';
+import 'package:fleet_stack/core/models/user_usage_last_7_days.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/user_home_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/main.dart';
 import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
 import 'package:fleet_stack/modules/user/widgets/home/card/fleet_card.dart';
 import 'package:fleet_stack/modules/user/widgets/home/card/recent_activity_box.dart';
 import 'package:fleet_stack/modules/user/widgets/home/card/search_bar.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:fleet_stack/modules/user/widgets/home/card/top_customers_box.dart';
+import 'package:fleet_stack/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,25 +28,141 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedLanguage = 'EN';
-  String _overviewMode = 'Fleet'; // New state for overview mode
-  final GlobalKey _overviewDropdownKey = GlobalKey(); // New key for positioning
+  // FleetStack-API-Reference.md confirmed User Home endpoints:
+  // - GET /user/dashboard/fleet-status
+  // - GET /user/dashboard/usage-last-7-days
+  // - GET /user/dashboard/recent-alerts
+  // - GET /user/dashboard/top-performing-assets
 
-  /// Stylish popup (top-right card). Uses showGeneralDialog for custom animation.
+  String _selectedLanguage = 'EN';
+  String _overviewMode = 'Fleet';
+
+  ApiClient? _api;
+  UserHomeRepository? _repo;
+  CancelToken? _loadToken;
+
+  bool _loading = false;
+  bool _errorShown = false;
+
+  UserFleetStatusSummary? _fleetStatus;
+  UserUsageLast7Days? _usageLast7Days;
+  List<UserRecentAlertItem>? _recentAlerts;
+  List<UserTopAssetItem>? _topAssets;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHome();
+  }
+
+  @override
+  void dispose() {
+    _loadToken?.cancel('User home disposed');
+    super.dispose();
+  }
+
+  UserHomeRepository _repoOrCreate() {
+    _api ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= UserHomeRepository(api: _api!);
+    return _repo!;
+  }
+
+  Future<void> _loadHome() async {
+    _loadToken?.cancel('Reload user home');
+    final token = CancelToken();
+    _loadToken = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    UserFleetStatusSummary? nextFleet = _fleetStatus;
+    UserUsageLast7Days? nextUsage = _usageLast7Days;
+    List<UserRecentAlertItem>? nextAlerts = _recentAlerts;
+    List<UserTopAssetItem>? nextTopAssets = _topAssets;
+
+    bool hasFailure = false;
+    String? errorMessage;
+
+    void captureFailure(Object error, String fallback) {
+      if (error is ApiException &&
+          error.message.trim() == 'Request cancelled') {
+        return;
+      }
+      hasFailure = true;
+      if (errorMessage == null || errorMessage!.trim().isEmpty) {
+        if (error is ApiException && error.message.trim().isNotEmpty) {
+          errorMessage = error.message;
+        } else {
+          errorMessage = fallback;
+        }
+      }
+    }
+
+    final repo = _repoOrCreate();
+
+    final fleetRes = await repo.getFleetStatus(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    fleetRes.when(
+      success: (data) => nextFleet = data,
+      failure: (error) => captureFailure(error, "Couldn't load fleet status."),
+    );
+
+    final usageRes = await repo.getUsageLast7Days(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    usageRes.when(
+      success: (data) => nextUsage = data,
+      failure: (error) => captureFailure(error, "Couldn't load usage summary."),
+    );
+
+    final alertsRes = await repo.getRecentAlerts(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    alertsRes.when(
+      success: (data) => nextAlerts = data,
+      failure: (error) => captureFailure(error, "Couldn't load recent alerts."),
+    );
+
+    final topAssetsRes = await repo.getTopPerformingAssets(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    topAssetsRes.when(
+      success: (data) => nextTopAssets = data,
+      failure: (error) =>
+          captureFailure(error, "Couldn't load top performing assets."),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _fleetStatus = nextFleet;
+      _usageLast7Days = nextUsage;
+      _recentAlerts = nextAlerts;
+      _topAssets = nextTopAssets;
+      _loading = false;
+      if (!hasFailure) {
+        _errorShown = false;
+      }
+    });
+
+    if (!hasFailure || _errorShown || !mounted) return;
+    _errorShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(errorMessage ?? "Couldn't load dashboard.")),
+    );
+  }
+
   Future<void> _showLanguagePicker(BuildContext context) async {
     final chosen = await showGeneralDialog<String?>(
       context: context,
-      barrierLabel: "Language",
+      barrierLabel: 'Language',
       barrierDismissible: true,
       barrierColor: Colors.black45,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (ctx, anim1, anim2) {
-        // pageBuilder must return something — actual UI is in transitionBuilder
         return const SizedBox.shrink();
       },
       transitionBuilder: (ctx, anim, secondaryAnim, child) {
         final theme = Theme.of(context);
-        // Position the popup near the top-right .
         return SafeArea(
           child: Align(
             alignment: Alignment.topRight,
@@ -47,27 +171,34 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FadeTransition(
                 opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
                 child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.97, end: 1.0)
-                      .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutBack)),
+                  scale: Tween<double>(begin: 0.97, end: 1.0).animate(
+                    CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                  ),
                   child: Material(
                     color: theme.colorScheme.surface,
                     elevation: 18,
                     borderRadius: BorderRadius.circular(12),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 220, maxWidth: 260),
+                      constraints: const BoxConstraints(
+                        minWidth: 220,
+                        maxWidth: 260,
+                      ),
                       child: IntrinsicWidth(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Header
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               child: Row(
                                 children: [
                                   Text(
                                     'Language',
-                                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
                                   ),
                                   const Spacer(),
                                   GestureDetector(
@@ -76,27 +207,36 @@ class _HomeScreenState extends State<HomeScreen> {
                                       height: 32,
                                       width: 32,
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary.withOpacity(0.08),
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.08),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Icon(Icons.close, size: 18, color: theme.colorScheme.primary),
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             const Divider(height: 1),
-                            // Options
                             _languageTile(ctx, 'EN', 'English', '🇬🇧'),
                             _languageTile(ctx, 'FR', 'Français', '🇫🇷'),
                             _languageTile(ctx, 'ES', 'Español', '🇪🇸'),
                             const SizedBox(height: 8),
-                            // Optional footer / small caption
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               child: Text(
                                 'App language will update after selection.',
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                ),
                               ),
                             ),
                           ],
@@ -112,18 +252,19 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    if (chosen != null && chosen != _selectedLanguage) {
-      setState(() {
-        _selectedLanguage = chosen;
-      });
-      // TODO: Hook into your localization provider here.
-      debugPrint('Language changed to: $chosen');
-    }
+    if (chosen == null || chosen == _selectedLanguage || !mounted) return;
+    setState(() => _selectedLanguage = chosen);
+    debugPrint('Language changed to: $chosen');
   }
 
-  Widget _languageTile(BuildContext ctx, String code, String label, String flag) {
+  Widget _languageTile(
+    BuildContext ctx,
+    String code,
+    String label,
+    String flag,
+  ) {
     final theme = Theme.of(ctx);
-    final bool selected = code == _selectedLanguage;
+    final selected = code == _selectedLanguage;
 
     return InkWell(
       onTap: () => Navigator.of(ctx).pop(code),
@@ -132,7 +273,6 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            // flag circle
             Container(
               height: 36,
               width: 36,
@@ -148,9 +288,19 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(code, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                  Text(
+                    code,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -162,7 +312,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check, size: 16, color: theme.colorScheme.onPrimary),
+                child: Icon(
+                  Icons.check,
+                  size: 16,
+                  color: theme.colorScheme.onPrimary,
+                ),
               ),
           ],
         ),
@@ -170,202 +324,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// New: Overview mode picker, now using showMenu positioned under the dropdown
-  Future<void> _showOverviewPicker(BuildContext context) async {
-    final RenderBox? button = _overviewDropdownKey.currentContext?.findRenderObject() as RenderBox?;
-    if (button == null) return;
-
-    final Offset buttonPosition = button.localToGlobal(Offset.zero);
-    final Rect buttonRect = buttonPosition & button.size;
-    final Rect shiftedRect = buttonRect.shift(Offset(0, button.size.height));
-    final Size screenSize = MediaQuery.of(context).size;
-    final Rect container = Offset.zero & screenSize;
-    final RelativeRect position = RelativeRect.fromRect(shiftedRect, container);
-
-    final theme = Theme.of(context);
-
-    final String? chosen = await showMenu<String>(
-      context: context,
-      position: position,
-      items: [
-        PopupMenuItem<String>(
-          enabled: false,
-          height: kMinInteractiveDimension,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Text(
-                  'Overview Mode',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    height: 32,
-                    width: 32,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.close, size: 18, color: theme.colorScheme.primary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const PopupMenuDivider(height: 1),
-        PopupMenuItem<String>(
-          value: 'Fleet',
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  height: 36,
-                  width: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: theme.colorScheme.primary.withOpacity(0.06),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.directions_car, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Fleet Overview', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-                ),
-                if (_overviewMode == 'Fleet')
-                  Container(
-                    height: 28,
-                    width: 28,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check, size: 16, color: theme.colorScheme.onPrimary),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'Revenue',
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  height: 36,
-                  width: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: theme.colorScheme.primary.withOpacity(0.06),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.monetization_on, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Revenue Ops', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-                ),
-                if (_overviewMode == 'Revenue')
-                  Container(
-                    height: 28,
-                    width: 28,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check, size: 16, color: theme.colorScheme.onPrimary),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ],
-      elevation: 18,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: theme.colorScheme.surface,
-    );
-
-    if (chosen != null && chosen != _overviewMode) {
-      setState(() {
-        _overviewMode = chosen;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final themeIcon = isDark ? Icons.light_mode : Icons.dark_mode;
 
     return AppLayout(
-      title: "FLEET STACK",
-      subtitle: "Overview",
-      // action icons: language, theme toggle, notifications
-      actionIcons: [
-        Icons.language,
-        themeIcon,
-        CupertinoIcons.bell,
-      ],
-
-      // onActionTaps must map 1:1 with actionIcons order
+      title: 'FLEET STACK',
+      subtitle: 'Overview',
+      actionIcons: [Icons.language, themeIcon, CupertinoIcons.bell],
       onActionTaps: [
-        // Language tap -> stylish popup
         () => _showLanguagePicker(context),
-
-        // Theme tap -> toggle light/dark immediately (non-blocking)
         () {
-          final isCurrentlyDark = Theme.of(context).brightness == Brightness.dark;
+          final isCurrentlyDark =
+              Theme.of(context).brightness == Brightness.dark;
           final newDarkMode = !isCurrentlyDark;
 
-          // update controller (instant UI update if your controller notifies listeners)
           themeController.setDarkMode(newDarkMode);
-
-          // persist (non-blocking)
           AppTheme.setDarkMode(newDarkMode);
 
-          // If using the Default brand, ensure brand matches mode
           if (AppTheme.brandColor == AppTheme.defaultBrand ||
               AppTheme.brandColor == AppTheme.defaultDarkBrand) {
-            final forcedBrand = newDarkMode ? AppTheme.defaultDarkBrand : AppTheme.defaultBrand;
+            final forcedBrand = newDarkMode
+                ? AppTheme.defaultDarkBrand
+                : AppTheme.defaultBrand;
             themeController.setBrand(forcedBrand);
             AppTheme.setBrand(forcedBrand);
           }
         },
-
-        // Notifications tap
-      //  () => context.push('/admin/notifications'),
+        () => context.push('/user/notifications'),
       ],
-
       leftAvatarText: 'FS',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AppSearchBar(),
           const SizedBox(height: 12),
-       //   ActionsButtons(),
           const SizedBox(height: 24),
           OverviewBox(
-  mode: _overviewMode,
-  onModeChanged: (newMode) {
-    setState(() => _overviewMode = newMode);
-  },
-),
+            mode: _overviewMode,
+            onModeChanged: (newMode) {
+              if (!mounted) return;
+              setState(() => _overviewMode = newMode);
+            },
+            loading: _loading,
+            fleetStatus: _fleetStatus,
+            usage: _usageLast7Days,
+            alertCount: _recentAlerts?.length,
+          ),
           const SizedBox(height: 24),
           if (_overviewMode == 'Fleet') ...[
-            const VehicleStatusBox(),
+            VehicleStatusBox(loading: _loading, summary: _fleetStatus),
             const SizedBox(height: 24),
           ],
           if (_overviewMode == 'Fleet')
-            const RecentActivityBox()
+            RecentActivityBox(
+              loading: _loading,
+              items: _recentAlerts ?? const <UserRecentAlertItem>[],
+            )
           else
-            const TopCustomersBox(),
+            TopCustomersBox(
+              loading: _loading,
+              items: _topAssets ?? const <UserTopAssetItem>[],
+            ),
           const SizedBox(height: 24),
         ],
       ),

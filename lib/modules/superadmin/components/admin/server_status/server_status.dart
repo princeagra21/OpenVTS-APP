@@ -152,9 +152,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       );
       _repo ??= SuperadminRepository(api: _api!);
 
-      final overallRes = await _repo!.getServerOverallStatus(
-        cancelToken: token,
-      );
+      final overviewRes = await _repo!.getServerOverviewRaw(cancelToken: token);
       final pgRes = await _repo!.getServerPostgresStatus(cancelToken: token);
       final logsDbRes = await _repo!.getLogsDbStatus(cancelToken: token);
       final addressDbRes = await _repo!.getAddressDbStatus(cancelToken: token);
@@ -169,8 +167,18 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       Map<String, dynamic> nextHealthRaw = _healthRaw;
       List<ServerServiceItem> nextServices = _services;
 
-      overallRes.when(
-        success: (d) => nextOverall = d,
+      overviewRes.when(
+        success: (raw) {
+          final level1 = _asMap(raw['data']);
+          final level2 = _asMap(level1['data']);
+          final payload = level2.isNotEmpty
+              ? level2
+              : level1.isNotEmpty
+              ? level1
+              : raw;
+          nextOverall = ServerOverallStatus(payload);
+          nextServices = ServerServiceItem.listFromOverview(raw);
+        },
         failure: (_) => hadFailure = true,
       );
       pgRes.when(success: (d) => nextPg = d, failure: (_) => hadFailure = true);
@@ -185,7 +193,6 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       healthRes.when(
         success: (raw) {
           nextHealthRaw = raw;
-          nextServices = ServerServiceItem.listFromHealth(raw);
         },
         failure: (_) => hadFailure = true,
       );
@@ -494,12 +501,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                         width: 14,
                         height: 14,
                         child: _loading
-                            ? CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.onPrimary,
-                                ),
-                              )
+                            ? const AppShimmer(width: 14, height: 14, radius: 7)
                             : Icon(
                                 Icons.refresh_rounded,
                                 color: colorScheme.onPrimary,
@@ -1072,17 +1074,26 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             ),
           )
         else
-          LinearProgressIndicator(
-            value: clampedPercent / 100,
-            backgroundColor: colorScheme.surfaceVariant,
-            valueColor: AlwaysStoppedAnimation(
-              clampedPercent > 80
-                  ? Colors.red
-                  : clampedPercent > 60
-                  ? Colors.orange
-                  : colorScheme.primary,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              width: double.infinity,
+              height: 8,
+              color: colorScheme.surfaceVariant,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: clampedPercent / 100,
+                  child: Container(
+                    color: clampedPercent > 80
+                        ? Colors.red
+                        : clampedPercent > 60
+                        ? Colors.orange
+                        : colorScheme.primary,
+                  ),
+                ),
+              ),
             ),
-            minHeight: 8,
           ),
         const SizedBox(height: 16),
       ],

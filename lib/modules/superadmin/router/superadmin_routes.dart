@@ -21,28 +21,21 @@ import 'package:fleet_stack/modules/superadmin/components/vehicle/vehicle_screen
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/add_new_vehicle.dart';
 import 'package:fleet_stack/modules/superadmin/screens/admin/add_new_admin.dart';
 import 'package:fleet_stack/modules/superadmin/screens/admin/administrator_details_screen.dart';
-import 'package:fleet_stack/modules/superadmin/screens/admin/admins_screen.dart' show AdminScreen;
+import 'package:fleet_stack/modules/superadmin/screens/admin/admins_screen.dart'
+    show AdminScreen;
 import 'package:fleet_stack/modules/superadmin/screens/home/home_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/map/map_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/more/more_screen.dart';
+import 'package:fleet_stack/modules/superadmin/screens/notifications/superadmin_notifications_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/setting/setting_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> superAdminRoutes = [
-  GoRoute(
-    path: '/superadmin',
-    builder: (_, __) => const HomeScreen(),
-  ),
-  GoRoute(
-    path: '/superadmin/home',
-    builder: (_, __) => const HomeScreen(),
-  ),
+  GoRoute(path: '/superadmin', builder: (_, __) => const HomeScreen()),
+  GoRoute(path: '/superadmin/home', builder: (_, __) => const HomeScreen()),
 
   /// ADMINS
-  GoRoute(
-    path: '/superadmin/admins',
-    builder: (_, __) => const AdminScreen(),
-  ),
+  GoRoute(path: '/superadmin/admins', builder: (_, __) => const AdminScreen()),
   GoRoute(
     path: '/superadmin/admins/add',
     builder: (_, __) => const AddNewAdminScreen(),
@@ -110,8 +103,11 @@ final List<GoRoute> superAdminRoutes = [
   /// ACTIVITY / NOTIFICATION
   GoRoute(
     path: '/superadmin/notification-settings',
-    builder: (_, __) =>
-        const PushNotificationTemplateSettingsScreen(),
+    builder: (_, __) => const PushNotificationTemplateSettingsScreen(),
+  ),
+  GoRoute(
+    path: '/superadmin/notifications',
+    builder: (_, __) => const SuperadminNotificationsScreen(),
   ),
   GoRoute(
     path: '/superadmin/all-activities',
@@ -152,10 +148,7 @@ final List<GoRoute> superAdminRoutes = [
     path: '/superadmin/ssl',
     builder: (_, __) => const SSLManagementScreen(),
   ),
-  GoRoute(
-    path: '/superadmin/roles',
-    builder: (_, __) => const RolesScreen(),
-  ),
+  GoRoute(path: '/superadmin/roles', builder: (_, __) => const RolesScreen()),
   GoRoute(
     path: '/superadmin/user-policy',
     builder: (_, __) => const PolicyEditScreen(),
@@ -164,12 +157,6 @@ final List<GoRoute> superAdminRoutes = [
     path: '/superadmin/support',
     builder: (_, __) => const SupportScreen(),
   ),
-  GoRoute(
-    path: '/superadmin/more',
-    builder: (_, __) => const MoreScreen(),
-  ),
-  GoRoute(
-    path: '/superadmin/map',
-    builder: (_, __) => const MapScreen(),
-  ),
+  GoRoute(path: '/superadmin/more', builder: (_, __) => const MoreScreen()),
+  GoRoute(path: '/superadmin/map', builder: (_, __) => const MapScreen()),
 ];

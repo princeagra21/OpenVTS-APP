@@ -1,4 +1,6 @@
 // components/profile/profile_box.dart
+import 'package:fleet_stack/core/models/admin_profile.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/edit_admin_profile_screen.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/update_password_screen.dart';
@@ -6,20 +8,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileSettingBox extends StatelessWidget {
-  final String displayName;
-  final String username;
-  final String roleLabel;
+  final AdminProfile? profile;
   final String initials;
   final bool loading;
+  final VoidCallback? onProfileChanged;
 
   const ProfileSettingBox({
     super.key,
-    this.displayName = 'Muhammad Sani',
-    this.username = '@danmasana',
-    this.roleLabel = 'Admin',
+    this.profile,
     this.initials = 'MS',
     this.loading = false,
+    this.onProfileChanged,
   });
+
+  String _safe(String? value, {String fallback = '—'}) {
+    final trimmed = value?.trim() ?? '';
+    return trimmed.isEmpty ? fallback : trimmed;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +44,26 @@ class ProfileSettingBox extends StatelessWidget {
         AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double largeSpacing = padding;
+    final displayName = _safe(profile?.fullName);
+    final username = () {
+      final raw = _safe(profile?.username, fallback: '');
+      if (raw.isEmpty) return '—';
+      return raw.startsWith('@') ? raw : '@$raw';
+    }();
+    final roleLabel = _safe(profile?.role);
+    final isActive = profile?.isActive ?? false;
+    final emailVerified = profile?.emailVerified ?? false;
+    final hasProfile = profile != null;
+    final statusLabel = hasProfile ? (isActive ? 'Active' : 'Inactive') : '—';
+    final statusBg = hasProfile
+        ? (isActive ? Colors.green : Colors.red).withOpacity(0.2)
+        : colorScheme.outline.withOpacity(0.2);
+    final statusFg = hasProfile
+        ? (isActive ? Colors.green[800]! : Colors.red[800]!)
+        : colorScheme.onSurface.withOpacity(0.8);
+    final verifiedLabel = hasProfile
+        ? (emailVerified ? 'Email Verified' : 'Email Not Verified')
+        : 'Verification —';
 
     return Container(
       padding: EdgeInsets.all(padding + 8),
@@ -110,11 +135,7 @@ class ProfileSettingBox extends StatelessWidget {
                         ),
                         if (loading) ...[
                           SizedBox(width: spacing),
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          const AppShimmer(width: 14, height: 14, radius: 7),
                         ],
                       ],
                     ),
@@ -178,14 +199,14 @@ class ProfileSettingBox extends StatelessWidget {
                   vertical: spacing - 2,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  "Active",
+                  statusLabel,
                   style: GoogleFonts.inter(
                     fontSize: badgeFontSize,
-                    color: Colors.green[800],
+                    color: statusFg,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -209,7 +230,7 @@ class ProfileSettingBox extends StatelessWidget {
                   ),
                   SizedBox(width: 2),
                   Text(
-                    "Email Verified",
+                    verifiedLabel,
                     style: GoogleFonts.inter(
                       fontSize: badgeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.8),
@@ -229,12 +250,17 @@ class ProfileSettingBox extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const EditAdminProfileScreen(),
+                        builder: (_) =>
+                            EditAdminProfileScreen(initialProfile: profile),
                       ),
-                    );
+                    ).then((result) {
+                      if (result == true) {
+                        onProfileChanged?.call();
+                      }
+                    });
                   },
                   child: Container(
                     height: 30,
@@ -262,12 +288,16 @@ class ProfileSettingBox extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const UpdatePasswordScreen(),
                       ),
-                    );
+                    ).then((result) {
+                      if (result == true) {
+                        onProfileChanged?.call();
+                      }
+                    });
                   },
                   child: Container(
                     height: 30,

@@ -1,3 +1,5 @@
+import 'package:fleet_stack/core/services/push_notifications_service.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,6 +27,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Future<void> _loadViewPreference() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isGridView = prefs.getBool(_viewModeKey) ?? true; // default = grid
     });
@@ -32,10 +35,27 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Future<void> _toggleViewMode() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isGridView = !_isGridView;
     });
     await prefs.setBool(_viewModeKey, _isGridView);
+  }
+
+  Future<void> _logout() async {
+    await PushNotificationsService.instance.unregisterForLogout();
+    await TokenStorage.defaultInstance().clear();
+    if (!mounted) return;
+    context.go('/login');
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _LogoutConfirmDialog(),
+    );
+    if (shouldLogout != true) return;
+    await _logout();
   }
 
   Widget _buildItemsBlock({
@@ -48,10 +68,10 @@ class _MoreScreenState extends State<MoreScreen> {
   }) {
     final int crossAxisCount = isGridView
         ? (width > 1100
-            ? 4
-            : width > 700
-                ? 3
-                : 2)
+              ? 4
+              : width > 700
+              ? 3
+              : 2)
         : 1;
 
     final double childAspectRatio = isGridView ? 0.95 : 4.5;
@@ -100,14 +120,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'title': 'Notifications',
         'subtitle': 'Manage alerts & pushes',
         'icon': CupertinoIcons.bell,
-        'route': '/user/notifications',
+        'route': '/user/notification-settings',
       },
-      {
-        'title': 'Generate Report',
-        'subtitle': 'Create custom reports',
-        'icon': CupertinoIcons.doc_chart,
-        'route': '/user/generate-report',
-      },
+      // Hidden from More until User report-generation APIs are confirmed.
+      // {
+      //   'title': 'Generate Report',
+      //   'subtitle': 'Create custom reports',
+      //   'icon': CupertinoIcons.doc_chart,
+      //   'route': '/user/generate-report',
+      // },
       {
         'title': 'Localization',
         'subtitle': 'Language & regional settings',
@@ -116,19 +137,19 @@ class _MoreScreenState extends State<MoreScreen> {
       },
     ];
 
-    final IconData _toggleViewIcon =
-        _isGridView ? CupertinoIcons.list_bullet : CupertinoIcons.square_grid_2x2;
+    final IconData toggleViewIcon = _isGridView
+        ? CupertinoIcons.list_bullet
+        : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
       title: "FLEET STACK",
       subtitle: "More Menu",
       horizontalPadding: 5,
-      actionIcons: [_toggleViewIcon],
-      onActionTaps: [
-        _toggleViewMode,
-      ],
+      actionIcons: [CupertinoIcons.square_arrow_right, toggleViewIcon],
+      onActionTaps: [_confirmLogout, _toggleViewMode],
       leftAvatarText: 'MO',
-      child: MediaQuery.removePadding(  // Added this to remove automatic top safe area padding
+      child: MediaQuery.removePadding(
+        // Added this to remove automatic top safe area padding
         context: context,
         removeTop: true,
         child: SingleChildScrollView(
@@ -147,6 +168,103 @@ class _MoreScreenState extends State<MoreScreen> {
               SizedBox(height: hp),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutConfirmDialog extends StatelessWidget {
+  const _LogoutConfirmDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.square_arrow_right,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Log out?',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your current session will end. You will need to log in again to continue.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Log out',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -192,7 +310,10 @@ class _MoreMenuCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.onSurface.withOpacity(0.05), width: 1),
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.05),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -235,7 +356,9 @@ class _MoreMenuCard extends StatelessWidget {
                             Text(
                               title,
                               style: GoogleFonts.inter(
-                                fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                    1,
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onSurface,
                               ),
@@ -244,7 +367,8 @@ class _MoreMenuCard extends StatelessWidget {
                             Text(
                               subtitle,
                               style: GoogleFonts.inter(
-                                fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
+                                fontSize:
+                                    AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
                               ),
                             ),
@@ -283,7 +407,8 @@ class _MoreMenuCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                         ),

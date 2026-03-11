@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -29,7 +30,7 @@ class _MapScreenState extends State<MapScreen> {
   String _query = '';
   // Adjust based on your CustomBottomBar height
 
-  final LatLng _initialCenter = LatLng(6.5244, 3.3792);
+  final LatLng _initialCenter = LatLng(28.6139, 77.2090);
 
   double _currentZoom = 13.0;
   late LatLng _currentCenter;
@@ -227,9 +228,8 @@ class _MapScreenState extends State<MapScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                  subdomains: const ['a', 'b', 'c'],
+                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  userAgentPackageName: 'com.example.fleek_stack_mobile',
                   tileProvider: NetworkTileProvider(
                     cachingProvider: const DisabledMapCachingProvider(),
                   ),
@@ -315,10 +315,7 @@ class _MapScreenState extends State<MapScreen> {
                       width: 12,
                       height: 12,
                       child: _loading
-                          ? CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(brand),
-                            )
+                          ? const AppShimmer(width: 12, height: 12, radius: 6)
                           : const SizedBox.shrink(),
                     ),
                   ],

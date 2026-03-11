@@ -38,6 +38,7 @@ import 'package:fleet_stack/modules/admin/screens/vehicles/vehicle_details_scree
 import 'package:fleet_stack/modules/admin/screens/vehicles/add_vehicle_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/drivers/driver_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/drivers/add_driver_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/drivers/driver_details_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/renewals/renew_device_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/payments/collect_payment_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/renewals/extend_license_screen.dart';
@@ -69,6 +70,11 @@ final List<GoRoute> adminRoutes = [
     builder: (_, __) => const AddVehicleScreen(),
   ),
   GoRoute(path: '/admin/drivers', builder: (_, __) => const DriverScreen()),
+  GoRoute(
+    path: '/admin/drivers/details/:id',
+    builder: (context, state) =>
+        AdminDriverDetailsScreen(id: state.pathParameters['id']!),
+  ),
   GoRoute(
     path: '/admin/drivers/add',
     builder: (_, __) => const AddDriverScreen(),

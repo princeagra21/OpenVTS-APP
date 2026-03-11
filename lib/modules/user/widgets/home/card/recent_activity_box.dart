@@ -1,9 +1,9 @@
-// components/recent_activity_box.dart
+import 'package:fleet_stack/core/models/user_recent_alert_item.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:intl/intl.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -22,11 +22,10 @@ class SmallTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4;
-    final double vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2;
-    final double fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final hPadding = AdaptiveUtils.getHorizontalPadding(screenWidth) - 4;
+    final vPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2;
+    final fontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -45,9 +44,7 @@ class SmallTab extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
-            color: selected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
           ),
         ),
       ),
@@ -56,103 +53,87 @@ class SmallTab extends StatelessWidget {
 }
 
 class RecentActivityBox extends StatefulWidget {
-  const RecentActivityBox({super.key});
+  final bool loading;
+  final List<UserRecentAlertItem> items;
+
+  const RecentActivityBox({
+    super.key,
+    required this.loading,
+    required this.items,
+  });
 
   @override
   State<RecentActivityBox> createState() => _RecentActivityBoxState();
 }
 
 class _RecentActivityBoxState extends State<RecentActivityBox> {
-  String activityTab = "Recent Activity";
+  String activityTab = 'Recent Alerts';
 
-  late final List<Map<String, dynamic>> recentActivities;
+  String _formatRelative(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '—';
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return value;
 
-  @override
-  void initState() {
-    super.initState();
-    recentActivities = [
-      {
-        "date": DateTime.now().subtract(Duration(hours: 1, minutes: 18)),
-        "description": "Policy updated for Fleet-APAC"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(hours: 2, minutes: 37)),
-        "description": "User Priya created a TrackLink"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(hours: 2, minutes: 52)),
-        "description": "12 vehicles added to Group Warehousing"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(days: 1)),
-        "description": "Admin billed for 200 credits"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(days: 2)),
-        "description": "System maintenance completed"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(days: 3, hours: 4)),
-        "description": "Vehicle MH-12-AB-1234 started trip"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(hours: 5)),
-        "description": "Route optimized for Trip #456"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(minutes: 30)),
-        "description": "Alert: Overspeed detected for MH-01-BB-5678"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(days: 4)),
-        "description": "User Raj updated profile"
-      },
-      {
-        "date": DateTime.now().subtract(Duration(days: 5)),
-        "description": "Group Logistics permissions changed"
-      },
-    ];
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    final weeks = (diff.inDays / 7).floor();
+    if (weeks < 5) return '${weeks}w';
+    final months = (diff.inDays / 30).floor();
+    if (months < 12) return '${months}mo';
+    return '${(diff.inDays / 365).floor()}y';
   }
 
-  List<Map<String, dynamic>> get currentActivities {
-    return recentActivities;
-  }
-
-  String formatRelative(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays == 0) {
-      return DateFormat('HH:mm').format(date);
-    } else if (diff.inDays == 1) {
-      return 'Yesterday';
-    } else {
-      return '${diff.inDays} days ago';
-    }
-  }
-
-  Widget buildActivityItem(Map<String, dynamic> activity) {
+  Widget _buildShimmerItem() {
     final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-    final double mainFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
-    final double subFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth);
-    final double itemPadding =
-        AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: itemPadding),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
+            backgroundColor: colorScheme.surfaceVariant,
+            child: const AppShimmer(width: 18, height: 18, radius: 9),
+          ),
+          SizedBox(width: itemPadding + 2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                AppShimmer(width: double.infinity, height: 14, radius: 8),
+                SizedBox(height: 8),
+                AppShimmer(width: 160, height: 12, radius: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(UserRecentAlertItem activity) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final mainFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
     final avatar = CircleAvatar(
       radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-      backgroundColor: colorScheme.surfaceVariant,
-      child: Icon(Icons.history, color: colorScheme.primary),
-    );
-
-    final content = Text(
-      '${formatRelative(activity["date"])} ${activity["description"]}',
-      style: GoogleFonts.inter(
-        fontSize: mainFontSize - 3,
-        fontWeight: FontWeight.w500,
-        color: colorScheme.onSurface,
+      backgroundColor: activity.isRead
+          ? colorScheme.surfaceVariant
+          : colorScheme.primary.withOpacity(0.12),
+      child: Icon(
+        Icons.notifications_none_rounded,
+        color: activity.isRead
+            ? colorScheme.onSurface.withOpacity(0.7)
+            : colorScheme.primary,
       ),
     );
 
@@ -162,7 +143,33 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         children: [
           avatar,
           SizedBox(width: itemPadding + 2),
-          Expanded(child: content),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.displayText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: mainFontSize - 3,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _formatRelative(activity.createdAt),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: subFontSize,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -171,14 +178,9 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double padding =
-        AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double linkFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -200,44 +202,60 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Wrap(
-                spacing:
-                    AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
+                spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
                 runSpacing: 8,
-                children: ["Recent Activity"].map((tab) {
-                  return SmallTab(
-                    label: tab,
-                    selected: activityTab == tab,
-                    onTap: () => setState(() => activityTab = tab),
-                  );
-                }).toList(),
+                children: [
+                  SmallTab(
+                    label: 'Recent Alerts',
+                    selected: activityTab == 'Recent Alerts',
+                    onTap: () => setState(() => activityTab = 'Recent Alerts'),
+                  ),
+                ],
               ),
               InkWell(
-                onTap: () {
-                  context.push(
-                    '/admin/all-activities',
-                    extra: {'type': activityTab},
-                  );
-                },
-                child: Text("View all",
-                    style: GoogleFonts.inter(
-                        fontSize: linkFontSize,
-                        color: colorScheme.primary)),
+                onTap: () => context.push('/user/notifications'),
+                child: Text(
+                  'View all',
+                  style: GoogleFonts.inter(
+                    fontSize: linkFontSize,
+                    color: colorScheme.primary,
+                  ),
+                ),
               ),
             ],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           SizedBox(
             height: 320,
-            child: ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: currentActivities.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: colorScheme.onSurface.withOpacity(0.08),
-              ),
-              itemBuilder: (_, i) =>
-                  buildActivityItem(currentActivities[i]),
-            ),
+            child: widget.loading
+                ? ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: 5,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, __) => _buildShimmerItem(),
+                  )
+                : widget.items.isEmpty
+                ? Center(
+                    child: Text(
+                      'No alerts found',
+                      style: GoogleFonts.inter(
+                        color: colorScheme.onSurface.withOpacity(0.65),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: widget.items.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, i) => _buildActivityItem(widget.items[i]),
+                  ),
           ),
         ],
       ),

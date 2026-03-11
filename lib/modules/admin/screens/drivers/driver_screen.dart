@@ -13,6 +13,7 @@ import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -706,7 +707,9 @@ class _DriverScreenState extends State<DriverScreen> {
           borderRadius: BorderRadius.circular(25),
           child: InkWell(
             borderRadius: BorderRadius.circular(25),
-            onTap: () {},
+            onTap: isPlaceholder || driverId.isEmpty
+                ? null
+                : () => context.push('/admin/drivers/details/$driverId'),
             child: Padding(
               padding: EdgeInsets.all(cardPadding),
               child: Column(

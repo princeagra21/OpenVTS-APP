@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 class GenerateReportScreen extends StatelessWidget {
   const GenerateReportScreen({super.key});
 
+  // FleetStack-API-Reference.md / Postman:
+  // - no User report-generation endpoint was found for this screen
+  // - keep UI honest until backend confirms report APIs
+
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
@@ -21,10 +25,11 @@ class GenerateReportScreen extends StatelessWidget {
         padding: EdgeInsets.all(hp),
         child: Column(
           children: [
-            // Add your generate report widgets here
-            Text('Generate report settings will be here'),
+            Text('Report API not available yet'),
             SizedBox(height: 24),
-            // More widgets can be added here
+            Text(
+              'Backend to confirm report generation endpoints for User module',
+            ),
           ],
         ),
       ),

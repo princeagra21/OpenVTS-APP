@@ -4,8 +4,10 @@ import 'package:fleet_stack/core/models/admin_notification_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_notifications_repository.dart';
+import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/core/widgets/push_notification_banner.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,9 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
 
   bool _loading = false;
   bool _loadErrorShown = false;
+  bool _pushStateLoading = false;
+  bool _pushActionLoading = false;
+  PushDeviceState? _pushState;
 
   ApiClient? _api;
   AdminNotificationsRepository? _repo;
@@ -35,6 +40,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   void initState() {
     super.initState();
     _loadNotifications();
+    _loadPushState();
   }
 
   @override
@@ -145,6 +151,60 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
         const SnackBar(content: Text("Couldn't load notifications.")),
       );
     }
+  }
+
+  Future<void> _loadPushState() async {
+    if (!mounted) return;
+    setState(() => _pushStateLoading = true);
+    final state = await PushNotificationsService.instance.getStatus();
+    if (!mounted) return;
+    setState(() {
+      _pushState = state;
+      _pushStateLoading = false;
+    });
+  }
+
+  Future<void> _togglePushState() async {
+    final state = _pushState;
+    if (_pushActionLoading || state == null || !state.canShowBanner) return;
+    if (!mounted) return;
+    setState(() => _pushActionLoading = true);
+
+    if (state.canDisable) {
+      final result = await PushNotificationsService.instance.disable();
+      if (!mounted) return;
+      result.when(
+        success: (_) {},
+        failure: (error) {
+          final message =
+              error is ApiException && error.message.trim().isNotEmpty
+              ? error.message
+              : "Couldn't update push notifications.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+    } else {
+      final result = await PushNotificationsService.instance.enable();
+      if (!mounted) return;
+      result.when(
+        success: (_) {},
+        failure: (error) {
+          final message =
+              error is ApiException && error.message.trim().isNotEmpty
+              ? error.message
+              : "Couldn't enable push notifications.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+    }
+
+    await _loadPushState();
+    if (!mounted) return;
+    setState(() => _pushActionLoading = false);
   }
 
   Future<void> _markOneRead(AdminNotificationItem item) async {
@@ -303,6 +363,15 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
               maxLines: 1,
             ),
             const SizedBox(height: 16),
+            if ((_pushState?.canShowBanner ?? false) || _pushStateLoading)
+              if (_pushState != null)
+                PushNotificationBanner(
+                  state: _pushState!,
+                  loading: _pushActionLoading || _pushStateLoading,
+                  onPressed: _togglePushState,
+                )
+              else
+                const _PushBannerShimmer(),
             if (_loading)
               const _NotificationShimmerList()
             else if (_items.isEmpty)
@@ -318,6 +387,43 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PushBannerShimmer extends StatelessWidget {
+  const _PushBannerShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: const Row(
+        children: [
+          AppShimmer(width: 40, height: 40, radius: 12),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(width: 180, height: 14, radius: 7),
+                SizedBox(height: 6),
+                AppShimmer(width: double.infinity, height: 12, radius: 6),
+              ],
+            ),
+          ),
+          SizedBox(width: 12),
+          AppShimmer(width: 64, height: 36, radius: 18),
+        ],
       ),
     );
   }

@@ -206,7 +206,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final double linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
     final vehicles = widget.vehicles ?? const <AdminVehiclePreviewItem>[];
-    final showPlaceholders = !widget.loading && vehicles.isEmpty;
+    final showEmptyState = !widget.loading && vehicles.isEmpty;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -258,26 +258,46 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           SizedBox(height: padding),
           SizedBox(
             height: 320,
-            child: ListView.separated(
-              itemCount: widget.loading
-                  ? 5
-                  : (showPlaceholders ? 5 : vehicles.length),
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: colorScheme.onSurface.withOpacity(0.08),
-              ),
-              itemBuilder: (_, i) {
-                if (widget.loading) return _buildLoadingRow(context);
-                if (showPlaceholders) {
-                  return _buildVehicleRow(
-                    context,
-                    const AdminVehiclePreviewItem(<String, dynamic>{}),
-                    placeholder: true,
-                  );
-                }
-                return _buildVehicleRow(context, vehicles[i]);
-              },
-            ),
+            child: showEmptyState
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'No vehicles found',
+                          style: GoogleFonts.inter(
+                            fontSize:
+                                AdaptiveUtils.getSubtitleFontSize(screenWidth) -
+                                1,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Ask superadmin to assign vehicles.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: AdaptiveUtils.getTitleFontSize(
+                              screenWidth,
+                            ),
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: widget.loading ? 5 : vehicles.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, i) {
+                      if (widget.loading) return _buildLoadingRow(context);
+                      return _buildVehicleRow(context, vehicles[i]);
+                    },
+                  ),
           ),
         ],
       ),

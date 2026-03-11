@@ -6,14 +6,45 @@ class VehicleDetails {
 
   const VehicleDetails(this.raw);
 
+  Map<String, dynamic> get payload {
+    final root = _coerceMap(raw);
+    final d = _coerceMap(root['data']);
+    return d.isNotEmpty ? d : root;
+  }
+
   Map<String, dynamic> get data {
-    final d = raw['data'];
-    if (d is Map) return Map<String, dynamic>.from(d.cast());
-    return raw;
+    final root = payload;
+    final vehicle = _coerceMap(root['vehicle']);
+    if (vehicle.isNotEmpty) return vehicle;
+
+    final nested = _coerceMap(root['data']);
+    final nestedVehicle = _coerceMap(nested['vehicle']);
+    if (nestedVehicle.isNotEmpty) return nestedVehicle;
+    if (nested.isNotEmpty) return nested;
+    return root;
+  }
+
+  Map<String, dynamic> get telemetry {
+    final root = payload;
+    final t = _coerceMap(root['telemetry']);
+    if (t.isNotEmpty) return t;
+
+    final nested = _coerceMap(root['data']);
+    final nestedTelemetry = _coerceMap(nested['telemetry']);
+    if (nestedTelemetry.isNotEmpty) return nestedTelemetry;
+
+    return const <String, dynamic>{};
   }
 
   String get id =>
       _s(data['id'] ?? data['vehicleId'] ?? data['vehicle_id'] ?? data['uuid']);
+
+  String get name => _s(
+    data['name'] ??
+        data['vehicleName'] ??
+        data['vehicle_name'] ??
+        data['title'],
+  );
 
   String get plate => _s(
     data['plateNumber'] ??
@@ -40,11 +71,67 @@ class VehicleDetails {
     return false;
   }
 
-  String get model =>
-      _s(data['model'] ?? data['deviceModel'] ?? data['device']);
+  Map<String, dynamic> get device {
+    final d = data['device'];
+    if (d is Map) return Map<String, dynamic>.from(d.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get deviceType {
+    final d = device['type'];
+    if (d is Map) return Map<String, dynamic>.from(d.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get vehicleType {
+    final t = data['vehicleType'];
+    if (t is Map) return Map<String, dynamic>.from(t.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get plan {
+    final p = data['plan'];
+    if (p is Map) return Map<String, dynamic>.from(p.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get userPrimary {
+    final u = data['userPrimary'];
+    if (u is Map) return Map<String, dynamic>.from(u.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get userAddedBy {
+    final u = data['userAddedBy'];
+    if (u is Map) return Map<String, dynamic>.from(u.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get driver {
+    final dv = data['driverVehicle'];
+    if (dv is Map) {
+      final d = dv['driver'];
+      if (d is Map) return Map<String, dynamic>.from(d.cast());
+    }
+    return const <String, dynamic>{};
+  }
+
+  String get model => _s(
+    data['model'] ??
+        data['deviceModel'] ??
+        data['deviceModel'] ??
+        deviceType['name'] ??
+        deviceType['manufacturer'] ??
+        device['model'] ??
+        device['typeName'] ??
+        data['device'],
+  );
 
   String get type => _s(
     data['type'] ??
+        vehicleType['name'] ??
+        vehicleType['title'] ??
+        vehicleType['slug'] ??
         data['vehicleType'] ??
         data['vehicleTypeName'] ??
         data['vehicle_type_name'],
@@ -52,26 +139,114 @@ class VehicleDetails {
 
   String get imei => _s(
     data['imei'] ??
+        device['imei'] ??
         data['deviceImei'] ??
         data['device_imei'] ??
         data['imeiNumber'],
   );
 
+  String get simNumber => _s(
+    data['simNumber'] ??
+        (device['sim'] is Map ? (device['sim'] as Map)['simNumber'] : null) ??
+        (device['sim'] is Map ? (device['sim'] as Map)['number'] : null),
+  );
+
+  String get simProviderName => _s(
+    (device['sim'] is Map && (device['sim'] as Map)['provider'] is Map
+        ? ((device['sim'] as Map)['provider'] as Map)['name']
+        : null),
+  );
+
+  String get gmtOffset =>
+      _s(data['gmtOffset'] ?? data['gmt_offset'] ?? data['timezone']);
+
   String get lastSeen => _s(
-    data['lastSeen'] ??
+    telemetry['lastSeen'] ??
+        telemetry['lastSeenAt'] ??
+        telemetry['last_seen_at'] ??
+        data['lastUpdate'] ??
+        data['lastSeen'] ??
         data['lastSeenAt'] ??
         data['last_seen_at'] ??
         data['updatedAt'] ??
         data['updated_at'],
   );
 
-  String get speed => _s(data['speed'] ?? data['currentSpeed']);
+  String get speed => _s(
+    telemetry['speed'] ??
+        telemetry['currentSpeed'] ??
+        data['speed'] ??
+        data['currentSpeed'],
+  );
 
-  String get ignition =>
-      _s(data['ignition'] ?? data['isIgnitionOn'] ?? data['ignitionStatus']);
+  String get ignition => _s(
+    telemetry['ignition'] ??
+        telemetry['isIgnitionOn'] ??
+        telemetry['ignitionStatus'] ??
+        data['ignition'] ??
+        data['isIgnitionOn'] ??
+        data['ignitionStatus'] ??
+        device['ignitionSource'],
+  );
 
-  String get locationName =>
-      _s(data['location'] ?? data['locationName'] ?? data['city']);
+  String get locationName => _s(
+    telemetry['location'] ??
+        telemetry['locationName'] ??
+        telemetry['address'] ??
+        data['location'] ??
+        data['locationName'] ??
+        data['city'],
+  );
+
+  String get vin => _s(data['vin'] ?? data['VIN'] ?? data['chassisNumber']);
+
+  String get primaryExpiry => _s(
+    data['primaryExpiry'] ??
+        data['primary_expiry'] ??
+        data['primaryLicenseExpiry'],
+  );
+
+  String get secondaryExpiry => _s(
+    data['secondaryExpiry'] ??
+        data['secondary_expiry'] ??
+        data['secondaryLicenseExpiry'],
+  );
+
+  String get engineHours => _s(
+    device['engineHours'] ?? telemetry['engineHours'] ?? telemetry['hours'],
+  );
+
+  String get odometer =>
+      _s(device['odometer'] ?? telemetry['odometer'] ?? telemetry['mileage']);
+
+  String get primaryUserName =>
+      _s(userPrimary['name'] ?? userPrimary['fullName']);
+
+  String get primaryUserEmail => _s(userPrimary['email']);
+
+  String get primaryUserUsername =>
+      _s(userPrimary['username'] ?? userPrimary['loginType']);
+
+  String get addedByName => _s(userAddedBy['name'] ?? userAddedBy['fullName']);
+
+  String get addedByEmail => _s(userAddedBy['email']);
+
+  String get addedByUsername => _s(userAddedBy['username']);
+
+  String get driverName => _s(driver['name'] ?? driver['fullName']);
+
+  String get driverEmail => _s(driver['email']);
+
+  String get driverPhone =>
+      _s(driver['phone'] ?? driver['mobile'] ?? driver['phoneNumber']);
+
+  String get planName => _s(plan['name']);
+
+  String get planPrice => _s(plan['price']);
+
+  String get planCurrency => _s(plan['currency']);
+
+  String get planDurationDays => _s(plan['durationDays']);
 
   List<Object?>? get usersRaw => _extractList(const [
     'users',
@@ -84,8 +259,33 @@ class VehicleDetails {
   List<Object?>? get documentsRaw =>
       _extractList(const ['documents', 'docs', 'files']);
 
-  List<VehicleUserItem> get users =>
-      _mapItems(usersRaw, (map) => VehicleUserItem(map));
+  List<VehicleUserItem> get users => usersRaw != null && usersRaw!.isNotEmpty
+      ? _mapItems(usersRaw, (map) => VehicleUserItem(map))
+      : _synthesizedUsers;
+
+  List<VehicleUserItem> get _synthesizedUsers {
+    final out = <VehicleUserItem>[];
+    if (userPrimary.isNotEmpty) {
+      out.add(
+        VehicleUserItem({
+          ...userPrimary,
+          'role': userPrimary['loginType'] ?? 'USER',
+        }),
+      );
+    }
+    if (userAddedBy.isNotEmpty) {
+      out.add(
+        VehicleUserItem({
+          ...userAddedBy,
+          'role': userAddedBy['loginType'] ?? 'ADMIN',
+        }),
+      );
+    }
+    if (driver.isNotEmpty) {
+      out.add(VehicleUserItem({...driver, 'role': driver['role'] ?? 'DRIVER'}));
+    }
+    return out;
+  }
 
   List<VehicleDocumentItem> get documents =>
       _mapItems(documentsRaw, (map) => VehicleDocumentItem(map));
@@ -130,5 +330,11 @@ class VehicleDetails {
     if (v == null) return '';
     if (v is String) return v;
     return v.toString();
+  }
+
+  static Map<String, dynamic> _coerceMap(Object? v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v.cast());
+    return const <String, dynamic>{};
   }
 }

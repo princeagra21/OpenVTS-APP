@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:device_preview/device_preview.dart';
+import 'package:fleet_stack/core/auth/session_expired_bus.dart';
+import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
@@ -14,12 +17,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-String _targetPathForRole(String? backendRole) {
+String? _targetPathForRole(String? backendRole) {
   final normalized = (backendRole ?? '').trim().toLowerCase();
   if (normalized.contains('super')) return '/superadmin/home';
   if (normalized.contains('admin')) return '/admin/home';
-  if (normalized.contains('driver')) return '/user/home';
   if (normalized.contains('user')) return '/user/home';
+  if (normalized.contains('driver')) return null;
   return '/user/home';
 }
 
@@ -129,7 +132,12 @@ Future<String> _resolveInitialLocation() async {
   }
 
   final role = _extractRoleFromToken(token);
-  return _targetPathForRole(role);
+  final target = _targetPathForRole(role);
+  if (target == null) {
+    await storage.clear();
+    return '/onboarding';
+  }
+  return target;
 }
 
 /// ROUTER
@@ -194,6 +202,8 @@ class ThemeController {
 }
 
 final themeController = ThemeController();
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 /// LISTENABLE BUILDER 2
 class ValueListenableBuilder2<A, B> extends StatelessWidget {
@@ -255,7 +265,7 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final GoRouter router;
   final bool enableDevicePreview;
 
@@ -264,6 +274,41 @@ class MyApp extends StatelessWidget {
     required this.router,
     this.enableDevicePreview = false,
   });
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamSubscription<void>? _sessionExpiredSub;
+  DateTime? _lastSessionNoticeAt;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(PushNotificationsService.instance.syncOnAppStart());
+    _sessionExpiredSub = SessionExpiredBus.stream.listen((_) async {
+      await TokenStorage.defaultInstance().clear();
+      if (!mounted) return;
+      widget.router.go('/login');
+      final now = DateTime.now();
+      final last = _lastSessionNoticeAt;
+      if (last == null || now.difference(last).inSeconds >= 2) {
+        _lastSessionNoticeAt = now;
+        rootScaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Session expired. Please log in again.'),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionExpiredSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -277,11 +322,14 @@ class MyApp extends StatelessWidget {
           builder: (_, mode, brand, __) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-              locale: enableDevicePreview
+              scaffoldMessengerKey: rootScaffoldMessengerKey,
+              locale: widget.enableDevicePreview
                   ? DevicePreview.locale(context)
                   : null,
-              builder: enableDevicePreview ? DevicePreview.appBuilder : null,
-              routerConfig: router,
+              builder: widget.enableDevicePreview
+                  ? DevicePreview.appBuilder
+                  : null,
+              routerConfig: widget.router,
               theme: AppTheme.light(brand),
               darkTheme: AppTheme.dark(brand),
               themeMode: mode,

@@ -493,16 +493,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                       ),
                       if (loadingBranding) ...[
                         const SizedBox(width: 8),
-                        SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
-                          ),
-                        ),
+                        const AppShimmer(width: 12, height: 12, radius: 6),
                       ],
                     ],
                   ),
@@ -524,11 +515,10 @@ class _BrandingSettingsBox extends StatelessWidget {
                   width: AdaptiveUtils.getIconSize(width),
                   height: AdaptiveUtils.getIconSize(width),
                   child: saving
-                      ? CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.onPrimary,
-                          ),
+                      ? AppShimmer(
+                          width: AdaptiveUtils.getIconSize(width),
+                          height: AdaptiveUtils.getIconSize(width),
+                          radius: AdaptiveUtils.getIconSize(width) / 2,
                         )
                       : Icon(
                           Icons.save_outlined,
@@ -829,15 +819,10 @@ class _BrandingSettingsBox extends StatelessWidget {
                           ),
                           child: Center(
                             child: uploading
-                                ? SizedBox(
+                                ? const AppShimmer(
                                     width: 12,
                                     height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.primary,
-                                      ),
-                                    ),
+                                    radius: 6,
                                   )
                                 : Column(
                                     mainAxisAlignment: MainAxisAlignment.center,

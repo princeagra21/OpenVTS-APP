@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Confirmed API source (FleetStack-API-Reference.md):
-  /// - GET /admin/dashboard/summary
+  /// - GET /admin/dashboard/summary?rk=0[&currency=INR]
   /// Keys used:
   /// - totals.totalVehicles
   /// - totals.totalUsers

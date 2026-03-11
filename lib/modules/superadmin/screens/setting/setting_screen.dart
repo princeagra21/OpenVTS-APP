@@ -3,110 +3,183 @@ import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  static const String _settingsViewKey = 'superadmin_settings_view_mode';
+  bool _isGridView = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadViewPreference();
+  }
+
+  Future<void> _loadViewPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _isGridView = prefs.getBool(_settingsViewKey) ?? true;
+    });
+  }
+
+  Future<void> _toggleViewMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _isGridView = !_isGridView;
+    });
+    await prefs.setBool(_settingsViewKey, _isGridView);
+  }
+
+  Widget _buildItemsBlock({
+    required BuildContext context,
+    required List<Map<String, dynamic>> items,
+    required double width,
+    required double hp,
+    required bool isGridView,
+  }) {
+    final int crossAxisCount = isGridView
+        ? (width > 1100
+              ? 4
+              : width > 700
+              ? 3
+              : 2)
+        : 1;
+
+    final double childAspectRatio = isGridView ? 0.95 : 4.5;
+    final double mainAxisSpacing = isGridView ? hp : 12;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: hp,
+        mainAxisSpacing: mainAxisSpacing,
+        childAspectRatio: childAspectRatio,
+      ),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _SettingsMenuCard(
+          title: item['title'],
+          subtitle: item['subtitle'],
+          icon: item['icon'],
+          route: item['route'],
+          isListMode: !isGridView,
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
 
     final List<Map<String, dynamic>> settingsItems = [
-      {'title': 'Profile', 'subtitle': 'Manage profile', 'icon': CupertinoIcons.person, 'route': '/superadmin/profile'},
-      {'title': 'White Label', 'subtitle': 'Brand customization', 'icon': CupertinoIcons.paintbrush, 'route': '/superadmin/white-label'},
-      {'title': 'Branding', 'subtitle': 'Company branding', 'icon': CupertinoIcons.briefcase, 'route': '/superadmin/branding'},
-      {'title': 'API Config', 'subtitle': 'Configure APIs', 'icon': CupertinoIcons.cloud, 'route': '/superadmin/api-config'},
-      {'title': 'SMTP Settings', 'subtitle': 'Email settings', 'icon': CupertinoIcons.mail, 'route': '/superadmin/smtp-settings'},
-      {'title': 'Localization', 'subtitle': 'Language & region', 'icon': CupertinoIcons.globe, 'route': '/superadmin/localization'},
-      {'title': 'Settings', 'subtitle': 'App preferences', 'icon': CupertinoIcons.settings, 'route': '/superadmin/application-settings'},
-    //  {'title': 'Email Templates', 'subtitle': 'Manage emails', 'icon': CupertinoIcons.doc, 'route': '/superadmin/email-settings'},
-    //  {'title': 'Push Notification Templates', 'subtitle': 'Manage push', 'icon': CupertinoIcons.bell, 'route': '/superadmin/notification-settings'},
-    //  {'title': 'Payment Gateway', 'subtitle': 'Configure payments', 'icon': CupertinoIcons.creditcard, 'route': '/superadmin/payment-gateway'},
-      {'title': 'Update User Policy', 'subtitle': 'User policy', 'icon': CupertinoIcons.doc_text, 'route': '/superadmin/user-policy'},
+      {
+        'title': 'Profile',
+        'subtitle': 'Manage profile',
+        'icon': CupertinoIcons.person,
+        'route': '/superadmin/profile',
+      },
+      {
+        'title': 'White Label',
+        'subtitle': 'Brand customization',
+        'icon': CupertinoIcons.paintbrush,
+        'route': '/superadmin/white-label',
+      },
+      // {
+      //   'title': 'Branding',
+      //   'subtitle': 'Company branding',
+      //   'icon': CupertinoIcons.briefcase,
+      //   'route': '/superadmin/branding',
+      // },
+      {
+        'title': 'API Config',
+        'subtitle': 'Configure APIs',
+        'icon': CupertinoIcons.cloud,
+        'route': '/superadmin/api-config',
+      },
+      {
+        'title': 'SMTP Settings',
+        'subtitle': 'Email settings',
+        'icon': CupertinoIcons.mail,
+        'route': '/superadmin/smtp-settings',
+      },
+      {
+        'title': 'Localization',
+        'subtitle': 'Language & region',
+        'icon': CupertinoIcons.globe,
+        'route': '/superadmin/localization',
+      },
+      {
+        'title': 'App Preferences',
+        'subtitle': 'App preferences',
+        'icon': CupertinoIcons.settings,
+        'route': '/superadmin/application-settings',
+      },
+      {
+        'title': 'Update User Policy',
+        'subtitle': 'User policy',
+        'icon': CupertinoIcons.doc_text,
+        'route': '/superadmin/user-policy',
+      },
     ];
 
-    final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
+    final IconData toggleIcon = _isGridView
+        ? CupertinoIcons.list_bullet
+        : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
       title: "FLEET STACK",
       subtitle: "Settings",
-      actionIcons: const [CupertinoIcons.search, CupertinoIcons.bell],
+      actionIcons: [toggleIcon, CupertinoIcons.bell],
+      onActionTaps: [
+        _toggleViewMode,
+        () => context.push('/superadmin/notifications'),
+      ],
       leftAvatarText: 'FS',
       showLeftAvatar: false,
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// TITLE
-         Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Text(
-      "Settings",
-      style: TextStyle(
-        fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
-        fontWeight: FontWeight.w700,
-        color: colorScheme.onSurface.withOpacity(0.85),
-        letterSpacing: -0.3,
-      ),
-    ),
-
-  //  SmallTab(
-  //    label: "8 items",
- //     selected: true,
-//      onTap: () {},
- //   ),
-  ],
-),
-
-      
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Settings",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface.withOpacity(0.85),
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
           SizedBox(height: hp * 1.2),
-      
-          /// SETTINGS CARDS IN ROWS (2 per row)
-          ..._buildCardRows(settingsItems, width, hp, context),
+          _buildItemsBlock(
+            context: context,
+            items: settingsItems,
+            width: width,
+            hp: hp,
+            isGridView: _isGridView,
+          ),
         ],
       ),
     );
-  }
-
-  List<Widget> _buildCardRows(List<Map<String, dynamic>> items, double width, double hp, BuildContext context) {
-    List<Widget> rows = [];
-    for (int i = 0; i < items.length; i += 2) {
-      final left = items[i];
-      final right = (i + 1 < items.length) ? items[i + 1] : null;
-
-      rows.add(
-        Row(
-          children: [
-            Expanded(
-              child: _SettingsMenuCard(
-                title: left['title'],
-                subtitle: left['subtitle'],
-                icon: left['icon'],
-                route: left['route'],
-              ),
-            ),
-            SizedBox(width: hp),
-            if (right != null)
-              Expanded(
-                child: _SettingsMenuCard(
-                  title: right['title'],
-                  subtitle: right['subtitle'],
-                  icon: right['icon'],
-                  route: right['route'],
-                ),
-              )
-            else
-              Expanded(child: Container()), // Empty for odd count
-          ],
-        ),
-      );
-
-      rows.add(SizedBox(height: hp)); // spacing between rows
-    }
-
-    return rows;
   }
 }
 
@@ -115,12 +188,14 @@ class _SettingsMenuCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final String route;
+  final bool isListMode;
 
   const _SettingsMenuCard({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.route,
+    this.isListMode = false,
   });
 
   @override
@@ -128,6 +203,13 @@ class _SettingsMenuCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
+    final double avatarSize = AdaptiveUtils.getAvatarSize(width);
+    final double iconSize = AdaptiveUtils.getIconSize(width);
+
+    final double containerSize = isListMode
+        ? avatarSize * 1.2
+        : avatarSize * 1.5;
+    final double innerIconSize = isListMode ? iconSize : iconSize * 1.2;
 
     return Material(
       color: Colors.transparent,
@@ -143,53 +225,121 @@ class _SettingsMenuCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colorScheme.onSurface.withOpacity(0.05), width: 1),
+            border: Border.all(
+              color: colorScheme.onSurface.withOpacity(0.05),
+              width: 1,
+            ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// ICON AVATAR
-              Container(
-                height: AdaptiveUtils.getAvatarSize(width) * 1.5,
-                width: AdaptiveUtils.getAvatarSize(width) * 1.5,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.primary.withOpacity(0.05),
-                ),
-                child: Center(
-                  child: Icon(icon, size: AdaptiveUtils.getIconSize(width) * 1.2, color: colorScheme.primary.withOpacity(0.8)),
-                ),
-              ),
-              SizedBox(height: 12),
-
-              /// CARD TITLE
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface.withOpacity(0.9),
-                  letterSpacing: -0.5,
-                ),
-              ),
-
-              SizedBox(height: 4),
-
-              /// CARD SUBTITLE
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: AdaptiveUtils.getTitleFontSize(width),
-                  fontWeight: FontWeight.w400,
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                  height: 1.2,
-                ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
+          child: isListMode
+              ? Row(
+                  children: [
+                    Container(
+                      height: containerSize,
+                      width: containerSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.primary.withOpacity(0.05),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          size: innerIconSize,
+                          color: colorScheme.primary.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: AdaptiveUtils.getSubtitleFontSize(
+                                width,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface.withOpacity(0.9),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: AdaptiveUtils.getTitleFontSize(width),
+                              fontWeight: FontWeight.w400,
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      CupertinoIcons.chevron_forward,
+                      size: iconSize * 0.9,
+                      color: colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: avatarSize * 1.5,
+                      width: avatarSize * 1.5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.primary.withOpacity(0.05),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          size: iconSize * 1.2,
+                          color: colorScheme.primary.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface.withOpacity(0.9),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        fontWeight: FontWeight.w400,
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

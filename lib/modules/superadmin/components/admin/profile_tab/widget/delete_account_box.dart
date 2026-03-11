@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -110,10 +111,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
     setState(() => _submitting = true);
 
     try {
-      final res = await _repo!.deleteAdmin(
-        widget.adminId,
-        cancelToken: _token,
-      );
+      final res = await _repo!.deleteAdmin(widget.adminId, cancelToken: _token);
       if (!mounted) return;
 
       if (res.isSuccess) {
@@ -123,7 +121,8 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
       }
 
       final err = res.error;
-      if (err is ApiException && (err.statusCode == 401 || err.statusCode == 403)) {
+      if (err is ApiException &&
+          (err.statusCode == 401 || err.statusCode == 403)) {
         _snackOnce('Not authorized.');
       } else {
         _snackOnce("Couldn't delete admin.");
@@ -195,15 +194,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                   ),
                 ),
                 child: _submitting
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(dangerColor),
-                        ),
-                      )
+                    ? const AppShimmer(width: 18, height: 18, radius: 9)
                     : Text(
                         "Delete",
                         style: GoogleFonts.inter(

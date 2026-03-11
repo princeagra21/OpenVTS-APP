@@ -536,11 +536,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                   if (_loadingConfig)
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
-                      child: SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                      child: AppShimmer(width: 12, height: 12, radius: 6),
                     ),
                 ],
               ),
@@ -566,11 +562,10 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                   width: AdaptiveUtils.getIconSize(width),
                   height: AdaptiveUtils.getIconSize(width),
                   child: _saving
-                      ? CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.onPrimary,
-                          ),
+                      ? AppShimmer(
+                          width: AdaptiveUtils.getIconSize(width),
+                          height: AdaptiveUtils.getIconSize(width),
+                          radius: AdaptiveUtils.getIconSize(width) / 2,
                         )
                       : Icon(
                           Icons.save_outlined,
@@ -933,12 +928,10 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 width: 16,
                                 height: 16,
                                 child: _testFirebaseLoading
-                                    ? CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
+                                    ? const AppShimmer(
+                                        width: 16,
+                                        height: 16,
+                                        radius: 8,
                                       )
                                     : Icon(
                                         Icons.check,
@@ -1475,12 +1468,10 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 width: 16,
                                 height: 16,
                                 child: _testGeoLoading
-                                    ? CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
+                                    ? const AppShimmer(
+                                        width: 16,
+                                        height: 16,
+                                        radius: 8,
                                       )
                                     : Icon(
                                         Icons.check,
@@ -1799,12 +1790,10 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 width: 16,
                                 height: 16,
                                 child: _testSsoLoading
-                                    ? CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
+                                    ? const AppShimmer(
+                                        width: 16,
+                                        height: 16,
+                                        radius: 8,
                                       )
                                     : Icon(
                                         Icons.check,
@@ -2174,12 +2163,10 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 width: 16,
                                 height: 16,
                                 child: _testOpenAiLoading
-                                    ? CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
+                                    ? const AppShimmer(
+                                        width: 16,
+                                        height: 16,
+                                        radius: 8,
                                       )
                                     : Icon(
                                         Icons.check,

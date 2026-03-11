@@ -1,6 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/models/admin_document_item.dart';
+import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
+import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
+import 'package:fleet_stack/core/models/admin_transaction_item.dart';
 import 'package:fleet_stack/core/models/admin_user_details.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
+import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
@@ -34,7 +39,10 @@ class AdminUsersRepository {
 
     return res.when(
       success: (data) {
-        final list = _extractList(data);
+        final list = _extractList(
+          data,
+          listKeys: const ['userslist', 'users', 'items'],
+        );
         final users = list
             .whereType<Map>()
             .map(
@@ -61,6 +69,172 @@ class AdminUsersRepository {
       success: (data) {
         final map = _extractMap(data);
         return Result.ok(AdminUserDetails.fromRaw(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminVehicleListItem>>> getUserLinkedVehicles(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/unlinkvehicles/$userId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['vehicles', 'items', 'data'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminVehicleListItem.fromRaw(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminDriverListItem>>> getUserLinkedDrivers(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/users/unlinkeddrivers/$userId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['drivers', 'items', 'data'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminDriverListItem.fromRaw(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminDocumentItem>>> getUserDocuments(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/documents/$userId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['documents', 'items', 'data'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminDocumentItem(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminTicketListItem>>> getUserTickets(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/tickets',
+      queryParameters: <String, dynamic>{'userId': userId},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['tickets', 'items', 'data'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminTicketListItem(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminTransactionItem>>> getUserPayments(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/payments',
+      queryParameters: <String, dynamic>{
+        'page': 1,
+        'limit': 1000,
+        'userId': userId,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['payments', 'transactions', 'items', 'data'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminTransactionItem.fromRaw(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
       },
       failure: (err) => Result.fail(err),
     );
@@ -126,7 +300,9 @@ class AdminUsersRepository {
     return level0;
   }
 
-  List _extractList(Object? data) {
+  List _extractList(Object? data, {List<String> listKeys = const <String>[]}) {
+    final keys = <String>['data', 'items', 'result', 'results', ...listKeys];
+
     List? walk(Object? node, int depth) {
       if (depth > 6) return null;
       if (node is List) return node;
@@ -136,20 +312,9 @@ class AdminUsersRepository {
           ? node
           : Map<String, dynamic>.from(node.cast());
 
-      final candidates = [
-        map['userslist'],
-        map['users'],
-        map['items'],
-        map['result'],
-        map['data'],
-      ];
-
-      for (final candidate in candidates) {
-        if (candidate is List) return candidate;
-        if (candidate is Map || candidate is List) {
-          final found = walk(candidate, depth + 1);
-          if (found != null) return found;
-        }
+      for (final key in keys) {
+        final value = map[key];
+        if (value is List) return value;
       }
 
       for (final value in map.values) {

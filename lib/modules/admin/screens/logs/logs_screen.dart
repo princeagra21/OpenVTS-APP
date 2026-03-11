@@ -10,6 +10,7 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/screens/logs/log_details_screen.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -24,10 +25,10 @@ class LogsScreen extends StatefulWidget {
 
 class _LogsScreenState extends State<LogsScreen> {
   // Endpoint truth table (FleetStack-API-Reference.md):
-  // - GET /admin/logs/events   (primary for severity-based UI chips)
-  //   query keys used: limit, severity
-  // - GET /admin/logs/activity (fallback)
-  //   query keys used: q, limit, from, to, cursorId
+  // - GET /admin/logs/options
+  // - GET /admin/logs/activity
+  // - GET /admin/logs/events
+  // Repository merges list rows and sorts by latest time.
   String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
 
@@ -64,11 +65,32 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   DateTime _safeParseDateTime(String dateStr) {
-    final value = dateStr.trim();
-    if (value.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+    final parsed = _parseLogDate(dateStr);
+    return parsed ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime? _parseLogDate(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return null;
+
+    final numeric = int.tryParse(value);
+    if (numeric != null) {
+      if (numeric > 1000000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          numeric,
+          isUtc: true,
+        ).toLocal();
+      }
+      if (numeric > 1000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          numeric * 1000,
+          isUtc: true,
+        ).toLocal();
+      }
+    }
 
     final parsedIso = DateTime.tryParse(value);
-    if (parsedIso != null) return parsedIso;
+    if (parsedIso != null) return parsedIso.toLocal();
 
     final commaParts = value.split(',');
     if (commaParts.isNotEmpty) {
@@ -78,18 +100,87 @@ class _LogsScreenState extends State<LogsScreen> {
         final m = int.tryParse(dateParts[1]);
         final y = int.tryParse(dateParts[2]);
         if (d != null && m != null && y != null) {
-          return DateTime(y, m, d);
+          return DateTime(y, m, d).toLocal();
         }
       }
     }
 
-    return DateTime.fromMillisecondsSinceEpoch(0);
+    return null;
   }
 
-  String _safe(String value) {
-    final out = value.trim();
-    if (out.isEmpty || out.toLowerCase() == 'null') return '—';
+  String _compactRelativeTime(String? raw) {
+    final date = _parseLogDate(raw);
+    if (date == null) return '';
+
+    final now = DateTime.now();
+    var diff = now.difference(date);
+    if (diff.isNegative) diff = Duration.zero;
+
+    if (diff.inMinutes < 1) return '0m';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 30) return '${diff.inDays}d';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo';
+    return '${(diff.inDays / 365).floor()}y';
+  }
+
+  String? _cleanValue(String? value, {bool hideUnknown = true}) {
+    final out = (value ?? '').trim();
+    if (out.isEmpty) return null;
+    final lower = out.toLowerCase();
+    if (lower == 'null' || lower == '-' || lower == '—') return null;
+    if (hideUnknown && (lower == 'unknown' || lower == 'n/a')) return null;
     return out;
+  }
+
+  String? _userDisplay(AdminLogItem log) {
+    final user = log.raw['user'];
+    if (user is Map<String, dynamic>) {
+      return _cleanValue(
+        (user['name'] ?? user['username'] ?? user['uid'])?.toString(),
+      );
+    }
+    if (user is Map) {
+      final map = Map<String, dynamic>.from(user.cast());
+      return _cleanValue(
+        (map['name'] ?? map['username'] ?? map['uid'])?.toString(),
+      );
+    }
+    return null;
+  }
+
+  String _toTitleWords(String raw) {
+    final source = raw.trim();
+    if (source.isEmpty) return '';
+    final words = source
+        .replaceAll('.', ' ')
+        .replaceAll('_', ' ')
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) {
+          final lower = w.toLowerCase();
+          if (lower.length <= 1) return lower.toUpperCase();
+          return lower[0].toUpperCase() + lower.substring(1);
+        })
+        .toList();
+    return words.join(' ');
+  }
+
+  String _summaryLabel(AdminLogItem log) {
+    final actionRaw = _cleanValue(log.raw['action']?.toString());
+    final action = actionRaw == null ? null : _toTitleWords(actionRaw);
+    final entity = _cleanValue(log.entity);
+    final user = _userDisplay(log);
+
+    if (entity != null && action != null) return '$entity • $action';
+    if (user != null && action != null) return '$user • $action';
+    if (action != null) return action;
+    if (entity != null) return entity;
+    if (user != null) return user;
+
+    final type = _cleanValue(log.type);
+    if (type != null) return type;
+    return 'Activity';
   }
 
   Future<void> _loadLogs() async {
@@ -414,7 +505,7 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   Widget _buildLogCard({
-    required AdminLogItem? log,
+    required AdminLogItem log,
     required ColorScheme colorScheme,
     required double width,
     required double spacing,
@@ -424,13 +515,64 @@ class _LogsScreenState extends State<LogsScreen> {
     required double iconSize,
     required double cardPadding,
   }) {
-    final severity = _safe(log?.normalizedSeverity ?? '');
-    final severityColor = getSeverityColor(severity);
-    final type = _safe(log?.type ?? '');
-    final entity = _safe(log?.entity ?? '');
-    final message = _safe(log?.message ?? '');
-    final channel = _safe(log?.channel ?? '');
-    final time = _safe(log?.time ?? '');
+    final severity = _cleanValue(log.normalizedSeverity, hideUnknown: false);
+    final severityColor = getSeverityColor(severity ?? '');
+    final summary = _summaryLabel(log);
+    final relativeTime = _compactRelativeTime(log.time);
+    final message = _cleanValue(log.message);
+    final type = _cleanValue(log.type);
+    final channel = _cleanValue(log.channel);
+    final user = _userDisplay(log);
+    final entityId = _cleanValue(log.raw['entityId']?.toString());
+
+    final detailRows = <Widget>[];
+    void addRow(Widget row) {
+      if (detailRows.isNotEmpty) {
+        detailRows.add(SizedBox(height: spacing / 2));
+      }
+      detailRows.add(row);
+    }
+
+    Widget buildInfoRow({required IconData icon, required String value}) {
+      return Row(
+        children: [
+          Icon(
+            icon,
+            size: iconSize,
+            color: colorScheme.primary.withOpacity(0.6),
+          ),
+          SizedBox(width: spacing),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (message != null) {
+      addRow(buildInfoRow(icon: CupertinoIcons.text_bubble, value: message));
+    }
+    if (type != null) {
+      addRow(buildInfoRow(icon: CupertinoIcons.tag, value: type));
+    }
+    if (user != null) {
+      addRow(buildInfoRow(icon: CupertinoIcons.person, value: user));
+    }
+    if (channel != null) {
+      addRow(buildInfoRow(icon: CupertinoIcons.device_laptop, value: channel));
+    }
+    if (entityId != null) {
+      addRow(buildInfoRow(icon: CupertinoIcons.number, value: 'ID: $entityId'));
+    }
 
     return Container(
       margin: EdgeInsets.only(bottom: hp),
@@ -451,7 +593,13 @@ class _LogsScreenState extends State<LogsScreen> {
           borderRadius: BorderRadius.circular(25),
           child: InkWell(
             borderRadius: BorderRadius.circular(25),
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AdminLogDetailsScreen(log: log),
+                ),
+              );
+            },
             child: Padding(
               padding: EdgeInsets.all(cardPadding),
               child: Column(
@@ -470,7 +618,7 @@ class _LogsScreenState extends State<LogsScreen> {
                           ),
                         ),
                         child: Icon(
-                          _getIconForType(type.toLowerCase()),
+                          _getIconForType((type ?? '').toLowerCase()),
                           size: AdaptiveUtils.getFsAvatarFontSize(width),
                           color: colorScheme.primary,
                         ),
@@ -481,21 +629,40 @@ class _LogsScreenState extends State<LogsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: Text(
-                                    entity,
+                                    summary,
                                     style: GoogleFonts.inter(
                                       fontSize: bodyFs + 2,
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme.onSurface,
                                     ),
-                                    maxLines: 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                SizedBox(width: spacing),
-                                Container(
+                                if (relativeTime.isNotEmpty) ...[
+                                  SizedBox(width: spacing),
+                                  Text(
+                                    relativeTime,
+                                    style: GoogleFonts.inter(
+                                      fontSize: smallFs + 1,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.75,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            if (severity != null) ...[
+                              SizedBox(height: spacing / 2),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: spacing + 4,
                                     vertical: 4,
@@ -513,92 +680,16 @@ class _LogsScreenState extends State<LogsScreen> {
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: spacing / 2),
-                            Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.text_bubble,
-                                  size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
-                                ),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    message,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing / 2),
-                            Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.device_laptop,
-                                  size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
-                                ),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    channel,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing / 2),
-                            Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.tag,
-                                  size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
-                                ),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    type,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
+                            if (detailRows.isNotEmpty) ...[
+                              SizedBox(height: spacing / 2),
+                              ...detailRows,
+                            ],
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  SizedBox(height: spacing * 2),
-                  Text(
-                    'Time: $time',
-                    style: GoogleFonts.inter(
-                      fontSize: smallFs + 1,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface.withOpacity(0.87),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -610,6 +701,7 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   Color getSeverityColor(String severity) {
+    if (severity.isEmpty) return Colors.grey;
     if (severity == 'info') return Colors.blue;
     if (severity == 'warning') return Colors.orange;
     if (severity == 'error') return Colors.red;

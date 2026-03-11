@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isForgot = false;
   bool _loggingIn = false;
   bool _loginErrorShown = false;
+  bool _obscurePassword = true;
   CancelToken? _loginToken;
 
   ApiClient? _api;
@@ -133,7 +134,17 @@ class _LoginScreenState extends State<LoginScreen> {
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       suffixIcon: isPassword
-          ? Icon(Icons.visibility_off_outlined, color: colorScheme.primary)
+          ? IconButton(
+              onPressed: () {
+                setState(() => _obscurePassword = !_obscurePassword);
+              },
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: colorScheme.primary,
+              ),
+            )
           : null,
     );
   }
@@ -182,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Password Field
         TextField(
           controller: _passwordController,
-          obscureText: true,
+          obscureText: _obscurePassword,
           style: GoogleFonts.inter(
             fontSize: labelSize,
             color: colorScheme.onSurface,

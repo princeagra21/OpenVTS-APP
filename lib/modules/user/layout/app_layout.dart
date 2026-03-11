@@ -96,7 +96,10 @@ class _AppLayoutState extends State<AppLayout> {
           };
 
           if (effectiveTaps == null) {
-            effectiveTaps = List.generate(widget.actionIcons!.length, (_) => () {});
+            effectiveTaps = List.generate(
+              widget.actionIcons!.length,
+              (_) => () {},
+            );
           }
 
           if (widget.onActionTaps != null && i < widget.onActionTaps!.length) {
@@ -108,12 +111,23 @@ class _AppLayoutState extends State<AppLayout> {
           } else {
             effectiveTaps[i] = searchTap;
           }
+        } else if (widget.actionIcons![i] == CupertinoIcons.bell) {
+          effectiveTaps ??= List.generate(
+            widget.actionIcons!.length,
+            (_) => () {},
+          );
+          if (!(widget.onActionTaps != null &&
+              i < widget.onActionTaps!.length)) {
+            effectiveTaps[i] = () => context.push('/user/notifications');
+          }
         }
       }
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      backgroundColor: isDark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
       extendBody: true,
       extendBodyBehindAppBar: true,
       body: Stack(
@@ -129,13 +143,18 @@ class _AppLayoutState extends State<AppLayout> {
               return true;
             },
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.horizontalPadding,
+              ),
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   SizedBox(
-                    height: topPadding +
-                        (widget.showAppBar ? AppUtils.appBarHeightCustom + 32 : 16),
+                    height:
+                        topPadding +
+                        (widget.showAppBar
+                            ? AppUtils.appBarHeightCustom + 32
+                            : 16),
                   ),
                   widget.child,
                   SizedBox(height: 68 + 16 + bottomPadding),
@@ -159,12 +178,14 @@ class _AppLayoutState extends State<AppLayout> {
                     title: widget.title,
                     subtitle: widget.subtitle,
                     icons: widget.actionIcons ?? [],
-                    onIconTaps: effectiveTaps, // Use effective taps with search handling
+                    onIconTaps:
+                        effectiveTaps, // Use effective taps with search handling
+                    enableBellBadge: true,
+                    notificationPathPrefix: '/user/notifications',
                     showLeftAvatar: widget.showLeftAvatar,
                     showRightAvatar: widget.showRightAvatar,
                     leftAvatarText: widget.leftAvatarText,
                     scrollOffset: _scrollOffset, // Pass the dynamic offset
-
                     // Instruct CustomAppBar to NOT show its automatic leading (back) button.
                     // If CustomAppBar exposes a parameter to control its leading/back button,
                     // add it there; otherwise control navigation from this layout.
@@ -184,11 +205,15 @@ class _AppLayoutState extends State<AppLayout> {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding, vertical: 0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: widget.horizontalPadding,
+                      vertical: 0,
+                    ),
                     child: Row(
                       children: [
                         // Back button (left) - only show when route can be popped
-                        if (ModalRoute.of(context)?.canPop == true || Navigator.of(context).canPop())
+                        if (ModalRoute.of(context)?.canPop == true ||
+                            Navigator.of(context).canPop())
                           GestureDetector(
                             onTap: () => context.pop(),
                             child: Container(
@@ -202,7 +227,7 @@ class _AppLayoutState extends State<AppLayout> {
                                     color: cs.shadow.withOpacity(0.15),
                                     blurRadius: 8,
                                     offset: const Offset(0, 3),
-                                  )
+                                  ),
                                 ],
                               ),
                               child: Icon(
@@ -219,14 +244,19 @@ class _AppLayoutState extends State<AppLayout> {
                         if (widget.actionIcons != null)
                           Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: widget.actionIcons!.asMap().entries.map((entry) {
+                            children: widget.actionIcons!.asMap().entries.map((
+                              entry,
+                            ) {
                               final int index = entry.key;
                               final IconData icon = entry.value;
-                              final VoidCallback? tapHandler = (effectiveTaps != null && index < effectiveTaps.length)
+                              final VoidCallback? tapHandler =
+                                  (effectiveTaps != null &&
+                                      index < effectiveTaps.length)
                                   ? effectiveTaps[index]
-                                  : (widget.onActionTaps != null && index < widget.onActionTaps!.length
-                                      ? widget.onActionTaps![index]
-                                      : null);
+                                  : (widget.onActionTaps != null &&
+                                            index < widget.onActionTaps!.length
+                                        ? widget.onActionTaps![index]
+                                        : null);
 
                               return Padding(
                                 padding: const EdgeInsets.only(left: 12),
@@ -287,7 +317,12 @@ class _AppLayoutState extends State<AppLayout> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                        Icon(
+                          Icons.search,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.7),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -315,10 +350,17 @@ class _AppLayoutState extends State<AppLayout> {
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1),
                             ),
-                            child: Icon(Icons.close,
-                                size: 18, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.7),
+                            ),
                           ),
                         ),
                       ],

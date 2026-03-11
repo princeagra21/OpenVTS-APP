@@ -12,11 +12,10 @@ class VehicleUserItem {
   String get email => _s(raw['email'] ?? raw['mail']);
 
   String get phone => _s(
-    raw['phone'] ??
-        raw['mobileNumber'] ??
-        raw['mobile'] ??
-        raw['phoneNumber'],
+    raw['phone'] ?? raw['mobileNumber'] ?? raw['mobile'] ?? raw['phoneNumber'],
   );
+
+  String get role => _s(raw['role'] ?? raw['loginType'] ?? raw['type']);
 
   String get lastSeen => _s(
     raw['lastSeen'] ??
@@ -32,4 +31,3 @@ class VehicleUserItem {
     return v.toString();
   }
 }
-
