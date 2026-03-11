@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isForgot = false;
   bool _loggingIn = false;
   bool _loginErrorShown = false;
+  bool _obscurePassword = true;
   CancelToken? _loginToken;
 
   ApiClient? _api;
@@ -132,7 +134,17 @@ class _LoginScreenState extends State<LoginScreen> {
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       suffixIcon: isPassword
-          ? Icon(Icons.visibility_off_outlined, color: colorScheme.primary)
+          ? IconButton(
+              onPressed: () {
+                setState(() => _obscurePassword = !_obscurePassword);
+              },
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: colorScheme.primary,
+              ),
+            )
           : null,
     );
   }
@@ -181,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Password Field
         TextField(
           controller: _passwordController,
-          obscureText: true,
+          obscureText: _obscurePassword,
           style: GoogleFonts.inter(
             fontSize: labelSize,
             color: colorScheme.onSurface,
@@ -213,16 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: Center(
               child: _loggingIn
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
-                        ),
-                      ),
-                    )
+                  ? const AppShimmer(width: 18, height: 18, radius: 9)
                   : Text(
                       "Login",
                       style: GoogleFonts.inter(

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/models/admin_document_item.dart';
 import 'package:fleet_stack/core/models/admin_driver_details.dart';
 import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
+import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
@@ -87,6 +89,64 @@ class AdminDriversRepository {
 
     return res.when(
       success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminDocumentItem>>> getDriverDocuments(
+    String driverId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/documents/driver/$driverId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminDocumentItem(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminUserListItem>>> getLinkedUsers(
+    String driverId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/drivers/linkedusers/$driverId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminUserListItem(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
       failure: (err) => Result.fail(err),
     );
   }

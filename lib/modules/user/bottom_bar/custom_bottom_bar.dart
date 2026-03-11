@@ -17,6 +17,7 @@ class CustomBottomBar extends StatelessWidget {
     /// Routes where bottom bar should be hidden
     const List<String> hiddenRoutes = [
       '/users/details',
+      '/user/drivers/details/',
       '/user/vehicles/details/',
       '/user/profile',
       '/user/white-label',
@@ -43,10 +44,8 @@ class CustomBottomBar extends StatelessWidget {
       }
     }
 
-    final double iconSize =
-        AdaptiveUtils.getIconSize(screenWidth) * 0.85;
-    final double buttonSize =
-        AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth) * 0.85;
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth) * 0.85;
     final double labelFontSize =
         AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
     final double topPadding =
@@ -56,21 +55,15 @@ class CustomBottomBar extends StatelessWidget {
 
     /// UPDATED ICONS
     final List<IconData> icons = [
-      CupertinoIcons.house_fill,          // Home
-      CupertinoIcons.map_fill,            // Maps
-      CupertinoIcons.map_pin_ellipse,     // Landmarks
-      CupertinoIcons.person_2_fill,       // Admin
-      CupertinoIcons.ellipsis_circle_fill // More
+      CupertinoIcons.house_fill, // Home
+      CupertinoIcons.map_fill, // Maps
+      CupertinoIcons.map_pin_ellipse, // Landmarks
+      CupertinoIcons.person_2_fill, // Admin
+      CupertinoIcons.ellipsis_circle_fill, // More
     ];
 
     /// UPDATED LABELS
-    final List<String> labels = [
-      'Home',
-      'Maps',
-      'Geofence',
-      'Admin',
-      'More',
-    ];
+    final List<String> labels = ['Home', 'Maps', 'Geofence', 'Tools', 'More'];
 
     /// UPDATED ROUTES
     final List<String> routes = [

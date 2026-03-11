@@ -99,6 +99,8 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
 
   Color _statusColor(String status, ColorScheme cs) {
     final s = status.trim().toLowerCase();
+    if (s == 'valid' || s.contains('active')) return cs.primary;
+    if (s == 'not_installed' || s.contains('not installed')) return cs.error;
     if (s.contains('active')) return cs.primary;
     if (s.contains('expiring')) return cs.secondary;
     if (s.contains('pending')) return cs.outline;
@@ -108,7 +110,13 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
 
   String _statusLabel(SslCertificateItem item) {
     final s = item.status.trim();
-    return s.isEmpty ? 'Unknown' : s;
+    if (s.isEmpty) return 'Unknown';
+    return s
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((part) => part.trim().isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
+        .join(' ');
   }
 
   List<String> _actionsFor(SslCertificateItem item) {
@@ -121,13 +129,13 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
     }
 
     final s = item.status.trim().toLowerCase();
-    if (s.contains('active')) return const ['Renew', 'Uninstall', 'Details'];
-    if (s.contains('expiring')) return const ['Renew', 'Details'];
-    if (s.contains('pending')) return const ['Install SSL', 'Details'];
+    if (s.contains('active')) return const ['Renew', 'Uninstall'];
+    if (s.contains('expiring')) return const ['Renew'];
+    if (s.contains('pending')) return const ['Install SSL'];
     if (s.contains('error') || s.contains('expired')) {
-      return const ['Install SSL', 'Uninstall', 'Details'];
+      return const ['Install SSL', 'Uninstall'];
     }
-    return const ['Details'];
+    return const [];
   }
 
   String _formatExpiry(SslCertificateItem item) {
@@ -155,6 +163,39 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
     final raw = item.expiryText.trim();
     if (raw.isNotEmpty) return raw;
     return '—';
+  }
+
+  String? _meaningfulText(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return null;
+    if (text.toLowerCase() == 'null') return null;
+    return text;
+  }
+
+  Widget _buildMetaText(
+    BuildContext context, {
+    required String label,
+    required String? value,
+    Color? color,
+    int maxLines = 2,
+  }) {
+    final meaningful = _meaningfulText(value);
+    if (meaningful == null) return const SizedBox.shrink();
+
+    final width = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        "$label: $meaningful",
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(
+          fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+          color: color ?? cs.onSurface.withOpacity(0.65),
+        ),
+      ),
+    );
   }
 
   void _handleUnavailableAction() {
@@ -244,15 +285,10 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                             alignment: PlaceholderAlignment.middle,
                             child: Padding(
                               padding: const EdgeInsets.only(left: 8),
-                              child: SizedBox(
+                              child: AppShimmer(
                                 width: 12,
                                 height: 12,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    cs.primary,
-                                  ),
-                                ),
+                                radius: 6,
                               ),
                             ),
                           ),
@@ -301,6 +337,14 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                       final statusText = _statusLabel(item);
                       final statusColor = _statusColor(statusText, cs);
                       final actions = _actionsFor(item);
+                      final companyName = _meaningfulText(item.companyName);
+                      final issuer = _meaningfulText(item.issuer);
+                      final validFrom = _meaningfulText(item.validFrom);
+                      final validTo = _meaningfulText(item.validTo);
+                      final expiry = _formatExpiry(item);
+                      final expiryText = expiry == '—' ? null : expiry;
+                      final errorText = _meaningfulText(item.error);
+                      final daysRemaining = item.daysRemaining;
                       return Container(
                         width: double.infinity,
                         margin: const EdgeInsets.only(bottom: 16),
@@ -330,6 +374,8 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                 children: [
                                   Text(
                                     domainName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.inter(
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         width,
@@ -338,17 +384,44 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                       color: cs.onSurface,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Expiry: ${_formatExpiry(item)}",
-                                    style: GoogleFonts.inter(
-                                      fontSize:
-                                          AdaptiveUtils.getSubtitleFontSize(
-                                            width,
-                                          ) -
-                                          5,
-                                      color: cs.onSurface.withOpacity(0.65),
+                                  if (companyName != null)
+                                    _buildMetaText(
+                                      context,
+                                      label: "Company",
+                                      value: companyName,
+                                      maxLines: 1,
                                     ),
+                                  _buildMetaText(
+                                    context,
+                                    label: "Issuer",
+                                    value: issuer,
+                                    maxLines: 1,
+                                  ),
+                                  _buildMetaText(
+                                    context,
+                                    label: "Valid From",
+                                    value: validFrom,
+                                    maxLines: 1,
+                                  ),
+                                  _buildMetaText(
+                                    context,
+                                    label: "Valid To",
+                                    value: validTo ?? expiryText,
+                                    maxLines: 1,
+                                  ),
+                                  if (daysRemaining != null)
+                                    _buildMetaText(
+                                      context,
+                                      label: "Days Remaining",
+                                      value: "$daysRemaining",
+                                      maxLines: 1,
+                                    ),
+                                  _buildMetaText(
+                                    context,
+                                    label: "Error",
+                                    value: errorText,
+                                    color: cs.error,
+                                    maxLines: 2,
                                   ),
                                   const SizedBox(height: 8),
 
@@ -383,29 +456,31 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                             ),
 
                             // Actions (3-dot menu)
-                            Expanded(
-                              flex: 2,
-                              child: Align(
-                                alignment: Alignment.topRight,
-                                child: PopupMenuButton<String>(
-                                  icon: Icon(
-                                    Icons.more_vert,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                            if (actions.isNotEmpty)
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.topRight,
+                                  child: PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                    onSelected: (_) =>
+                                        _handleUnavailableAction(),
+                                    itemBuilder: (context) => actions
+                                        .map<PopupMenuItem<String>>((action) {
+                                          return PopupMenuItem<String>(
+                                            value: action,
+                                            child: Text(action),
+                                          );
+                                        })
+                                        .toList(),
                                   ),
-                                  onSelected: (_) => _handleUnavailableAction(),
-                                  itemBuilder: (context) => actions
-                                      .map<PopupMenuItem<String>>((action) {
-                                        return PopupMenuItem<String>(
-                                          value: action,
-                                          child: Text(action),
-                                        );
-                                      })
-                                      .toList(),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       );

@@ -650,12 +650,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   width: 18,
                   height: 18,
                   child: _saving
-                      ? CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.onPrimary,
-                          ),
-                        )
+                      ? const AppShimmer(width: 18, height: 18, radius: 9)
                       : Icon(Icons.save_outlined, color: colorScheme.onPrimary),
                 ),
                 label: Text(

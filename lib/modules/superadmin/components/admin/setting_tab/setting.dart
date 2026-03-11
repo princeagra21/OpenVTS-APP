@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/main.dart' show themeController;
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,8 @@ class AdminSettingsTab extends StatefulWidget {
 
 class _AdminSettingsTabState extends State<AdminSettingsTab> {
   // Selected values (fallback-first).
-  String? _selectedTheme = 'system'; // light|dark|system (system is client-mapped)
+  String? _selectedTheme =
+      'system'; // light|dark|system (system is client-mapped)
   String? _selectedUnit = 'KM';
   String? _selectedLanguage;
   String? _selectedDateFormat;
@@ -212,9 +214,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
         await _persistLocalSettings();
       } else if (!_errorShown) {
         _errorShown = true;
-        _showSnackBarOnce(
-          "Couldn't load admin settings. Showing saved info.",
-        );
+        _showSnackBarOnce("Couldn't load admin settings. Showing saved info.");
       }
     } catch (_) {
       if (!_errorShown) {
@@ -318,8 +318,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     required ValueChanged<String?> onChanged,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fontSize =
-        AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,8 +343,10 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 16,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: colorScheme.outline),
@@ -383,8 +386,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     required bool textOnTop,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fontSize =
-        AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
     final bool isSelected = _selectedTheme == value;
 
     return Expanded(
@@ -402,8 +406,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                 style: GoogleFonts.inter(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isSelected ? colorScheme.primary : colorScheme.onSurface,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface,
                 ),
               ),
             Radio<String>(
@@ -422,8 +427,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                 style: GoogleFonts.inter(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isSelected ? colorScheme.primary : colorScheme.onSurface,
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface,
                 ),
               ),
           ],
@@ -438,46 +444,31 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
 
     final languageItems = _languageOptions
         .map(
-          (o) => DropdownMenuItem<String>(
-            value: o.value,
-            child: Text(o.label),
-          ),
+          (o) => DropdownMenuItem<String>(value: o.value, child: Text(o.label)),
         )
         .toList();
 
     final dateFormatItems = _dateFormatOptions
         .map(
-          (o) => DropdownMenuItem<String>(
-            value: o.value,
-            child: Text(o.label),
-          ),
+          (o) => DropdownMenuItem<String>(value: o.value, child: Text(o.label)),
         )
         .toList();
 
     final timeFormatItems = _timeFormatOptions
         .map(
-          (o) => DropdownMenuItem<String>(
-            value: o.value,
-            child: Text(o.label),
-          ),
+          (o) => DropdownMenuItem<String>(value: o.value, child: Text(o.label)),
         )
         .toList();
 
     final timezoneItems = _timezoneOptions
         .map(
-          (o) => DropdownMenuItem<String>(
-            value: o.value,
-            child: Text(o.label),
-          ),
+          (o) => DropdownMenuItem<String>(value: o.value, child: Text(o.label)),
         )
         .toList();
 
     final firstDayItems = _firstDayOptions
         .map(
-          (o) => DropdownMenuItem<String>(
-            value: o.value,
-            child: Text(o.label),
-          ),
+          (o) => DropdownMenuItem<String>(value: o.value, child: Text(o.label)),
         )
         .toList();
 
@@ -528,8 +519,11 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.settings,
-                          size: 24, color: colorScheme.primary),
+                      Icon(
+                        Icons.settings,
+                        size: 24,
+                        color: colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         "Admin Settings",
@@ -545,12 +539,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                         width: 12,
                         height: 12,
                         child: _loading
-                            ? CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary,
-                                ),
-                              )
+                            ? const AppShimmer(width: 12, height: 12, radius: 6)
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -640,8 +629,11 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.brightness_6,
-                        size: 18, color: colorScheme.primary),
+                    Icon(
+                      Icons.brightness_6,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       "Theme",
@@ -699,8 +691,11 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.straighten,
-                        size: 18, color: colorScheme.primary),
+                    Icon(
+                      Icons.straighten,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       "Units",

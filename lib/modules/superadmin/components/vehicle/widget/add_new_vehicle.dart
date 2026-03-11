@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -477,11 +478,7 @@ class StylishDropdown extends StatelessWidget {
                   alignment: PlaceholderAlignment.middle,
                   child: Padding(
                     padding: EdgeInsets.only(left: 8),
-                    child: SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+                    child: AppShimmer(width: 14, height: 14, radius: 7),
                   ),
                 ),
             ],

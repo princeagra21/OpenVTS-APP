@@ -425,11 +425,10 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                     width: AdaptiveUtils.getIconSize(width),
                     height: AdaptiveUtils.getIconSize(width),
                     child: _saving
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
-                            ),
+                        ? AppShimmer(
+                            width: AdaptiveUtils.getIconSize(width),
+                            height: AdaptiveUtils.getIconSize(width),
+                            radius: AdaptiveUtils.getIconSize(width) / 2,
                           )
                         : Icon(
                             Icons.save_outlined,
@@ -463,11 +462,10 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                     width: AdaptiveUtils.getIconSize(width),
                     height: AdaptiveUtils.getIconSize(width),
                     child: _testing
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
-                            ),
+                        ? AppShimmer(
+                            width: AdaptiveUtils.getIconSize(width),
+                            height: AdaptiveUtils.getIconSize(width),
+                            radius: AdaptiveUtils.getIconSize(width) / 2,
                           )
                         : Icon(
                             Icons.email_outlined,

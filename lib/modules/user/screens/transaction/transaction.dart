@@ -1,4 +1,15 @@
 // screens/transactions/transaction_screen.dart
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_transaction_item.dart';
+import 'package:fleet_stack/core/models/user_transactions_page.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/user_transactions_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
@@ -7,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -17,127 +27,325 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
+  // FleetStack-API-Reference.md confirmed:
+  // - GET /user/transactions
+  //
+  // Query keys used:
+  // - q
+  // - status
+  // - page
+  // - limit
+  //
+  // No User transaction details/receipt endpoint is confirmed in MD/Postman.
   String selectedTab = "All";
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _tabScrollController = ScrollController();
   late final List<String> _tabs;
   late final List<GlobalKey> _tabKeys;
 
-  DateTime _safeParseDateTime(String dateStr) {
-    try {
-      // Parse only the date part to ignore time for consistent day-level calculations
-      return DateFormat('dd/MM/yyyy').parse(dateStr.split(', ')[0]);
-    } catch (e) {
-      return DateTime(2025, 12, 25); // Consistent with the fixed 'now' date
-    }
-  }
+  ApiClient? _apiClient;
+  UserTransactionsRepository? _repo;
+  CancelToken? _token;
+  Timer? _debounce;
 
-  final List<Map<String, dynamic>> transactions = [
-    {
-      "id": 0,
-      "date": "25/12/2025, 07:31:28",
-      "invoice": "Invoice INV-2025-0101",
-      "fs_id": "FS-47228846",
-      "description": "Top-up: 10 credit-years",
-      "method": "UPI",
-      "credits": "+10",
-      "amount": "₹14,990.00",
-      "status": "Success",
-    },
-    {
-      "id": 1,
-      "date": "23/12/2025, 07:31:28",
-      "invoice": "Invoice INV-2025-0097",
-      "fs_id": "FS-E1NN8846",
-      "description": "Stripe Card • **** 4242",
-      "method": "Card",
-      "credits": "+5",
-      "amount": "₹7,495.00",
-      "status": "Success",
-    },
-    {
-      "id": 2,
-      "date": "20/12/2025, 07:31:28",
-      "invoice": "nb_7788",
-      "fs_id": "FS-2QU78846",
-      "description": "Awaiting bank confirmation",
-      "method": "NetBanking",
-      "credits": "+2",
-      "amount": "₹2,998.00",
-      "status": "Pending",
-    },
-    {
-      "id": 3,
-      "date": "18/12/2025, 07:31:28",
-      "invoice": "upi_fail_8899",
-      "fs_id": "FS-8BH28846",
-      "description": "Insufficient funds",
-      "method": "UPI",
-      "credits": "+3",
-      "amount": "₹4,497.00",
-      "status": "Failed",
-    },
-    {
-      "id": 4,
-      "date": "13/12/2025, 07:31:28",
-      "invoice": "re_93HG",
-      "fs_id": "FS-PKYR8846",
-      "description": "Refund for duplicate",
-      "method": "Card",
-      "credits": "-1",
-      "amount": "-₹1,499.00",
-      "status": "Refunded",
-    },
-    {
-      "id": 5,
-      "date": "11/12/2025, 07:31:28",
-      "invoice": "rzp_w_9812",
-      "fs_id": "FS-FHZC8846",
-      "description": "Wallet promo",
-      "method": "Wallet",
-      "credits": "+1",
-      "amount": "₹1,499.00",
-      "status": "Success",
-    },
-    {
-      "id": 6,
-      "date": "30/11/2025, 07:31:28",
-      "invoice": "upi_9922",
-      "fs_id": "FS-U3PF8846",
-      "description": "Bulk purchase 20",
-      "method": "UPI",
-      "credits": "+20",
-      "amount": "₹29,980.00",
-      "status": "Success",
-    },
-    {
-      "id": 7,
-      "date": "23/11/2025, 07:31:28",
-      "invoice": "pi_3abc1111",
-      "fs_id": "FS-PL348847",
-      "description": "Auto top-up",
-      "method": "Card",
-      "credits": "+1",
-      "amount": "₹1,499.00",
-      "status": "Success",
-    },
-  ];
+  UserTransactionsPage? _pageData;
+  bool _loading = false;
+  bool _errorShown = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() => setState(() {}));
-
-    // define tabs once so we can create keys
     _tabs = ["All", "Success", "Pending", "Failed", "Refunded"];
     _tabKeys = List.generate(_tabs.length, (_) => GlobalKey());
+    _searchController.addListener(_scheduleReload);
+    _loadTransactions();
   }
 
   @override
   void dispose() {
+    _token?.cancel('User transactions disposed');
+    _debounce?.cancel();
     _searchController.dispose();
     _tabScrollController.dispose();
     super.dispose();
+  }
+
+  UserTransactionsRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= UserTransactionsRepository(api: _apiClient!);
+    return _repo!;
+  }
+
+  bool _isCancelled(Object error) {
+    return error is ApiException &&
+        error.message.toLowerCase() == 'request cancelled';
+  }
+
+  void _scheduleReload() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 250), _loadTransactions);
+  }
+
+  String _normalizeStatusTab(String tab) {
+    final value = tab.trim().toLowerCase();
+    if (value == 'all') return '';
+    return value;
+  }
+
+  Future<void> _loadTransactions() async {
+    _token?.cancel('Reload user transactions');
+    final token = CancelToken();
+    _token = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    final result = await _repoOrCreate().getTransactions(
+      query: _searchController.text,
+      status: _normalizeStatusTab(selectedTab),
+      page: 1,
+      limit: 100,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (page) {
+        setState(() {
+          _pageData = page;
+          _loading = false;
+          _errorShown = false;
+        });
+      },
+      failure: (error) {
+        setState(() => _loading = false);
+        if (_isCancelled(error) || _errorShown) return;
+        _errorShown = true;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't load transactions.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Color _statusColor(String normalizedStatus) {
+    switch (normalizedStatus) {
+      case 'success':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'failed':
+      case 'refunded':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatDate(String raw) {
+    if (raw.trim().isEmpty) return '—';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    final local = parsed.toLocal();
+    return '${_two(local.day)}/${_two(local.month)}/${local.year}, '
+        '${_two(local.hour)}:${_two(local.minute)}:${_two(local.second)}';
+  }
+
+  String _formatAmount(AdminTransactionItem item) {
+    if (item.amount == null) return '—';
+    final symbol = item.currency.toUpperCase() == 'INR'
+        ? '₹'
+        : '${item.currency} ';
+    return '$symbol${_formatNumber(item.amount!)}';
+  }
+
+  String _formatCredits(AdminTransactionItem item) {
+    if (item.credits == null) return '—';
+    final value = item.credits!;
+    if (value > 0) return '+$value';
+    return value.toString();
+  }
+
+  int _availableCredits(List<AdminTransactionItem> items) {
+    var total = 0;
+    for (final item in items) {
+      final credits = item.credits;
+      if (credits == null) continue;
+      if (item.normalizedStatus == 'success' ||
+          item.normalizedStatus == 'refunded') {
+        total += credits;
+      }
+    }
+    return total;
+  }
+
+  double _processed30Days(List<AdminTransactionItem> items) {
+    final now = DateTime.now();
+    var total = 0.0;
+    for (final item in items) {
+      if (item.normalizedStatus != 'success') continue;
+      final amount = item.amount;
+      final parsedDate = DateTime.tryParse(item.createdAt);
+      if (amount == null || parsedDate == null) continue;
+      if (now.difference(parsedDate.toLocal()).inDays <= 30) {
+        total += amount;
+      }
+    }
+    return total;
+  }
+
+  String _two(int value) => value.toString().padLeft(2, '0');
+
+  String _formatNumber(double value) {
+    final negative = value < 0;
+    final absolute = value.abs().toStringAsFixed(2);
+    final parts = absolute.split('.');
+    var whole = parts.first;
+    final decimals = parts.last;
+
+    if (whole.length > 3) {
+      final lastThree = whole.substring(whole.length - 3);
+      var prefix = whole.substring(0, whole.length - 3);
+      final groups = <String>[];
+      while (prefix.length > 2) {
+        groups.insert(0, prefix.substring(prefix.length - 2));
+        prefix = prefix.substring(0, prefix.length - 2);
+      }
+      if (prefix.isNotEmpty) {
+        groups.insert(0, prefix);
+      }
+      whole = '${groups.join(',')},$lastThree';
+    }
+
+    return '${negative ? '-' : ''}$whole.$decimals';
+  }
+
+  Widget _buildShimmerStat(ColorScheme colorScheme) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          children: const [
+            AppShimmer(width: 110, height: 12, radius: 6),
+            SizedBox(height: 8),
+            AppShimmer(width: 70, height: 18, radius: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerCard(
+    ColorScheme colorScheme,
+    double width,
+    double hp,
+    double spacing,
+    double iconSize,
+    double cardPadding,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(bottom: hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(cardPadding),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            AppShimmer(width: 48, height: 48, radius: 24),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppShimmer(
+                          width: double.infinity,
+                          height: 12,
+                          radius: 6,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      AppShimmer(width: 74, height: 24, radius: 12),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  AppShimmer(width: 220, height: 18, radius: 8),
+                  SizedBox(height: 10),
+                  AppShimmer(width: 180, height: 14, radius: 7),
+                  SizedBox(height: 10),
+                  AppShimmer(width: double.infinity, height: 14, radius: 7),
+                  SizedBox(height: 10),
+                  AppShimmer(width: 120, height: 14, radius: 7),
+                  SizedBox(height: 10),
+                  AppShimmer(width: 170, height: 14, radius: 7),
+                ],
+              ),
+            ),
+            SizedBox(width: 12),
+            AppShimmer(width: 28, height: 28, radius: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyCard(ColorScheme colorScheme, double hp, double bodyFs) {
+    return Container(
+      margin: EdgeInsets.only(bottom: hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(hp + 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No transactions found',
+              style: GoogleFonts.inter(
+                fontSize: bodyFs + 1,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Transactions will appear here once payments are recorded.',
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                color: colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -152,46 +360,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
     final double iconSize = titleFs + 2;
     final double cardPadding = hp + 4;
 
-    final f = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
-
-    final now = DateTime(2025, 12, 25);
-
-    int availableCredits = 0;
-    double processed30Days = 0.0;
-
-    for (var t in transactions) {
-      final d = _safeParseDateTime(t['date']);
-      final cred = int.tryParse(t['credits'].replaceAll('+', '').replaceAll('-', '')) ?? 0;
-      final sign = t['credits'].startsWith('-') ? -1 : 1;
-      final amt = double.tryParse(t['amount'].replaceAll('₹', '').replaceAll(',', '').replaceAll('-', '')) ?? 0.0;
-      final amtSign = t['amount'].startsWith('-') ? -1 : 1;
-
-      if (t['status'] == "Success" || t['status'] == "Refunded") {
-        availableCredits += sign * cred;
-      }
-
-      final diff = now.difference(d).inDays;
-      if (t['status'] == "Success" && diff >= 0 && diff <= 30) {
-        processed30Days += amtSign * amt;
-      }
-    }
-
-    final searchQuery = _searchController.text.toLowerCase();
-
-    var filteredTransactions = transactions.where((t) {
-      final matchesSearch = searchQuery.isEmpty ||
-          t['invoice'].toString().toLowerCase().contains(searchQuery) ||
-          t['fs_id'].toString().toLowerCase().contains(searchQuery) ||
-          t['description'].toString().toLowerCase().contains(searchQuery) ||
-          t['method'].toString().toLowerCase().contains(searchQuery) ||
-          t['status'].toString().toLowerCase().contains(searchQuery);
-
-      final matchesTab = selectedTab == "All" ||
-          t['status'] == selectedTab;
-
-      return matchesSearch && matchesTab;
-    }).toList()
-      ..sort((a, b) => _safeParseDateTime(b['date']).compareTo(_safeParseDateTime(a['date'])));
+    final items = _pageData?.items ?? const <AdminTransactionItem>[];
+    final totalTransactions = _pageData?.total ?? items.length;
+    final availableCredits = _availableCredits(items);
+    final processed30Days = _processed30Days(items);
+    final processed30DaysLabel = '₹${_formatNumber(processed30Days)}';
 
     return AppLayout(
       title: "USER",
@@ -203,38 +376,60 @@ class _TransactionScreenState extends State<TransactionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SEARCH BAR
             Container(
               height: hp * 3.5,
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+                style: GoogleFonts.inter(
+                  fontSize: bodyFs,
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   hintText: "Search invoice, description, method...",
-                  hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.onSurface.withOpacity(0.7)),
+                  hintStyle: GoogleFonts.inter(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: bodyFs,
+                  ),
+                  prefixIcon: Icon(
+                    CupertinoIcons.search,
+                    size: iconSize,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                   border: InputBorder.none,
                   focusColor: colorScheme.primary,
-                    enabledBorder: OutlineInputBorder(
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.transparent, width: 0),
+                    borderSide: const BorderSide(
+                      color: Colors.transparent,
+                      width: 0,
                     ),
-                    focusedBorder: OutlineInputBorder(
+                  ),
+                  focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
                     ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: hp,
+                    vertical: hp,
+                  ),
                 ),
               ),
             ),
             SizedBox(height: hp),
-
-            // STATS
             Container(
               padding: EdgeInsets.symmetric(vertical: hp),
               decoration: BoxDecoration(
@@ -243,33 +438,52 @@ class _TransactionScreenState extends State<TransactionScreen> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _statBox("Available Credits", availableCredits.toString(), "", bodyFs, smallFs, colorScheme, spacing),
-                  _statBox("Processed (30 days)", f.format(processed30Days), "", bodyFs, smallFs, colorScheme, spacing),
-                ],
+                children: _loading
+                    ? [
+                        _buildShimmerStat(colorScheme),
+                        _buildShimmerStat(colorScheme),
+                      ]
+                    : [
+                        _statBox(
+                          "Available Credits",
+                          availableCredits.toString(),
+                          "",
+                          bodyFs,
+                          smallFs,
+                          colorScheme,
+                          spacing,
+                        ),
+                        _statBox(
+                          "Processed (30 days)",
+                          processed30DaysLabel,
+                          "",
+                          bodyFs,
+                          smallFs,
+                          colorScheme,
+                          spacing,
+                        ),
+                      ],
               ),
             ),
             SizedBox(height: hp),
-
             SizedBox(
-              height: hp * 3, // tweak if tabs are clipped
+              height: hp * 3,
               child: Scrollbar(
                 controller: _tabScrollController,
                 thumbVisibility: true,
                 trackVisibility: true,
                 thickness: 1,
-                radius: Radius.circular(8),
+                radius: const Radius.circular(8),
                 child: SingleChildScrollView(
                   controller: _tabScrollController,
                   scrollDirection: Axis.horizontal,
-                  physics: BouncingScrollPhysics(),
+                  physics: const BouncingScrollPhysics(),
                   padding: EdgeInsets.symmetric(horizontal: spacing),
                   child: Row(
                     children: List.generate(_tabs.length, (index) {
                       final tab = _tabs[index];
                       return Padding(
                         padding: EdgeInsets.only(right: spacing),
-                        // ensure we have a context to call ensureVisible on:
                         child: KeyedSubtree(
                           key: _tabKeys[index],
                           child: Padding(
@@ -279,15 +493,18 @@ class _TransactionScreenState extends State<TransactionScreen> {
                               selected: selectedTab == tab,
                               onTap: () {
                                 setState(() => selectedTab = tab);
-                            
-                                // wait until after frame so the widget exists, then ensure visible
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                _loadTransactions();
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
                                   final ctx = _tabKeys[index].currentContext;
                                   if (ctx != null) {
                                     Scrollable.ensureVisible(
                                       ctx,
-                                      duration: Duration(milliseconds: 300),
-                                      alignment: 0.5, // 0.5 tries to center it in view
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      alignment: 0.5,
                                       curve: Curves.easeInOut,
                                     );
                                   }
@@ -302,163 +519,318 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 ),
               ),
             ),
-            
             SizedBox(height: hp),
-
-            // COUNT
             Text(
-              "Showing ${filteredTransactions.length} of ${transactions.length} transactions",
-              style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface.withOpacity(0.87)),
+              "Showing ${items.length} of $totalTransactions transactions",
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                color: colorScheme.onSurface.withOpacity(0.87),
+              ),
             ),
             SizedBox(height: spacing * 1.5),
+            if (_loading)
+              ...List.generate(
+                4,
+                (_) => _buildShimmerCard(
+                  colorScheme,
+                  width,
+                  hp,
+                  spacing,
+                  iconSize,
+                  cardPadding,
+                ),
+              )
+            else if (items.isEmpty)
+              _buildEmptyCard(colorScheme, hp, bodyFs)
+            else
+              ...items.asMap().entries.map((entry) {
+                final index = entry.key;
+                final tran = entry.value;
 
-            // TRANSACTION CARDS
-            ...filteredTransactions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tran = entry.value;
-
-              Color getStatusColor(String status) {
-                if (status == "Success") return Colors.green;
-                if (status == "Pending") return Colors.orange;
-                if (status == "Failed" || status == "Refunded") return Colors.red;
-                return Colors.grey;
-              }
-
-              return AnimatedContainer(
-                duration: Duration(milliseconds: 300 + index * 50),
-                curve: Curves.easeOut,
-                margin: EdgeInsets.only(bottom: hp),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 300 + index * 50),
+                  curve: Curves.easeOut,
+                  margin: EdgeInsets.only(bottom: hp),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(25),
-                      onTap: () {},
-                      child: Padding(
-                        padding: EdgeInsets.all(cardPadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // TOP ROW
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: AdaptiveUtils.getAvatarSize(width),
-                                  height: AdaptiveUtils.getAvatarSize(width),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: colorScheme.primary.withOpacity(0.6)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: () => context.push(
+                          "/user/transactions/details/${tran.id}",
+                          extra: tran,
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(cardPadding),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: AdaptiveUtils.getAvatarSize(width),
+                                    height: AdaptiveUtils.getAvatarSize(width),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: colorScheme.primary.withOpacity(
+                                          0.6,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.money_dollar_circle,
+                                      size: AdaptiveUtils.getFsAvatarFontSize(
+                                        width,
+                                      ),
+                                      color: colorScheme.primary,
+                                    ),
                                   ),
-                                  child: Icon(CupertinoIcons.money_dollar_circle, size: AdaptiveUtils.getFsAvatarFontSize(width), color: colorScheme.primary),
-                                ),
-                                SizedBox(width: spacing * 1.5),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(tran["date"], style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.6))),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: spacing + 4, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: getStatusColor(tran["status"]).withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(16),
+                                  SizedBox(width: spacing * 1.5),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _formatDate(tran.createdAt),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: smallFs,
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.6),
+                                                ),
+                                              ),
                                             ),
-                                            child: Text(
-                                              tran["status"],
-                                              style: GoogleFonts.inter(
-                                                fontSize: smallFs,
-                                                fontWeight: FontWeight.w600,
-                                                color: getStatusColor(tran["status"]),
+                                            const SizedBox(width: 12),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: spacing + 4,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _statusColor(
+                                                  tran.normalizedStatus,
+                                                ).withOpacity(0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              child: Text(
+                                                tran.statusLabel,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: smallFs,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _statusColor(
+                                                    tran.normalizedStatus,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Text(
+                                          tran.invoiceNumber.isEmpty
+                                              ? 'Invoice ${tran.id}'
+                                              : tran.invoiceNumber,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: bodyFs + 2,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                tran.reference.isEmpty
+                                                    ? tran.id
+                                                    : tran.reference,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: bodyFs,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                CupertinoIcons.doc_on_clipboard,
+                                                size: iconSize - 4,
+                                                color: colorScheme.primary,
+                                              ),
+                                              onPressed: () {
+                                                final text =
+                                                    tran.reference.isEmpty
+                                                    ? tran.id
+                                                    : tran.reference;
+                                                Clipboard.setData(
+                                                  ClipboardData(text: text),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Text(
+                                          tran.description.isEmpty
+                                              ? '—'
+                                              : tran.description,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: bodyFs,
+                                            fontWeight: FontWeight.w500,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Text(
+                                          tran.method.isEmpty
+                                              ? '—'
+                                              : tran.method,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: bodyFs,
+                                            fontWeight: FontWeight.w500,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: spacing / 2),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                "Credits: ${_formatCredits(tran)}",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: bodyFs - 1,
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            Expanded(
+                                              child: Text(
+                                                "Amount: ${_formatAmount(tran)}",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: bodyFs - 1,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      CupertinoIcons.ellipsis_vertical,
+                                      color: colorScheme.primary.withOpacity(
+                                        0.6,
+                                      ),
+                                    ),
+                                    onSelected: (String value) {
+                                      if (value == 'details') {
+                                        context.push(
+                                          "/user/transactions/details/${tran.id}",
+                                          extra: tran,
+                                        );
+                                      } else if (value == 'receipt') {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Receipt API not available yet',
+                                            ),
+                                          ),
+                                        );
+                                      } else if (value == 'copy') {
+                                        final text = tran.reference.isEmpty
+                                            ? tran.id
+                                            : tran.reference;
+                                        Clipboard.setData(
+                                          ClipboardData(text: text),
+                                        );
+                                      }
+                                    },
+                                    itemBuilder: (BuildContext context) =>
+                                        <PopupMenuEntry<String>>[
+                                          PopupMenuItem<String>(
+                                            value: 'details',
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.visibility,
+                                                color: colorScheme.primary,
+                                              ),
+                                              title: const Text('View details'),
+                                            ),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'receipt',
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.receipt,
+                                                color: colorScheme.primary,
+                                              ),
+                                              title: const Text('Receipt'),
+                                            ),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'copy',
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.content_copy,
+                                                color: colorScheme.primary,
+                                              ),
+                                              title: const Text(
+                                                'Copy reference',
                                               ),
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Text(tran["invoice"], style: GoogleFonts.inter(fontSize: bodyFs + 2, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Text(tran["fs_id"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
-                                          IconButton(
-                                            icon: Icon(CupertinoIcons.doc_on_clipboard, size: iconSize - 4, color: colorScheme.primary),
-                                            onPressed: () {
-                                              Clipboard.setData(ClipboardData(text: tran["fs_id"]));
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: spacing / 2),
-                                      Text(tran["description"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
-                                      SizedBox(height: spacing / 2),
-                                      Text(tran["method"], style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
-                                      SizedBox(height: spacing / 2),
-                                      Row(
-                                        children: [
-                                          Text("Credits: ${tran["credits"]}", style: GoogleFonts.inter(fontSize: bodyFs - 1, color: colorScheme.onSurface)),
-                                          SizedBox(width: spacing),
-                                          Text("Amount: ${tran["amount"]}", style: GoogleFonts.inter(fontSize: bodyFs - 1, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-                                        ],
-                                      ),
-                                    ],
                                   ),
-                                ),
-                                PopupMenuButton<String>(
-                                  icon: Icon(CupertinoIcons.ellipsis_vertical, color: colorScheme.primary.withOpacity(0.6)),
-                                  onSelected: (String value) {
-                                    if (value == 'details') {
-                                      context.push("/user/transactions/details/${tran['id']}");
-                                    } else if (value == 'receipt') {
-                                      // empty
-                                    } else if (value == 'copy') {
-                                      Clipboard.setData(ClipboardData(text: tran["fs_id"]));
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                     PopupMenuItem<String>(
-                                      value: 'details',
-                                      child: ListTile(
-                                        leading: Icon(Icons.visibility, color: colorScheme.primary,),
-                                        title: Text('View details'),
-                                      ),
-                                    ),
-                                     PopupMenuItem<String>(
-                                      value: 'receipt',
-                                      child: ListTile(
-                                        leading: Icon(Icons.receipt, color: colorScheme.primary,),
-                                        title: Text('Receipt'),
-                                      ),
-                                    ),
-                                     PopupMenuItem<String>(
-                                      value: 'copy',
-                                      child: ListTile(
-                                        leading: Icon(Icons.content_copy, color: colorScheme.primary,),
-                                        title: Text('Copy reference'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-
+                );
+              }),
             SizedBox(height: hp * 3),
           ],
         ),
@@ -466,16 +838,52 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  Widget _statBox(String title, String value, String subtitle, double bodyFs, double smallFs, ColorScheme colorScheme, double spacing) {
+  Widget _statBox(
+    String title,
+    String value,
+    String subtitle,
+    double bodyFs,
+    double smallFs,
+    ColorScheme colorScheme,
+    double spacing,
+  ) {
     return Expanded(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: spacing / 2),
         child: Column(
           children: [
-            Text(title, style: GoogleFonts.inter(fontSize: smallFs, color: colorScheme.onSurface.withOpacity(0.6))),
-            Text(value, style: GoogleFonts.inter(fontSize: bodyFs, fontWeight: FontWeight.bold, color: colorScheme.primary.withOpacity(0.5))),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: smallFs,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary.withOpacity(0.5),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
             if (subtitle.isNotEmpty)
-              Text(subtitle, style: GoogleFonts.inter(fontSize: smallFs - 1, color: colorScheme.onSurface.withOpacity(0.6))),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: smallFs - 1,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       ),

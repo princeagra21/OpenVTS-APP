@@ -31,6 +31,10 @@ class AdminTicketListItem {
     raw['description'] ?? raw['message'] ?? raw['snippet'] ?? raw['preview'],
   );
 
+  String get category => _string(raw['category']);
+
+  String get priority => _string(raw['priority']);
+
   String get createdAt => _string(
     raw['createdAt'] ?? raw['created_at'] ?? raw['created'] ?? raw['timestamp'],
   );

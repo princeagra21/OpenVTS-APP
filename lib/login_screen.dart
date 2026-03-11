@@ -1,10 +1,13 @@
 // login_screen.dart
+import 'dart:async';
+
 import 'package:animations/animations.dart';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/auth_repository.dart';
+import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isForgot = false;
   bool _isLoggingIn = false;
+  bool _obscurePassword = true;
 
   CancelToken? _loginToken;
   ApiClient? _api;
@@ -40,13 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return _authRepo!;
   }
 
-  String _targetPathForRole(String? backendRole) {
+  String? _targetPathForRole(String? backendRole) {
     final normalized = (backendRole ?? '').trim().toLowerCase();
     if (normalized.contains('super')) return '/superadmin/home';
     if (normalized.contains('admin')) return '/admin/home';
-    if (normalized.contains('driver')) return '/user/home';
     if (normalized.contains('user')) return '/user/home';
-    return '/user/home';
+    if (normalized.contains('driver')) return null;
+    return null;
   }
 
   void _showSnack(String message) {
@@ -54,6 +58,41 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _handlePushAfterLogin() async {
+    final service = PushNotificationsService.instance;
+    final shouldPrompt = await service.shouldPromptAfterLogin();
+    if (!mounted) return;
+
+    if (!shouldPrompt) {
+      unawaited(service.syncOnAppStart());
+      return;
+    }
+
+    final enable = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _EnableNotificationsDialog(),
+    );
+    if (!mounted) return;
+
+    if (enable == true) {
+      final result = await service.enable();
+      if (!mounted) return;
+      result.when(
+        success: (_) {},
+        failure: (error) {
+          final message =
+              error is ApiException && error.message.trim().isNotEmpty
+              ? error.message
+              : 'Push notifications could not be enabled.';
+          _showSnack(message);
+        },
+      );
+      return;
+    }
+
+    await service.markPromptDeclined();
   }
 
   Future<void> _submitLogin() async {
@@ -84,9 +123,20 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       res.when(
-        success: (ctx) {
+        success: (ctx) async {
+          final target = _targetPathForRole(ctx.role);
+          if (target == null) {
+            await TokenStorage.defaultInstance().clear();
+            if (!mounted) return;
+            setState(() => _isLoggingIn = false);
+            _showSnack('This account role is not supported in this app.');
+            return;
+          }
+
+          await _handlePushAfterLogin();
+          if (!mounted) return;
           setState(() => _isLoggingIn = false);
-          context.go(_targetPathForRole(ctx.role));
+          context.go(target);
         },
         failure: (error) {
           setState(() => _isLoggingIn = false);
@@ -147,7 +197,17 @@ class _LoginScreenState extends State<LoginScreen> {
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       suffixIcon: isPassword
-          ? Icon(Icons.visibility_off_outlined, color: colorScheme.primary)
+          ? IconButton(
+              onPressed: () {
+                setState(() => _obscurePassword = !_obscurePassword);
+              },
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: colorScheme.primary,
+              ),
+            )
           : null,
     );
   }
@@ -201,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Password Field
         TextField(
           controller: _passwordController,
-          obscureText: true,
+          obscureText: _obscurePassword,
           style: GoogleFonts.inter(
             fontSize: labelSize,
             color: colorScheme.onSurface,
@@ -440,6 +500,108 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EnableNotificationsDialog extends StatelessWidget {
+  const _EnableNotificationsDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.notifications_active_outlined,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Enable notifications?',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You can turn this on now and change it later from Notifications.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                height: 1.5,
+                color: colorScheme.onSurface.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurface,
+                      side: BorderSide(
+                        color: colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Not now',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Enable',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -358,11 +358,10 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                             width: 18,
                             height: 18,
                             child: _saving
-                                ? CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      colorScheme.onPrimary,
-                                    ),
+                                ? const AppShimmer(
+                                    width: 18,
+                                    height: 18,
+                                    radius: 9,
                                   )
                                 : Icon(
                                     Icons.save_outlined,
@@ -394,16 +393,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                         ),
                         if (_loading) ...[
                           const SizedBox(width: 8),
-                          SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.primary,
-                              ),
-                            ),
-                          ),
+                          const AppShimmer(width: 12, height: 12, radius: 6),
                         ],
                       ],
                     ),

@@ -1,6 +1,7 @@
 import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:go_router/go_router.dart';
 import '../components/appbars/custom_appbar.dart';
 import '../components/bottom_bar/custom_bottom_bar.dart';
 import 'dart:ui';
@@ -85,10 +86,15 @@ class _AppLayoutState extends State<AppLayout> {
           };
 
           if (effectiveTaps == null) {
-            effectiveTaps = List.generate(widget.actionIcons!.length, (_) => () {});
+            effectiveTaps = List.generate(
+              widget.actionIcons!.length,
+              (_) => () {},
+            );
           }
 
-          if (widget.onActionTaps != null && i < widget.onActionTaps!.length && widget.onActionTaps![i] != null) {
+          if (widget.onActionTaps != null &&
+              i < widget.onActionTaps!.length &&
+              widget.onActionTaps![i] != null) {
             VoidCallback original = widget.onActionTaps![i];
             effectiveTaps[i] = () {
               searchTap();
@@ -96,6 +102,15 @@ class _AppLayoutState extends State<AppLayout> {
             }; // Chain original if provided
           } else {
             effectiveTaps[i] = searchTap;
+          }
+        } else if (widget.actionIcons![i] == CupertinoIcons.bell) {
+          effectiveTaps ??= List.generate(
+            widget.actionIcons!.length,
+            (_) => () {},
+          );
+          if (!(widget.onActionTaps != null &&
+              i < widget.onActionTaps!.length)) {
+            effectiveTaps[i] = () => context.push('/superadmin/notifications');
           }
         }
       }
@@ -120,12 +135,15 @@ class _AppLayoutState extends State<AppLayout> {
               return true;
             },
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: widget.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.horizontalPadding,
+              ),
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   SizedBox(
-                    height: topPadding +
+                    height:
+                        topPadding +
                         (widget.showAppBar
                             ? AppUtils.appBarHeightCustom + 32
                             : 16),
@@ -152,7 +170,9 @@ class _AppLayoutState extends State<AppLayout> {
                     title: widget.title,
                     subtitle: widget.subtitle,
                     icons: widget.actionIcons ?? [],
-                    onIconTaps: effectiveTaps, // Use effective taps with search handling
+                    onIconTaps:
+                        effectiveTaps, // Use effective taps with search handling
+                    notificationPathPrefix: '/superadmin/notifications',
                     showLeftAvatar: widget.showLeftAvatar,
                     showRightAvatar: widget.showRightAvatar,
                     leftAvatarText: widget.leftAvatarText,
@@ -181,11 +201,18 @@ class _AppLayoutState extends State<AppLayout> {
                     decoration: BoxDecoration(
                       color: cs.surface.withOpacity(0.75),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: cs.primary.withOpacity(0.3)), // Replaced 'brand' with cs.primary
+                      border: Border.all(
+                        color: cs.primary.withOpacity(0.3),
+                      ), // Replaced 'brand' with cs.primary
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                        Icon(
+                          Icons.search,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.7),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -199,12 +226,13 @@ class _AppLayoutState extends State<AppLayout> {
                               errorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               focusedErrorBorder: InputBorder.none,
-                              fillColor:  cs.surface.withOpacity(0.75),
+                              fillColor: cs.surface.withOpacity(0.75),
                               hintStyle: TextStyle(
                                 color: cs.onSurface.withOpacity(0.5),
                               ),
                               isDense: true, // optional – reduces padding
-                              contentPadding: EdgeInsets.zero, // optional – tight layout
+                              contentPadding:
+                                  EdgeInsets.zero, // optional – tight layout
                             ),
                             style: TextStyle(color: cs.onSurface),
                             onSubmitted: (q) {
@@ -219,10 +247,17 @@ class _AppLayoutState extends State<AppLayout> {
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1),
                             ),
-                            child: Icon(Icons.close,
-                                size: 18, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.7),
+                            ),
                           ),
                         ),
                       ],

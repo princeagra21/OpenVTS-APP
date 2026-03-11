@@ -248,11 +248,22 @@ class SuperadminRepository {
   Future<Result<ServerOverallStatus>> getServerOverallStatus({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/status', cancelToken: cancelToken);
+    final res = await api.get(
+      '/superadmin/server/overview',
+      queryParameters: <String, dynamic>{
+        'rk': DateTime.now().millisecondsSinceEpoch,
+      },
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (data) {
-        final root = _coerceMap(data);
-        final payload = root['data'] is Map ? _coerceMap(root['data']) : root;
+        final level1 = _extractMap(data);
+        final level2 = _extractMapFromNested(level1);
+        final payload = level2.isNotEmpty
+            ? level2
+            : level1.isNotEmpty
+            ? level1
+            : _coerceMap(data);
         return Result.ok(ServerOverallStatus(payload));
       },
       failure: (err) => Result.fail(err),
@@ -321,9 +332,31 @@ class SuperadminRepository {
   Future<Result<List<ServerServiceItem>>> getServerServices({
     CancelToken? cancelToken,
   }) async {
-    final rawRes = await getHealthRaw(cancelToken: cancelToken);
-    return rawRes.when(
-      success: (raw) => Result.ok(ServerServiceItem.listFromHealth(raw)),
+    final res = await api.get(
+      '/superadmin/server/overview',
+      queryParameters: <String, dynamic>{
+        'rk': DateTime.now().millisecondsSinceEpoch,
+      },
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (data) => Result.ok(ServerServiceItem.listFromOverview(data)),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getServerOverviewRaw({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/server/overview',
+      queryParameters: <String, dynamic>{
+        'rk': DateTime.now().millisecondsSinceEpoch,
+      },
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (data) => Result.ok(_coerceMap(data)),
       failure: (err) => Result.fail(err),
     );
   }
@@ -704,14 +737,59 @@ class SuperadminRepository {
     String vehicleId, {
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(
+    final baseRes = await api.get(
       '/superadmin/vehicles/$vehicleId',
       cancelToken: cancelToken,
     );
 
-    return res.when(
-      success: (data) => Result.ok(VehicleDetails(_extractMap(data))),
-      failure: (err) => Result.fail(err),
+    if (baseRes.isFailure) {
+      return Result.fail(baseRes.error!);
+    }
+
+    final baseValue = _coerceMap(baseRes.data);
+    final basePayload = _extractMap(baseValue);
+    final nestedVehicle = _coerceMap(basePayload['data']);
+    final vehicle = nestedVehicle.isNotEmpty ? nestedVehicle : basePayload;
+    final imei = _string(
+      vehicle['imei'] ??
+          vehicle['deviceImei'] ??
+          vehicle['device_imei'] ??
+          (_coerceMap(vehicle['device']))['imei'],
+    );
+
+    var mergedVehicle = Map<String, dynamic>.from(vehicle);
+    var telemetry = const <String, dynamic>{};
+
+    if (imei.isNotEmpty) {
+      final detailRes = await api.get(
+        '/superadmin/vehicles/by-imei/$imei/details',
+        cancelToken: cancelToken,
+      );
+
+      if (detailRes.isSuccess) {
+        final detailValue = _coerceMap(detailRes.data);
+        final detailPayload = _extractMap(detailValue);
+        final nested = _coerceMap(detailPayload['data']);
+        final detailVehicle = _coerceMap(
+          detailPayload['vehicle'] ?? nested['vehicle'],
+        );
+        if (detailVehicle.isNotEmpty) {
+          mergedVehicle = _deepMergeMaps(mergedVehicle, detailVehicle);
+        }
+
+        final detailTelemetry = _coerceMap(
+          detailPayload['telemetry'] ?? nested['telemetry'],
+        );
+        if (detailTelemetry.isNotEmpty) {
+          telemetry = detailTelemetry;
+        }
+      }
+    }
+
+    return Result.ok(
+      VehicleDetails({
+        'data': {'vehicle': mergedVehicle, 'telemetry': telemetry},
+      }),
     );
   }
 
@@ -1268,5 +1346,29 @@ class SuperadminRepository {
           .toList();
     }
     return null;
+  }
+
+  String _string(Object? value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  Map<String, dynamic> _deepMergeMaps(
+    Map<String, dynamic> base,
+    Map<String, dynamic> incoming,
+  ) {
+    final merged = Map<String, dynamic>.from(base);
+
+    incoming.forEach((key, value) {
+      final existing = merged[key];
+      if (existing is Map && value is Map) {
+        merged[key] = _deepMergeMaps(_coerceMap(existing), _coerceMap(value));
+      } else {
+        merged[key] = value;
+      }
+    });
+
+    return merged;
   }
 }

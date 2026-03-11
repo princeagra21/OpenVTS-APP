@@ -9,12 +9,11 @@ class AdminDashboardRepository {
   const AdminDashboardRepository({required this.api});
 
   Future<Result<AdminDashboardSummary>> getAdminDashboardSummary({
-    int months = 12,
-    int listLimit = 10,
+    int rk = 0,
     String? currency,
     CancelToken? cancelToken,
   }) async {
-    final query = <String, dynamic>{'months': months, 'listLimit': listLimit};
+    final query = <String, dynamic>{'rk': rk};
     if (currency != null && currency.trim().isNotEmpty) {
       query['currency'] = currency.trim();
     }

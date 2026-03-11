@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -20,7 +21,8 @@ class UpdatePasswordScreen extends StatefulWidget {
 
 class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _obscureNew = true;
   bool _obscureConfirm = true;
@@ -51,7 +53,10 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5), // subtle focus
+        borderSide: BorderSide(
+          color: colorScheme.primary,
+          width: 1.5,
+        ), // subtle focus
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -127,7 +132,8 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       }
 
       final err = res.error;
-      if (err is ApiException && (err.statusCode == 401 || err.statusCode == 403)) {
+      if (err is ApiException &&
+          (err.statusCode == 401 || err.statusCode == 403)) {
         _snackOnce('Not authorized.');
       } else {
         _snackOnce("Couldn't update password.");
@@ -163,11 +169,17 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   Text(
                     "Update Password",
                     style: GoogleFonts.inter(
-                      fontSize: titleSize + 2, fontWeight: FontWeight.w800),
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
@@ -191,7 +203,9 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 obscureText: _obscureNew,
                 style: GoogleFonts.inter(
                   color: colorScheme.onSurface,
-                  fontSize: AdaptiveUtils.getTitleFontSize(w), // matches API screen
+                  fontSize: AdaptiveUtils.getTitleFontSize(
+                    w,
+                  ), // matches API screen
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
                   hintText: "New Password",
@@ -201,11 +215,17 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                    child: Icon(
+                      Icons.lock_outline,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureNew
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                     onPressed: () => setState(() => _obscureNew = !_obscureNew),
@@ -231,14 +251,21 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(Icons.lock_outline, color: colorScheme.primary, size: 22),
+                    child: Icon(
+                      Icons.lock_outline,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureConfirm
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
-                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                 ),
               ),
@@ -257,16 +284,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   ),
                   child: Center(
                     child: _submitting
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
+                        ? const AppShimmer(width: 18, height: 18, radius: 9)
                         : Text(
                             "Update Password",
                             style: GoogleFonts.inter(

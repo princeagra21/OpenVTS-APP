@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/auth/session_expired_bus.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/interceptors/auth_interceptor.dart';
@@ -8,8 +9,9 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 class ApiClient {
   final Dio dio;
   final AppConfig _config;
+  final TokenStorageBase _tokenStorage;
 
-  ApiClient._(this.dio, this._config);
+  ApiClient._(this.dio, this._config, this._tokenStorage);
 
   factory ApiClient({
     required AppConfig config,
@@ -35,7 +37,7 @@ class ApiClient {
       LogInterceptor(requestBody: true, responseBody: false),
     );
 
-    return ApiClient._(dio, config);
+    return ApiClient._(dio, config, tokenStorage);
   }
 
   Future<Result<dynamic>> get(
@@ -62,6 +64,7 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
+      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -96,6 +99,7 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
+      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -130,6 +134,42 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
+      await _handleUnauthorizedIfNeeded(e);
+      return Result.fail(ApiException.fromDioException(e));
+    } catch (e) {
+      return Result.fail(ApiException(message: 'Unexpected error', details: e));
+    }
+  }
+
+  Future<Result<dynamic>> put(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+    Options? options,
+  }) async {
+    try {
+      if (_config.baseUrl.trim().isEmpty && !_isAbsoluteUrl(path)) {
+        return Result.fail(
+          const ApiException(
+            message:
+                'API baseUrl is empty. Set --dart-define=API_BASE_URL=https://your-host',
+          ),
+        );
+      }
+      final res = await dio.put<dynamic>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        options: options,
+      );
+      return Result.ok(res.data);
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        return Result.fail(const ApiException(message: 'Request cancelled'));
+      }
+      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -164,9 +204,18 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
+      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
+    }
+  }
+
+  Future<void> _handleUnauthorizedIfNeeded(DioException e) async {
+    final status = e.response?.statusCode;
+    if (status == 401 || status == 403) {
+      await _tokenStorage.clear();
+      SessionExpiredBus.emit();
     }
   }
 

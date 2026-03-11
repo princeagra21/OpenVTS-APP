@@ -7,9 +7,10 @@ class AdminTicketMessageItem {
 
   String get senderName => _string(
     raw['senderName'] ??
-        raw['sender'] ??
         raw['author'] ??
         raw['createdBy'] ??
+        (raw['sender'] is Map ? (raw['sender'] as Map)['name'] : null) ??
+        (raw['sender'] is Map ? (raw['sender'] as Map)['username'] : null) ??
         (raw['user'] is Map ? (raw['user'] as Map)['name'] : null),
   );
 

@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -557,11 +558,10 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                     ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.onPrimary,
-                          ),
+                        child: const AppShimmer(
+                          width: 18,
+                          height: 18,
+                          radius: 9,
                         ),
                       )
                     : Icon(Icons.send, size: 18, color: colorScheme.onPrimary),
@@ -592,12 +592,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 width: 12,
                 height: 12,
                 child: _loadingRefs
-                    ? CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.primary,
-                        ),
-                      )
+                    ? const AppShimmer(width: 12, height: 12, radius: 6)
                     : const SizedBox.shrink(),
               ),
             ],

@@ -1,3 +1,11 @@
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/user_share_track_link_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/user_share_track_links_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
@@ -16,104 +24,470 @@ class ShareTrackScreen extends StatefulWidget {
 }
 
 class _ShareTrackScreenState extends State<ShareTrackScreen> {
-  String selectedTab = "All";
+  // FleetStack-API-Reference.md confirmed:
+  // - GET    /user/sharetracklinks
+  // - POST   /user/sharetracklinks
+  // - GET    /user/sharetracklinks/:id
+  // - PATCH  /user/sharetracklinks/:id
+  // - DELETE /user/sharetracklinks/:id
+  //
+  // Postman mismatch:
+  // - Create body shows single-vehicle shape: { vehicleId, expiresAt }
+  // - MD shows array shape: { vehicleIds, expiryAt, isGeofence, isHistory }
+  // The repository prefers MD and falls back to Postman shape when needed.
+  String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, dynamic>> tracks = [
-    {
-      "name": "Agra Delivery – Morning Slot",
-      "status": "Active",
-      "vehicles_count": 3,
-      "link": "trk.fleet.link/agra-morning",
-      "expires": "03/01/2026, 14:39:35",
-      "views": 48,
-      "last_opened": "03/01/2026, 08:27:35",
-      "vehicles": ["UP80AA1234", "UP80BB4567", "DL01C7788"],
-    },
-    {
-      "name": "Vendor QA – One day",
-      "status": "Scheduled",
-      "vehicles_count": 1,
-      "link": "trk.fleet.link/vendor-qa",
-      "expires": "05/01/2026, 08:39:35",
-      "views": 0,
-      "last_opened": null,
-      "vehicles": ["MH12Q9090"],
-    },
-    {
-      "name": "Festival Rush – North Zone",
-      "status": "Expired",
-      "vehicles_count": 4,
-      "link": "trk.fleet.link/north-rush",
-      "expires": "03/01/2026, 05:39:35",
-      "views": 311,
-      "last_opened": "03/01/2026, 04:39:35",
-      "vehicles": ["HR26D3344", "GJ01M6666", "RJ14P2211", "TN99Z0000"],
-    },
-    // Add more dummy tracks if needed
-  ];
+  final Map<String, CancelToken> _toggleTokens = <String, CancelToken>{};
+  final Map<String, CancelToken> _deleteTokens = <String, CancelToken>{};
+
+  ApiClient? _apiClient;
+  UserShareTrackLinksRepository? _repo;
+  CancelToken? _loadToken;
+
+  List<UserShareTrackLinkItem> _tracks = <UserShareTrackLinkItem>[];
+  bool _loading = false;
+  bool _errorShown = false;
+  bool _editUnavailableShown = false;
+  bool _qrUnavailableShown = false;
+  final Set<String> _togglingIds = <String>{};
+  final Set<String> _deletingIds = <String>{};
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(() => setState(() {}));
+    _loadLinks();
   }
 
   @override
   void dispose() {
+    _loadToken?.cancel('Share track screen disposed');
+    for (final token in _toggleTokens.values) {
+      token.cancel('Share track screen disposed');
+    }
+    for (final token in _deleteTokens.values) {
+      token.cancel('Share track screen disposed');
+    }
     _searchController.dispose();
     super.dispose();
   }
 
-  bool _isExpiringToday(String expires) {
-    // Simple check assuming format DD/MM/YYYY, HH:MM:SS and current date 03/01/2026
-    // In real app, parse to DateTime and compare DateTime.now()
-    final datePart = expires.split(', ')[0];
-    return datePart == "03/01/2026";
+  UserShareTrackLinksRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= UserShareTrackLinksRepository(api: _apiClient!);
+    return _repo!;
+  }
+
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  Future<void> _loadLinks() async {
+    _loadToken?.cancel('Reload share track links');
+    final token = CancelToken();
+    _loadToken = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    final result = await _repoOrCreate().getLinks(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (items) {
+        setState(() {
+          _tracks = items;
+          _loading = false;
+          _errorShown = false;
+        });
+      },
+      failure: (error) {
+        setState(() => _loading = false);
+        if (_isCancelled(error) || _errorShown) return;
+        _errorShown = true;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't load share links.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  bool _isExpiringToday(UserShareTrackLinkItem item) {
+    final expiry = item.expiryDate;
+    if (expiry == null) return false;
+    final now = DateTime.now();
+    return expiry.year == now.year &&
+        expiry.month == now.month &&
+        expiry.day == now.day;
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) return '';
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(value.day)}/${two(value.month)}/${value.year}, ${two(value.hour)}:${two(value.minute)}';
+  }
+
+  Color _statusColor(ColorScheme cs, UserShareTrackLinkItem item) {
+    switch (item.statusLabel.toLowerCase()) {
+      case 'active':
+        return Colors.green;
+      case 'expired':
+        return Colors.red;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String _vehiclesDisplay(UserShareTrackLinkItem item) {
+    final labels = item.vehicles
+        .map(
+          (vehicle) =>
+              (vehicle['plateNumber'] ??
+                      vehicle['plate_number'] ??
+                      vehicle['name'] ??
+                      '')
+                  .toString()
+                  .trim(),
+        )
+        .where((value) => value.isNotEmpty)
+        .toList();
+    if (labels.length > 3) {
+      return '${labels.take(3).join(' ')} +${labels.length - 3} more';
+    }
+    return labels.join(' ');
+  }
+
+  Future<void> _openLink(String rawUrl) async {
+    final value = rawUrl.trim();
+    if (value.isEmpty) return;
+    final normalized =
+        value.startsWith('http://') || value.startsWith('https://')
+        ? value
+        : 'https://$value';
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  void _copyLink(UserShareTrackLinkItem item) {
+    final value = item.finalUrl.trim();
+    if (value.isEmpty) return;
+    final normalized =
+        value.startsWith('http://') || value.startsWith('https://')
+        ? value
+        : 'https://$value';
+    Clipboard.setData(ClipboardData(text: normalized));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Link copied to clipboard')));
+  }
+
+  void _showUnavailableQr() {
+    if (_qrUnavailableShown) return;
+    _qrUnavailableShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('QR Code UI not available yet')),
+    );
+  }
+
+  void _showUnavailableEdit() {
+    if (_editUnavailableShown) return;
+    _editUnavailableShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Edit API shape not confirmed yet')),
+    );
+  }
+
+  Future<void> _toggleLink(UserShareTrackLinkItem item) async {
+    if (_togglingIds.contains(item.id) || _deletingIds.contains(item.id)) {
+      return;
+    }
+
+    final next = !item.isActive;
+    final previousIndex = _tracks.indexWhere(
+      (element) => element.id == item.id,
+    );
+    if (previousIndex < 0) return;
+
+    final token = CancelToken();
+    _toggleTokens[item.id]?.cancel('Restart share link toggle');
+    _toggleTokens[item.id] = token;
+
+    final optimisticRaw = Map<String, dynamic>.from(item.raw)
+      ..['isActive'] = next;
+
+    if (!mounted) return;
+    setState(() {
+      _togglingIds.add(item.id);
+      _tracks[previousIndex] = item.copyWithRaw(optimisticRaw);
+    });
+
+    final result = await _repoOrCreate().setLinkActive(
+      item.id,
+      next,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (updated) {
+        final index = _tracks.indexWhere((element) => element.id == item.id);
+        if (index < 0) return;
+        setState(() {
+          _tracks[index] = updated;
+          _togglingIds.remove(item.id);
+        });
+      },
+      failure: (error) {
+        final index = _tracks.indexWhere((element) => element.id == item.id);
+        if (index < 0) return;
+        setState(() {
+          _tracks[index] = item;
+          _togglingIds.remove(item.id);
+        });
+        if (_isCancelled(error)) return;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't update link status.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Future<void> _deleteLink(UserShareTrackLinkItem item) async {
+    if (_deletingIds.contains(item.id) || _togglingIds.contains(item.id)) {
+      return;
+    }
+
+    final shouldDelete =
+        await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete share link?'),
+            content: Text('This will revoke "${item.displayName}".'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!shouldDelete) return;
+
+    final token = CancelToken();
+    _deleteTokens[item.id]?.cancel('Restart share link delete');
+    _deleteTokens[item.id] = token;
+
+    if (!mounted) return;
+    setState(() => _deletingIds.add(item.id));
+
+    final result = await _repoOrCreate().deleteLink(
+      item.id,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (_) {
+        setState(() {
+          _deletingIds.remove(item.id);
+          _tracks.removeWhere((element) => element.id == item.id);
+        });
+      },
+      failure: (error) {
+        setState(() => _deletingIds.remove(item.id));
+        if (_isCancelled(error)) return;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't delete share link.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Widget _buildShimmerCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    double padding,
+    double spacing,
+    double bodyFs,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(bottom: padding),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        child: Padding(
+          padding: EdgeInsets.all(padding + 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  Expanded(
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: 16,
+                      radius: 8,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  AppShimmer(width: 72, height: 24, radius: 12),
+                ],
+              ),
+              SizedBox(height: spacing),
+              const AppShimmer(width: 220, height: 14, radius: 8),
+              SizedBox(height: spacing / 2),
+              Row(
+                children: const [
+                  AppShimmer(width: 140, height: 14, radius: 8),
+                  SizedBox(width: 12),
+                  AppShimmer(width: 90, height: 14, radius: 8),
+                ],
+              ),
+              SizedBox(height: spacing / 2),
+              const AppShimmer(width: 180, height: 14, radius: 8),
+              SizedBox(height: spacing),
+              const AppShimmer(width: 240, height: 14, radius: 8),
+              SizedBox(height: spacing * 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(
+                  5,
+                  (_) => AppShimmer(
+                    width: bodyFs + 10,
+                    height: bodyFs + 10,
+                    radius: (bodyFs + 10) / 2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    double padding,
+    double bodyFs,
+    String title,
+    String subtitle,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(bottom: padding),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(padding + 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: bodyFs,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: bodyFs - 1,
+                color: colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // --- ADAPTIVE VALUES ---
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8-16
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
-    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth); // 13-15
-    final bodyFs = titleFs - 1; // general text
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final bodyFs = titleFs - 1;
     final smallFs = titleFs - 3;
     final iconSize = titleFs + 2;
-    final cardPadding = padding + 4; // slightly bigger for cards
-    final searchQuery = _searchController.text.toLowerCase();
+    final cardPadding = padding + 4;
+    final searchQuery = _searchController.text.toLowerCase().trim();
 
-    var filteredTracks = tracks.where((track) {
-      final matchesSearch = searchQuery.isEmpty ||
-          track['name'].toString().toLowerCase().contains(searchQuery) ||
-          track['status'].toString().toLowerCase().contains(searchQuery) ||
-          track['link'].toString().toLowerCase().contains(searchQuery) ||
-          track['vehicles'].toString().toLowerCase().contains(searchQuery);
+    final filteredTracks =
+        _tracks.where((track) {
+          final matchesSearch =
+              searchQuery.isEmpty ||
+              track.displayName.toLowerCase().contains(searchQuery) ||
+              track.statusLabel.toLowerCase().contains(searchQuery) ||
+              track.finalUrl.toLowerCase().contains(searchQuery) ||
+              _vehiclesDisplay(track).toLowerCase().contains(searchQuery);
 
-      final matchesTab = selectedTab == "All" ||
-          (selectedTab == "Active" && track['status'] == "Active") ||
-          (selectedTab == "Expires Today" && _isExpiringToday(track['expires']));
+          final matchesTab =
+              selectedTab == 'All' ||
+              (selectedTab == 'Active' && track.statusLabel == 'Active') ||
+              (selectedTab == 'Expires Today' && _isExpiringToday(track));
 
-      return matchesSearch && matchesTab;
-    }).toList();
+          return matchesSearch && matchesTab;
+        }).toList()..sort((a, b) {
+          final ad = a.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bd = b.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+          return bd.compareTo(ad);
+        });
 
     return AppLayout(
-      title: "USER",
-      subtitle: "Share Track",
+      title: 'USER',
+      subtitle: 'Share Track',
       showLeftAvatar: false,
       actionIcons: const [],
-      onActionTaps: [],
+      onActionTaps: const [],
       leftAvatarText: 'ST',
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --------------------------------------------
-            // SEARCH FIELD
-            // --------------------------------------------
             Container(
               height: padding * 3.5,
               decoration: BoxDecoration(
@@ -122,23 +496,36 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+                style: GoogleFonts.inter(
+                  fontSize: bodyFs,
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
-                  hintText: "Search name, link, status...",
+                  hintText: 'Search name, link, status...',
                   hintStyle: GoogleFonts.inter(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: bodyFs,
                   ),
-                  prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.primary),
+                  prefixIcon: Icon(
+                    CupertinoIcons.search,
+                    size: iconSize,
+                    color: colorScheme.primary,
+                  ),
                   border: InputBorder.none,
                   focusColor: colorScheme.primary,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.transparent, width: 0),
+                    borderSide: const BorderSide(
+                      color: Colors.transparent,
+                      width: 0,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
+                    ),
                   ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: padding,
@@ -148,13 +535,10 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
               ),
             ),
             SizedBox(height: padding),
-            // --------------------------------------------
-            // TABS
-            // --------------------------------------------
             Wrap(
               spacing: spacing,
               runSpacing: spacing,
-              children: ["All", "Active", "Expires Today"].map((tab) {
+              children: ['All', 'Active', 'Expires Today'].map((tab) {
                 return SmallTab(
                   label: tab,
                   selected: selectedTab == tab,
@@ -163,23 +547,22 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
               }).toList(),
             ),
             SizedBox(height: padding),
-            // --------------------------------------------
-            // TOP ROW: showing count + add track
-            // --------------------------------------------
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Showing ${filteredTracks.length} of ${tracks.length} tracks",
+                  'Showing ${filteredTracks.length} of ${_tracks.length} tracks',
                   style: GoogleFonts.inter(
                     fontSize: bodyFs,
                     color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),
-                // ADD TRACK BUTTON
                 GestureDetector(
-                  onTap: () {
-                    context.push('/user/share-track/add');
+                  onTap: () async {
+                    final result = await context.push('/user/share-track/add');
+                    if (result == true) {
+                      _loadLinks();
+                    }
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -189,10 +572,12 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.1),
+                      ),
                     ),
                     child: Text(
-                      "Add Track",
+                      'Add Track',
                       style: GoogleFonts.inter(
                         fontSize: bodyFs,
                         fontWeight: FontWeight.w600,
@@ -204,236 +589,287 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
               ],
             ),
             SizedBox(height: spacing),
-            // --------------------------------------------
-            // TRACK LIST
-            // --------------------------------------------
-            ListView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredTracks.length,
-              itemBuilder: (context, index) {
-                final track = filteredTracks[index];
-                final vehicles = track["vehicles"] as List<String>;
-                final vehiclesDisplay = vehicles.length > 3
-                    ? "${vehicles.sublist(0, 3).join(' ')} +${vehicles.length - 3} more"
-                    : vehicles.join(' ');
-                final isActive = track["status"] == "Active";
-                final statusColor = track["status"] == "Active"
-                    ? Colors.green
-                    : track["status"] == "Scheduled"
-                        ? Colors.orange
-                        : Colors.red;
-                return Container(
-                  margin: EdgeInsets.only(bottom: padding),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
-                      onTap: () {},
+            if (_loading)
+              ...List.generate(
+                3,
+                (_) => _buildShimmerCard(
+                  context,
+                  colorScheme,
+                  padding,
+                  spacing,
+                  bodyFs,
+                ),
+              )
+            else if (filteredTracks.isEmpty)
+              _buildEmptyCard(
+                context,
+                colorScheme,
+                padding,
+                bodyFs,
+                'No track links found',
+                'Create a link to share live tracking.',
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredTracks.length,
+                itemBuilder: (context, index) {
+                  final track = filteredTracks[index];
+                  final vehiclesDisplay = _vehiclesDisplay(track);
+                  final statusColor = _statusColor(colorScheme, track);
+                  final isBusy =
+                      _togglingIds.contains(track.id) ||
+                      _deletingIds.contains(track.id);
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: padding),
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25),
-                      child: Padding(
-                        padding: EdgeInsets.all(cardPadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // NAME + STATUS
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    track["name"],
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: spacing + 2,
-                                    vertical: spacing - 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    track["status"],
-                                    style: GoogleFonts.inter(
-                                      fontSize: smallFs,
-                                      fontWeight: FontWeight.w600,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing),
-                            // VEHICLES COUNT + LINK
-                            GestureDetector(
-                              onTap: () async {
-                                final url = Uri.parse('https://${track["link"]}');
-                                if (await canLaunchUrl(url)) {
-                                  await launchUrl(url);
-                                }
-                              },
-                              child: Text(
-                                "${track["vehicles_count"]} vehicles • ${track["link"]}",
-                                style: GoogleFonts.inter(
-                                  fontSize: bodyFs,
-                                  color: colorScheme.primary,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: spacing / 2),
-                            // EXPIRES AND VIEWS IN ROW
-                            Row(
-                              children: [
-                                // EXPIRES
-                                Row(
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.calendar,
-                                      size: iconSize * 0.8,
-                                      color: colorScheme.primary.withOpacity(0.87),
-                                    ),
-                                    SizedBox(width: spacing / 2),
-                                    Text(
-                                      "Expires: ${track["expires"]}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(width: spacing + 5),
-                                // VIEWS
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.visibility,
-                                      size: iconSize * 0.8,
-                                      color: colorScheme.primary.withOpacity(0.87),
-                                    ),
-                                    SizedBox(width: spacing / 2),
-                                    Text(
-                                      "Views: ${track["views"]}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing / 2),
-                            // LAST OPENED
-                            if (track["last_opened"] != null)
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        onTap: track.finalUrl.trim().isEmpty
+                            ? null
+                            : () => _openLink(track.finalUrl),
+                        borderRadius: BorderRadius.circular(25),
+                        child: Padding(
+                          padding: EdgeInsets.all(cardPadding),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    size: iconSize * 0.8,
-                                    color: colorScheme.primary.withOpacity(0.87),
+                                  Expanded(
+                                    child: Text(
+                                      track.displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
                                   ),
-                                  SizedBox(width: spacing / 2),
-                                  Text(
-                                    "Last opened: ${track["last_opened"]}",
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      color: colorScheme.onSurface,
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: spacing + 2,
+                                      vertical: spacing - 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      track.statusLabel,
+                                      style: GoogleFonts.inter(
+                                        fontSize: smallFs,
+                                        fontWeight: FontWeight.w600,
+                                        color: statusColor,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            SizedBox(height: spacing),
-                            // VEHICLES
-                            Text(
-                              vehiclesDisplay,
-                              style: GoogleFonts.inter(
-                                fontSize: bodyFs,
-                                color: colorScheme.onSurface.withOpacity(0.7),
+                              SizedBox(height: spacing),
+                              GestureDetector(
+                                onTap: track.finalUrl.trim().isEmpty
+                                    ? null
+                                    : () => _openLink(track.finalUrl),
+                                child: Text(
+                                  '${track.vehiclesCount} vehicles • ${track.finalUrl}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: bodyFs,
+                                    color: colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
                               ),
-                            ),
-                            SizedBox(height: spacing * 2),
-                            // ACTION ICONS
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                IconButton(
-                                  tooltip: 'Copy Link',
-                                  icon: Icon(Icons.content_copy, size: iconSize, color: colorScheme.primary),
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: 'https://${track["link"]}'));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Link copied to clipboard')),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  tooltip: 'QR Code',
-                                  icon: Icon(Icons.qr_code, size: iconSize, color: colorScheme.primary),
-                                  onPressed: () {
-                                    // Placeholder: Show QR dialog or something
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('QR Code functionality TBD')),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  tooltip: isActive ? 'Pause' : 'Resume',
-                                  icon: Icon(isActive ? Icons.pause : Icons.play_arrow, size: iconSize, color: colorScheme.primary),
-                                  onPressed: () {
-                                    // Placeholder: Toggle status
-                                    setState(() {
-                                      track["status"] = isActive ? "Paused" : "Active";
-                                    });
-                                  },
-                                ),
-                                IconButton(
-                                  tooltip: 'Edit',
-                                  icon: Icon(Icons.edit, size: iconSize, color: colorScheme.primary),
-                                  onPressed: () {
-                                    // Placeholder: Navigate to edit
-                                    context.push('/user/share-track/edit/${track["name"]}');
-                                  },
-                                ),
-                                IconButton(
-                                  tooltip: 'Delete',
-                                  icon: Icon(Icons.delete, size: iconSize, color: Colors.red),
-                                  onPressed: () {
-                                    // Placeholder: Confirm delete
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Delete functionality TBD')),
-                                    );
-                                  },
+                              SizedBox(height: spacing / 2),
+                              Row(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.calendar,
+                                        size: iconSize * 0.8,
+                                        color: colorScheme.primary.withOpacity(
+                                          0.87,
+                                        ),
+                                      ),
+                                      SizedBox(width: spacing / 2),
+                                      Text(
+                                        'Expires: ${_formatDate(track.expiryDate)}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: bodyFs,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(width: spacing + 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.visibility,
+                                        size: iconSize * 0.8,
+                                        color: colorScheme.primary.withOpacity(
+                                          0.87,
+                                        ),
+                                      ),
+                                      SizedBox(width: spacing / 2),
+                                      Text(
+                                        'Views: ${track.views}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: bodyFs,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              if (track.lastOpenedDate != null) ...[
+                                SizedBox(height: spacing / 2),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      size: iconSize * 0.8,
+                                      color: colorScheme.primary.withOpacity(
+                                        0.87,
+                                      ),
+                                    ),
+                                    SizedBox(width: spacing / 2),
+                                    Expanded(
+                                      child: Text(
+                                        'Last opened: ${_formatDate(track.lastOpenedDate)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: bodyFs,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                          ],
+                              SizedBox(height: spacing),
+                              if (vehiclesDisplay.isNotEmpty)
+                                Text(
+                                  vehiclesDisplay,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: bodyFs,
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
+                                  ),
+                                ),
+                              SizedBox(height: spacing * 2),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Copy Link',
+                                    icon: Icon(
+                                      Icons.content_copy,
+                                      size: iconSize,
+                                      color: colorScheme.primary,
+                                    ),
+                                    onPressed: isBusy
+                                        ? null
+                                        : () => _copyLink(track),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'QR Code',
+                                    icon: Icon(
+                                      Icons.qr_code,
+                                      size: iconSize,
+                                      color: colorScheme.primary,
+                                    ),
+                                    onPressed: isBusy
+                                        ? null
+                                        : _showUnavailableQr,
+                                  ),
+                                  _togglingIds.contains(track.id)
+                                      ? AppShimmer(
+                                          width: iconSize,
+                                          height: iconSize,
+                                          radius: iconSize / 2,
+                                        )
+                                      : IconButton(
+                                          tooltip: track.isActive
+                                              ? 'Pause'
+                                              : 'Resume',
+                                          icon: Icon(
+                                            track.isActive
+                                                ? Icons.pause
+                                                : Icons.play_arrow,
+                                            size: iconSize,
+                                            color: colorScheme.primary,
+                                          ),
+                                          onPressed: isBusy
+                                              ? null
+                                              : () => _toggleLink(track),
+                                        ),
+                                  IconButton(
+                                    tooltip: 'Edit',
+                                    icon: Icon(
+                                      Icons.edit,
+                                      size: iconSize,
+                                      color: colorScheme.primary,
+                                    ),
+                                    onPressed: isBusy
+                                        ? null
+                                        : _showUnavailableEdit,
+                                  ),
+                                  _deletingIds.contains(track.id)
+                                      ? AppShimmer(
+                                          width: iconSize,
+                                          height: iconSize,
+                                          radius: iconSize / 2,
+                                        )
+                                      : IconButton(
+                                          tooltip: 'Delete',
+                                          icon: Icon(
+                                            Icons.delete,
+                                            size: iconSize,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: isBusy
+                                              ? null
+                                              : () => _deleteLink(track),
+                                        ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
             SizedBox(height: padding * 2),
           ],
         ),

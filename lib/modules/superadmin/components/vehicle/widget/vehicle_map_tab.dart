@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 
 class VehicleMapTab extends StatefulWidget {
@@ -156,10 +157,8 @@ class _VehicleMapTabState extends State<VehicleMapTab> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: const ['a', 'b', 'c'],
-                userAgentPackageName: 'com.fleetstack.app',
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.fleek_stack_mobile',
               ),
               MarkerLayer(
                 markers: [
@@ -209,12 +208,10 @@ class _VehicleMapTabState extends State<VehicleMapTab> {
                                 width: 12,
                                 height: 12,
                                 child: _loading
-                                    ? CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              colorScheme.primary,
-                                            ),
+                                    ? const AppShimmer(
+                                        width: 12,
+                                        height: 12,
+                                        radius: 6,
                                       )
                                     : const SizedBox.shrink(),
                               ),

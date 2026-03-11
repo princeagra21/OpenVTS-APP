@@ -66,11 +66,7 @@ class CompanyBox extends StatelessWidget {
                     alignment: PlaceholderAlignment.middle,
                     child: Padding(
                       padding: EdgeInsets.only(left: 8),
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                      child: AppShimmer(width: 14, height: 14, radius: 7),
                     ),
                   ),
               ],

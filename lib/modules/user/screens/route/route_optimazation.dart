@@ -1,4 +1,11 @@
-import 'dart:ui';
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/user_route_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/user_routes_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
@@ -8,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:open_route_service/open_route_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../layout/app_layout.dart';
@@ -25,11 +31,8 @@ class Waypoint {
   final LatLng point;
   final String label;
   final IconData icon;
-  Waypoint({
-    required this.point,
-    required this.label,
-    required this.icon,
-  });
+
+  Waypoint({required this.point, required this.label, required this.icon});
 }
 
 class TopActionButton extends StatelessWidget {
@@ -40,7 +43,7 @@ class TopActionButton extends StatelessWidget {
     required this.label,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Icon icon;
   final String label;
 
@@ -55,41 +58,191 @@ class TopActionButton extends StatelessWidget {
 }
 
 class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
+  // FleetStack-API-Reference.md + Postman confirmed:
+  // - GET    /user/routes
+  // - GET    /user/routes/:id
+  // - POST   /user/routes
+  // - PATCH  /user/routes/:id
+  //
+  // Missing backend APIs for this screen:
+  // - No /user/routes/optimize (optimization stays local in app)
+  // - No assign-driver endpoint for saved routes
+  //
+  // Missing UI/backend parity:
+  // - Assign Driver is local-only and not persisted
+  // - Route list/history UI is not exposed; only latest saved route is auto-loaded
   final MapController _mapController = MapController();
   final PopupController _popupLayerController = PopupController();
 
-  late final OpenRouteService client;
-
-  // ---- MAP STATE ----
-  final LatLng _initialCenter = LatLng(28.6139, 77.2090);
+  final LatLng _initialCenter = const LatLng(28.6139, 77.2090);
   late LatLng _currentCenter;
   double _currentZoom = 5.0;
 
-  // ---- ROUTE STATE ----
-  final List<Waypoint> _waypoints = []; // holds waypoints with metadata
-  List<LatLng> _route = []; // optimized route order (polyline)
+  final List<Waypoint> _waypoints = <Waypoint>[];
+  List<LatLng> _route = <LatLng>[];
   bool _isOptimized = false;
-  double _totalDistanceKm = 0.0; // Total route distance in km
-  bool _isOptimizing = false; // Loading state
+  double _totalDistanceKm = 0.0;
+  bool _isOptimizing = false;
+  bool _loading = false;
+  bool _saving = false;
+  bool _deleting = false;
+  bool _loadErrorShown = false;
+  bool _saveErrorShown = false;
 
-  // ---- Driver Assignment ----
   String? _assignedDriver;
+  String? _loadedRouteId;
+  String _routeName = 'Optimized Route';
 
-  // ---- UI / Add dialog ----
-  bool _isPickingFromMap = false; // when true, next map tap will add waypoint
-  final TextEditingController _landmarkController = TextEditingController();
-  final TextEditingController _latController = TextEditingController();
-  final TextEditingController _lngController = TextEditingController();
+  bool _isPickingFromMap = false;
   String? _pendingLabel;
   IconData _pendingIcon = Icons.location_on;
+
+  ApiClient? _apiClient;
+  UserRoutesRepository? _repo;
+  CancelToken? _loadToken;
+  CancelToken? _saveToken;
+  CancelToken? _deleteToken;
 
   @override
   void initState() {
     super.initState();
-    client = OpenRouteService(
-        apiKey:
-            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImY2NTk4MGZlZjBmMTRjOTY5M2YxMDE1YzgzMGU2ZTA1IiwiaCI6Im11cm11cjY0In0=');
     _currentCenter = _initialCenter;
+    _loadLatestRoute();
+  }
+
+  @override
+  void dispose() {
+    _loadToken?.cancel('User route optimization disposed');
+    _saveToken?.cancel('User route optimization disposed');
+    _deleteToken?.cancel('User route optimization disposed');
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  UserRoutesRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= UserRoutesRepository(api: _apiClient!);
+    return _repo!;
+  }
+
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  DateTime _safeParseDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+    final parsed = DateTime.tryParse(value);
+    return parsed?.toLocal() ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  Future<void> _loadLatestRoute() async {
+    _loadToken?.cancel('Reload user routes');
+    final token = CancelToken();
+    _loadToken = token;
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    final routesRes = await _repoOrCreate().getRoutes(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+
+    await routesRes.when(
+      success: (items) async {
+        if (items.isEmpty) {
+          if (!mounted) return;
+          setState(() {
+            _loading = false;
+            _loadErrorShown = false;
+          });
+          return;
+        }
+
+        final sorted = List<UserRouteItem>.from(items)
+          ..sort(
+            (a, b) => _safeParseDate(
+              b.updatedAt,
+            ).compareTo(_safeParseDate(a.updatedAt)),
+          );
+
+        final detailsRes = await _repoOrCreate().getRouteDetails(
+          sorted.first.id,
+          cancelToken: token,
+        );
+        if (!mounted || token.isCancelled) return;
+
+        detailsRes.when(
+          success: (route) {
+            _hydrateFromRoute(route);
+            if (!mounted) return;
+            setState(() {
+              _loading = false;
+              _loadErrorShown = false;
+            });
+          },
+          failure: (error) {
+            if (!mounted) return;
+            setState(() => _loading = false);
+            if (_isCancelled(error) || _loadErrorShown) return;
+            _loadErrorShown = true;
+            final msg = error is ApiException && error.message.trim().isNotEmpty
+                ? error.message
+                : "Couldn't load route details.";
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(msg)));
+          },
+        );
+      },
+      failure: (error) async {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        if (_isCancelled(error) || _loadErrorShown) return;
+        _loadErrorShown = true;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't load routes.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  void _hydrateFromRoute(UserRouteItem route) {
+    final coords = route.coordinates;
+    _loadedRouteId = route.id;
+    _routeName = route.name;
+    _route = List<LatLng>.from(coords);
+    _waypoints
+      ..clear()
+      ..addAll(
+        coords.asMap().entries.map(
+          (entry) => Waypoint(
+            point: entry.value,
+            label: 'Point ${entry.key + 1}',
+            icon: Icons.location_on,
+          ),
+        ),
+      );
+    _isOptimized = coords.length >= 2;
+    _totalDistanceKm = _calculateTotalDistance(coords);
+
+    if (coords.isNotEmpty) {
+      final avgLat =
+          coords.map((p) => p.latitude).reduce((a, b) => a + b) / coords.length;
+      final avgLng =
+          coords.map((p) => p.longitude).reduce((a, b) => a + b) /
+          coords.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _mapController.move(LatLng(avgLat, avgLng), _currentZoom);
+      });
+    }
   }
 
   void _zoomIn() {
@@ -104,12 +257,13 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     setState(() => _currentZoom = newZoom);
   }
 
-  // Add waypoint programmatically (always adds a Waypoint instance)
   void _addWaypoint(LatLng p, {required String label, IconData? icon}) {
     setState(() {
-      _waypoints.add(Waypoint(point: p, label: label, icon: icon ?? Icons.place));
+      _waypoints.add(
+        Waypoint(point: p, label: label, icon: icon ?? Icons.place),
+      );
       _isOptimized = false;
-      _route.clear();
+      _route = <LatLng>[];
       _totalDistanceKm = 0.0;
     });
   }
@@ -119,13 +273,12 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       if (index >= 0 && index < _waypoints.length) {
         _waypoints.removeAt(index);
         _isOptimized = false;
-        _route.clear();
+        _route = <LatLng>[];
         _totalDistanceKm = 0.0;
       }
     });
   }
 
-  // Show waypoint info and option to remove
   void _showWaypointInfo(int index) {
     final waypoint = _waypoints[index];
     showDialog(
@@ -138,16 +291,14 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
           children: [
             Text('Latitude: ${waypoint.point.latitude}'),
             Text('Longitude: ${waypoint.point.longitude}'),
-            Row(
-              children: [
-                const Text('Icon: '),
-                Icon(waypoint.icon, ),
-              ],
-            ),
+            Row(children: [const Text('Icon: '), Icon(waypoint.icon)]),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -160,20 +311,61 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     );
   }
 
-  // Clear everything
-  void _clearWaypoints() {
-    setState(() {
-      _waypoints.clear();
-      _route.clear();
-      _isOptimized = false;
-      _totalDistanceKm = 0.0;
-      _assignedDriver = null;
-    });
+  void _resetRouteState() {
+    _waypoints.clear();
+    _route = <LatLng>[];
+    _isOptimized = false;
+    _totalDistanceKm = 0.0;
+    _assignedDriver = null;
+    _loadedRouteId = null;
+    _routeName = 'Optimized Route';
   }
 
-  // Calculate total distance in km using Haversine
+  Future<void> _clearWaypoints() async {
+    if (_loadedRouteId == null || _loadedRouteId!.trim().isEmpty) {
+      if (!mounted) return;
+      setState(_resetRouteState);
+      return;
+    }
+
+    _deleteToken?.cancel('Restart user route delete');
+    final token = CancelToken();
+    _deleteToken = token;
+
+    if (!mounted) return;
+    setState(() => _deleting = true);
+
+    final result = await _repoOrCreate().deleteRoute(
+      _loadedRouteId!,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (_) {
+        setState(() {
+          _deleting = false;
+          _resetRouteState();
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Route cleared')));
+      },
+      failure: (error) {
+        setState(() => _deleting = false);
+        if (_isCancelled(error)) return;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't clear route.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
   double _calculateTotalDistance(List<LatLng> route) {
-    final Distance distance = const Distance();
+    final distance = const Distance();
     double total = 0.0;
     for (int i = 0; i < route.length - 1; i++) {
       total += distance.as(LengthUnit.Kilometer, route[i], route[i + 1]);
@@ -181,20 +373,20 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     return total;
   }
 
-  // Simple 2-opt improvement for better optimization
   List<LatLng> _twoOptImprove(List<LatLng> route) {
-    final Distance distance = const Distance();
+    final distance = const Distance();
     bool improved = true;
     while (improved) {
       improved = false;
       for (int i = 1; i < route.length - 2; i++) {
         for (int j = i + 2; j < route.length - 1; j++) {
-          final double oldDist = distance.as(LengthUnit.Meter, route[i - 1], route[i]) +
+          final oldDist =
+              distance.as(LengthUnit.Meter, route[i - 1], route[i]) +
               distance.as(LengthUnit.Meter, route[j], route[j + 1]);
-          final double newDist = distance.as(LengthUnit.Meter, route[i - 1], route[j]) +
+          final newDist =
+              distance.as(LengthUnit.Meter, route[i - 1], route[j]) +
               distance.as(LengthUnit.Meter, route[i], route[j + 1]);
           if (newDist < oldDist) {
-            // Reverse segment i to j
             final reversed = route.sublist(i, j + 1).reversed.toList();
             route.replaceRange(i, j + 1, reversed);
             improved = true;
@@ -205,24 +397,80 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     return route;
   }
 
-  /// Enhanced route optimizer with greedy + 2-opt
+  Map<String, dynamic> _routePayload(List<LatLng> points) {
+    return <String, dynamic>{
+      'name': _routeName,
+      'color': '#2196F3',
+      'toleranceMeters': 100,
+      'geodata': <String, dynamic>{
+        'kind': 'LINE',
+        'geometry': <String, dynamic>{
+          'type': 'LineString',
+          'coordinates': points
+              .map((p) => <double>[p.longitude, p.latitude])
+              .toList(),
+        },
+        'toleranceM': 100,
+      },
+    };
+  }
+
+  Future<void> _saveRoute(List<LatLng> points) async {
+    if (points.length < 2) return;
+    _saveToken?.cancel('Restart user route save');
+    final token = CancelToken();
+    _saveToken = token;
+
+    if (!mounted) return;
+    setState(() => _saving = true);
+
+    final payload = _routePayload(points);
+    final repo = _repoOrCreate();
+    final result = _loadedRouteId == null || _loadedRouteId!.trim().isEmpty
+        ? await repo.createRoute(payload, cancelToken: token)
+        : await repo.updateRoute(_loadedRouteId!, payload, cancelToken: token);
+
+    if (!mounted || token.isCancelled) return;
+
+    result.when(
+      success: (route) {
+        setState(() {
+          _loadedRouteId = route.id;
+          _routeName = route.name;
+          _saving = false;
+          _saveErrorShown = false;
+        });
+      },
+      failure: (error) {
+        setState(() => _saving = false);
+        if (_isCancelled(error) || _saveErrorShown) return;
+        _saveErrorShown = true;
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't save route.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
   Future<void> _optimizeRoute() async {
     if (_waypoints.length <= 1) {
       setState(() {
-        _route
-          ..clear()
-          ..addAll(_waypoints.map((w) => w.point));
+        _route = List<LatLng>.from(_waypoints.map((w) => w.point));
         _isOptimized = true;
         _totalDistanceKm = _calculateTotalDistance(_route);
       });
+      await _saveRoute(_route);
       return;
     }
 
     setState(() => _isOptimizing = true);
 
-    final Distance distance = const Distance();
-    List<LatLng> remaining = _waypoints.map((w) => w.point).toList(growable: true);
-    List<LatLng> ordered = [];
+    final distance = const Distance();
+    final remaining = _waypoints.map((w) => w.point).toList(growable: true);
+    final ordered = <LatLng>[];
 
     LatLng current = remaining.removeAt(0);
     ordered.add(current);
@@ -241,65 +489,35 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       ordered.add(current);
     }
 
-    // Apply 2-opt for deeper optimization
-    ordered = _twoOptImprove(ordered);
+    final optimized = _twoOptImprove(ordered);
 
-    // Fetch real road route using OpenRouteService
-    List<LatLng> realRoute = [];
-    double apiDistance = 0.0;
-
-    try {
-      final List<ORSCoordinate> orsCoords = ordered.map((p) => ORSCoordinate(latitude: p.latitude, longitude: p.longitude)).toList();
-      final GeoJsonFeatureCollection geoJson = await client.directionsMultiRouteGeoJsonPost(
-        coordinates: orsCoords,
-        profileOverride: ORSProfile.drivingCar, // Adjust profile as needed (e.g., cyclingElectric, footWalking)
-        units: 'km', // Request distances in km
-      );
-
-      if (geoJson.features.isNotEmpty) {
-        final GeoJsonFeature feature = geoJson.features.first;
-        final GeoJsonFeatureGeometry geometry = feature.geometry;
-
-        if (geometry.type == 'LineString' && geometry.coordinates.isNotEmpty) {
-          realRoute = geometry.coordinates.first.map((c) => LatLng(c.latitude, c.longitude)).toList();
-        }
-
-        final dynamic summary = feature.properties['summary'];
-        if (summary != null && summary['distance'] != null) {
-          apiDistance = (summary['distance'] as num).toDouble();
-        }
-      }
-    } catch (e) {
-      // Handle API errors (e.g., invalid key, network issue) and fall back
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to fetch road route: $e. Using straight-line fallback.'),
-      ));
-    }
-
-    if (realRoute.isEmpty) {
-      realRoute = ordered;
-      apiDistance = _calculateTotalDistance(realRoute);
-    }
-
+    if (!mounted) return;
     setState(() {
-      _route
-        ..clear()
-        ..addAll(realRoute.isNotEmpty ? realRoute : ordered);
+      _route = List<LatLng>.from(optimized);
       _isOptimized = true;
-      _totalDistanceKm = apiDistance > 0 ? apiDistance : _calculateTotalDistance(_route);
+      _totalDistanceKm = _calculateTotalDistance(_route);
       _isOptimizing = false;
     });
 
-    // Center map on route average
     if (_route.isNotEmpty) {
-      final avgLat = _route.map((p) => p.latitude).reduce((a, b) => a + b) / _route.length;
-      final avgLng = _route.map((p) => p.longitude).reduce((a, b) => a + b) / _route.length;
+      final avgLat =
+          _route.map((p) => p.latitude).reduce((a, b) => a + b) / _route.length;
+      final avgLng =
+          _route.map((p) => p.longitude).reduce((a, b) => a + b) /
+          _route.length;
       _mapController.move(LatLng(avgLat, avgLng), _currentZoom);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Optimized route: ${_totalDistanceKm.toStringAsFixed(2)} km'),
-    ));
+    await _saveRoute(_route);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Optimized route: ${_totalDistanceKm.toStringAsFixed(2)} km',
+        ),
+      ),
+    );
   }
 
   Future<void> _handleAdd(String type, BuildContext ctx) async {
@@ -309,7 +527,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     } else if (type == 'lat_lng') {
       screen = const AddLatLngScreen();
     } else if (type == 'map_location') {
-      screen = const AddMapLocationScreen(); // New full-screen
+      screen = const AddMapLocationScreen();
     } else {
       return;
     }
@@ -319,23 +537,21 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       MaterialPageRoute(builder: (_) => screen),
     );
 
-    if (result == null) return;
+    if (!mounted || result == null) return;
 
     if (type == 'map_location') {
-      // Special handling: store metadata and enable picking
       _pendingLabel = result['label'] as String;
       _pendingIcon = result['icon'] as IconData? ?? Icons.location_on;
 
       setState(() => _isPickingFromMap = true);
 
-      ScaffoldMessenger.of(ctx).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Tap the map to place "${_pendingLabel}"'),
+          content: Text('Tap the map to place "$_pendingLabel"'),
           duration: const Duration(seconds: 3),
         ),
       );
     } else {
-      // Landmark or Lat/Lng: direct add
       final label = result['label'] as String;
       final lat = (result['lat'] as num).toDouble();
       final lng = (result['lng'] as num).toDouble();
@@ -344,13 +560,12 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       _addWaypoint(LatLng(lat, lng), label: label, icon: icon);
       _mapController.move(LatLng(lat, lng), _currentZoom);
 
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        SnackBar(content: Text('Added: $label')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Added: $label')));
     }
   }
 
-  // Updated assign driver to use full screen
   Future<void> _assignDriver() async {
     final selected = await Navigator.push<String?>(
       context,
@@ -359,32 +574,57 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       ),
     );
 
-    if (selected != null && selected != _assignedDriver) {
-      setState(() => _assignedDriver = selected);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Assigned: $selected')),
-      );
-    }
+    if (!mounted || selected == null || selected == _assignedDriver) return;
+    setState(() => _assignedDriver = selected);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Assigned: $selected')));
   }
 
-  // Email route details
-  void _emailRoute() {
-    if (!_isOptimized) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Optimize route first'),
-      ));
+  String _routeSummaryBody() {
+    final lines = <String>[
+      'Route: $_routeName',
+      'Distance: ${_totalDistanceKm.toStringAsFixed(2)} km',
+      'Waypoints: ${_waypoints.length}',
+      if ((_assignedDriver ?? '').trim().isNotEmpty)
+        'Assigned Driver: ${_assignedDriver!.trim()}',
+      '',
+      'Stops:',
+    ];
+
+    for (var i = 0; i < _waypoints.length; i++) {
+      final waypoint = _waypoints[i];
+      lines.add(
+        '${i + 1}. ${waypoint.label} '
+        '(${waypoint.point.latitude.toStringAsFixed(6)}, '
+        '${waypoint.point.longitude.toStringAsFixed(6)})',
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  Future<void> _emailRoute() async {
+    if (!_isOptimized || _route.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Optimize route first')));
       return;
     }
 
-    final String waypointsList = _waypoints.map((w) => '- ${w.label} (${w.point.latitude}, ${w.point.longitude})').join('\n');
-    final String body = 'Optimized Route Details:\n\nWaypoints:\n$waypointsList\n\nTotal Distance: ${_totalDistanceKm.toStringAsFixed(2)} km\nAssigned Driver: ${_assignedDriver ?? 'None'}';
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'recipient@example.com', // Replace with actual email
-      query: 'subject=Optimized Route&body=${Uri.encodeComponent(body)}',
-    );
+    final subject = Uri.encodeComponent('Route Plan: $_routeName');
+    final body = Uri.encodeComponent(_routeSummaryBody());
+    final uri = Uri.parse('mailto:?subject=$subject&body=$body');
 
-    launchUrl(emailUri);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No mail app available on this device.')),
+    );
   }
 
   @override
@@ -395,31 +635,28 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
     final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
     final iconSize = AdaptiveUtils.getIconSize(screenWidth);
-    final bottomMargin = MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
+    final bottomMargin =
+        MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
 
-    final List<Marker> markers = _waypoints.map((w) {
+    final markers = _waypoints.map((w) {
       return Marker(
         point: w.point,
         width: 40,
         height: 40,
         child: GestureDetector(
           onLongPress: () => _showWaypointInfo(_waypoints.indexOf(w)),
-          child: Icon(
-            w.icon,
-            size: 40,
-            color:  Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.black,
-          ),
+          child: Icon(w.icon, size: 40, color: Colors.black),
         ),
       );
     }).toList();
 
     return AppLayout(
-      title: "MAP",
-      subtitle: "Route Optimization",
-      actionIcons: [],
-      onActionTaps: [],
+      title: 'MAP',
+      subtitle: 'Route Optimization',
+      actionIcons: const [],
+      onActionTaps: const [],
       showAppBar: false,
-      leftAvatarText: "MP",
+      leftAvatarText: 'MP',
       showLeftAvatar: false,
       horizontalPadding: 0,
       child: Padding(
@@ -428,7 +665,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
           height: MediaQuery.of(context).size.height,
           child: Stack(
             children: [
-              // ================= MAP =================
               FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
@@ -436,7 +672,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   initialZoom: _currentZoom,
                   minZoom: 3,
                   maxZoom: 18,
-                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all,
+                  ),
                   onPositionChanged: (camera, _) {
                     _currentCenter = camera.center;
                     _currentZoom = camera.zoom;
@@ -444,11 +682,17 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   },
                   onTap: (tapPos, latlng) {
                     if (_isPickingFromMap && _pendingLabel != null) {
-                      _addWaypoint(latlng, label: _pendingLabel!, icon: _pendingIcon);
+                      _addWaypoint(
+                        latlng,
+                        label: _pendingLabel!,
+                        icon: _pendingIcon,
+                      );
                       _mapController.move(latlng, _currentZoom);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Waypoint added from map')),
+                        const SnackBar(
+                          content: Text('Waypoint added from map'),
+                        ),
                       );
 
                       setState(() {
@@ -460,8 +704,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    subdomains: const ['a', 'b', 'c'],
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.fleek_stack_mobile',
                   ),
                   if (_route.isNotEmpty)
                     PolylineLayer(
@@ -469,9 +714,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         Polyline(
                           points: _route,
                           strokeWidth: 4.0,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.blue
-                              : Colors.blue,
+                          color: Colors.blue,
                         ),
                       ],
                     ),
@@ -481,9 +724,14 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                       popupController: _popupLayerController,
                       popupDisplayOptions: PopupDisplayOptions(
                         builder: (BuildContext context, Marker marker) {
-                          final waypoint = _waypoints.firstWhere((w) => w.point == marker.point);
+                          final waypoint = _waypoints.firstWhere(
+                            (w) => w.point == marker.point,
+                          );
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: cs.surface,
                               borderRadius: BorderRadius.circular(20),
@@ -504,14 +752,14 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                           );
                         },
                         snap: PopupSnap.markerTop,
-                        animation: const PopupAnimation.fade(duration: Duration(milliseconds: 200)),
+                        animation: const PopupAnimation.fade(
+                          duration: Duration(milliseconds: 200),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-
-              // ================= TOP ADD BUTTONS =================
               Positioned(
                 top: 0,
                 left: 0,
@@ -525,19 +773,37 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         TopActionButton(
-                          onPressed: () => _handleAdd('landmark', context),
+                          onPressed:
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
+                              ? null
+                              : () => _handleAdd('landmark', context),
                           icon: const Icon(Icons.edit),
                           label: 'Landmark',
                         ),
                         const SizedBox(width: 8),
                         TopActionButton(
-                          onPressed: () => _handleAdd('map_location', context),
+                          onPressed:
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
+                              ? null
+                              : () => _handleAdd('map_location', context),
                           icon: const Icon(Icons.touch_app),
                           label: 'Map location',
                         ),
                         const SizedBox(width: 8),
                         TopActionButton(
-                          onPressed: () => _handleAdd('lat_lng', context),
+                          onPressed:
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
+                              ? null
+                              : () => _handleAdd('lat_lng', context),
                           icon: const Icon(Icons.map),
                           label: 'Insert lat/long',
                         ),
@@ -546,8 +812,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   ),
                 ),
               ),
-
-              // ================= RIGHT CONTROLS (Zoom, Optimize, Clear, Assign, Email) =================
               Positioned(
                 right: 16,
                 bottom: bottomMargin + 10,
@@ -556,7 +820,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                     Tooltip(
                       message: 'Zoom In',
                       child: _fab(
-                        hero: "zoom_in",
+                        hero: 'zoom_in',
                         icon: Icons.add,
                         size: fabSize,
                         iconSize: iconSize,
@@ -567,7 +831,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                     Tooltip(
                       message: 'Zoom Out',
                       child: _fab(
-                        hero: "zoom_out",
+                        hero: 'zoom_out',
                         icon: Icons.remove,
                         size: fabSize,
                         iconSize: iconSize,
@@ -578,40 +842,51 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                     Tooltip(
                       message: 'Optimize Route',
                       child: _fab(
-                        hero: "optimize",
+                        hero: 'optimize',
                         icon: Icons.autorenew,
                         size: fabSize,
                         iconSize: iconSize,
-                        onTap: () async => await _optimizeRoute(),
+                        onTap:
+                            (_loading || _saving || _deleting || _isOptimizing)
+                            ? () {}
+                            : () async => _optimizeRoute(),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Tooltip(
                       message: 'Clear Route',
                       child: _fab(
-                        hero: "clear",
+                        hero: 'clear',
                         icon: Icons.clear,
                         size: fabSize,
                         iconSize: iconSize,
-                        onTap: _clearWaypoints,
+                        onTap:
+                            (_loading || _saving || _deleting || _isOptimizing)
+                            ? () {}
+                            : () async => _clearWaypoints(),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Tooltip(
                       message: 'Assign Driver',
                       child: _fab(
-                        hero: "assign_driver",
+                        hero: 'assign_driver',
                         icon: Icons.person_add,
                         size: fabSize,
                         iconSize: iconSize,
-                        onTap: _assignDriver,
+                        // Backend does not expose a route-to-driver assignment API yet.
+                        // This FAB currently stores the selected driver in local UI state only.
+                        onTap:
+                            (_loading || _saving || _deleting || _isOptimizing)
+                            ? () {}
+                            : _assignDriver,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Tooltip(
                       message: 'Email Route',
                       child: _fab(
-                        hero: "email_route",
+                        hero: 'email_route',
                         icon: Icons.email,
                         size: fabSize,
                         iconSize: iconSize,
@@ -621,9 +896,11 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   ],
                 ),
               ),
-
-              // ================= ROUTE INFO DISPLAY =================
-              if (_isOptimized)
+              if (_isOptimized ||
+                  _loading ||
+                  _saving ||
+                  _deleting ||
+                  _isOptimizing)
                 Positioned(
                   bottom: bottomMargin,
                   left: 16,
@@ -633,25 +910,31 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Total Distance: ${_totalDistanceKm.toStringAsFixed(2)} km'),
-                          if (_assignedDriver != null) Text('Assigned Driver: $_assignedDriver'),
+                          if (_loading ||
+                              _saving ||
+                              _deleting ||
+                              _isOptimizing) ...[
+                            const AppShimmer(width: 180, height: 16, radius: 8),
+                            const SizedBox(height: 8),
+                            const AppShimmer(width: 120, height: 14, radius: 8),
+                          ] else ...[
+                            Text(
+                              'Total Distance: ${_totalDistanceKm.toStringAsFixed(2)} km',
+                            ),
+                            if (_assignedDriver != null)
+                              Text('Assigned Driver: $_assignedDriver'),
+                          ],
                         ],
                       ),
                     ),
                   ),
                 ),
-
-              // Loading indicator
-              if (_isOptimizing)
-                const Center(child: CircularProgressIndicator()),
             ],
           ),
         ),
       ),
     );
   }
-
-  // ================= UI HELPERS =================
 
   Widget _fab({
     required String hero,
@@ -672,14 +955,5 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
         child: Icon(icon, size: iconSize),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _landmarkController.dispose();
-    _latController.dispose();
-    _lngController.dispose();
-    _mapController.dispose();
-    super.dispose();
   }
 }

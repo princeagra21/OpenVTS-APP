@@ -55,6 +55,93 @@ class CommonRepository {
     );
   }
 
+  Future<Result<List<CountryOption>>> getCountries({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/countries', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        final out = <CountryOption>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map) {
+              final map = item is Map<String, dynamic>
+                  ? item
+                  : Map<String, dynamic>.from(item.cast());
+              final name = (map['name'] ?? map['label'] ?? '')
+                  .toString()
+                  .trim();
+              final iso =
+                  (map['isoCode'] ?? map['countryCode'] ?? map['code'] ?? '')
+                      .toString()
+                      .trim()
+                      .toUpperCase();
+              if (name.isEmpty || iso.isEmpty) continue;
+              out.add(CountryOption(name: name, isoCode: iso));
+            }
+          }
+        }
+        out.sort((a, b) => a.name.compareTo(b.name));
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<MobilePrefixOption>>> getMobilePrefixes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/mobileprefix', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        final out = <MobilePrefixOption>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map) {
+              final map = item is Map<String, dynamic>
+                  ? item
+                  : Map<String, dynamic>.from(item.cast());
+              final countryCode =
+                  (map['country'] ?? map['countryCode'] ?? map['isoCode'] ?? '')
+                      .toString()
+                      .trim()
+                      .toUpperCase();
+              final code = (map['code'] ?? map['mobilePrefix'] ?? '')
+                  .toString()
+                  .trim();
+              if (countryCode.isEmpty || code.isEmpty) continue;
+              out.add(MobilePrefixOption(countryCode: countryCode, code: code));
+            }
+          }
+        }
+        out.sort((a, b) => a.countryCode.compareTo(b.countryCode));
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<ReferenceOption>>> getVehicleTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/vehicletypes', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) => Result.ok(
+        _parseReferenceOptions(
+          data,
+          valueKeys: const ['id', 'value', 'code'],
+          labelKeys: const ['name', 'label', 'title', 'displayName'],
+        ),
+      ),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   List<TimezoneOption> _parseTimezoneOptions(Object? data) {
     // Support common response shapes:
     // - List<String> or List<Map>
@@ -198,4 +285,18 @@ class ReferenceOption {
   final String label;
 
   const ReferenceOption({required this.value, required this.label});
+}
+
+class CountryOption {
+  final String name;
+  final String isoCode;
+
+  const CountryOption({required this.name, required this.isoCode});
+}
+
+class MobilePrefixOption {
+  final String countryCode;
+  final String code;
+
+  const MobilePrefixOption({required this.countryCode, required this.code});
 }

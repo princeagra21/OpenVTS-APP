@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -542,13 +543,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           ),
           const SizedBox(height: 16),
           if (_loading)
-            const Center(
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
+            const Center(child: AppShimmer(width: 16, height: 16, radius: 8))
           else if (filteredActivities.isEmpty)
             Center(
               child: Text(

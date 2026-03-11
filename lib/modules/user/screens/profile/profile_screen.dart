@@ -1,14 +1,14 @@
 // components/profile/profile_screen.dart
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/core/debug/auth_profile_smoke_test.dart';
-import 'package:fleet_stack/core/models/profile.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_repository.dart';
+import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/user/layout/app_layout.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_info_boxes.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_setting_box.dart';
 import 'package:flutter/foundation.dart';
@@ -22,13 +22,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  Profile? _profile;
+  AdminProfile? _profile;
   bool _loadingProfile = false;
   bool _profileErrorShown = false;
   CancelToken? _profileCancelToken;
 
   ApiClient? _api;
-  UserRepository? _userRepo;
+  UserProfileRepository? _userRepo;
 
   @override
   void initState() {
@@ -55,10 +55,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         config: AppConfig.fromDartDefine(),
         tokenStorage: TokenStorage.defaultInstance(),
       );
-      _userRepo ??= UserRepository(api: _api!);
+      _userRepo ??= UserProfileRepository(api: _api!);
 
-      final res = await _userRepo!.getProfile(cancelToken: token);
-      if (!mounted) return;
+      final res = await _userRepo!.getMyProfile(cancelToken: token);
+      if (!mounted || token.isCancelled) return;
 
       res.when(
         success: (profile) {
@@ -87,11 +87,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _loadingProfile = false);
       if (_profileErrorShown) return;
       _profileErrorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Couldn't load profile. Showing saved info."),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load profile.")));
     }
   }
 
@@ -99,9 +97,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (err is ApiException) {
       final sc = err.statusCode;
       if (sc == 401 || sc == 403) return 'Please log in again';
-      return "Couldn't load profile. Showing saved info.";
+      return "Couldn't load profile.";
     }
-    return "Couldn't load profile. Showing saved info.";
+    return "Couldn't load profile.";
   }
 
   String _computeInitials(String nameFallback) {
@@ -122,23 +120,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
-
-    const fallbackName = 'Muhammad Sani';
-    const fallbackRole = 'Admin';
-    const fallbackUsername = '@danmasana';
-
-    final displayName = (_profile?.name.isNotEmpty == true)
-        ? _profile!.name
-        : fallbackName;
-    final roleLabel = (_profile?.role.isNotEmpty == true)
-        ? _profile!.role
-        : fallbackRole;
-    final username = (_profile?.username.isNotEmpty == true)
-        ? _profile!.username.startsWith('@')
-              ? _profile!.username
-              : '@${_profile!.username}'
-        : fallbackUsername;
-    final initials = _computeInitials(displayName);
+    final displayName = _profile?.fullName.trim().isNotEmpty == true
+        ? _profile!.fullName
+        : '—';
+    final initials = _computeInitials(displayName == '—' ? 'FS' : displayName);
 
     return AppLayout(
       title: "USER",
@@ -152,14 +137,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             ProfileSettingBox(
-              displayName: displayName,
-              username: username,
-              roleLabel: roleLabel,
               initials: initials,
               loading: _loadingProfile,
+              profile: _profile,
+              onProfileChanged: _loadProfile,
             ),
             SizedBox(height: 24),
-            ProfileInfoBoxes(),
+            ProfileInfoBoxes(profile: _profile, loading: _loadingProfile),
             SizedBox(height: 24),
             //ProfileCompanyBox(),
             // SizedBox(height: 24,),

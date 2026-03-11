@@ -7,7 +7,8 @@ class AdminVehicleListItem {
     return AdminVehicleListItem(raw);
   }
 
-  String get id => _s(raw['id'] ?? raw['vehicleId'] ?? raw['uid'] ?? raw['_id']);
+  String get id =>
+      _s(raw['id'] ?? raw['vehicleId'] ?? raw['uid'] ?? raw['_id']);
 
   String get nameModel {
     final value = _s(
@@ -22,19 +23,27 @@ class AdminVehicleListItem {
   }
 
   String get plateNumber => _s(
-        raw['plateNumber'] ??
-            raw['plate'] ??
-            raw['registrationNo'] ??
-            raw['registrationNumber'],
-      );
+    raw['plateNumber'] ??
+        raw['plate'] ??
+        raw['registrationNo'] ??
+        raw['registrationNumber'],
+  );
 
-  String get imei => _s(raw['imei'] ?? raw['deviceImei'] ?? raw['imeiNumber']);
+  String get imei {
+    final device = _asMap(raw['device']);
+    return _s(
+      raw['imei'] ??
+          raw['deviceImei'] ??
+          raw['imeiNumber'] ??
+          device['imei'] ??
+          device['imeiNumber'],
+    );
+  }
 
   String get vin => _s(raw['vin'] ?? raw['chassisNo'] ?? raw['vehicleVin']);
 
-  String get motion => _s(
-        raw['motion'] ?? raw['status'] ?? raw['state'] ?? raw['liveStatus'],
-      );
+  String get motion =>
+      _s(raw['motion'] ?? raw['status'] ?? raw['state'] ?? raw['liveStatus']);
 
   String get statusLabel {
     final normalized = _normalizeMotion(motion);
@@ -69,15 +78,16 @@ class AdminVehicleListItem {
 
   String get driverName {
     final nested = _asMap(raw['driver']);
-    return _s(
-      nested['name'] ?? raw['driverName'] ?? raw['assignedDriverName'],
-    );
+    return _s(nested['name'] ?? raw['driverName'] ?? raw['assignedDriverName']);
   }
 
   String get userInitials {
     final name = (driverName.isNotEmpty ? driverName : primaryUserName).trim();
     if (name.isEmpty) return '--';
-    final parts = name.split(RegExp(r'\\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = name
+        .split(RegExp(r'\\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '--';
     if (parts.length == 1) {
       return parts.first.length >= 2
@@ -96,23 +106,24 @@ class AdminVehicleListItem {
   }
 
   String get lastActivityAt => _s(
-        raw['lastActivityAt'] ??
-            raw['last_activity'] ??
-            raw['lastSeenAt'] ??
-            raw['lastSeen'] ??
-            raw['updatedAt'] ??
-            raw['timestamp'],
-      );
+    raw['lastActivityAt'] ??
+        raw['last_activity'] ??
+        raw['lastSeenAt'] ??
+        raw['lastSeen'] ??
+        raw['updatedAt'] ??
+        raw['timestamp'],
+  );
 
   String get expiry => _s(
-        raw['expiry'] ??
-            raw['planExpiry'] ??
-            raw['licenseExpiry'] ??
-            raw['expiryDate'],
-      );
+    raw['expiry'] ??
+        raw['planExpiry'] ??
+        raw['licenseExpiry'] ??
+        raw['expiryDate'],
+  );
 
-  bool? get isActive =>
-      _b(raw['isActive'] ?? raw['active'] ?? raw['enabled'] ?? raw['statusFlag']);
+  bool? get isActive => _b(
+    raw['isActive'] ?? raw['active'] ?? raw['enabled'] ?? raw['statusFlag'],
+  );
 
   bool? get ignitionOk =>
       _b(raw['ignition'] ?? raw['ignitionOk'] ?? raw['ignitionStatus']);
