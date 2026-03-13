@@ -10,7 +10,7 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     env:
-      API_BASE_URL: http://15.206.76.175:4000
+      API_BASE_URL: https://new.fleetstack.in/api
 
     steps:
       # 1️⃣ Checkout Code
