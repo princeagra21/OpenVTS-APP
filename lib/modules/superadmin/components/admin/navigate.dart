@@ -21,8 +21,14 @@ class NavigateBox extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double scale = (screenWidth / 420).clamp(0.9, 1.0);
+    final double fsSection = 18 * scale;
+    final double fsSubtitle = 12 * scale;
+    final double fsTab = 13 * scale;
+    final double fsTabIcon = 14 * scale;
 
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -38,14 +44,24 @@ class NavigateBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// NAVIGATE title
+          /// Header
           Text(
-            "Navigate",
+            "System Settings",
             style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.7),
-              letterSpacing: 0.8,
+              fontSize: fsSection,
+              height: 24 / 18,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Manage platform configuration",
+            style: GoogleFonts.inter(
+              fontSize: fsSubtitle,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
 
@@ -57,13 +73,16 @@ class NavigateBox extends StatelessWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
-              child: Row(
+                child: Row(
                 children: tabs.map((tab) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 10),
                     child: SmallTab(
                       label: tab,
                       selected: selectedTab == tab,
+                      icon: _iconFor(tab),
+                      fontSize: fsTab,
+                      iconSize: fsTabIcon,
                       onTap: () => onTabSelected(tab),
                     ),
                   );
@@ -74,5 +93,13 @@ class NavigateBox extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData? _iconFor(String tab) {
+    final t = tab.toLowerCase();
+    if (t == 'profile') return Icons.person_outline;
+    if (t == 'localization') return Icons.language;
+    if (t == 'settings') return Icons.tune;
+    return null;
   }
 }

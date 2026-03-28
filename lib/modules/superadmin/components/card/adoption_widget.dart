@@ -74,7 +74,7 @@ class AdoptionGrowthBox extends StatefulWidget {
 
 class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   String monthTab = "12M";
-  Set<String> selectedStats = {"Vehicles", "Users", "Licenses"};
+  final Set<String> selectedStats = {"Vehicles", "Users", "Licenses"};
 
   SuperadminAdoptionGraph? _graph;
   bool _loadingGraph = false;
@@ -177,6 +177,34 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     };
   }
 
+  Widget _legendItem(
+    BuildContext context, {
+    required String label,
+    required Color color,
+    required double fontSize,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface.withOpacity(0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
   List<double> getDataFor(String stat) {
     final graph = _graph;
     final base = switch (stat) {
@@ -188,6 +216,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     return switch (monthTab) {
       "3M" => base.sublist(9),
       "6M" => base.sublist(6),
+      "12M" => base,
       _ => base,
     };
   }
@@ -195,7 +224,8 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   int get numMonths => switch (monthTab) {
     "3M" => 3,
     "6M" => 6,
-    _ => 12,
+    "12M" => 12,
+    _ => _graph?.vehicles().length ?? 12,
   };
 
   double get yMax {
@@ -214,6 +244,31 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
     }
     return value.toInt().toString();
+  }
+
+  List<String> _monthLabels(int count) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final now = DateTime.now();
+    return List.generate(count, (i) {
+      final idxFromEnd = count - 1 - i;
+      final date = DateTime(now.year, now.month - idxFromEnd, 1);
+      final month = months[date.month - 1];
+      final year = (date.year % 100).toString().padLeft(2, '0');
+      return "$month '$year";
+    });
   }
 
   @override
@@ -250,6 +305,9 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     final showSkeleton = _loadingGraph;
 
     final statColors = getStatColors(context);
+    const statsOrder = ['Vehicles', 'Users', 'Licenses'];
+    final statsList = statsOrder.where(selectedStats.contains).toList();
+    final labels = _monthLabels(numMonths);
 
     final monthTabs = Container(
       padding: const EdgeInsets.all(4),
@@ -276,6 +334,12 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
             label: "3M",
             selected: monthTab == "3M",
             onTap: () => setState(() => monthTab = "3M"),
+          ),
+          SizedBox(width: spacing),
+          SmallTab(
+            label: "All",
+            selected: monthTab == "All",
+            onTap: () => setState(() => monthTab = "All"),
           ),
         ],
       ),
@@ -371,49 +435,28 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
               ),
             ),
           ] else ...[
-            Text(
-              "Last $monthTab months",
-              style: GoogleFonts.inter(
-                fontSize: subheaderFontSize,
-                color: colorScheme.onSurface.withOpacity(0.87),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: padding),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SmallTab(
-                  label: "Vehicles",
-                  selected: selectedStats.contains("Vehicles"),
-                  selectedBackground: statColors["Vehicles"],
-                  onTap: () => setState(() {
-                    selectedStats.contains("Vehicles")
-                        ? selectedStats.remove("Vehicles")
-                        : selectedStats.add("Vehicles");
-                  }),
+                _legendItem(
+                  context,
+                  label: 'Vehicles',
+                  color: statColors['Vehicles']!,
+                  fontSize: subheaderFontSize + 2,
                 ),
-                SizedBox(width: spacing),
-                SmallTab(
-                  label: "Users",
-                  selected: selectedStats.contains("Users"),
-                  selectedBackground: statColors["Users"],
-                  onTap: () => setState(() {
-                    selectedStats.contains("Users")
-                        ? selectedStats.remove("Users")
-                        : selectedStats.add("Users");
-                  }),
+                SizedBox(width: spacing + 6),
+                _legendItem(
+                  context,
+                  label: 'Users',
+                  color: statColors['Users']!,
+                  fontSize: subheaderFontSize + 2,
                 ),
-                SizedBox(width: spacing),
-                SmallTab(
-                  label: "Licenses",
-                  selected: selectedStats.contains("Licenses"),
-                  selectedBackground: statColors["Licenses"],
-                  onTap: () => setState(() {
-                    selectedStats.contains("Licenses")
-                        ? selectedStats.remove("Licenses")
-                        : selectedStats.add("Licenses");
-                  }),
+                SizedBox(width: spacing + 6),
+                _legendItem(
+                  context,
+                  label: 'Licenses',
+                  color: statColors['Licenses']!,
+                  fontSize: subheaderFontSize + 2,
                 ),
               ],
             ),
@@ -424,7 +467,56 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                 LineChartData(
                   minY: 0,
                   maxY: yMax,
-                  lineTouchData: const LineTouchData(enabled: true),
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      tooltipBorderRadius: BorderRadius.circular(8),
+                      tooltipPadding: const EdgeInsets.all(10),
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
+                      getTooltipColor: (_) => colorScheme.surface,
+                      getTooltipItems: (touchedSpots) {
+                        if (touchedSpots.isEmpty) return [];
+                        final index = touchedSpots.first.x.toInt();
+                        final monthLabel =
+                            index >= 0 && index < labels.length
+                                ? labels[index]
+                                : 'Month';
+
+                        final children = <TextSpan>[];
+                        for (final stat in statsList) {
+                          final data = getDataFor(stat);
+                          if (index >= data.length) continue;
+                          final color = statColors[stat]!;
+                          children.add(
+                            TextSpan(
+                              text:
+                                  '\n$stat: ${_formatYAxisValue(data[index])}',
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                                fontSize: subheaderFontSize + 2,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final item = LineTooltipItem(
+                          monthLabel,
+                          TextStyle(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                            fontSize: subheaderFontSize + 2,
+                          ),
+                          children: children,
+                        );
+                        return List<LineTooltipItem>.generate(
+                          touchedSpots.length,
+                          (_) => item,
+                        );
+                      },
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -446,15 +538,16 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: 1,
+                        interval: 2,
                         reservedSize: 22,
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
-                          if (index >= numMonths) return const SizedBox();
+                          if (index % 2 != 0) return const SizedBox();
+                          if (index >= labels.length) return const SizedBox();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              "M${index + 1}",
+                              labels[index],
                               style: GoogleFonts.inter(
                                 fontSize: bottomTitleFontSize,
                                 color: colorScheme.onSurface.withOpacity(0.54),
@@ -478,10 +571,12 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                     getDrawingHorizontalLine: (_) => FlLine(
                       color: colorScheme.onSurface.withOpacity(0.12),
                       strokeWidth: 1,
+                      dashArray: [6, 4],
                     ),
                   ),
                   borderData: FlBorderData(show: false),
-                  lineBarsData: selectedStats.map((stat) {
+                  lineBarsData: statsList.asMap().entries.map((e) {
+                    final stat = e.value;
                     final data = getDataFor(stat);
                     final color = statColors[stat]!;
                     return LineChartBarData(
@@ -493,16 +588,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                       isCurved: true,
                       barWidth: lineWidth,
                       color: color,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, bar, index) =>
-                            FlDotCirclePainter(
-                              radius: dotRadius,
-                              color: color,
-                              strokeColor: colorScheme.surface,
-                              strokeWidth: 2,
-                            ),
-                      ),
+                      dotData: const FlDotData(show: false),
                     );
                   }).toList(),
                 ),

@@ -179,18 +179,48 @@ class ThemeController {
     final prefs = await SharedPreferences.getInstance();
 
     final isDark = prefs.getBool("isDark") ?? false;
+    final modeRaw = prefs.getString("themeMode");
     final colorValue =
         prefs.getInt("brandColor") ?? AppTheme.defaultBrand.value;
 
-    themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
-    brandColor.value = Color(colorValue);
+    themeMode.value = switch (modeRaw) {
+      'system' => ThemeMode.system,
+      'dark' => ThemeMode.dark,
+      'light' => ThemeMode.light,
+      _ => isDark ? ThemeMode.dark : ThemeMode.light,
+    };
+    var nextBrand = Color(colorValue);
+    final bool isLightMode =
+        themeMode.value != ThemeMode.dark && isDark == false;
+    if (isLightMode &&
+        ThemeData.estimateBrightnessForColor(nextBrand) ==
+            Brightness.light) {
+      nextBrand = AppTheme.defaultBrand;
+      await prefs.setInt("brandColor", nextBrand.value);
+    }
+    brandColor.value = nextBrand;
   }
 
   void setDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isDark", isDark);
+    await prefs.setString("themeMode", isDark ? "dark" : "light");
 
     themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  void setThemeMode(ThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      "themeMode",
+      mode == ThemeMode.system
+          ? "system"
+          : (mode == ThemeMode.dark ? "dark" : "light"),
+    );
+    if (mode != ThemeMode.system) {
+      await prefs.setBool("isDark", mode == ThemeMode.dark);
+    }
+    themeMode.value = mode;
   }
 
   void setBrand(Color color) async {

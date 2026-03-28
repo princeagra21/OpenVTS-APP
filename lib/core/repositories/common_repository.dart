@@ -125,6 +125,69 @@ class CommonRepository {
     );
   }
 
+  Future<Result<List<ReferenceOption>>> getStates(
+    String countryCode, {
+    CancelToken? cancelToken,
+  }) async {
+    final code = countryCode.trim();
+    if (code.isEmpty) return Result.ok(const []);
+
+    final res = await api.get('/states/$code', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) => Result.ok(
+        _parseReferenceOptions(
+          data,
+          valueKeys: const [
+            'code',
+            'stateCode',
+            'isoCode',
+            'id',
+            'value',
+          ],
+          labelKeys: const [
+            'name',
+            'stateName',
+            'label',
+            'title',
+          ],
+        ),
+      ),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<ReferenceOption>>> getCities(
+    String stateCode, {
+    CancelToken? cancelToken,
+  }) async {
+    final code = stateCode.trim();
+    if (code.isEmpty) return Result.ok(const []);
+
+    final res = await api.get('/cities/$code', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) => Result.ok(
+        _parseReferenceOptions(
+          data,
+          valueKeys: const [
+            'code',
+            'cityCode',
+            'id',
+            'value',
+          ],
+          labelKeys: const [
+            'name',
+            'cityName',
+            'label',
+            'title',
+          ],
+        ),
+      ),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<List<ReferenceOption>>> getVehicleTypes({
     CancelToken? cancelToken,
   }) async {

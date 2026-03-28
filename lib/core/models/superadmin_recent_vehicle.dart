@@ -24,6 +24,21 @@ class SuperadminRecentVehicle {
         raw['title'],
   );
 
+  String get vehicleTypeName {
+    final vt = raw['vehicleType'];
+    if (vt is Map) {
+      final nested = vt['name'] ?? vt['title'] ?? vt['type'] ?? vt['slug'];
+      final s = _string(nested);
+      if (s.isNotEmpty) return s;
+    }
+    return _string(
+      raw['vehicleTypeName'] ??
+          raw['vehicle_type_name'] ??
+          raw['vehicleType'] ??
+          raw['type'],
+    );
+  }
+
   String get status {
     final v = raw['status'] ?? raw['state'];
     if (v is String && v.trim().isNotEmpty) return v;

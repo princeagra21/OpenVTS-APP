@@ -7,6 +7,8 @@ class SmallTab extends StatelessWidget {
   final String label;
   final bool selected;
   final double? fontSize;
+  final double? iconSize;
+  final IconData? icon;
   final VoidCallback? onTap;
 
   const SmallTab({
@@ -14,6 +16,8 @@ class SmallTab extends StatelessWidget {
     required this.label,
     this.selected = false,
     this.fontSize,
+    this.iconSize,
+    this.icon,
     this.onTap,
   });
 
@@ -40,14 +44,39 @@ class SmallTab extends StatelessWidget {
             width: 1,
           ),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: fontSize ?? defaultFontSize,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
+        child: icon == null
+            ? Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: fontSize ?? defaultFontSize,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      selected ? colorScheme.onPrimary : colorScheme.onSurface,
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size:
+                        iconSize ?? ((fontSize ?? defaultFontSize) + 2),
+                    color:
+                        selected ? colorScheme.onPrimary : colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: fontSize ?? defaultFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: selected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

@@ -16,6 +16,8 @@ import 'package:fleet_stack/modules/superadmin/components/admin/support/support.
 import 'package:fleet_stack/modules/superadmin/components/branding/branding_settings_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/card/all_activities_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/profile/profile_screen.dart';
+import 'package:fleet_stack/modules/superadmin/components/transactions/record_manual_payment_screen.dart';
+import 'package:fleet_stack/modules/superadmin/components/transactions/payments_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/VehicleDetailsScreen.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/vehicle_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/add_new_vehicle.dart';
@@ -23,16 +25,22 @@ import 'package:fleet_stack/modules/superadmin/screens/admin/add_new_admin.dart'
 import 'package:fleet_stack/modules/superadmin/screens/admin/administrator_details_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/admin/admins_screen.dart'
     show AdminScreen;
+import 'package:fleet_stack/modules/superadmin/screens/dashboard/dashboard_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/home/home_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/map/map_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/more/more_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/notifications/superadmin_notifications_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/setting/setting_screen.dart';
+import 'package:fleet_stack/modules/superadmin/screens/setting/superadmin_settings_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> superAdminRoutes = [
   GoRoute(path: '/superadmin', builder: (_, __) => const HomeScreen()),
   GoRoute(path: '/superadmin/home', builder: (_, __) => const HomeScreen()),
+  GoRoute(
+    path: '/superadmin/dashboard',
+    builder: (_, __) => const DashboardScreen(),
+  ),
 
   /// ADMINS
   GoRoute(path: '/superadmin/admins', builder: (_, __) => const AdminScreen()),
@@ -52,7 +60,7 @@ final List<GoRoute> superAdminRoutes = [
   /// SETTINGS
   GoRoute(
     path: '/superadmin/settings',
-    builder: (_, __) => const SettingsScreen(),
+    builder: (_, __) => const SuperAdminSettingsScreen(),
   ),
   GoRoute(
     path: '/superadmin/profile',
@@ -89,6 +97,10 @@ final List<GoRoute> superAdminRoutes = [
 
   /// PAYMENT
   GoRoute(
+    path: '/superadmin/payments',
+    builder: (_, __) => const PaymentsScreen(),
+  ),
+  GoRoute(
     path: '/superadmin/payment-gateway',
     builder: (_, __) => const PaymentGatewaySettingsScreen(),
   ),
@@ -98,6 +110,10 @@ final List<GoRoute> superAdminRoutes = [
       final gatewayId = state.pathParameters['id']!;
       return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
     },
+  ),
+  GoRoute(
+    path: '/superadmin/transactions/record-manual',
+    builder: (_, __) => const RecordManualPaymentScreen(),
   ),
 
   /// ACTIVITY / NOTIFICATION

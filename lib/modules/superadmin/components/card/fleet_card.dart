@@ -7,9 +7,10 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../utils/adaptive_utils.dart';
 
 class CustomBox extends StatelessWidget {
@@ -38,6 +39,10 @@ class CustomBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -150,15 +155,11 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
 
     // Adaptive values from our design system
     final double titleFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 14–18
-    final double bigNumberFontSize =
-        titleFontSize * 2.4; // ~34–43, scales perfectly
-    final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(
-      screenWidth,
-    ); // 13–15
-    final double capsuleFontSize = AdaptiveUtils.getTitleFontSize(
-      screenWidth,
-    ); // 13–15
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) + 2;
+    final double labelFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double valueFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) + 4;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(
       screenWidth,
     ); // 6–10
@@ -177,198 +178,203 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Title + Badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: "Your fleet Today",
-                      style: GoogleFonts.inter(
-                        fontSize: titleFontSize,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    if (_loadingCounts)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: AppShimmer(width: 14, height: 14, radius: 7),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              //  Container(
-              //  padding: EdgeInsets.symmetric(
-              //  horizontal: spacing + 4,
-              //  vertical: spacing - 2,
-              //  ),
-              // decoration: BoxDecoration(
-              // border: Border.all(color: colorScheme.onSurface, width: 1),
-              //             borderRadius: BorderRadius.circular(20),
-              ///         ),
-              //         child: Text(
-              //          "Today 12M",
-              //          style: GoogleFonts.inter(
-              //            fontSize: badgeFontSize,
-              //            fontWeight: FontWeight.w600,
-              //            color: colorScheme.onSurface,
-              //          ),
-              //        ),
-              //     ),
-            ],
+          Text(
+            'Overview',
+            style: AppUtils.headlineSmallBase.copyWith(
+              fontSize: titleFontSize,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface,
+            ),
           ),
+          SizedBox(height: spacing + 8),
 
-          SizedBox(height: spacing + 4),
+          // Summary cards (3 per row)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final itemSpacing = spacing + 6;
+              final maxWidth = constraints.maxWidth;
+              final columns = 2;
+              final totalSpacing = itemSpacing * (columns - 1);
+              final itemWidth = (maxWidth - totalSpacing) / columns;
 
-          // Big Number
-          if (showSkeleton)
-            AppShimmer(
-              width: bigNumberFontSize * 2.1,
-              height: bigNumberFontSize * 0.95,
-              radius: 12,
-            )
-          else
-            Text(
-              _fmtInt(totalVehicles),
-              style: GoogleFonts.inter(
-                fontSize: bigNumberFontSize,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-                height: 1.1,
-                letterSpacing: -1.5,
-              ),
-            ),
+              if (showSkeleton) {
+                return _summaryGridSkeleton(
+                  itemWidth: itemWidth,
+                  itemSpacing: itemSpacing,
+                  columns: columns,
+                  spacing: spacing,
+                );
+              }
 
-          SizedBox(height: spacing),
-
-          // Description
-          if (showSkeleton)
-            AppShimmer(
-              width: screenWidth * 0.56,
-              height: descriptionFontSize + 4,
-              radius: 8,
-            )
-          else
-            Text(
-              "Total Vehicles across all admins",
-              style: GoogleFonts.inter(
-                fontSize: descriptionFontSize,
-                fontWeight: FontWeight.w400,
-                color: colorScheme.onSurface.withOpacity(0.8),
-              ),
-            ),
-
-          SizedBox(height: spacing + 6),
-
-          // Capsules
-          if (showSkeleton)
-            Wrap(
-              spacing: spacing + 4,
-              runSpacing: spacing + 2,
-              children: [
-                AppShimmer(
-                  width: screenWidth * 0.23,
-                  height: capsuleFontSize + spacing * 2.2,
-                  radius: 999,
-                ),
-                AppShimmer(
-                  width: screenWidth * 0.22,
-                  height: capsuleFontSize + spacing * 2.2,
-                  radius: 999,
-                ),
-                AppShimmer(
-                  width: screenWidth * 0.25,
-                  height: capsuleFontSize + spacing * 2.2,
-                  radius: 999,
-                ),
-                AppShimmer(
-                  width: screenWidth * 0.34,
-                  height: capsuleFontSize + spacing * 2.2,
-                  radius: 999,
-                ),
-                AppShimmer(
-                  width: screenWidth * 0.32,
-                  height: capsuleFontSize + spacing * 2.2,
-                  radius: 999,
-                ),
-              ],
-            )
-          else
-            Wrap(
-              spacing: spacing + 4,
-              runSpacing: spacing + 2,
-              children: [
-                _capsule(
-                  context,
-                  "Active ${_fmtInt(activeVehicles)}",
-                  capsuleFontSize,
-                  spacing,
-                ),
-                _capsule(
-                  context,
-                  "Users ${_fmtInt(totalUsers)}",
-                  capsuleFontSize,
-                  spacing,
-                ),
-                _capsule(
-                  context,
-                  "Admins ${_fmtInt(totalAdmins)}",
-                  capsuleFontSize,
-                  spacing,
-                ),
-                _capsule(
-                  context,
-                  "Licenses issued ${_fmtInt(licensesIssued)}",
-                  capsuleFontSize,
-                  spacing,
-                ),
-                _capsule(
-                  context,
-                  "Licenses used ${_fmtInt(licensesUsed)}",
-                  capsuleFontSize,
-                  spacing,
-                ),
-              ],
-            ),
+                return Wrap(
+                  spacing: itemSpacing,
+                  runSpacing: itemSpacing,
+                  children: [
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'ALL ADMINS',
+                      value: _fmtInt(totalAdmins),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.verified_user,
+                      padding: spacing,
+                    ),
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'TOTAL VEHICLES',
+                      value: _fmtInt(totalVehicles),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.directions_car,
+                      padding: spacing,
+                    ),
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'ACTIVE VEHICLES',
+                      value: _fmtInt(activeVehicles),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.bolt,
+                      padding: spacing,
+                    ),
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'TOTAL USERS',
+                      value: _fmtInt(totalUsers),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.group,
+                      padding: spacing,
+                    ),
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'LICENSES ISSUED',
+                      value: _fmtInt(licensesIssued),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.description,
+                      padding: spacing,
+                    ),
+                    _summaryCard(
+                      context,
+                      width: itemWidth,
+                      title: 'LICENSES USED',
+                      value: _fmtInt(licensesUsed),
+                      titleSize: labelFontSize,
+                      valueSize: valueFontSize,
+                      icon: Symbols.radio_button_checked,
+                      padding: spacing,
+                    ),
+                  ],
+                );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _capsule(
-    BuildContext context,
-    String text,
-    double fontSize,
-    double spacing,
-  ) {
+  Widget _summaryGridSkeleton({
+    required double itemWidth,
+    required double itemSpacing,
+    required int columns,
+    required double spacing,
+  }) {
+    final itemHeight = spacing * 6 + 24;
+    final totalItems = 6;
+    final rowCount = (totalItems / columns).ceil();
+    final totalSlots = rowCount * columns;
+
+    return Wrap(
+      spacing: itemSpacing,
+      runSpacing: itemSpacing,
+      children: List.generate(
+        totalSlots,
+        (_) => AppShimmer(
+          width: itemWidth,
+          height: itemHeight,
+          radius: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryCard(
+    BuildContext context, {
+    required double width,
+    required String title,
+    required String value,
+    required double titleSize,
+    required double valueSize,
+    required IconData icon,
+    required double padding,
+  }) {
     final cs = Theme.of(context).colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: spacing + 8, vertical: spacing),
+      width: width,
+      constraints: const BoxConstraints(minHeight: 110),
+      padding: EdgeInsets.symmetric(
+        horizontal: padding + 2,
+        vertical: padding + 20,
+      ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(999), // TRUE PILL
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cs.onSurface.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          color: cs.onSurface,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppUtils.bodySmallBase.copyWith(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withOpacity(0.65),
+                  ),
+                ),
+              ),
+              Icon(
+                icon,
+                size: titleSize + 6,
+                color: cs.onSurface.withOpacity(0.5),
+              ),
+            ],
+          ),
+          SizedBox(height: padding + 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppUtils.headlineSmallBase.copyWith(
+              fontSize: valueSize,
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

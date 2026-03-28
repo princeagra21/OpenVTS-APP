@@ -10,10 +10,12 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class ServerStatusScreen extends StatefulWidget {
   const ServerStatusScreen({super.key});
@@ -101,6 +103,35 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     return text.isEmpty ? '—' : text;
   }
 
+  String _formatPortValue(Object? v) {
+    if (v == null) return '—';
+    if (v is List) {
+      final items = v
+          .map(_asString)
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      if (items.isEmpty) return '—';
+      return items.join(', ');
+    }
+    return _valueOrDash(v);
+  }
+
+  int? _asInt(Object? v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.round();
+    return int.tryParse(v.toString());
+  }
+
+  double? _asDouble(Object? v) {
+    if (v == null) return null;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString());
+  }
+
   Object? _readPath(Map<String, dynamic> root, String path) {
     Object? cur = root;
     for (final part in path.split('.')) {
@@ -135,6 +166,158 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     }
     final asText = _asString(value).trim();
     return asText.isNotEmpty ? asText : fallback;
+  }
+
+  String _monitoringMeta(Map<String, dynamic> health, String label) {
+    final key = label.toLowerCase();
+    List<String> paths;
+    if (key == 'local') {
+      paths = const [
+        'local.lastCheck',
+        'local.last_check',
+        'local.updatedAt',
+        'local.updated_at',
+        'local.timestamp',
+        'data.timestamp',
+        'timestamp',
+      ];
+    } else if (key == 'agent') {
+      paths = const [
+        'agent.lastCheck',
+        'agent.last_check',
+        'agent.updatedAt',
+        'agent.updated_at',
+        'agent.timestamp',
+        'data.timestamp',
+        'timestamp',
+      ];
+    } else if (key == 'server') {
+      paths = const [
+        'server.lastCheck',
+        'server.last_check',
+        'server.updatedAt',
+        'server.updated_at',
+        'server.timestamp',
+        'data.timestamp',
+        'timestamp',
+      ];
+    } else {
+      paths = const [
+        'status.lastCheck',
+        'status.updatedAt',
+        'status.timestamp',
+        'data.timestamp',
+        'timestamp',
+      ];
+    }
+    final value = _valueOrDash(_firstPathValue(health, paths));
+    return "Last check: $value";
+  }
+
+  String _monitoringLastCheckValue(
+    Map<String, dynamic> health,
+    String label,
+  ) {
+    final directTimestamp = _asString(health['timestamp']).trim();
+    if (directTimestamp.isNotEmpty) {
+      return _formatLocalTimestamp(directTimestamp);
+    }
+    final dataMap = _asMap(health['data']);
+    final dataTimestamp = _asString(dataMap['timestamp']).trim();
+    if (dataTimestamp.isNotEmpty) {
+      return _formatLocalTimestamp(dataTimestamp);
+    }
+    final key = label.toLowerCase();
+    List<String> paths;
+    if (key == 'local') {
+      paths = const [
+        'local.lastCheck',
+        'local.last_check',
+        'local.updatedAt',
+        'local.updated_at',
+        'local.timestamp',
+      ];
+    } else if (key == 'agent') {
+      paths = const [
+        'agent.lastCheck',
+        'agent.last_check',
+        'agent.updatedAt',
+        'agent.updated_at',
+        'agent.timestamp',
+      ];
+    } else if (key == 'server') {
+      paths = const [
+        'server.lastCheck',
+        'server.last_check',
+        'server.updatedAt',
+        'server.updated_at',
+        'server.timestamp',
+      ];
+    } else {
+      paths = const [
+        'status.lastCheck',
+        'status.updatedAt',
+        'status.timestamp',
+      ];
+    }
+    return _formatLocalTimestamp(_valueOrDash(_firstPathValue(health, paths)));
+  }
+
+  String _formatLocalTimestamp(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty || text == '—') return '—';
+    final parsed = DateTime.tryParse(text);
+    if (parsed == null) return text;
+    final local = parsed.toLocal();
+    final int hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final String minute = local.minute.toString().padLeft(2, '0');
+    final String ampm = local.hour >= 12 ? 'PM' : 'AM';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final String month = months[local.month - 1];
+    return '$month ${local.day}, ${local.year} · $hour12:$minute $ampm';
+  }
+
+  String _formatUptimeAbbrev(int seconds) {
+    if (seconds <= 0) return '—';
+    const int minute = 60;
+    const int hour = 3600;
+    const int day = 86400;
+    const int month = 2592000; // 30d
+    const int year = 31536000; // 365d
+    int remaining = seconds;
+    final years = remaining ~/ year;
+    remaining %= year;
+    final months = remaining ~/ month;
+    remaining %= month;
+    final days = remaining ~/ day;
+    remaining %= day;
+    final hours = remaining ~/ hour;
+    remaining %= hour;
+    final minutes = remaining ~/ minute;
+    remaining %= minute;
+    final secs = remaining;
+
+    final parts = <String>[];
+    if (years > 0) parts.add('${years}y');
+    if (months > 0) parts.add('${months}mo');
+    if (days > 0) parts.add('${days}d');
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0) parts.add('${minutes}m');
+    if (secs > 0 && parts.isEmpty) parts.add('${secs}s');
+    return parts.isEmpty ? '0s' : parts.join(' ');
   }
 
   Future<void> _loadAll() async {
@@ -231,17 +414,10 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
     final double fs = AdaptiveUtils.getTitleFontSize(width);
     final overallUp = _overall?.isUp == true;
-    final overallStatusText = _overall == null
-        ? "Unknown"
-        : (overallUp ? "Up" : "Down");
-    final overallStatusColor = _overall == null
-        ? Colors.grey
-        : (overallUp ? Colors.green : Colors.red);
     final int? cpu = _overall != null ? _overall!.cpuPercent.round() : null;
     final int? mem = _overall != null ? _overall!.memPercent.round() : null;
     final int? disk = _overall != null ? _overall!.diskPercent.round() : null;
@@ -257,6 +433,36 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final addressDb = _addressDb;
     final healthData = _asMap(_healthRaw['data']);
     final health = healthData.isNotEmpty ? healthData : _healthRaw;
+    final cpuCoresRaw = _firstPathValue(_healthRaw, const [
+      'cpu.cores',
+      'data.cpu.cores',
+      'system.cpu.cores',
+    ]);
+    final int? cpuCores = _asInt(cpuCoresRaw);
+    final load1Raw = _firstPathValue(_healthRaw, const [
+      'cpu.load1',
+      'data.cpu.load1',
+      'system.cpu.load1',
+    ]);
+    final load5Raw = _firstPathValue(_healthRaw, const [
+      'cpu.load5',
+      'data.cpu.load5',
+      'system.cpu.load5',
+    ]);
+    final load15Raw = _firstPathValue(_healthRaw, const [
+      'cpu.load15',
+      'data.cpu.load15',
+      'system.cpu.load15',
+    ]);
+    final double? cpuLoad1 = _asDouble(load1Raw) ?? load1;
+    final double? cpuLoad5 = _asDouble(load5Raw) ?? load5;
+    final double? cpuLoad15 = _asDouble(load15Raw) ?? load15;
+    final String cpuMeta = (cpuCores != null ||
+            cpuLoad1 != null ||
+            cpuLoad5 != null ||
+            cpuLoad15 != null)
+        ? "${cpuCores ?? 0}C · ${(cpuLoad1 ?? 0).toStringAsFixed(2)} / ${(cpuLoad5 ?? 0).toStringAsFixed(2)} / ${(cpuLoad15 ?? 0).toStringAsFixed(2)}"
+        : "—";
     final redisStateRaw = _firstPathValue(health, const [
       'redis.state',
       'redis.status',
@@ -429,477 +635,1571 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       'firebase.last_ping',
     ]);
     final firebaseLastPing = _valueOrDash(firebasePingRaw);
-    final serviceRows = _services
-        .map(
-          (s) => <String, dynamic>{
-            'name': s.name.isNotEmpty ? s.name : 'Service',
-            'status': s.status.isNotEmpty ? s.status : 'unknown',
-            'since': s.since.isNotEmpty ? s.since : "—",
-            'color': _serviceColor(s.status),
-          },
-        )
-        .toList();
-    final runningCount = serviceRows
-        .where((e) => e['status'].toString().toLowerCase() == 'running')
-        .length;
+    final services = _services;
+    final runningCount = services.where((s) => s.isUp).length;
     final hasServerData =
         _overall != null ||
         pgPrimary != null ||
         health.isNotEmpty ||
-        serviceRows.isNotEmpty;
+        services.isNotEmpty;
     final showSkeleton = _loading && !hasServerData;
     final loadAvgText = (load1 != null && load5 != null && load15 != null)
         ? "${load1.toStringAsFixed(2)} / ${load5.toStringAsFixed(2)} / ${load15.toStringAsFixed(2)}"
         : "—";
+    final statusLocalRaw = _statusFromAny(
+      _firstPathValue(_healthRaw, const [
+        'local.status',
+        'local.state',
+        'local',
+        'data.status',
+        'status',
+      ]),
+      'unknown',
+    );
+    final statusLocal =
+        statusLocalRaw.toLowerCase() == 'ok' ? 'Online' : statusLocalRaw;
+    final localLastCheck = _monitoringLastCheckValue(_healthRaw, 'local');
+    final hasServiceIssue = services.any((s) => !s.isUp);
+    final needsAttention = !overallUp || hasServiceIssue;
 
-    return AppLayout(
-      title: "FLEET STACK",
-      subtitle: "Server Status",
-      actionIcons: const [],
-      leftAvatarText: 'FS',
-      showLeftAvatar: false,
-      horizontalPadding: 3,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(hp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // MAIN CARD
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(hp),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+    final topPadding = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              hp,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              hp,
+              84,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+            _buildMonitoringCard(
+              context: context,
+              loading: _loading,
+              title: "Server Health Monitoring",
+              subtitle: "Monitor uptime, dependencies, and safe service actions",
+              localStatus: statusLocal,
+              localLastCheck: localLastCheck,
+              onRefresh: _loading ? null : _loadAll,
+            ),
+            const SizedBox(height: 12),
+            _buildAlertCard(
+              context: context,
+              icon: Icons.warning_amber_rounded,
+              title: "Important",
+              message:
+                  "Stopping Frontend, Backend, or Listener can lock you out of the application. Start and Restart are available, but Stop is disabled.",
+            ),
+            const SizedBox(height: 16),
+            _buildMetricsSection(
+              context: context,
+              showSkeleton: showSkeleton,
+              title: "Resource Overview",
+              subtitle: "",
+              loadAvgText: loadAvgText,
+              metrics: [
+                _MetricData(
+                  label: "CPU Usage",
+                  value: cpu == null ? "—" : "$cpu%",
+                  percent: cpu,
+                  icon: Icons.memory_outlined,
+                  subtext: cpuMeta,
+                ),
+                _MetricData(
+                  label: "Memory Usage",
+                  value: mem == null ? "—" : "$mem%",
+                  percent: mem,
+                  icon: Icons.sd_storage_outlined,
+                  subtext: mem == null ? "—" : "$mem% used",
+                ),
+                _MetricData(
+                  label: "Disk Usage",
+                  value: disk == null ? "—" : "$disk%",
+                  percent: disk,
+                  icon: Icons.storage_outlined,
+                  subtext: disk == null ? "—" : "$disk% used",
+                ),
+                _MetricData(
+                  label: "Uptime",
+                  value: _uptimeText(),
+                  percent: null,
+                  icon: Icons.schedule,
+                  subtext:
+                      "Started: ${_formatLocalTimestamp(_valueOrDash(_overall?.startedAt))}",
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildServicesSection(
+              context: context,
+              showSkeleton: showSkeleton,
+              title: "Services",
+              subtitle: services.isEmpty
+                  ? "No data"
+                  : "$runningCount/${services.length} healthy",
+              services: services,
+            ),
+            /*
+            const SizedBox(height: 16),
+            _buildRecommendationSection(
+              context: context,
+              needsAttention: needsAttention,
+              overallUp: overallUp,
+            ),
+            if (!overallUp) ...[
+              const SizedBox(height: 12),
+              _buildAlertCard(
+                context: context,
+                icon: Icons.warning_amber_rounded,
+                title: "Service Degradation Detected",
+                message:
+                    "Overall status indicates the server is down. Investigate critical services and infrastructure health.",
               ),
+            ],
+            const SizedBox(height: 20),
+            _buildSectionHeaderCard(
+              context: context,
+              title: "Database Metrics",
+              subtitle: pgName,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // REFRESH BUTTON (top-right)
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: ElevatedButton.icon(
-                      onPressed: _loading ? null : _loadAll,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: hp + 4,
-                          vertical: hp - 4,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: _loading
-                            ? const AppShimmer(width: 14, height: 14, radius: 7)
-                            : Icon(
-                                Icons.refresh_rounded,
-                                color: colorScheme.onPrimary,
-                              ),
-                      ),
-                      label: Text(
-                        "Refresh",
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
+                  _buildInfoRow("Size", _pgSizeText(pgPrimary)),
+                  _buildInfoRow(
+                    "Connections",
+                    pgConnections != null ? "$pgConnections" : "—",
                   ),
-                  const SizedBox(height: 24),
-
-                  // TITLE
-                  Text(
-                    "Server Status",
-                    style: GoogleFonts.inter(
-                      fontSize: fs + 8,
-                      fontWeight: FontWeight.w900,
-                      color: colorScheme.onSurface.withOpacity(0.9),
-                    ),
+                  _buildInfoRow(
+                    "Dead tuples",
+                    pgDeadTuples != null ? "$pgDeadTuples" : "—",
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Monitor and manage server infrastructure",
-                    style: GoogleFonts.inter(
-                      fontSize: fs - 1,
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                  if (addressDb != null) ...[
+                    const SizedBox(height: 10),
+                    _buildInfoRow(
+                      "Address DB size",
+                      _pgSizeText(addressDb),
+                      color: addressDb.isUp ? null : Colors.red,
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  if (showSkeleton) ...[
-                    _buildSection(
-                      context: context,
-                      title: "Overall",
-                      children: [
-                        _buildShimmerLine(context, 0.36),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.52),
-                        const SizedBox(height: 20),
-                        _buildShimmerProgress(context),
-                        _buildShimmerProgress(context),
-                        _buildShimmerProgress(context),
-                        const SizedBox(height: 8),
-                        _buildShimmerLine(context, 0.66),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "PostgreSQL",
-                      children: [
-                        _buildShimmerLine(context, 0.4),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.34),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.32),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: const [
-                            AppShimmer(width: 82, height: 28, radius: 14),
-                            AppShimmer(width: 76, height: 28, radius: 14),
-                            AppShimmer(width: 96, height: 28, radius: 14),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "Services",
-                      children: List.generate(
-                        4,
-                        (_) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: _buildShimmerLine(context, 0.72),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "Redis",
-                      children: [
-                        _buildShimmerLine(context, 0.3),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.25),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.22),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "Socket.io",
-                      children: [
-                        _buildShimmerLine(context, 0.28),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.26),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.24),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "BullMQ",
-                      children: List.generate(
-                        3,
-                        (_) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: _buildShimmerLine(context, 0.78),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      context: context,
-                      title: "Firebase",
-                      children: [
-                        _buildShimmerLine(context, 0.27),
-                        const SizedBox(height: 10),
-                        _buildShimmerLine(context, 0.45),
-                      ],
-                    ),
-                  ] else ...[
-                    // OVERALL
-                    _buildSection(
-                      context: context,
-                      title: "Overall",
-                      status: overallStatusText,
-                      statusColor: overallStatusColor,
-                      children: [
-                        _buildInfoRow("Uptime", _uptimeText()),
-                        _buildInfoRow(
-                          "Started",
-                          _valueOrDash(_overall?.startedAt),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildProgress("CPU", cpu),
-                        _buildProgress("Memory", mem),
-                        _buildProgress("Disk", disk),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Load avg: $loadAvgText",
-                          style: GoogleFonts.inter(
-                            fontSize: fs - 2,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "PostgreSQL",
-                      subtitle: pgName,
-                      children: [
-                        _buildInfoRow("Size", _pgSizeText(pgPrimary)),
-                        _buildInfoRow(
-                          "Connections",
-                          pgConnections != null ? "$pgConnections" : "—",
-                        ),
-                        _buildInfoRow(
-                          "Dead tuples",
-                          pgDeadTuples != null ? "$pgDeadTuples" : "—",
-                        ),
-                        if (addressDb != null) ...[
-                          const SizedBox(height: 10),
-                          _buildInfoRow(
-                            "Address DB size",
-                            _pgSizeText(addressDb),
-                            color: addressDb.isUp ? null : Colors.red,
-                          ),
-                          _buildInfoRow(
-                            "Address DB connections",
-                            "${addressDb.connections}",
-                            color: addressDb.isUp ? null : Colors.red,
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: [
-                            _actionChip("Refresh"),
-                            _actionChip("Vacuum"),
-                            _actionChip("Diagnostics"),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "Services",
-                      subtitle: serviceRows.isEmpty
-                          ? "No data"
-                          : "$runningCount/${serviceRows.length} running",
-                      children: serviceRows.isEmpty
-                          ? [_buildInfoRow("Status", "No services data")]
-                          : serviceRows.map((s) {
-                              final statusText = s['status'].toString();
-                              final colorValue = s['color'];
-                              final rowColor = colorValue is Color
-                                  ? colorValue
-                                  : _serviceColor(statusText);
-                              return _serviceRow(
-                                s['name'].toString(),
-                                statusText,
-                                s['since'].toString(),
-                                rowColor,
-                              );
-                            }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "Redis",
-                      children: [
-                        _buildInfoRow("State", redisState, color: redisColor),
-                        _buildInfoRow("Used", redisUsed),
-                        _buildInfoRow("Hit rate", redisHitRate),
-                        _buildInfoRow("Keys", redisKeys),
-                        const SizedBox(height: 16),
-                        _actionChip("Restart Redis", color: Colors.orange),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "Socket.io",
-                      children: [
-                        _buildInfoRow("Clients", socketClients),
-                        _buildInfoRow("Rooms", socketRooms),
-                        _buildInfoRow("Events/sec", socketEvents),
-                        const SizedBox(height: 16),
-                        _actionChip("Restart Socket", color: Colors.orange),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "BullMQ",
-                      children: [
-                        _queueRow(
-                          "ingest",
-                          bullIngest,
-                          wait: bullIngestWait,
-                          act: bullIngestAct,
-                          delay: bullIngestDelay,
-                          fail: bullIngestFail,
-                        ),
-                        _queueRow(
-                          "notifications",
-                          bullNotifications,
-                          wait: bullNotificationsWait,
-                          act: bullNotificationsAct,
-                          delay: bullNotificationsDelay,
-                          fail: bullNotificationsFail,
-                        ),
-                        _queueRow(
-                          "geocoder",
-                          bullGeocode,
-                          wait: bullGeocodeWait,
-                          act: bullGeocodeAct,
-                          delay: bullGeocodeDelay,
-                          fail: bullGeocodeFail,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildSection(
-                      context: context,
-                      title: "Firebase",
-                      children: [
-                        _buildInfoRow(
-                          "FCM",
-                          firebaseFcm,
-                          color: _serviceColor(firebaseFcm),
-                        ),
-                        _buildInfoRow("Last ping", firebaseLastPing),
-                      ],
+                    _buildInfoRow(
+                      "Address DB connections",
+                      "${addressDb.connections}",
+                      color: addressDb.isUp ? null : Colors.red,
                     ),
                   ],
-                  const SizedBox(height: 32),
-
-                  // DANGER ZONE: DELETE LOGS
-                  Container(
-                    padding: EdgeInsets.all(hp),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: colorScheme.error.withOpacity(0.5),
-                        width: 2,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.warning_rounded,
-                              color: colorScheme.error,
-                              size: fs + 6,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              "Delete Data (Logs)",
-                              style: GoogleFonts.inter(
-                                fontSize: fs + 4,
-                                fontWeight: FontWeight.w800,
-                                color: colorScheme.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Permanently delete GPS logs for a date range.",
-                          style: GoogleFonts.inter(
-                            fontSize: fs - 2,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          "Select date range",
-                          style: GoogleFonts.inter(
-                            fontSize: fs,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        CalendarDatePicker2(
-                          config: CalendarDatePicker2WithActionButtonsConfig(
-                            calendarType: CalendarDatePicker2Type.range,
-                            selectedDayHighlightColor: colorScheme.primary,
-                            dayTextStyle: TextStyle(
-                              color: colorScheme.onSurface,
-                            ),
-                            todayTextStyle: TextStyle(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            controlsTextStyle: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          value: _dates,
-                          onValueChanged: (dates) =>
-                              setState(() => _dates = dates),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.error,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: Text(
-                              "Delete Selected Range",
-                              style: GoogleFonts.inter(
-                                fontSize: fs,
-                                color: colorScheme.onError,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      _actionChip("Refresh"),
+                      _actionChip("Vacuum"),
+                      _actionChip("Diagnostics"),
+                    ],
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            _buildSectionHeaderCard(
+              context: context,
+              title: "Redis",
+              child: Column(
+                children: [
+                  _buildInfoRow("State", redisState, color: redisColor),
+                  _buildInfoRow("Used", redisUsed),
+                  _buildInfoRow("Hit rate", redisHitRate),
+                  _buildInfoRow("Keys", redisKeys),
+                  const SizedBox(height: 12),
+                  _actionChip("Restart Redis", color: Colors.orange),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeaderCard(
+              context: context,
+              title: "Socket.io",
+              child: Column(
+                children: [
+                  _buildInfoRow("Clients", socketClients),
+                  _buildInfoRow("Rooms", socketRooms),
+                  _buildInfoRow("Events/sec", socketEvents),
+                  const SizedBox(height: 12),
+                  _actionChip("Restart Socket", color: Colors.orange),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeaderCard(
+              context: context,
+              title: "BullMQ",
+              child: Column(
+                children: [
+                  _queueRow(
+                    "ingest",
+                    bullIngest,
+                    wait: bullIngestWait,
+                    act: bullIngestAct,
+                    delay: bullIngestDelay,
+                    fail: bullIngestFail,
+                  ),
+                  _queueRow(
+                    "notifications",
+                    bullNotifications,
+                    wait: bullNotificationsWait,
+                    act: bullNotificationsAct,
+                    delay: bullNotificationsDelay,
+                    fail: bullNotificationsFail,
+                  ),
+                  _queueRow(
+                    "geocoder",
+                    bullGeocode,
+                    wait: bullGeocodeWait,
+                    act: bullGeocodeAct,
+                    delay: bullGeocodeDelay,
+                    fail: bullGeocodeFail,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeaderCard(
+              context: context,
+              title: "Firebase",
+              child: Column(
+                children: [
+                  _buildInfoRow(
+                    "FCM",
+                    firebaseFcm,
+                    color: _serviceColor(firebaseFcm),
+                  ),
+                  _buildInfoRow("Last ping", firebaseLastPing),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildDangerZone(context, hp, fs),
+            */
+              ],
+            ),
+          ),
+          Positioned(
+            left: hp,
+            right: hp,
+            top: 0,
+            child: SuperAdminHomeAppBar(
+              title: 'Server',
+              leadingIcon: Symbols.storage,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double scale = (width / 420).clamp(0.9, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32 * scale,
+            height: 32 * scale,
+            decoration: BoxDecoration(
+              color: colorScheme.onSurface,
+              borderRadius: BorderRadius.circular(12 * scale),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.storage_rounded,
+              color: colorScheme.surface,
+              size: 15 * scale,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Server",
+              style: GoogleFonts.inter(
+                fontSize: 16 * scale,
+                height: 20 / 16,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              }
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurface,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.close,
+                color: colorScheme.surface,
+                size: 15 * scale,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonitoringCard({
+    required BuildContext context,
+    required bool loading,
+    required String title,
+    required String subtitle,
+    required String localStatus,
+    required String localLastCheck,
+    required VoidCallback? onRefresh,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double scale = (width / 420).clamp(0.9, 1.0);
+    final double fsSection = 18 * scale;
+    final double fsMain = 14 * scale;
+    final double fsSecondary = 12 * scale;
+    final double fsMeta = 11 * scale;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: fsSection,
+                        height: 24 / 18,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: fsSecondary,
+                        height: 16 / 12,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface.withOpacity(0.65),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: onRefresh,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: loading
+                      ? const AppShimmer(width: 14, height: 14, radius: 7)
+                      : Icon(
+                          Icons.refresh_rounded,
+                          color: colorScheme.onSurface,
+                          size: 16 * scale,
+                        ),
+                ),
+                label: Text(
+                  "Refresh",
+                  style: GoogleFonts.inter(
+                    fontSize: fsMain,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? colorScheme.surfaceVariant
+                  : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Local agent status",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: fsMain,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Last check \u00b7 $localLastCheck",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: fsSecondary,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        localStatus.trim().isEmpty ? '—' : localStatus,
+                        style: GoogleFonts.inter(
+                          fontSize: fsMeta,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonitoringRow(BuildContext context, _MonitoringRowData row) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final statusText = row.status.trim().isEmpty ? '—' : row.status;
+    final statusColor =
+        statusText == '—' ? Colors.grey : _serviceColor(statusText);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 12 * scale,
+                    height: 16 / 12,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  row.meta,
+                  style: GoogleFonts.inter(
+                    fontSize: 11 * scale,
+                    height: 14 / 11,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildStatusPill(statusText, statusColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String text, Color color) {
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 11 * scale,
+          height: 14 / 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlertCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: colorScheme.onSurface, size: 16 * scale),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 14 * scale,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.inter(
+                    fontSize: 12 * scale,
+                    height: 17 / 12,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface.withOpacity(0.65),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricsSection({
+    required BuildContext context,
+    required bool showSkeleton,
+    required String title,
+    required String subtitle,
+    required String loadAvgText,
+    required List<_MetricData> metrics,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final double fsSection = 18 * scale;
+    final double fsSecondary = 12 * scale;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? colorScheme.surfaceVariant
+              : Colors.grey.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: fsSection,
+              height: 24 / 18,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          if (subtitle.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: fsSecondary,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (showSkeleton) ...[
+            _buildMetricSkeleton(context),
+          ] else ...[
+            _buildMetricsGrid(context: context, metrics: metrics),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricsGrid({
+    required BuildContext context,
+    required List<_MetricData> metrics,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double spacing = 10;
+        final double cardWidth =
+            (constraints.maxWidth - spacing) / 2;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: metrics.map((m) {
+            return SizedBox(
+              width: cardWidth,
+              child: _buildMetricCard(context, m),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildMetricCard(BuildContext context, _MetricData data) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final double fsLabel = 11 * scale;
+    final double fsValue = 32 * scale;
+    final double fsSecondary = 12 * scale;
+    final percent = data.percent;
+    final int? clamped = percent == null ? null : percent.clamp(0, 100).toInt();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? colorScheme.surfaceVariant
+              : Colors.grey.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  data.label,
+                  style: GoogleFonts.inter(
+                    fontSize: fsLabel,
+                    height: 14 / 11,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ),
+              Icon(
+                data.icon,
+                size: 18 * scale,
+                color: Colors.grey.shade500,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            data.value,
+            style: GoogleFonts.inter(
+              fontSize: fsValue,
+              height: 34 / 32,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.subtext,
+            style: GoogleFonts.inter(
+              fontSize: fsSecondary,
+              height: 14 / 11,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          if (clamped != null) ...[
+            const SizedBox(height: 8),
+            _metricProgressBar(context, clamped),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _metricProgressBar(BuildContext context, int? percent) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: LinearProgressIndicator(
+        minHeight: 6,
+        value: ((percent ?? 0) / 100).clamp(0.0, 1.0),
+        backgroundColor: colorScheme.onSurface.withOpacity(0.08),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServicesSkeleton(BuildContext context) {
+    return Column(
+      children: List.generate(3, (index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                AppShimmer(width: 120, height: 14, radius: 8),
+                SizedBox(height: 12),
+                AppShimmer(width: 200, height: 12, radius: 8),
+                SizedBox(height: 12),
+                AppShimmer(width: 160, height: 12, radius: 8),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildServicesSection({
+    required BuildContext context,
+    required bool showSkeleton,
+    required String title,
+    required String subtitle,
+    required List<ServerServiceItem> services,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final double fsSection = 18 * scale;
+    final double fsSecondary = 12 * scale;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: fsSection,
+                    height: 24 / 18,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: fsSecondary,
+                    height: 16 / 12,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (showSkeleton) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildServicesSkeleton(context),
+            ),
+          ] else if (services.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildEmptyCard(context, "No services data available."),
+            ),
+          ] else ...[
+            Column(
+              children: services.map((s) {
+                final statusText =
+                    s.status.isNotEmpty ? s.status : 'unknown';
+                final pid = _valueOrDash(
+                  _firstPathValue(s.raw, const [
+                    'pid',
+                    'processId',
+                    'process_id',
+                  ]),
+                );
+                final port = _formatPortValue(
+                  _firstPathValue(s.raw, const [
+                    'port',
+                    'ports',
+                    'listenPort',
+                    'listen_port',
+                  ]),
+                );
+                final uptimeSec = _asInt(
+                  _firstPathValue(s.raw, const [
+                    'uptimeSec',
+                    'uptimeSeconds',
+                    'uptime_sec',
+                    'uptime',
+                  ]),
+                );
+                final description = _valueOrDash(
+                  _firstPathValue(s.raw, const [
+                    'description',
+                    'note',
+                    'details',
+                  ]),
+                );
+                final message = _valueOrDash(
+                  _firstPathValue(s.raw, const [
+                    'message',
+                  ]),
+                );
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                  child: _buildServiceCard(
+                    context: context,
+                    name: s.name.isNotEmpty ? s.name : 'Service',
+                    status: statusText,
+                    pid: pid,
+                    port: port,
+                    uptimeSec: uptimeSec,
+                    description: description,
+                    message: message,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricSkeleton(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double spacing = 10;
+        final double cardWidth =
+            (constraints.maxWidth - spacing) / 2;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: List.generate(4, (index) {
+            return SizedBox(
+              width: cardWidth,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                  ),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppShimmer(width: 70, height: 10, radius: 8),
+                    SizedBox(height: 8),
+                    AppShimmer(width: 90, height: 16, radius: 8),
+                    SizedBox(height: 10),
+                    AppShimmer(width: double.infinity, height: 6, radius: 8),
+                  ],
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  Widget _buildServiceCard({
+    required BuildContext context,
+    required String name,
+    required String status,
+    required String pid,
+    required String port,
+    required int? uptimeSec,
+    required String description,
+    required String message,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final double fsTitle = 14 * scale;
+    final double fsSecondary = 12 * scale;
+    final double fsMeta = 11 * scale;
+    final statusColor = _serviceColor(status);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.onSurface.withOpacity(0.08),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          style: GoogleFonts.inter(
+                            fontSize: fsTitle,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPill(context, status, statusColor),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Uptime",
+                      style: GoogleFonts.inter(
+                        fontSize: fsMeta,
+                        height: 14 / 11,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatUptimeAbbrev(
+                        uptimeSec ?? 0,
+                      ),
+                      style: GoogleFonts.inter(
+                        fontSize: fsSecondary,
+                        height: 16 / 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              description == '—' ? "No description available." : description,
+              style: GoogleFonts.inter(
+                fontSize: fsSecondary,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.65),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double spacing = 8;
+                final double cellWidth =
+                    (constraints.maxWidth - spacing) / 2;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: [
+                    SizedBox(
+                      width: cellWidth,
+                      child: _infoCell(context, "PID", pid),
+                    ),
+                    SizedBox(
+                      width: cellWidth,
+                      child: _infoCell(context, "Port", port),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: colorScheme.onSurface.withOpacity(0.08),
+                ),
+              ),
+              child: Text(
+                message == '—' ? "No message available." : message,
+                style: GoogleFonts.inter(
+                  fontSize: fsSecondary,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.65),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (_serviceColor(status) == Colors.green) ...[
+                  OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      side: BorderSide(
+                        color: colorScheme.onSurface.withOpacity(0.2),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh,
+                          size: 16 * scale,
+                          color: colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Refresh",
+                          style: GoogleFonts.inter(
+                            fontSize: fsTitle,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      side: BorderSide(
+                        color: colorScheme.onSurface.withOpacity(0.2),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.play_arrow_outlined,
+                          size: 16 * scale,
+                          color: colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Start",
+                          style: GoogleFonts.inter(
+                            fontSize: fsTitle,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _infoCell(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11 * scale,
+              height: 14 / 11,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPill(BuildContext context, String text, Color color) {
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 11 * scale,
+          height: 14 / 11,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendationSection({
+    required BuildContext context,
+    required bool needsAttention,
+    required bool overallUp,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double fs = AdaptiveUtils.getTitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
+    final String message = needsAttention
+        ? "Review unhealthy services and restart or investigate issues where necessary."
+        : "System is healthy. Continue monitoring and run periodic checks.";
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Recommended Action",
+            style: GoogleFonts.inter(
+              fontSize: fs + 5,
+              height: 24 / 18,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Next step based on current system state",
+            style: GoogleFonts.inter(
+              fontSize: fs - 1,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  needsAttention
+                      ? Icons.warning_amber_rounded
+                      : Icons.check_circle,
+                  color: needsAttention ? Colors.orange : Colors.green,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        needsAttention ? "Action Required" : "All Good",
+                        style: GoogleFonts.inter(
+                          fontSize: fs,
+                          height: 18 / 13,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: GoogleFonts.inter(
+                          fontSize: fs,
+                          height: 18 / 13,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface.withOpacity(0.65),
+                        ),
+                      ),
+                      if (!overallUp)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            "Overall status is down. Prioritize incident response.",
+                            style: GoogleFonts.inter(
+                              fontSize: fs,
+                              height: 18 / 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeaderCard({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    required Widget child,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 18 * scale,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12 * scale,
+                    height: 16 / 12,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyCard(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceVariant),
+      ),
+      child: Text(
+        message,
+        style: GoogleFonts.inter(
+          fontSize: 12 * scale,
+          height: 16 / 12,
+          color: colorScheme.onSurface.withOpacity(0.7),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDangerZone(BuildContext context, double hp, double fs) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.error.withOpacity(0.5),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_rounded,
+                color: colorScheme.error,
+                size: fs + 6,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "Delete Data (Logs)",
+                style: GoogleFonts.inter(
+                  fontSize: fs + 4,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Permanently delete GPS logs for a date range.",
+            style: GoogleFonts.inter(
+              fontSize: fs - 2,
+              color: colorScheme.onSurface.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "Select date range",
+            style: GoogleFonts.inter(
+              fontSize: fs,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          CalendarDatePicker2(
+            config: CalendarDatePicker2WithActionButtonsConfig(
+              calendarType: CalendarDatePicker2Type.range,
+              selectedDayHighlightColor: colorScheme.primary,
+              dayTextStyle: TextStyle(
+                color: colorScheme.onSurface,
+              ),
+              todayTextStyle: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              controlsTextStyle: TextStyle(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            value: _dates,
+            onValueChanged: (dates) => setState(() => _dates = dates),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                "Delete Selected Range",
+                style: GoogleFonts.inter(
+                  fontSize: fs,
+                  color: colorScheme.onError,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -917,7 +2217,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
     // FIX: Add hp here
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double scale = (width / 420).clamp(0.9, 1.0);
 
     return Container(
       width: double.infinity,
@@ -940,15 +2240,16 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             children: [
               Icon(
                 Icons.storage_rounded,
-                size: fs + 6,
+                size: 16 * scale,
                 color: colorScheme.primary,
               ),
               const SizedBox(width: 12),
               Text(
                 title,
                 style: GoogleFonts.inter(
-                  fontSize: fs + 3,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 18 * scale,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface.withOpacity(0.9),
                 ),
               ),
@@ -957,7 +2258,8 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 Text(
                   subtitle,
                   style: GoogleFonts.inter(
-                    fontSize: fs - 2,
+                    fontSize: 12 * scale,
+                    height: 16 / 12,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
@@ -967,8 +2269,9 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 Text(
                   status,
                   style: GoogleFonts.inter(
-                    fontSize: fs - 1,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 12 * scale,
+                    height: 16 / 12,
+                    fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
                 ),
@@ -984,9 +2287,8 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   Widget _buildInfoRow(String label, String value, {Color? color}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fs = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -994,14 +2296,16 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           Text(
             "$label: ",
             style: GoogleFonts.inter(
-              fontSize: fs - 1,
-              fontWeight: FontWeight.w600,
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: fs - 1,
+              fontSize: 12 * scale,
+              height: 16 / 12,
               color: color ?? colorScheme.onSurface,
             ),
           ),
@@ -1035,9 +2339,8 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   Widget _buildProgress(String label, int? percent) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fs = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
     final int? clampedPercent = percent == null
         ? null
         : percent.clamp(0, 100).toInt();
@@ -1050,15 +2353,17 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: fs - 1,
-                fontWeight: FontWeight.w600,
+                fontSize: 12 * scale,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
             Text(
               clampedPercent == null ? "—" : "$clampedPercent%",
               style: GoogleFonts.inter(
-                fontSize: fs - 1,
-                fontWeight: FontWeight.w600,
+                fontSize: 12 * scale,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -1101,9 +2406,8 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   }
 
   Widget _serviceRow(String name, String status, String since, Color color) {
-    final double fs = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
     final normalizedStatus = status.toLowerCase();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1122,14 +2426,16 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 Text(
                   name,
                   style: GoogleFonts.inter(
-                    fontSize: fs - 1,
+                    fontSize: 14 * scale,
+                    height: 20 / 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   "since $since",
                   style: GoogleFonts.inter(
-                    fontSize: fs - 4,
+                    fontSize: 12 * scale,
+                    height: 16 / 12,
                     color: Theme.of(
                       context,
                     ).colorScheme.onSurface.withOpacity(0.6),
@@ -1156,9 +2462,8 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     required String delay,
     required String fail,
   }) {
-    final double fs = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
     final normalizedState = state.toLowerCase();
     final stateColor = normalizedState == 'unknown'
         ? Colors.grey
@@ -1172,19 +2477,25 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           Text(
             "$name ",
             style: GoogleFonts.inter(
-              fontSize: fs - 1,
+              fontSize: 14 * scale,
+              height: 20 / 14,
               fontWeight: FontWeight.w600,
             ),
           ),
           Text(
             state,
-            style: GoogleFonts.inter(fontSize: fs - 3, color: stateColor),
+            style: GoogleFonts.inter(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              color: stateColor,
+            ),
           ),
           const Spacer(),
           Text(
             "wait:$wait act:$act delay:$delay fail:$fail",
             style: GoogleFonts.inter(
-              fontSize: fs - 5,
+              fontSize: 11 * scale,
+              height: 14 / 11,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
@@ -1195,14 +2506,14 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
 
   Widget _actionChip(String label, {Color? color}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fs = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double scale =
+        (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
     return ActionChip(
       label: Text(
         label,
         style: GoogleFonts.inter(
-          fontSize: fs - 3,
+          fontSize: 14 * scale,
+          height: 20 / 14,
           fontWeight: FontWeight.w600,
           color: color ?? colorScheme.primary,
         ),
@@ -1211,4 +2522,39 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       onPressed: () {},
     );
   }
+}
+
+class _StatusItem {
+  final String label;
+  final String value;
+
+  const _StatusItem(this.label, this.value);
+}
+
+class _MetricData {
+  final String label;
+  final String value;
+  final String subtext;
+  final int? percent;
+  final IconData icon;
+
+  const _MetricData({
+    required this.label,
+    required this.value,
+    required this.subtext,
+    required this.percent,
+    required this.icon,
+  });
+}
+
+class _MonitoringRowData {
+  final String label;
+  final String meta;
+  final String status;
+
+  const _MonitoringRowData({
+    required this.label,
+    required this.meta,
+    required this.status,
+  });
 }
