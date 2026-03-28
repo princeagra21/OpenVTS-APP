@@ -31,6 +31,7 @@ import 'package:fleet_stack/core/models/vehicle_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:fleet_stack/core/repositories/auth_repository.dart';
 
 class SuperadminRepository {
   final ApiClient api;
@@ -416,6 +417,22 @@ class SuperadminRepository {
         });
         return Result.ok(out);
       },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getCalendarDayDetails({
+    required String date,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/calendar/day',
+      queryParameters: {'date': date},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(_coerceMap(data)),
       failure: (err) => Result.fail(err),
     );
   }
@@ -1025,6 +1042,28 @@ class SuperadminRepository {
     );
   }
 
+  Future<Result<void>> createTicket({
+    required String message,
+    required String priority,
+    required String category,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/superadmin/support/tickets',
+      data: <String, dynamic>{
+        'message': message,
+        'priority': priority,
+        'category': category,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   /// Roles endpoint is not stable across deployments.
   /// Probe known candidates and normalize into a list of role maps.
   Future<Result<List<Map<String, dynamic>>>> getRoles({
@@ -1103,12 +1142,13 @@ class SuperadminRepository {
     bool internal = false,
     CancelToken? cancelToken,
   }) async {
+    final payload = <String, dynamic>{'message': message};
+    if (internal) {
+      payload['type'] = 'INTERNAL';
+    }
     final res = await api.post(
       '/superadmin/support/tickets/$ticketId/messages',
-      data: <String, dynamic>{
-        'message': message,
-        'type': internal ? 'INTERNAL' : 'PUBLIC',
-      },
+      data: payload,
       cancelToken: cancelToken,
     );
 
@@ -1265,6 +1305,49 @@ class SuperadminRepository {
         }
         return Result.ok(transactions);
       },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> loginAsAdmin(
+    String adminId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/adminlogin/$adminId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final token = AuthRepository.extractToken(data);
+        if (token == null || token.trim().isEmpty) {
+          return Result.fail(
+            ApiException(
+              statusCode: 401,
+              message: 'Token not found in admin login response.',
+              details: data,
+            ),
+          );
+        }
+        return Result.ok(token);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> recordManualTransaction(
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/superadmin/transactions/manual',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
     );
   }

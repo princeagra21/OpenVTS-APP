@@ -10,12 +10,16 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:intl/intl.dart';
 
 class EventCalendarScreen extends StatefulWidget {
   const EventCalendarScreen({super.key});
@@ -26,27 +30,38 @@ class EventCalendarScreen extends StatefulWidget {
 
 class _EventCalendarScreenState extends State<EventCalendarScreen> {
   DateTime _selectedDate = DateTime.now();
-  String? _selectedType;
+  DateTime _weekAnchor = DateTime.now();
+  String? _selectedType = 'user';
   CalendarEventItem? _selectedEvent;
+  final TextEditingController _eventSearchController = TextEditingController();
   List<CalendarEventItem> _events = const [];
   final Map<String, List<CalendarEventItem>> _monthCache = {};
+  final Map<String, List<CalendarEventItem>> _dayCache = {};
   bool _loadingMonth = false;
+  bool _loadingDay = false;
   bool _loading = false;
   bool _errorShown = false;
   CancelToken? _token;
   ApiClient? _api;
   SuperadminRepository? _repo;
   DateTime? _loadedMonth;
+  DateTime? _loadedDay;
+  List<CalendarEventItem> _dayItems = const [];
+  final ScrollController _weekScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _weekAnchor = DateTime.now();
+    _eventSearchController.addListener(() => setState(() {}));
     _loadMonth(_selectedDate);
   }
 
   @override
   void dispose() {
     _token?.cancel('Calendar disposed');
+    _eventSearchController.dispose();
+    _weekScrollController.dispose();
     super.dispose();
   }
 
@@ -116,6 +131,216 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     return out;
   }
 
+  Map<String, dynamic> _map(Object? v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v.cast());
+    return const <String, dynamic>{};
+  }
+
+  List _list(Object? v) => v is List ? v : const [];
+
+  List<CalendarEventItem> _buildDayItems(Map<String, dynamic> root) {
+    final dataMap = _map(_map(root)['data']);
+    final inner = _map(dataMap['data']);
+    final dateStr = inner['date']?.toString() ?? _fmtDate(_selectedDate);
+    final out = <CalendarEventItem>[];
+
+    for (final it in _list(inner['usersCreated'])) {
+      final m = _map(it);
+      out.add(
+        CalendarEventItem(<String, dynamic>{
+          'type': 'USER_CREATED',
+          'id': m['uid'] ?? m['id'],
+          'title': m['name'] ?? m['email'] ?? '',
+          'description': m['email'] ?? '',
+          'createdAt': m['createdAt'],
+          'date': dateStr,
+        }),
+      );
+    }
+
+    for (final it in _list(inner['vehiclesCreated'])) {
+      final m = _map(it);
+      out.add(
+        CalendarEventItem(<String, dynamic>{
+          'type': 'VEHICLE_CREATED',
+          'id': m['id'],
+          'title': m['name'] ?? m['plateNumber'] ?? '',
+          'description': m['plateNumber'] ?? '',
+          'createdAt': m['createdAt'],
+          'date': dateStr,
+        }),
+      );
+    }
+
+    for (final it in _list(inner['vehiclesExpiry'])) {
+      final m = _map(it);
+      out.add(
+        CalendarEventItem(<String, dynamic>{
+          'type': 'VEHICLE_EXPIRY',
+          'id': m['id'],
+          'title': m['name'] ?? m['plateNumber'] ?? '',
+          'description': m['plateNumber'] ?? '',
+          'createdAt': m['createdAt'],
+          'date': dateStr,
+        }),
+      );
+    }
+
+    return out;
+  }
+
+  Future<void> _loadDay(DateTime date) async {
+    final key = _fmtDate(date);
+    if (_dayCache.containsKey(key)) {
+      setState(() {
+        _dayItems = _dayCache[key] ?? const [];
+        _loadedDay = date;
+        _loadingDay = false;
+      });
+      return;
+    }
+
+    setState(() => _loadingDay = true);
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+      final res = await _repo!.getCalendarDayDetails(date: key);
+      if (!mounted) return;
+      res.when(
+        success: (data) {
+          final items = _buildDayItems(data);
+          setState(() {
+            _dayCache[key] = items;
+            _dayItems = items;
+            _loadedDay = date;
+            _loadingDay = false;
+          });
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() {
+            _dayItems = const [];
+            _loadedDay = date;
+            _loadingDay = false;
+          });
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _dayItems = const [];
+        _loadedDay = date;
+        _loadingDay = false;
+      });
+    }
+  }
+
+  void _loadDayIfNeeded(DateTime date) {
+    final key = _dayKey(date);
+    if (!_eventsByDate.containsKey(key)) {
+      setState(() {
+        _dayItems = const [];
+        _loadedDay = date;
+        _loadingDay = false;
+      });
+      return;
+    }
+    _loadDay(date);
+  }
+
+  String _eventLabel(CalendarEventItem e) {
+    final t = _normType(e.type);
+    if (t.contains('user')) return 'Users Created';
+    if (t.contains('admin')) return 'Admins Created';
+    if (t.contains('vehicle') && t.contains('expiry')) return 'Vehicle Expiry';
+    if (t.contains('vehicle')) return 'Vehicles';
+    return 'Events';
+  }
+
+  String _eventEntity(CalendarEventItem e) {
+    final t = _normType(e.type);
+    if (t.contains('user')) return 'User';
+    if (t.contains('admin')) return 'Admin';
+    if (t.contains('vehicle')) return 'Vehicle';
+    return 'Event';
+  }
+
+  String _eventId(CalendarEventItem e) {
+    final t = _normType(e.type);
+    if (t.contains('user') && e.userId.isNotEmpty) return e.userId;
+    if (t.contains('admin') && e.adminId.isNotEmpty) return e.adminId;
+    if (t.contains('vehicle') && e.vehicleId.isNotEmpty) return e.vehicleId;
+    return e.id;
+  }
+
+  String _eventTime(CalendarEventItem e) {
+    if (e.time.trim().isNotEmpty) return e.time;
+    final dt = e.createdAt ?? e.date;
+    if (dt == null) return '-';
+    return DateFormat('hh:mm a').format(dt);
+  }
+
+  String _eventSubtitle(CalendarEventItem e) {
+    final t = _normType(e.type);
+    if (t.contains('user')) return 'User Registration';
+    if (t.contains('admin')) return 'Admin Registration';
+    if (t.contains('vehicle') && t.contains('expiry')) return 'Vehicle Expiry';
+    if (t.contains('vehicle')) return 'Vehicle Registration';
+    return 'Event';
+  }
+
+  Widget _headerTab(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final double fsChip = 14 * scale;
+    final double iconSize = 14 * scale;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? cs.onSurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: cs.onSurface.withOpacity(0.1),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: iconSize,
+              color: selected ? cs.surface : cs.onSurface,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: fsChip,
+                height: 20 / 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? cs.surface : cs.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadMonth(DateTime anyDateInMonth, {bool force = false}) async {
     final month = _monthStart(anyDateInMonth);
     _loadedMonth = month;
@@ -159,6 +384,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
             _loading = false;
             _errorShown = false;
           });
+          _loadDayIfNeeded(_selectedDate);
         },
         failure: (err) {
           setState(() => _loading = false);
@@ -262,396 +488,748 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme; // Short alias
+    final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
     final bool isMobile = width < 650;
+    final double topPadding = MediaQuery.of(context).padding.top;
     final eventMap = _effectiveEventMap;
     final currentMonth = _loadedMonth ?? _selectedDate;
     final showSkeleton = _loading && _events.isEmpty;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final double fsHeader = 16 * scale;
+    final double fsMonth = 18 * scale;
+    final double fsButton = 14 * scale;
+    final double fsChip = 14 * scale;
+    final double fsWeekday = 11 * scale;
+    final double fsDate = 14 * scale;
+    final double fsDateSelected = 14 * scale;
+    final double fsSearch = 14 * scale;
+    final double fsLabel = 12 * scale;
+    final double fsEventTitle = 14 * scale;
+    final double fsEventSecondary = 12 * scale;
+    final double fsEventMeta = 11 * scale;
 
-    return AppLayout(
-      title: "FLEET STACK",
-      subtitle: "White Label",
-      actionIcons: const [],
-      leftAvatarText: 'FS',
-      showLeftAvatar: false,
-      horizontalPadding: 3,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(hp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // OUTER CARD
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(hp),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+    Widget navButton(IconData icon, VoidCallback onTap) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: cs.onSurface.withOpacity(0.2)),
+          ),
+          child: Icon(icon, size: fsButton, color: cs.onSurface),
+        ),
+      );
+    }
+
+    void shiftDay(int delta) {
+      final next = _weekAnchor.add(Duration(days: delta));
+      setState(() {
+        _weekAnchor = next;
+        _selectedDate = next;
+        _selectedEvent = null;
+      });
+      if (_loadedMonth == null || _monthStart(_loadedMonth!) != _monthStart(next)) {
+        _loadMonth(next);
+      }
+      _loadDayIfNeeded(next);
+    }
+
+    void jumpToToday() {
+      final now = DateTime.now();
+      setState(() {
+        _weekAnchor = now;
+        _selectedDate = now;
+        _selectedEvent = null;
+      });
+      _loadMonth(now, force: true);
+      _loadDayIfNeeded(now);
+    }
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                hp,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                hp,
+                hp,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // HEADER
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _monthTitle(currentMonth),
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getTitleFontSize(width) + 4,
-                                fontWeight: FontWeight.w800,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () =>
-                                      _loadMonth(_selectedDate, force: true),
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Text(
-                                    "Today",
-                                    style: GoogleFonts.inter(
-                                      fontSize:
-                                          AdaptiveUtils.getSubtitleFontSize(
-                                            width,
-                                          ) -
-                                          3,
-                                      fontWeight: FontWeight.w500,
-                                      color: cs.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ),
-                                if (_loading) ...[
-                                  const SizedBox(width: 8),
-                                  const AppShimmer(
-                                    width: 12,
-                                    height: 12,
-                                    radius: 6,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      if (!isMobile)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.onSurface.withOpacity(0.06),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            "Monochrome Calendar\nAdmin/User/Vehicle Events",
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 6,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // LEGEND
-                  if (showSkeleton)
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 10,
-                      children: const [
-                        AppShimmer(width: 112, height: 20, radius: 10),
-                        AppShimmer(width: 104, height: 20, radius: 10),
-                        AppShimmer(width: 118, height: 20, radius: 10),
-                        AppShimmer(width: 110, height: 20, radius: 10),
-                      ],
-                    )
-                  else
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 10,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _legendItem(
-                          "Admin Created",
-                          cs,
-                          selected: _selectedType == 'admin',
-                          onTap: () => setState(
-                            () => _selectedType = _selectedType == 'admin'
-                                ? null
-                                : 'admin',
-                          ),
-                        ),
-                        _legendItem(
-                          "User Created",
-                          cs,
-                          selected: _selectedType == 'user',
-                          onTap: () => setState(
-                            () => _selectedType = _selectedType == 'user'
-                                ? null
-                                : 'user',
-                          ),
-                        ),
-                        _legendItem(
-                          "Vehicle Expiry",
-                          cs,
-                          selected:
-                              _selectedType == 'vehicle_expiry' ||
-                              _selectedType == 'vehicle',
-                          onTap: () => setState(
-                            () => _selectedType =
-                                _selectedType == 'vehicle_expiry'
-                                ? null
-                                : 'vehicle_expiry',
-                          ),
-                        ),
-                        _legendItem(
-                          "Vehicle Added",
-                          cs,
-                          selected:
-                              _selectedType == 'vehicle_added' ||
-                              _selectedType == 'vehicle',
-                          onTap: () => setState(
-                            () => _selectedType == 'vehicle_added'
-                                ? null
-                                : 'vehicle_added',
-                          ),
-                        ),
-                      ],
-                    ),
-
-                  const SizedBox(height: 32),
-
-                  // CALENDAR
-                  if (showSkeleton)
-                    AppShimmer(
-                      width: double.infinity,
-                      height: isMobile ? 300 : 340,
-                      radius: 16,
-                    )
-                  else
-                    CalendarDatePicker2(
-                      config: CalendarDatePicker2Config(
-                        calendarType: CalendarDatePicker2Type.single,
-                        selectedDayHighlightColor: cs.primary,
-
-                        // Weekdays
-                        weekdayLabelTextStyle: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        ),
-
-                        // Normal day
-                        dayTextStyle: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: cs.onSurface,
-                        ),
-
-                        // Selected day
-                        selectedDayTextStyle: GoogleFonts.inter(
-                          color: cs.onPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-
-                        // Today
-                        todayTextStyle: GoogleFonts.inter(
-                          color: cs.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-
-                        // Month navigation arrows + month text
-                        controlsTextStyle: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: cs.onSurface,
-                        ),
-
-                        // Day cell builder
-                        dayBuilder:
-                            ({
-                              required DateTime date,
-                              bool? isSelected,
-                              bool? isToday,
-                              TextStyle? textStyle,
-                              BoxDecoration? decoration,
-                              bool? isDisabled,
-                            }) {
-                              final hasEvent = eventMap.containsKey(
-                                _dayKey(date),
-                              );
-
-                              return Center(
-                                child: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: isSelected == true
-                                        ? cs.primary
-                                        : isToday == true
-                                        ? cs.primary.withOpacity(0.08)
-                                        : null,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Text(
-                                        "${date.day}",
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: isSelected == true
-                                              ? cs.onPrimary
-                                              : cs.onSurface,
-                                        ),
-                                      ),
-
-                                      if (hasEvent)
-                                        Positioned(
-                                          bottom: 3,
-                                          child: Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              color: cs.primary,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                      ),
-                      value: [_selectedDate],
-                      onValueChanged: (dates) {
-                        if (dates.isNotEmpty) {
-                          final nextDate = dates.first;
-                          final nextMonth = _monthStart(nextDate);
-                          setState(() {
-                            _selectedDate = nextDate;
-                            _selectedEvent = null;
-                          });
-                          if (_loadedMonth == null ||
-                              _monthStart(_loadedMonth!) != nextMonth) {
-                            _loadMonth(nextDate);
-                          }
-                        }
-                      },
-                    ),
-
-                  const SizedBox(height: 40),
-
-                  // SELECTED DATE CARD
-                  if (showSkeleton)
-                    const AppShimmer(
-                      width: double.infinity,
-                      height: 56,
-                      radius: 12,
-                    )
-                  else
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        "${_selectedDate.day} / ${_selectedDate.month} / ${_selectedDate.year}",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getTitleFontSize(width),
-                          fontWeight: FontWeight.w700,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // EVENTS LIST
-                  ..._buildEventList(
-                    context,
-                    cs,
-                    width,
-                    eventMap,
-                    showSkeleton,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // DETAILS BOX
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(hp),
                     decoration: BoxDecoration(
-                      color: cs.surface.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.onSurface.withOpacity(0.06)),
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: cs.onSurface.withOpacity(0.08)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: _openSelectedEventTarget,
-                          behavior: HitTestBehavior.opaque,
-                          child: Text(
-                            "Event Details",
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _monthTitle(currentMonth),
+                                style: GoogleFonts.inter(
+                                  fontSize: fsMonth,
+                                  height: 24 / 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                            ),
+                            navButton(Icons.chevron_left, () => shiftDay(-1)),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: jumpToToday,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: cs.onSurface.withOpacity(0.2)),
+                                ),
+                                child: Text(
+                                  'Today',
+                                  style: GoogleFonts.inter(
+                                    fontSize: fsButton,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            navButton(Icons.chevron_right, () => shiftDay(1)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _headerTab(
+                                context,
+                                label: 'User',
+                                icon: Symbols.person,
+                                selected: _selectedType == 'user',
+                                onTap: () {
+                                  setState(() => _selectedType = 'user');
+                                  _loadDayIfNeeded(_selectedDate);
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              _headerTab(
+                                context,
+                                label: 'Vehicle',
+                                icon: Symbols.directions_car,
+                                selected: _selectedType == 'vehicle',
+                                onTap: () {
+                                  setState(() => _selectedType = 'vehicle');
+                                  _loadDayIfNeeded(_selectedDate);
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              _headerTab(
+                                context,
+                                label: 'Expiry',
+                                icon: Symbols.event,
+                                selected: _selectedType == 'vehicle_expiry',
+                                onTap: () {
+                                  setState(() => _selectedType = 'vehicle_expiry');
+                                  _loadDayIfNeeded(_selectedDate);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(hp),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'This Week',
+                          style: GoogleFonts.inter(
+                            fontSize: fsMonth,
+                            height: 24 / 18,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final days = List<DateTime>.generate(
+                              7,
+                              (i) => _weekAnchor.add(Duration(days: i - 3)),
+                            );
+                            const gap = 8.0;
+                            final cellWidth = (constraints.maxWidth - gap * 2) / 3.2;
+                            final viewportWidth = constraints.maxWidth;
+                            final desiredOffset =
+                                (cellWidth + gap) * 3 - (viewportWidth - cellWidth) / 2;
+                            final clampedOffset = desiredOffset < 0 ? 0.0 : desiredOffset;
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!_weekScrollController.hasClients) return;
+                              _weekScrollController.jumpTo(clampedOffset);
+                            });
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              controller: _weekScrollController,
+                              child: Row(
+                                children: days.map((day) {
+                                  final key = _dayKey(day);
+                                  final count = eventMap[key]?.length ?? 0;
+                                  final isActiveDay = _dayKey(day) == _dayKey(_weekAnchor);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: gap),
+                                    child: SizedBox(
+                                      width: cellWidth,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _weekAnchor = day;
+                                            _selectedDate = day;
+                                            _selectedEvent = null;
+                                          });
+                                          if (_loadedMonth == null ||
+                                              _monthStart(_loadedMonth!) != _monthStart(day)) {
+                                            _loadMonth(day);
+                                          }
+                                          _loadDayIfNeeded(day);
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: isActiveDay ? cs.onSurface : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: cs.onSurface.withOpacity(0.1),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                DateFormat('EEE').format(day),
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fsWeekday,
+                                                  height: 14 / 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: isActiveDay ? cs.surface : cs.onSurface,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                day.day.toString(),
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fsDate,
+                                                  height: 20 / 14,
+                                                  fontWeight: isActiveDay
+                                                      ? FontWeight.w600
+                                                      : FontWeight.w500,
+                                                  color: isActiveDay ? cs.surface : cs.onSurface,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                count == 0
+                                                    ? 'No events'
+                                                    : '$count event${count == 1 ? '' : 's'}',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fsEventMeta,
+                                                  height: 14 / 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: isActiveDay
+                                                      ? cs.surface.withOpacity(0.85)
+                                                      : cs.onSurface.withOpacity(0.7),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(hp),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Month Snapshot',
+                          style: GoogleFonts.inter(
+                            fontSize: fsMonth,
+                            height: 24 / 18,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (showSkeleton)
+                          AppShimmer(
+                            width: double.infinity,
+                            height: isMobile ? 300 : 340,
+                            radius: 16,
+                          )
+                        else
+                          CalendarDatePicker2(
+                            key: ValueKey(_monthKey(currentMonth)),
+                            config: CalendarDatePicker2Config(
+                              calendarType: CalendarDatePicker2Type.single,
+                              currentDate: _selectedDate,
+                              selectedDayHighlightColor: cs.primary,
+                              weekdayLabelTextStyle: GoogleFonts.inter(
+                                fontSize: fsWeekday,
+                                height: 14 / 11,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurface,
+                              ),
+                              dayTextStyle: GoogleFonts.inter(
+                                fontSize: fsDate,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurface,
+                              ),
+                              selectedDayTextStyle: GoogleFonts.inter(
+                                color: cs.onPrimary,
+                                fontSize: fsDateSelected,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              todayTextStyle: GoogleFonts.inter(
+                                color: cs.primary,
+                                fontSize: fsDate,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              controlsTextStyle: GoogleFonts.inter(
+                                fontSize: fsButton,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                              dayBuilder: ({
+                                required DateTime date,
+                                bool? isSelected,
+                                bool? isToday,
+                                TextStyle? textStyle,
+                                BoxDecoration? decoration,
+                                bool? isDisabled,
+                              }) {
+                                final hasEvent = eventMap.containsKey(_dayKey(date));
+                                return Center(
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: isSelected == true
+                                          ? cs.primary
+                                          : isToday == true
+                                              ? cs.primary.withOpacity(0.08)
+                                              : null,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Text(
+                                          '${date.day}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: fsDate,
+                                            height: 20 / 14,
+                                            fontWeight: isSelected == true
+                                                ? FontWeight.w600
+                                                : FontWeight.w500,
+                                            color: isSelected == true ? cs.onPrimary : cs.onSurface,
+                                          ),
+                                        ),
+                                        if (hasEvent)
+                                          Positioned(
+                                            bottom: 3,
+                                            child: Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                color: cs.primary,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            value: [_selectedDate],
+                            onValueChanged: (dates) {
+                              if (dates.isNotEmpty) {
+                                final nextDate = dates.first;
+                                final nextMonth = _monthStart(nextDate);
+                                setState(() {
+                                  _selectedDate = nextDate;
+                                  _selectedEvent = null;
+                                  _weekAnchor = nextDate;
+                                });
+                                if (_loadedMonth == null ||
+                                    _monthStart(_loadedMonth!) != nextMonth) {
+                                  _loadMonth(nextDate);
+                                }
+                                _loadDayIfNeeded(nextDate);
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat('EEEE').format(_selectedDate),
+                          style: GoogleFonts.inter(
+                            fontSize: fsEventTitle,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('MMMM d, yyyy').format(_selectedDate),
+                          style: GoogleFonts.inter(
+                            fontSize: fsEventSecondary,
+                            height: 16 / 12,
+                            fontWeight: FontWeight.w500,
+                            color: cs.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: hp * 3.5,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: cs.onSurface.withOpacity(0.1),
+                            ),
+                          ),
+                          child: TextField(
+                            controller: _eventSearchController,
                             style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getTitleFontSize(width) + 2,
-                              fontWeight: FontWeight.w800,
+                              fontSize: fsSearch,
+                              height: 20 / 14,
                               color: cs.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Search users or vehicles',
+                              hintStyle: GoogleFonts.inter(
+                                color: cs.onSurface.withOpacity(0.5),
+                                fontSize: fsLabel,
+                                height: 16 / 12,
+                              ),
+                              prefixIcon: Icon(
+                                CupertinoIcons.search,
+                                size: fsButton,
+                                color: cs.onSurface,
+                              ),
+                              filled: true,
+                              fillColor: Colors.transparent,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: hp,
+                                vertical: hp,
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        if (showSkeleton)
-                          Column(
-                            children: const [
-                              AppShimmer(
-                                width: double.infinity,
-                                height: 14,
-                                radius: 8,
-                              ),
-                              SizedBox(height: 8),
-                              AppShimmer(width: 220, height: 14, radius: 8),
-                            ],
-                          )
-                        else
-                          Text(
-                            _eventDetailText(_selectedEvent),
-                            style: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              color: cs.onSurface.withOpacity(0.6),
-                            ),
-                          ),
+                        const SizedBox(height: 12),
+                        Builder(
+                          builder: (context) {
+                            final dayKey = _dayKey(_selectedDate);
+                            final useDayItems = _loadedDay != null &&
+                                _dayKey(_loadedDay!) == dayKey &&
+                                _dayItems.isNotEmpty;
+                            final rawItems = eventMap[dayKey] ?? const [];
+                            final items = useDayItems
+                                ? _dayItems
+                                : rawItems
+                                    .map((e) => _eventFromMap(e, dayKey))
+                                    .toList(growable: false);
+                            final query = _eventSearchController.text.toLowerCase();
+                            final filtered = query.isEmpty
+                                ? items
+                                : items
+                                    .where(
+                                      (e) =>
+                                          e.title.toLowerCase().contains(query) ||
+                                          e.description.toLowerCase().contains(query) ||
+                                          _eventId(e).toLowerCase().contains(query),
+                                    )
+                                    .toList();
+                            final label =
+                                filtered.isEmpty ? 'Events' : _eventLabel(filtered.first);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_loadingDay && _dayKey(_loadedDay ?? _selectedDate) == dayKey)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: AppShimmer(
+                                      width: double.infinity,
+                                      height: 48,
+                                      radius: 12,
+                                    ),
+                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      label,
+                                      style: GoogleFonts.inter(
+                                        fontSize: fsEventTitle,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: cs.onSurface,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${filtered.length} event${filtered.length == 1 ? '' : 's'}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: fsEventMeta,
+                                        height: 14 / 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: cs.onSurface.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                if (filtered.isEmpty)
+                                  Text(
+                                    'No events',
+                                    style: GoogleFonts.inter(
+                                      fontSize: fsEventSecondary,
+                                      height: 16 / 12,
+                                      color: cs.onSurface.withOpacity(0.7),
+                                    ),
+                                  )
+                                else
+                                  ...filtered.map((e) {
+                                    final pillLabel = _eventLabel(e);
+                                    final time = _eventTime(e);
+                                    final entity = _eventEntity(e);
+                                    final name = e.title.isNotEmpty ? e.title : '—';
+                                    final subtitle = _eventSubtitle(e);
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.transparent,
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: cs.onSurface.withOpacity(0.12),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 6,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context).brightness ==
+                                                                Brightness.dark
+                                                            ? cs.surfaceVariant
+                                                            : Colors.grey.shade50,
+                                                        borderRadius:
+                                                            BorderRadius.circular(999),
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.access_time,
+                                                            size: fsButton,
+                                                            color: cs.onSurface,
+                                                          ),
+                                                          const SizedBox(width: 8),
+                                                          Text(
+                                                            pillLabel,
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: fsChip,
+                                                              height: 20 / 14,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: cs.onSurface,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      time,
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsEventSecondary,
+                                                        height: 16 / 12,
+                                                        fontWeight: FontWeight.w500,
+                                                        color: cs.onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 36,
+                                                      height: 36,
+                                                      decoration: BoxDecoration(
+                                                        color: cs.primary,
+                                                        borderRadius:
+                                                            BorderRadius.circular(10),
+                                                      ),
+                                                      alignment: Alignment.center,
+                                                      child: Icon(
+                                                        _normType(e.type).contains('expiry')
+                                                            ? Icons.event_busy_outlined
+                                                            : _normType(e.type).contains('vehicle')
+                                                                ? Icons.directions_car_outlined
+                                                                : _normType(e.type).contains('admin')
+                                                                    ? Icons.admin_panel_settings_outlined
+                                                                    : Icons.person_outline,
+                                                        size: 18 * scale,
+                                                        color: cs.onPrimary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment.start,
+                                                        children: [
+                                                          const SizedBox(height: 2),
+                                                          Text(
+                                                            name,
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: fsEventTitle,
+                                                              height: 20 / 14,
+                                                              fontWeight:
+                                                                  FontWeight.w600,
+                                                              color: cs.onSurface,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          Text(
+                                                            subtitle,
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: fsEventSecondary,
+                                                              height: 16 / 12,
+                                                              fontWeight:
+                                                                  FontWeight.w500,
+                                                              color: cs.onSurface
+                                                                  .withOpacity(0.7),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                              ],
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            left: hp,
+            right: hp,
+            top: 0,
+            child: SuperAdminHomeAppBar(
+              title: 'Calendar',
+              leadingIcon: Symbols.date_range,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -703,7 +1281,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
             child: Text(
               "No events for this date.",
               style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                fontSize: 12 * (width / 420).clamp(0.9, 1.0),
+                height: 16 / 12,
                 fontWeight: FontWeight.w500,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -753,7 +1332,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     Text(
                       event['title'],
                       style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        fontSize: 14 * (width / 420).clamp(0.9, 1.0),
+                        height: 20 / 14,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
                       ),
@@ -762,7 +1342,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     Text(
                       "at ${event['time']}",
                       style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                        fontSize: 12 * (width / 420).clamp(0.9, 1.0),
+                        height: 16 / 12,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
                     ),
@@ -801,7 +1382,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: 11 * (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0),
+              height: 14 / 11,
               color: selected ? cs.primary : cs.onSurface,
             ),
           ),

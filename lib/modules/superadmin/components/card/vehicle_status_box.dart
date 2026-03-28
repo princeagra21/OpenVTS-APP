@@ -6,9 +6,9 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
 class VehicleStatusBox extends StatefulWidget {
@@ -162,6 +162,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
 
   List<Map<String, dynamic>> get _statusData {
     final total = _runningCount + _stopCount + _notWorkingCount + _noDataCount;
+    final connectedCount = _runningCount + _stopCount;
     double percent(int count) {
       if (total <= 0) return 0;
       return ((count * 10000) / total).roundToDouble() / 100;
@@ -169,18 +170,23 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
 
     return [
       {
-        'label': 'Running',
+        'label': 'CONNECTED',
+        'count': connectedCount,
+        'percent': percent(connectedCount),
+      },
+      {
+        'label': 'RUNNING',
         'count': _runningCount,
         'percent': percent(_runningCount),
       },
-      {'label': 'Stop', 'count': _stopCount, 'percent': percent(_stopCount)},
+      {'label': 'STOP', 'count': _stopCount, 'percent': percent(_stopCount)},
       {
-        'label': 'Not Working (48h)',
+        'label': 'INACTIVE (48H)',
         'count': _notWorkingCount,
         'percent': percent(_notWorkingCount),
       },
       {
-        'label': 'No Data',
+        'label': 'NO DATA',
         'count': _noDataCount,
         'percent': percent(_noDataCount),
       },
@@ -197,19 +203,22 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
 
   Map<String, dynamic> getStatusMeta(String label) {
     final key = label.toLowerCase();
+    if (key.startsWith('connected')) {
+      return {'icon': Icons.wifi_outlined};
+    }
     if (key.startsWith('running')) {
-      return {'color': Colors.green, 'icon': Icons.check};
+      return {'icon': Icons.show_chart_outlined};
     }
     if (key.startsWith('stop')) {
-      return {
-        'color': Colors.yellow[700]!,
-        'icon': Icons.warning_amber_rounded,
-      };
+      return {'icon': Icons.stop_outlined};
     }
-    if (key.contains('not work')) {
-      return {'color': Colors.redAccent, 'icon': Icons.error_outline};
+    if (key.contains('no data')) {
+      return {'icon': Icons.storage_outlined};
     }
-    return {'color': Colors.grey[400]!, 'icon': null};
+    if (key.contains('inactive')) {
+      return {'icon': Icons.warning_amber_outlined};
+    }
+    return {'icon': null};
   }
 
   @override
@@ -217,20 +226,43 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final statusData = _statusData;
+    final totalDevices =
+        _runningCount + _stopCount + _notWorkingCount + _noDataCount;
 
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
     final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(
       screenWidth,
     );
+    final double deviceLabelFontSize =
+        AdaptiveUtils.isVerySmallScreen(screenWidth)
+            ? 8.5
+            : AdaptiveUtils.isSmallScreen(screenWidth)
+                ? 8.5
+                : 12.0;
     final double legendFontSize =
-        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+        AdaptiveUtils.isVerySmallScreen(screenWidth)
+            ? 11.5
+            : AdaptiveUtils.isSmallScreen(screenWidth)
+                ? 11.5
+                : 15.0;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double sectionTitleFs = 18 * scale;
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
+
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -245,144 +277,271 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.2,
-                backgroundColor: colorScheme.surfaceVariant,
-                child: Icon(Icons.directions_car, color: colorScheme.primary),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _loading
+                        ? AppShimmer(
+                            width: screenWidth * 0.34,
+                            height: titleFontSize + 6,
+                            radius: 8,
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Vehicle Status',
+                                style: AppUtils.headlineSmallBase.copyWith(
+                                  fontSize: sectionTitleFs,
+                                  height: 24 / 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                    SizedBox(height: spacing / 2),
+                    _loading
+                        ? AppShimmer(
+                            width: screenWidth * 0.30,
+                            height: descriptionFontSize + 4,
+                            radius: 8,
+                          )
+                        : const SizedBox.shrink(),
+                  ],
+                ),
               ),
-              SizedBox(width: padding),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   _loading
                       ? AppShimmer(
-                          width: screenWidth * 0.34,
+                          width: screenWidth * 0.12,
                           height: titleFontSize + 6,
                           radius: 8,
                         )
                       : Text(
-                          'Vehicle Status',
-                          style: GoogleFonts.inter(
-                            fontSize: titleFontSize,
-                            fontWeight: FontWeight.bold,
+                          _formatCount(totalDevices),
+                          style: AppUtils.headlineSmallBase.copyWith(
+                            fontSize: mainRowFs,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface,
                           ),
                         ),
                   SizedBox(height: spacing / 2),
-                  _loading
-                      ? AppShimmer(
-                          width: screenWidth * 0.30,
-                          height: descriptionFontSize + 4,
-                          radius: 8,
-                        )
-                      : Text(
-                          'Live distribution',
-                          style: GoogleFonts.inter(
-                            fontSize: descriptionFontSize,
-                            fontWeight: FontWeight.w400,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
+                  Text(
+                    'DEVICES',
+                    style: AppUtils.bodySmallBase.copyWith(
+                      fontSize: metaFs,
+                      height: 14 / 11,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
           SizedBox(height: spacing + 6),
-          Column(
-            children: statusData.map((data) {
-              final label = data['label'] as String;
-              final count = data['count'] as int;
-              final percent = data['percent'] as double;
-              final meta = getStatusMeta(label);
-              final dotColor = meta['color'] as Color;
-              final innerIcon = meta['icon'] as IconData?;
-              const bulletSize = 18.0;
-              const innerIconSize = 12.0;
-
-              final countText = _formatCount(count);
-              final percentText = '(${percent.toStringAsFixed(1)}%)';
-
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: spacing / 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: bulletSize,
-                      height: bulletSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: dotColor,
+          if (_loading)
+            Column(
+              children: List.generate(
+                5,
+                (index) => Padding(
+                  padding: EdgeInsets.only(bottom: spacing),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing + 4,
+                      vertical: spacing + 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                        width: 1,
                       ),
-                      child: innerIcon != null
-                          ? Center(
-                              child: Icon(
-                                innerIcon,
-                                size: innerIconSize,
-                                color: Colors.white,
-                              ),
-                            )
-                          : null,
-                    ),
-                    SizedBox(width: spacing),
-                    Expanded(
-                      child: _loading
-                          ? AppShimmer(
-                              width: screenWidth * 0.32,
-                              height: legendFontSize + 4,
-                              radius: 7,
-                            )
-                          : Text(
-                              label,
-                              style: GoogleFonts.inter(
-                                fontSize: legendFontSize,
-                                color: colorScheme.onSurface.withOpacity(0.87),
-                              ),
-                            ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (_loading)
-                          AppShimmer(
-                            width: screenWidth * 0.16,
-                            height: legendFontSize + 6,
-                            radius: 7,
-                          )
-                        else
-                          Text(
-                            countText,
-                            style: GoogleFonts.inter(
-                              fontSize: legendFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        if (_loading) ...[
-                          const SizedBox(height: 4),
-                          AppShimmer(
-                            width: screenWidth * 0.13,
-                            height: legendFontSize + 4,
-                            radius: 7,
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            percentText,
-                            style: GoogleFonts.inter(
-                              fontSize: legendFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: dotColor,
-                            ),
-                          ),
-                        ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
                       ],
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppShimmer(
+                              width: 40,
+                              height: 40,
+                              radius: 12,
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppShimmer(
+                                    width: screenWidth * 0.28,
+                                    height: mainRowFs + 6,
+                                    radius: 6,
+                                  ),
+                                  SizedBox(height: spacing / 2),
+                                  AppShimmer(
+                                    width: screenWidth * 0.22,
+                                    height: secondaryFs + 4,
+                                    radius: 6,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            AppShimmer(
+                              width: screenWidth * 0.12,
+                              height: mainRowFs + 6,
+                              radius: 6,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: double.infinity,
+                          height: 6,
+                          radius: 999,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            )
+          else
+            Column(
+              children: statusData.map((data) {
+                final label = data['label'] as String;
+                final count = data['count'] as int;
+                final percent = data['percent'] as double;
+                final meta = getStatusMeta(label);
+                final icon = meta['icon'] as IconData?;
+
+                final title = label == 'INACTIVE (48H)'
+                    ? 'Inactive \u00b7 48H'
+                    : label[0] + label.substring(1).toLowerCase();
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: spacing),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing + 4,
+                      vertical: spacing + 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.08),
+                                  width: 1,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                icon,
+                                size: 18,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppUtils.bodySmallBase.copyWith(
+                                      fontSize: mainRowFs,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: spacing / 2),
+                                  Text(
+                                    '${percent.toStringAsFixed(0)}% of devices',
+                                    style: AppUtils.bodySmallBase.copyWith(
+                                      fontSize: secondaryFs,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            Text(
+                              _formatCount(count),
+                              style: AppUtils.bodySmallBase.copyWith(
+                                fontSize: mainRowFs,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            minHeight: 6,
+                            value: (percent / 100).clamp(0.0, 1.0),
+                            backgroundColor:
+                                colorScheme.onSurface.withOpacity(0.08),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           SizedBox(height: padding),
         ],
       ),

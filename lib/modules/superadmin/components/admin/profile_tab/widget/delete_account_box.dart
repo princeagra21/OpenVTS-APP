@@ -50,47 +50,95 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
 
   Future<bool> _confirmDelete() async {
     final colorScheme = Theme.of(context).colorScheme;
-    final double w = MediaQuery.of(context).size.width;
-    final double fontSize = AdaptiveUtils.getTitleFontSize(w);
-
     final ok = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(
-            'Delete admin?',
-            style: GoogleFonts.inter(
-              fontSize: fontSize + 2,
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          content: Text(
-            'This action cannot be undone.',
-            style: GoogleFonts.inter(
-              fontSize: fontSize,
-              color: colorScheme.onSurface.withOpacity(0.8),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(color: colorScheme.onSurface),
+      builder: (ctx) => Dialog(
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: colorScheme.error,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Delete admin?',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(
-                'Delete',
-                style: GoogleFonts.inter(color: colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'This will permanently remove the admin and all related data. You can’t undo this action.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
               ),
-            ),
-          ],
-        );
-      },
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        backgroundColor: colorScheme.error,
+                        foregroundColor: colorScheme.onError,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'Delete',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
     return ok == true;

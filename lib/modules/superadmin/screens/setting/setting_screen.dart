@@ -49,10 +49,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final int crossAxisCount = isGridView
         ? (width > 1100
-              ? 4
-              : width > 700
-              ? 3
-              : 2)
+            ? 4
+            : width > 700
+                ? 3
+                : 2)
         : 1;
 
     final double childAspectRatio = isGridView ? 0.95 : 4.5;
@@ -138,9 +138,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     ];
 
-    final IconData toggleIcon = _isGridView
-        ? CupertinoIcons.list_bullet
-        : CupertinoIcons.square_grid_2x2;
+    final IconData toggleIcon =
+        _isGridView ? CupertinoIcons.list_bullet : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
       title: "FLEET STACK",
@@ -206,9 +205,7 @@ class _SettingsMenuCard extends StatelessWidget {
     final double avatarSize = AdaptiveUtils.getAvatarSize(width);
     final double iconSize = AdaptiveUtils.getIconSize(width);
 
-    final double containerSize = isListMode
-        ? avatarSize * 1.2
-        : avatarSize * 1.5;
+    final double containerSize = isListMode ? avatarSize * 1.2 : avatarSize * 1.5;
     final double innerIconSize = isListMode ? iconSize : iconSize * 1.2;
 
     return Material(
@@ -244,55 +241,38 @@ class _SettingsMenuCard extends StatelessWidget {
                       height: containerSize,
                       width: containerSize,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.primary.withOpacity(0.05),
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: innerIconSize,
-                          color: colorScheme.primary.withOpacity(0.8),
-                        ),
+                      child: Icon(
+                        icon,
+                        size: innerIconSize,
+                        color: colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: hp),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: AdaptiveUtils.getSubtitleFontSize(
-                                width,
-                              ),
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface.withOpacity(0.9),
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
-                              fontWeight: FontWeight.w400,
-                              color: colorScheme.onSurface.withOpacity(0.5),
-                              height: 1.2,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            subtitle,
+                            style: GoogleFonts.inter(
+                              fontSize: AdaptiveUtils.getTitleFontSize(width),
+                              color:
+                                  colorScheme.onSurface.withOpacity(0.65),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Icon(
-                      CupertinoIcons.chevron_forward,
-                      size: iconSize * 0.9,
-                      color: colorScheme.onSurface.withOpacity(0.4),
                     ),
                   ],
                 )
@@ -300,42 +280,32 @@ class _SettingsMenuCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      height: avatarSize * 1.5,
-                      width: avatarSize * 1.5,
+                      height: containerSize,
+                      width: containerSize,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.primary.withOpacity(0.05),
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: iconSize * 1.2,
-                          color: colorScheme.primary.withOpacity(0.8),
-                        ),
+                      child: Icon(
+                        icon,
+                        size: innerIconSize,
+                        color: colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: hp),
                     Text(
                       title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface.withOpacity(0.9),
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
-                        fontWeight: FontWeight.w400,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                        height: 1.2,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: AdaptiveUtils.getTitleFontSize(width),
+                        color: colorScheme.onSurface.withOpacity(0.65),
                       ),
                     ),
                   ],

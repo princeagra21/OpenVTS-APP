@@ -1,5 +1,4 @@
 // screens/all_activities_screen.dart
-import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,7 +19,6 @@ class AllActivitiesScreen extends StatefulWidget {
 }
 
 class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
-  List<DateTime?> _selectedRange = [];
   late List<Map<String, dynamic>> allActivities;
 
   @override
@@ -52,41 +50,8 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
     }
   }
 
-  Future<void> _pickDateRange() async {
-    final results = await showCalendarDatePicker2Dialog(
-      context: context,
-      dialogSize: const Size(350, 380),
-      value: _selectedRange,
-      config: CalendarDatePicker2WithActionButtonsConfig(
-        calendarType: CalendarDatePicker2Type.range,
-        selectedDayHighlightColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
-
-    if (results != null && results.length == 2) {
-      setState(() => _selectedRange = results);
-    }
-  }
-
-  String get formattedRange {
-    if (_selectedRange.isEmpty || _selectedRange[0] == null) return 'All Dates';
-
-    final df = DateFormat('MMM dd, yyyy');
-    final start = df.format(_selectedRange[0]!);
-    final end = _selectedRange.length > 1 && _selectedRange[1] != null ? df.format(_selectedRange[1]!) : start;
-    return '$start - $end';
-  }
-
   List<Map<String, dynamic>> get filteredActivities {
-    if (_selectedRange.isEmpty || _selectedRange[0] == null) return allActivities;
-
-    final start = _selectedRange[0]!;
-    final end = (_selectedRange[1] ?? start).add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
-
-    return allActivities.where((activity) {
-      final date = activity["date"] as DateTime;
-      return date.isAfter(start.subtract(const Duration(seconds: 1))) && date.isBefore(end.add(const Duration(seconds: 1)));
-    }).toList();
+    return allActivities;
   }
 
   Widget buildActivityItem(Map<String, dynamic> activity) {
@@ -132,7 +97,6 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double hp = AdaptiveUtils.getHorizontalPadding(MediaQuery.of(context).size.width);
     final double fs = AdaptiveUtils.getSubtitleFontSize(MediaQuery.of(context).size.width);
     final String title = widget.activityType;
     final String subtitle = 'All ${widget.activityType}';
@@ -148,30 +112,6 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // DATE RANGE PICKER
-          Center(
-            child: GestureDetector(
-              onTap: _pickDateRange,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: hp, vertical: hp * 0.9),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colorScheme.primary, width: 1.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.calendar_month, size: fs + 4, color: colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Text(formattedRange, style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
           if (filteredActivities.isEmpty)
             Center(
               child: Text('No activities in selected range',

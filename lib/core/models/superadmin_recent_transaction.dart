@@ -31,6 +31,30 @@ class SuperadminRecentTransaction {
         (raw['user'] is Map ? (raw['user'] as Map)['name'] : null),
   );
 
+  String get fromUserName {
+    final from = raw['fromUser'];
+    if (from is Map) {
+      return _string(from['name'] ?? from['username'] ?? from['email']);
+    }
+    return '';
+  }
+
+  String get fromUserId {
+    return _string(
+      raw['fromUserId'] ??
+          raw['from_user_id'] ??
+          (raw['fromUser'] is Map ? (raw['fromUser'] as Map)['uid'] : null),
+    );
+  }
+
+  String get fromUserEmail {
+    final from = raw['fromUser'];
+    if (from is Map) {
+      return _string(from['email']);
+    }
+    return '';
+  }
+
   String get description => _string(
     raw['description'] ??
         raw['notes'] ??

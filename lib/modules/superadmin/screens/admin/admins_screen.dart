@@ -7,12 +7,14 @@ import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/small_box/small_box.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
+import '../../utils/app_utils.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -24,6 +26,7 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   String selectedTab = "All";
   final TextEditingController _searchController = TextEditingController();
+  int _pageSize = 50;
 
   final List<Map<String, dynamic>> _admins = <Map<String, dynamic>>[];
   bool _loadingAdmins = false;
@@ -32,6 +35,7 @@ class _AdminScreenState extends State<AdminScreen> {
   CancelToken? _adminsCancelToken;
   final Map<String, CancelToken> _statusTokensByAdminId = {};
   final Set<String> _statusSubmittingAdminIds = {};
+  final Set<String> _loginSubmittingAdminIds = {};
 
   ApiClient? _api;
   SuperadminRepository? _repo;
@@ -95,6 +99,13 @@ class _AdminScreenState extends State<AdminScreen> {
       "phone": _safeText(a.phone),
       "username": username,
       "email": _safeText(a.email),
+      "company": _safeText(
+        a.raw['companyName'] ??
+            a.raw['company_name'] ??
+            a.raw['company'] ??
+            a.raw['organization'] ??
+            a.raw['orgName'],
+      ),
       "status": status,
       "vehicles": a.vehiclesCount == 0 ? '' : a.vehiclesCount.toString(),
       "credits": a.credits == 0 ? '' : a.credits.toString(),
@@ -123,7 +134,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
       final res = await _repo!.getAdmins(
         page: 1,
-        limit: 50,
+        limit: _pageSize,
         cancelToken: token,
       );
       if (!mounted) return;
@@ -264,6 +275,60 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  Future<void> _loginAsAdmin(Map<String, dynamic> admin) async {
+    final adminId = admin['id']?.toString() ?? '';
+    if (adminId.isEmpty) return;
+    if (_loginSubmittingAdminIds.contains(adminId)) return;
+
+    _loginSubmittingAdminIds.add(adminId);
+    setState(() {});
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+
+      final res = await _repo!.loginAsAdmin(adminId);
+      if (!mounted) return;
+      res.when(
+        success: (token) async {
+          await TokenStorage.defaultInstance().writeAccessToken(token);
+          if (!mounted) return;
+          context.go('/admin/home');
+        },
+        failure: (err) {
+          final msg =
+              err is ApiException
+                  ? (err.message ?? 'Login failed.')
+                  : 'Login failed.';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login failed.')));
+    } finally {
+      _loginSubmittingAdminIds.remove(adminId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _confirmLoginAsAdmin(Map<String, dynamic> admin) async {
+    final name = _safeText(admin['name']?.toString(), fallback: 'this admin');
+    final shouldLogin = await showDialog<bool>(
+      context: context,
+      builder: (_) => _AdminLoginConfirmDialog(adminName: name),
+    );
+    if (shouldLogin != true) return;
+    await _loginAsAdmin(admin);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -272,10 +337,17 @@ class _AdminScreenState extends State<AdminScreen> {
     // --- ADAPTIVE VALUES ---
     final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8-16
     final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
-    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth); // 13-15
-    final bodyFs = titleFs - 1; // general text
-    final smallFs = titleFs - 3;
-    final iconSize = titleFs + 2;
+    final scale =
+        (screenWidth / 390).clamp(0.9, 1.05); // responsive but close to spec
+    final fsHeader = 16 * scale;
+    final fsSection = 18 * scale;
+    final fsMain = 14 * scale;
+    final fsSecondary = 12 * scale;
+    final fsMeta = 11 * scale;
+    final titleFs = fsHeader;
+    final bodyFs = fsMain;
+    final smallFs = fsMeta;
+    final iconSize = 18.0;
     final cardPadding = padding + 4; // slightly bigger for cards
 
     final query = _searchController.text.trim().toLowerCase();
@@ -299,276 +371,815 @@ class _AdminScreenState extends State<AdminScreen> {
     }).toList();
     final showNoData = !_loadingAdmins && filteredAdmins.isEmpty;
 
-    return AppLayout(
-      title: "SUPER ADMIN",
-      subtitle: "Administrators",
-      actionIcons: const [CupertinoIcons.add],
-      onActionTaps: [
-        // NEW: Handle tap on add icon
-        () {
-          context.push(
-            '/superadmin/admins/add',
-          ); // Navigate to AddNewAdminScreen (adjust route if needed)
-        },
-      ],
-      leftAvatarText: 'SA',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --------------------------------------------
-            // SEARCH FIELD
-            // --------------------------------------------
-            Container(
-              height: padding * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Search name, email, role, department...",
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.onSurface,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: padding,
-                  ),
-                ),
-              ),
+    final topPadding = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              padding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              padding,
+              84,
             ),
-
-            SizedBox(height: padding),
-
-            // --------------------------------------------
-            // TABS
-            // --------------------------------------------
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ["All", "Active", "Disabled", "Pending"].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () => setState(() => selectedTab = tab),
-                );
-              }).toList(),
-            ),
-
-            SizedBox(height: padding),
-
-            // --------------------------------------------
-            // TOP ROW: showing count + export
-            // --------------------------------------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _loadingAdmins
-                    ? AppShimmer(
-                        width: screenWidth * 0.48,
-                        height: bodyFs + 8,
-                        radius: 8,
-                      )
-                    : Text(
-                        "Showing ${filteredAdmins.length} of ${_admins.length} admins",
-                        style: GoogleFonts.inter(
-                          fontSize: bodyFs,
-                          color: colorScheme.onSurface.withOpacity(0.87),
-                        ),
-                      ),
-
-                // EXPORT BUTTON
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding * 1.5,
-                    vertical: spacing,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Text(
-                    "Export",
-                    style: GoogleFonts.inter(
-                      fontSize: bodyFs,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: spacing),
-
             // --------------------------------------------
             // ADMIN LIST
             // --------------------------------------------
-            if (showNoData)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: padding),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(cardPadding),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(cardPadding),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.surfaceVariant),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          _adminsLoadFailed
-                              ? "Couldn't load admins."
-                              : "No admins found",
-                          style: GoogleFonts.inter(
-                            fontSize: bodyFs,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                            fontWeight: FontWeight.w600,
+                      Text(
+                        "Administrators",
+                        style: GoogleFonts.inter(
+                          fontSize: fsSection,
+                          height: 24 / 18,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          context.push('/superadmin/admins/add');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: padding * 1.2,
+                            vertical: spacing,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.onSurface,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.add,
+                                size: iconSize,
+                                color: colorScheme.surface,
+                              ),
+                              SizedBox(width: spacing / 2),
+                              Text(
+                                "New",
+                                style: GoogleFonts.inter(
+                                  fontSize: fsMain,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.surface,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      if (_adminsLoadFailed)
-                        TextButton(
-                          onPressed: _loadAdmins,
-                          child: const Text('Retry'),
-                        ),
                     ],
                   ),
-                ),
-              ),
-            if (_loadingAdmins)
-              ...List<Widget>.generate(
-                3,
-                (_) => _buildAdminSkeletonCard(
-                  padding: padding,
-                  spacing: spacing,
-                  cardPadding: cardPadding,
-                  screenWidth: screenWidth,
-                  bodyFs: bodyFs,
-                  smallFs: smallFs,
-                ),
-              ),
-            if (!showNoData && !_loadingAdmins)
-              ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredAdmins.length,
-                itemBuilder: (context, index) {
-                  final admin = filteredAdmins[index];
-                  final statusLabel = admin["status"].toString();
-                  final statusLower = statusLabel.toLowerCase();
-                  final isPending = statusLower.contains('pending');
-                  final isPositive =
-                      statusLower.contains('verified') ||
-                      statusLower.contains('active');
-                  final statusColor = isPending
-                      ? Colors.orange
-                      : (isPositive ? Colors.green : colorScheme.error);
-                  final statusBg = statusColor.withOpacity(0.2);
-
-                  return Container(
-                    margin: EdgeInsets.only(bottom: padding),
+                  SizedBox(height: padding),
+                  // --------------------------------------------
+                  // SEARCH FIELD
+                  // --------------------------------------------
+                  Container(
+                    height: padding * 3.5,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.1),
+                      ),
                     ),
-                    child: Material(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        onTap: () async {
-                          final adminId = admin["id"]?.toString() ?? '';
-                          if (adminId.trim().isEmpty) return;
-                          final result = await context.push<bool>(
-                            '/superadmin/admins/details/$adminId',
-                          );
-                          if (!context.mounted) return;
-                          if (result == true) {
-                            await _loadAdmins();
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Admin deleted')),
-                            );
-                          }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: colorScheme.primary,
-                                    radius:
-                                        AdaptiveUtils.getAvatarSize(
-                                          screenWidth,
-                                        ) /
-                                        2,
-                                    child: Text(
-                                      admin["initials"],
+                    child: TextField(
+                      controller: _searchController,
+                      style: GoogleFonts.inter(
+                        fontSize: fsMain,
+                        height: 20 / 14,
+                        color: colorScheme.onSurface,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: "Search name, email, role, department...",
+                        hintStyle: GoogleFonts.inter(
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                          fontSize: fsSecondary,
+                          height: 16 / 12,
+                        ),
+                        prefixIcon: Icon(
+                          CupertinoIcons.search,
+                          size: iconSize + 2,
+                          color: colorScheme.onSurface,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: padding,
+                          vertical: padding,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: padding),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double gap = spacing;
+                      final double cellWidth =
+                          (constraints.maxWidth - gap * 2) / 3;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          SizedBox(
+                            width: cellWidth,
+                            child: PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (selectedTab == value) return;
+                                setState(() => selectedTab = value);
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: "All",
+                                  child: Text('All'),
+                                ),
+                                PopupMenuItem(
+                                  value: "Active",
+                                  child: Text('Active'),
+                                ),
+                                PopupMenuItem(
+                                  value: "Disabled",
+                                  child: Text('Disabled'),
+                                ),
+                                PopupMenuItem(
+                                  value: "Pending",
+                                  child: Text('Pending'),
+                                ),
+                              ],
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: padding,
+                                  vertical: spacing,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.tune,
+                                      size: iconSize,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    SizedBox(width: spacing / 2),
+                                    Text(
+                                      "Filter",
                                       style: GoogleFonts.inter(
-                                        color: colorScheme.onPrimary,
-                                        fontSize:
-                                            AdaptiveUtils.getFsAvatarFontSize(
-                                              screenWidth,
-                                            ),
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: fsMain - 3,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: cellWidth,
+                            child: PopupMenuButton<int>(
+                              onSelected: (value) {
+                                if (_pageSize == value) return;
+                                setState(() => _pageSize = value);
+                                _loadAdmins();
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 10,
+                                  child: Text('10'),
+                                ),
+                                PopupMenuItem(
+                                  value: 25,
+                                  child: Text('25'),
+                                ),
+                                PopupMenuItem(
+                                  value: 50,
+                                  child: Text('50'),
+                                ),
+                              ],
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: padding,
+                                  vertical: spacing,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.1),
                                   ),
-                                  SizedBox(width: spacing * 2),
-                                  Expanded(
-                                    child: Column(
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Records",
+                                          style: GoogleFonts.inter(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Icon(
+                                          Icons.keyboard_arrow_down,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: cellWidth,
+                            child: InkWell(
+                              onTap: _loadAdmins,
+                              borderRadius: BorderRadius.circular(12),
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: padding,
+                                  vertical: spacing,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.refresh,
+                                      size: iconSize,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    SizedBox(width: spacing / 2),
+                                    Text(
+                                      "Refresh",
+                                      style: GoogleFonts.inter(
+                                        fontSize: fsMain - 3,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  SizedBox(height: padding),
+                  if (showNoData)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: padding),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(cardPadding),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _adminsLoadFailed
+                                    ? "Couldn't load admins."
+                                    : "No admins found",
+                                style: GoogleFonts.inter(
+                                  fontSize: fsSecondary,
+                                  height: 16 / 12,
+                                  color: colorScheme.onSurface.withOpacity(0.8),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (_adminsLoadFailed)
+                              TextButton(
+                                onPressed: _loadAdmins,
+                                child: const Text('Retry'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (_loadingAdmins)
+                    ...List<Widget>.generate(
+                      3,
+                      (_) => _buildAdminSkeletonCard(
+                        padding: padding,
+                        spacing: spacing,
+                        cardPadding: cardPadding,
+                        screenWidth: screenWidth,
+                        bodyFs: bodyFs,
+                        smallFs: smallFs,
+                      ),
+                    ),
+                  if (!showNoData && !_loadingAdmins)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredAdmins.length,
+                      itemBuilder: (context, index) {
+                        final admin = filteredAdmins[index];
+                        final statusLabel = admin["status"].toString();
+                        final statusLower = statusLabel.toLowerCase();
+                        final isPending = statusLower.contains('pending');
+                        final isPositive =
+                            statusLower.contains('verified') ||
+                            statusLower.contains('active');
+                        final statusColor = isPending
+                            ? Colors.orange
+                            : (isPositive ? Colors.green : colorScheme.error);
+                        final statusBg = statusColor.withOpacity(0.2);
+
+                        return Container(
+                          margin: EdgeInsets.only(bottom: padding),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(25),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        onTap: null,
+                              child: Padding(
+                                padding: EdgeInsets.all(cardPadding),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Row(
+                                        CircleAvatar(
+                                          backgroundColor:
+                                              colorScheme.surface,
+                                          radius:
+                                              AdaptiveUtils.getAvatarSize(
+                                                    screenWidth,
+                                                  ) /
+                                                  2,
+                                          foregroundColor:
+                                              colorScheme.onSurface,
+                                          child: Container(
+                                            width:
+                                                AdaptiveUtils.getAvatarSize(
+                                                  screenWidth,
+                                                ),
+                                            height:
+                                                AdaptiveUtils.getAvatarSize(
+                                                  screenWidth,
+                                                ),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surface,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: colorScheme.onSurface
+                                                    .withOpacity(0.12),
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              admin["initials"],
+                                              style: GoogleFonts.inter(
+                                                color:
+                                                    colorScheme.onSurface,
+                                                fontSize:
+                                                    AdaptiveUtils
+                                                        .getFsAvatarFontSize(
+                                                          screenWidth,
+                                                        ),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: spacing * 2),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                admin["name"],
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fsMain,
+                                                  height: 20 / 14,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                  color:
+                                                      colorScheme.onSurface,
+                                                ),
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: spacing / 2),
+                                              Text(
+                                                _safeText(
+                                                  admin["username"]
+                                                      ?.toString(),
+                                                  fallback: '—',
+                                                ),
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fsSecondary,
+                                                  height: 16 / 12,
+                                                  fontWeight:
+                                                      FontWeight.w500,
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.7),
+                                                ),
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: spacing / 2),
+                                              Row(
                                                 children: [
+                                                  Icon(
+                                                    CupertinoIcons.mail,
+                                                    size: iconSize,
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                  SizedBox(width: spacing),
                                                   Expanded(
                                                     child: Text(
-                                                      admin["name"],
+                                                      _safeText(
+                                                        admin["email"]
+                                                            ?.toString(),
+                                                        fallback: '—',
+                                                      ),
                                                       style: GoogleFonts.inter(
-                                                        fontSize: bodyFs,
+                                                        fontSize: fsSecondary,
+                                                        height: 16 / 12,
                                                         fontWeight:
-                                                            FontWeight.bold,
+                                                            FontWeight.w500,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: spacing / 2),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    CupertinoIcons.phone,
+                                                    size: iconSize,
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                  SizedBox(width: spacing),
+                                                  Expanded(
+                                                    child: Text(
+                                                      _safeText(
+                                                        admin["phone"]
+                                                            ?.toString(),
+                                                        fallback: '—',
+                                                      ),
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsSecondary,
+                                                        height: 16 / 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: spacing / 2),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.apartment,
+                                                    size: iconSize,
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                  SizedBox(width: spacing),
+                                                  Expanded(
+                                                    child: Text(
+                                                      _safeText(
+                                                        admin["company"]
+                                                            ?.toString(),
+                                                        fallback: '—',
+                                                      ),
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsSecondary,
+                                                        height: 16 / 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Transform.scale(
+                                          scale: 0.75,
+                                          child: Switch(
+                                            value: admin["active"],
+                                            onChanged:
+                                                _statusSubmittingAdminIds
+                                                        .contains(
+                                                  admin['id']?.toString() ?? '',
+                                                )
+                                                    ? null
+                                                    : (v) => _toggleAdminStatus(
+                                                          admin: admin,
+                                                          isActive: v,
+                                                        ),
+                                            activeColor: colorScheme.onPrimary,
+                                            activeTrackColor:
+                                                colorScheme.primary,
+                                            inactiveThumbColor:
+                                                colorScheme.onPrimary,
+                                            inactiveTrackColor: colorScheme
+                                                .primary
+                                                .withOpacity(0.3),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: spacing * 1.5),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: padding,
+                                        vertical: spacing,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: colorScheme.onSurface
+                                              .withOpacity(0.1),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Location",
+                                            style: GoogleFonts.inter(
+                                              fontSize: fsMeta,
+                                              height: 14 / 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.6),
+                                            ),
+                                          ),
+                                          SizedBox(height: spacing / 2),
+                                          Text(
+                                            _safeText(
+                                              admin["location"]?.toString(),
+                                              fallback: '—',
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: fsSecondary,
+                                              height: 16 / 12,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: spacing),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final double gap = spacing;
+                                        final double cellWidth =
+                                            (constraints.maxWidth - gap) / 2;
+                                        return Wrap(
+                                          spacing: gap,
+                                          runSpacing: gap,
+                                          children: [
+                                            SizedBox(
+                                              width: cellWidth,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: padding,
+                                                  vertical: spacing - 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.surface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.1),
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.visibility,
+                                                          size: iconSize,
+                                                          color: colorScheme
+                                                              .onSurface
+                                                              .withOpacity(0.7),
+                                                        ),
+                                                        SizedBox(
+                                                          width: spacing,
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            "Usage",
+                                                            style:
+                                                                GoogleFonts.inter(
+                                                              fontSize: fsMeta,
+                                                              height: 14 / 11,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: colorScheme
+                                                                  .onSurface
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(
+                                                      height: spacing,
+                                                    ),
+                                                    Text(
+                                                      _safeText(
+                                                        admin["credits"]
+                                                            ?.toString(),
+                                                        fallback: '—',
+                                                      ),
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsMain,
+                                                        height: 20 / 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: colorScheme
+                                                            .onSurface,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: cellWidth,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: padding,
+                                                  vertical: spacing - 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.surface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.1),
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "Recent login",
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsMeta,
+                                                        height: 14 / 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    SizedBox(
+                                                      height: spacing,
+                                                    ),
+                                                    Text(
+                                                      _safeText(
+                                                        admin["recentLogin"]
+                                                            ?.toString(),
+                                                        fallback: '—',
+                                                      ),
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: fsMain,
+                                                        height: 20 / 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                         color: colorScheme
                                                             .onSurface,
                                                       ),
@@ -576,247 +1187,96 @@ class _AdminScreenState extends State<AdminScreen> {
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              spacing + 2,
-                                                          vertical: spacing - 3,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: statusBg,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
-                                                    ),
-                                                    child: Text(
-                                                      statusLabel,
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: smallFs,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: statusColor,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],
+                                        );
+                                      },
+                                    ),
+                                    SizedBox(height: spacing),
+                                    GestureDetector(
+                                      onTap: () => _confirmLoginAsAdmin(admin),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: padding,
+                                          vertical: spacing * 1.6,
                                         ),
-                                        SizedBox(height: spacing),
-                                        Row(
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primary,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Icon(
-                                              CupertinoIcons.phone,
+                                              Icons.login,
                                               size: iconSize,
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.87),
+                                              color: colorScheme.onPrimary,
                                             ),
                                             SizedBox(width: spacing),
-                                            Expanded(
-                                              child: Text(
-                                                admin["phone"],
-                                                style: GoogleFonts.inter(
-                                                  fontSize: bodyFs,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
+                                            _loginSubmittingAdminIds.contains(
+                                                  admin['id']?.toString() ??
+                                                      '',
+                                                )
+                                                ? const AppShimmer(
+                                                    width: 16,
+                                                    height: 16,
+                                                    radius: 8,
+                                                  )
+                                                : Text(
+                                                    "Login",
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: fsMain,
+                                                      height: 20 / 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color:
+                                                          colorScheme.onPrimary,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                           ],
                                         ),
-                                        SizedBox(height: spacing / 2),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              CupertinoIcons.mail,
-                                              size: iconSize,
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.87),
-                                            ),
-                                            SizedBox(width: spacing),
-                                            Expanded(
-                                              child: Text(
-                                                admin["email"],
-                                                style: GoogleFonts.inter(
-                                                  fontSize: bodyFs,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                              SizedBox(height: spacing * 2),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: padding,
-                                      vertical: spacing - 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: colorScheme.primary.withOpacity(
-                                          0.7,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      "${admin["vehicles"]} Vehicles",
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: spacing * 2),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: padding,
-                                      vertical: spacing - 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: colorScheme.error,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      "${admin["credits"]} LOW Credits",
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.error,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: spacing * 2),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      "Recent login: ${admin["recentLogin"]}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs + 1,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Transform.scale(
-                                    scale: 0.75,
-                                    child: Switch(
-                                      value: admin["active"],
-                                      onChanged:
-                                          _statusSubmittingAdminIds.contains(
-                                            admin['id']?.toString() ?? '',
-                                          )
-                                          ? null
-                                          : (v) => _toggleAdminStatus(
-                                              admin: admin,
-                                              isActive: v,
-                                            ),
-                                      activeColor: colorScheme.onPrimary,
-                                      activeTrackColor: colorScheme.primary,
-                                      inactiveThumbColor: colorScheme.onPrimary,
-                                      inactiveTrackColor: colorScheme.primary
-                                          .withOpacity(0.3),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: spacing),
-                              Row(
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.location,
-                                    size: iconSize,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.87,
-                                    ),
-                                  ),
-                                  SizedBox(width: spacing),
-                                  Expanded(
-                                    child: Text(
-                                      admin["location"],
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: spacing),
-                              Divider(
-                                color: colorScheme.onSurface.withOpacity(0.1),
-                              ),
-                              SizedBox(height: spacing),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      "Joined: ${admin["joined"]}",
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  SizedBox(width: spacing),
-                                  Expanded(
-                                    child: Text(
-                                      admin["role"],
-                                      textAlign: TextAlign.right,
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs - 1,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
+                ],
               ),
+            ),
 
             SizedBox(height: padding * 2),
-          ],
-        ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: SuperAdminHomeAppBar(
+              title: 'Administration',
+              leadingIcon: Symbols.verified_user,
+              onClose: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -926,6 +1386,105 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminLoginConfirmDialog extends StatelessWidget {
+  final String adminName;
+
+  const _AdminLoginConfirmDialog({required this.adminName});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.login,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Login as admin?',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You are about to enter the admin module as $adminName. You can return to superadmin at any time.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Login',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

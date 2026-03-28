@@ -11,6 +11,8 @@ class AppLayout extends StatefulWidget {
   final String subtitle;
   final List<IconData>? actionIcons;
   final List<VoidCallback>? onActionTaps; // NEW: Tap handlers for action icons
+  final ValueChanged<String>? onSearchSubmitted;
+  final ValueChanged<String>? onSearchChanged;
   final Widget child;
 
   /// NEW CONTROLS
@@ -28,6 +30,8 @@ class AppLayout extends StatefulWidget {
     required this.subtitle,
     this.actionIcons,
     this.onActionTaps, // NEW
+    this.onSearchSubmitted,
+    this.onSearchChanged,
     required this.child,
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
@@ -237,8 +241,10 @@ class _AppLayoutState extends State<AppLayout> {
                             style: TextStyle(color: cs.onSurface),
                             onSubmitted: (q) {
                               debugPrint("Searching: $q");
+                              widget.onSearchSubmitted?.call(q);
                               _closeSearch();
                             },
+                            onChanged: (q) => widget.onSearchChanged?.call(q),
                           ),
                         ),
                         GestureDetector(
@@ -270,8 +276,8 @@ class _AppLayoutState extends State<AppLayout> {
         ],
       ),
 
-      /// FIXED BOTTOM BAR
-      bottomNavigationBar: const CustomBottomBar(),
+      /// FIXED BOTTOM BAR (intentionally disabled)
+      // bottomNavigationBar: const CustomBottomBar(),
     );
   }
 }

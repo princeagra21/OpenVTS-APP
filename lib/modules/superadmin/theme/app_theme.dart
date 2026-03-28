@@ -10,6 +10,8 @@ class AppTheme {
   static const Color modern = Color(0xFF6A00FF);
   static const Color luxury = Color(0xFFB8933D);
   static const Color futuristic = Color(0xFF00FFFF);
+  static const Color neutralGrey = Color(0xFF8A8F98);
+  static const Color neutralGreyDark = Color(0xFFB5BAC4);
 
   // STORED VALUES
   static bool isDarkMode = false;
@@ -31,6 +33,14 @@ class AppTheme {
     } else {
       // No saved brand → apply correct default for each mode
       brandColor = isDarkMode ? defaultDarkBrand : defaultBrand;
+    }
+
+    // Guard: avoid a too-light primary in light mode.
+    if (!isDarkMode) {
+      final b = ThemeData.estimateBrightnessForColor(brandColor);
+      if (b == Brightness.light) {
+        brandColor = defaultBrand;
+      }
     }
   }
 

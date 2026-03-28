@@ -538,7 +538,8 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 Text(
                   "Free Signup Credits",
                   style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
+                    fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                    fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface.withOpacity(0.87),
                   ),
                 ),

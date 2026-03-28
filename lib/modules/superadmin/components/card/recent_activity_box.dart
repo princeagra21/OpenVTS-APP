@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/debug/superadmin_recent_vehicles_smoke_test.dart';
+import 'package:fleet_stack/core/models/superadmin_recent_vehicle.dart';
 import 'package:fleet_stack/core/models/superadmin_recent_transaction.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
@@ -14,58 +15,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/adaptive_utils.dart';
 
-class SmallTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color? selectedBackground;
-
-  const SmallTab({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.selectedBackground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    final double hPadding =
-        AdaptiveUtils.getHorizontalPadding(screenWidth) - 4; // 4-12
-    final double vPadding =
-        AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 2; // 4-8
-    final double fontSize = AdaptiveUtils.getTitleFontSize(
-      screenWidth,
-    ); // 11-13
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
-        decoration: BoxDecoration(
-          color: selected
-              ? (selectedBackground ?? colorScheme.primary)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.onSurface, width: 1),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class RecentActivityBox extends StatefulWidget {
   const RecentActivityBox({super.key});
 
@@ -74,7 +23,107 @@ class RecentActivityBox extends StatefulWidget {
 }
 
 class _RecentActivityBoxState extends State<RecentActivityBox> {
-  String activityTab = "Vehicles";
+  String _capitalizeFirst(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+    final lower = trimmed.toLowerCase();
+    return lower[0].toUpperCase() + lower.substring(1);
+  }
+
+  String _safeString(Object? value, {String fallback = "—"}) {
+    if (value == null) return fallback;
+    final s = value.toString().trim();
+    return s.isEmpty ? fallback : s;
+  }
+
+  String _relativeTime(Object? value) {
+    final raw = _safeString(value, fallback: "");
+    if (raw.isEmpty) return "";
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return "";
+    final now = DateTime.now().toUtc();
+    final diff = now.difference(parsed.toUtc());
+    if (diff.inHours < 24) {
+      final h = diff.inHours < 1 ? 1 : diff.inHours;
+      return '${h}h';
+    }
+    if (diff.inDays < 30) {
+      final d = diff.inDays < 1 ? 1 : diff.inDays;
+      return '${d}d';
+    }
+    final months = (diff.inDays / 30).floor();
+    if (months < 12) return '${months < 1 ? 1 : months}mo';
+    final years = (diff.inDays / 365).floor();
+    return '${years < 1 ? 1 : years}y';
+  }
+
+  String _formatDate(Object? value) {
+    final raw = _safeString(value, fallback: "");
+    if (raw.isEmpty) return "";
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final date = parsed.toLocal();
+    final m = months[date.month - 1];
+    final hour12 = date.hour == 0
+        ? 12
+        : date.hour > 12
+            ? date.hour - 12
+            : date.hour;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final ampm = date.hour >= 12 ? 'pm' : 'am';
+    return '${date.day} $m, $hour12:$minute $ampm';
+  }
+
+  String _formatDateOnly(Object? value) {
+    final raw = _safeString(value, fallback: "");
+    if (raw.isEmpty) return "";
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final date = parsed.toLocal();
+    final m = months[date.month - 1];
+    return '${date.day} $m, ${date.year}';
+  }
+
+  String _vehicleTypeLabel(SuperadminRecentVehicle v) {
+    final fromGetter = v.vehicleTypeName;
+    if (fromGetter.trim().isNotEmpty) return fromGetter;
+    final raw = v.raw;
+    final vt = raw['vehicleType'];
+    if (vt is Map) {
+      final name = vt['name'] ?? vt['title'] ?? vt['type'] ?? vt['slug'];
+      final s = _safeString(name, fallback: "");
+      if (s.isNotEmpty) return s;
+    }
+    return "—";
+  }
 
   Map<String, Color> getStatusColors(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -104,6 +153,62 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
   ApiClient? _api;
   SuperadminRepository? _repo;
+
+  Widget _buildTab({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double hPadding =
+        AdaptiveUtils.getHorizontalPadding(screenWidth) - 6; // 2-10
+    final double vPadding =
+        AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 4; // 2-6
+    final double baseFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double fontSize = AdaptiveUtils.isSmallScreen(screenWidth)
+        ? baseFontSize - 1
+        : baseFontSize + 2;
+    final Color textColor = selected
+        ? colorScheme.primary.withOpacity(0.7)
+        : colorScheme.onSurface.withOpacity(0.6);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTight = constraints.maxWidth < 90;
+            final iconSize = isTight ? fontSize : fontSize + 1;
+            final labelSize = isTight ? fontSize + 1 : fontSize + 2;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: iconSize, color: textColor),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: labelSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -153,8 +258,10 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 (v) => <String, dynamic>{
                   "id": v.id.isNotEmpty ? v.id : "—",
                   "name": v.name.isNotEmpty ? v.name : "—",
+                  "type": _vehicleTypeLabel(v),
                   "status": v.status.isNotEmpty ? v.status : "Active",
                   "time": _friendlyDateTime(v.time),
+                  "timeRaw": v.time,
                 },
               )
               .toList();
@@ -232,9 +339,10 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               .map(
                 (t) => <String, dynamic>{
                   'id': t.id.isNotEmpty ? t.id : '—',
+                  'name': t.fromUserName.isNotEmpty ? t.fromUserName : '—',
                   'value': t.valueText.isNotEmpty ? t.valueText : '—',
-                  'description': _transactionDescription(t),
                   'status': _normalizedTransactionStatus(t.status),
+                  'timeRaw': t.time,
                 },
               )
               .toList();
@@ -307,7 +415,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 (u) => <String, dynamic>{
                   'name': u.name.isNotEmpty ? u.name : '—',
                   'email': u.email,
-                  'time': _friendlyDateTime(u.time),
+                  'timeRaw': u.time,
                 },
               )
               .toList();
@@ -416,23 +524,14 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     return '${local.day} $month, $time';
   }
 
-  List<Map<String, dynamic>> get currentActivities {
-    return switch (activityTab) {
+  List<Map<String, dynamic>> _activitiesFor(String type) {
+    final list = switch (type) {
       "Vehicles" => vehicleActivities,
       "Transactions" => transactionActivities,
       _ => userActivities,
     };
-  }
-
-  bool get _isCurrentTabLoading {
-    return (activityTab == "Vehicles" && _loadingRecentVehicles) ||
-        (activityTab == "Transactions" && _loadingRecentTransactions) ||
-        (activityTab == "Users" && _loadingRecentUsers);
-  }
-
-  List<Map<String, dynamic>> get _currentActivitiesForRender {
-    if (currentActivities.isNotEmpty) return currentActivities;
-    return switch (activityTab) {
+    if (list.isNotEmpty) return list;
+    return switch (type) {
       "Vehicles" => [
         {'id': '—', 'name': 'No data', 'status': 'Idle', 'time': ''},
       ],
@@ -450,18 +549,15 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     };
   }
 
-  Widget buildActivityItem(Map<String, dynamic> activity) {
+  Widget buildActivityItem(String type, Map<String, dynamic> activity) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double mainFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2; // 12-16
-    final double subFontSize = AdaptiveUtils.getTitleFontSize(
-      screenWidth,
-    ); // 11-13
-    final double badgeFontSize = AdaptiveUtils.getTitleFontSize(
-      screenWidth,
-    ); // 11-13
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double mainFontSize = 14 * scale;
+    final double subFontSize = 12 * scale;
+    final double badgeFontSize = 11 * scale;
     final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(
       screenWidth,
     ); // 6-10
@@ -472,155 +568,194 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     Widget content;
     Widget right = const SizedBox.shrink();
 
-    switch (activityTab) {
+    switch (type) {
       case "Vehicles":
         avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.directions_car, color: colorScheme.primary),
+          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.1,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[200]
+                  : colorScheme.surfaceVariant,
+          child: Icon(
+            Icons.directions_car_outlined,
+            size: 18 * scale,
+            color: colorScheme.primary,
+          ),
         );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              activity["id"],
+              _capitalizeFirst(_safeString(activity["name"], fallback: "")),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
+                height: 20 / 14,
                 color: colorScheme.onSurface,
               ),
             ),
-            Text(
-              activity["name"],
-              style: GoogleFonts.inter(
-                fontSize: subFontSize,
-                color: colorScheme.onSurface.withOpacity(0.54),
-              ),
-            ),
-            Text(
-              activity["time"],
-              style: GoogleFonts.inter(
-                fontSize: subFontSize,
-                color: colorScheme.onSurface.withOpacity(0.54),
-              ),
-            ),
-          ],
-        );
-
-        right = Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: itemPadding + 2,
-            vertical: itemPadding - 2,
-          ),
-          decoration: BoxDecoration(
-            color: statusColors[activity["status"]],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            activity["status"],
-            style: GoogleFonts.inter(
-              color: colorScheme.onPrimary,
-              fontSize: badgeFontSize,
-            ),
-          ),
-        );
-
-      case "Transactions":
-        avatar = CircleAvatar(
-          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
-          child: Icon(Icons.receipt_long, color: colorScheme.primary),
-        );
-
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  activity["id"],
-                  style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  activity["value"],
-                  style: GoogleFonts.inter(
-                    fontSize: mainFontSize,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    activity["description"],
+                    _capitalizeFirst(
+                      _safeString(activity["type"], fallback: "—"),
+                    ),
                     style: GoogleFonts.inter(
                       fontSize: subFontSize,
+                      fontWeight: FontWeight.w500,
+                      height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: itemPadding,
-                    vertical: itemPadding - 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColors[activity["status"]],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    activity["status"],
-                    style: GoogleFonts.inter(
-                      color: colorScheme.onPrimary,
-                      fontSize: badgeFontSize,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _formatDate(activity["timeRaw"]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: subFontSize,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 12,
+                        color: colorScheme.onSurface.withOpacity(0.54),
+                      ),
                     ),
                   ),
                 ),
+                const Expanded(child: SizedBox.shrink()),
               ],
             ),
           ],
         );
 
+        right = Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: itemPadding - 2,
+                vertical: itemPadding - 6,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[100]
+                    : colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                activity["status"],
+                style: GoogleFonts.inter(
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                  fontSize: badgeFontSize,
+                  fontWeight: FontWeight.w600,
+                  height: 14 / 11,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _relativeTime(activity["timeRaw"]),
+              style: GoogleFonts.inter(
+                fontSize: subFontSize,
+                fontWeight: FontWeight.w500,
+                height: 16 / 12,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
+          ],
+        );
+
+      case "Transactions":
+        avatar = CircleAvatar(
+          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.1,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[200]
+                  : colorScheme.surfaceVariant,
+          child: Icon(
+            Icons.credit_card,
+            size: 18 * scale,
+            color: colorScheme.primary,
+          ),
+        );
+
+        content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _capitalizeFirst(_safeString(activity["name"], fallback: "")),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: mainFontSize,
+                fontWeight: FontWeight.w600,
+                height: 20 / 14,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _formatDateOnly(activity["timeRaw"]),
+              style: GoogleFonts.inter(
+                fontSize: subFontSize,
+                fontWeight: FontWeight.w500,
+                height: 16 / 12,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
+          ],
+        );
+        right = Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              _safeString(activity["value"], fallback: "—"),
+              style: GoogleFonts.inter(
+                fontSize: mainFontSize,
+                fontWeight: FontWeight.w600,
+                height: 20 / 14,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _safeString(activity["status"], fallback: ""),
+              style: GoogleFonts.inter(
+                fontSize: badgeFontSize,
+                fontWeight: FontWeight.w600,
+                height: 14 / 11,
+                color: colorScheme.onSurface.withOpacity(0.54),
+              ),
+            ),
+          ],
+        );
+        break;
+
       default: // Users
-        final name = activity["name"] as String;
+        final name = _safeString(activity["name"], fallback: "—");
         final initials = name
             .split(" ")
             .map((e) => e.isNotEmpty ? e[0] : '')
             .take(2)
             .join();
 
-        avatar = Container(
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: colorScheme.primary.withOpacity(0.8),
-              width: 2,
-            ),
-          ),
-          child: CircleAvatar(
-            radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-            backgroundColor: Colors.transparent,
-            child: Text(
-              initials,
-              style: GoogleFonts.inter(
-                fontSize: mainFontSize,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
+        avatar = CircleAvatar(
+          radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.1,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey[200]
+                  : colorScheme.surfaceVariant,
+          child: Icon(
+            Icons.group,
+            size: 18 * scale,
+            color: colorScheme.primary,
           ),
         );
 
@@ -629,16 +764,21 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           children: [
             Text(
               name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
+                height: 20 / 14,
                 color: colorScheme.onSurface,
               ),
             ),
             Text(
-              activity["email"],
+              _safeString(activity["email"], fallback: ""),
               style: GoogleFonts.inter(
                 fontSize: subFontSize,
+                fontWeight: FontWeight.w500,
+                height: 16 / 12,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
             ),
@@ -646,23 +786,50 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         );
 
         right = Text(
-          activity["time"],
+          _formatDateOnly(activity["timeRaw"]),
           style: GoogleFonts.inter(
             fontSize: subFontSize,
+            fontWeight: FontWeight.w500,
+            height: 16 / 12,
             color: colorScheme.onSurface.withOpacity(0.54),
           ),
         );
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: itemPadding),
-      child: Row(
-        children: [
-          avatar,
-          SizedBox(width: itemPadding + 2),
-          Expanded(child: content),
-          if (right is! SizedBox) ...[SizedBox(width: itemPadding + 2), right],
-        ],
+      padding: EdgeInsets.symmetric(vertical: itemPadding / 2),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: itemPadding,
+          vertical: itemPadding,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.onSurface.withOpacity(0.12),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            avatar,
+            SizedBox(width: itemPadding + 2),
+            Expanded(child: content),
+            if (right is! SizedBox) ...[
+              SizedBox(width: itemPadding + 2),
+              right,
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -711,14 +878,68 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final double linkFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double linkFontSize = 14 * scale;
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildActivitySection(
+          context,
+          title: 'Recent Vehicles',
+          loading: _loadingRecentVehicles,
+          activities: _activitiesFor('Vehicles'),
+          padding: padding,
+          linkFontSize: linkFontSize,
+          screenWidth: screenWidth,
+        ),
+        SizedBox(height: padding),
+        _buildActivitySection(
+          context,
+          title: 'Transactions',
+          loading: _loadingRecentTransactions,
+          activities: _activitiesFor('Transactions'),
+          padding: padding,
+          linkFontSize: linkFontSize,
+          screenWidth: screenWidth,
+        ),
+        SizedBox(height: padding),
+        _buildActivitySection(
+          context,
+          title: 'Users',
+          loading: _loadingRecentUsers,
+          activities: _activitiesFor('Users'),
+          padding: padding,
+          linkFontSize: linkFontSize,
+          screenWidth: screenWidth,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivitySection(
+    BuildContext context, {
+    required String title,
+    required bool loading,
+    required List<Map<String, dynamic>> activities,
+    required double padding,
+    required double linkFontSize,
+    required double screenWidth,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final icon = switch (title) {
+      'Transactions' => Icons.credit_card,
+      'Users' => Icons.group,
+      _ => Icons.directions_car,
+    };
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -733,96 +954,113 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: "Recent Activity",
-                      style: GoogleFonts.inter(
-                        fontSize: titleFontSize,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey[100]
+                          : colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    if ((_loadingRecentVehicles && activityTab == "Vehicles") ||
-                        (_loadingRecentTransactions &&
-                            activityTab == "Transactions") ||
-                        (_loadingRecentUsers && activityTab == "Users"))
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: AppShimmer(width: 14, height: 14, radius: 7),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: title,
+                        style: GoogleFonts.inter(
+                          fontSize: 18 * scale,
+                          height: 24 / 18,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
                         ),
                       ),
-                  ],
-                ),
+                        if (loading)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child:
+                                  AppShimmer(width: 14, height: 14, radius: 7),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              InkWell(
-                onTap: () {
-                  context.push(
-                    '/superadmin/all-activities',
-                    extra: {'type': activityTab},
-                  );
-                },
-                onLongPress: kDebugMode
-                    ? () => DebugSuperadminRecentVehiclesSmokeTest.run(
-                        context,
-                        cancelToken: _smokeCancelToken,
-                      )
-                    : null,
-                child: Text(
-                  "View all",
-                  style: GoogleFonts.inter(
-                    fontSize: linkFontSize,
-                    color: colorScheme.primary,
+              if (title == 'Transactions')
+                InkWell(
+                  onTap: () => context.push('/superadmin/payments'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.white
+                          : colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "View all",
+                          style: GoogleFonts.inter(
+                            fontSize: linkFontSize,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary.withOpacity(0.7),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right,
+                          size: linkFontSize + 2,
+                          color: colorScheme.primary.withOpacity(0.7),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
-
-          SizedBox(height: padding),
-
-          Center(
-            child: Wrap(
-              spacing: AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: ["Vehicles", "Transactions", "Users"].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: activityTab == tab,
-                  onTap: () => setState(() => activityTab = tab),
-                );
-              }).toList(),
-            ),
-          ),
-
           SizedBox(height: padding - 2),
-
           SizedBox(
             height: 320,
-            child: _isCurrentTabLoading
+            child: loading
                 ? ListView.separated(
                     padding: EdgeInsets.zero,
                     itemCount: 4,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: colorScheme.onSurface.withOpacity(0.08),
-                    ),
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, __) =>
                         _buildActivitySkeletonItem(screenWidth),
                   )
                 : ListView.separated(
                     padding: EdgeInsets.zero,
-                    itemCount: _currentActivitiesForRender.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: colorScheme.onSurface.withOpacity(0.08),
-                    ),
+                    itemCount: activities.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, index) =>
-                        buildActivityItem(_currentActivitiesForRender[index]),
+                        buildActivityItem(title, activities[index]),
                   ),
           ),
         ],

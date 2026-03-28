@@ -108,12 +108,12 @@ class _MoreScreenState extends State<MoreScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
 
     final List<Map<String, dynamic>> menuItems = [
-      {
-        'title': 'Server',
-        'subtitle': 'Status and setup',
-        'icon': CupertinoIcons.settings,
-        'route': '/superadmin/server',
-      },
+      // {
+      //   'title': 'Server',
+      //   'subtitle': 'Status and setup',
+      //   'icon': CupertinoIcons.settings,
+      //   'route': '/superadmin/server',
+      // },
       {
         'title': 'Calendar',
         'subtitle': 'Jobs and events',
@@ -132,12 +132,12 @@ class _MoreScreenState extends State<MoreScreen> {
         'icon': CupertinoIcons.settings_solid,
         'route': '/superadmin/settings',
       },
-      {
-        'title': 'SSL',
-        'subtitle': 'Certificate & HTTPS',
-        'icon': CupertinoIcons.lock_shield,
-        'route': '/superadmin/ssl',
-      },
+      // {
+      //   'title': 'SSL',
+      //   'subtitle': 'Certificate & HTTPS',
+      //   'icon': CupertinoIcons.lock_shield,
+      //   'route': '/superadmin/ssl',
+      // },
       {
         'title': 'Roles',
         'subtitle': 'Admin & permissions',

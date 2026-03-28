@@ -271,27 +271,30 @@ class _CustomAppBarState extends State<CustomAppBar>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      widget.title,
-                                      style: AppUtils.subtitleBase.copyWith(
-                                        fontSize: titleFontSize,
-                                        fontWeight: FontWeight.w600,
-                                        color: cs.onSurface.withOpacity(0.6),
+                                    if (widget.title.trim().isNotEmpty)
+                                      Text(
+                                        widget.title,
+                                        style: AppUtils.subtitleBase.copyWith(
+                                          fontSize: titleFontSize,
+                                          fontWeight: FontWeight.w600,
+                                          color: cs.onSurface.withOpacity(0.6),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      widget.subtitle,
-                                      style: AppUtils.headlineSmallBase
-                                          .copyWith(
-                                            fontSize: subtitleFontSize,
-                                            fontWeight: FontWeight.w900,
-                                            color: cs.onBackground,
-                                            letterSpacing: -0.5,
-                                          ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.visible,
-                                    ),
+                                    if (widget.title.trim().isNotEmpty)
+                                      const SizedBox(height: 2),
+                                    if (widget.subtitle.trim().isNotEmpty)
+                                      Text(
+                                        widget.subtitle,
+                                        style: AppUtils.headlineSmallBase
+                                            .copyWith(
+                                              fontSize: subtitleFontSize,
+                                              fontWeight: FontWeight.w900,
+                                              color: cs.onBackground,
+                                              letterSpacing: -0.5,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.visible,
+                                      ),
                                   ],
                                 ),
                               ),

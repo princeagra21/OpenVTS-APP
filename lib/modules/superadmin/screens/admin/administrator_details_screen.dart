@@ -1,19 +1,18 @@
-import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/credit_history_tab.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/documents_tab.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/localization/localization.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_box.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/profile_tab.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/role_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/setting_tab/setting.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/vehicles_tab/vehicles_tab.dart';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart'
-    show AppLayout;
+import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
+import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdministratorDetailsScreen extends StatefulWidget {
   // Made stateful to manage tab state
@@ -39,11 +38,8 @@ class _AdministratorDetailsScreenState
 
   final List<String> tabs = [
     "Profile",
-    "Credit History",
-    "Documents",
-    "Vehicles",
-    "Setting",
-    "Roles",
+    "Localization",
+    "Settings",
   ];
 
   @override
@@ -116,25 +112,30 @@ class _AdministratorDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: "ADMINISTRATOR",
-      subtitle: _headerLoading ? "Loading..." : _headerName,
-      showLeftAvatar: false,
-      leftAvatarText: _headerInitials,
-      child: SingleChildScrollView(
-        child: Column(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 8.0
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 10.0
+            : 12.0;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              horizontalPadding,
+              84,
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProfileBox(
-              adminId: widget.id,
-              onProfileUpdated: () {
-                setState(() {
-                  _profileReloadNonce++;
-                });
-                _loadHeader();
-              },
-            ), // Assuming this is always visible as a header
-            const SizedBox(height: 24),
             NavigateBox(
               selectedTab: selectedTab,
               tabs: tabs,
@@ -148,7 +149,23 @@ class _AdministratorDetailsScreenState
             _buildTabContent(), // Dynamic content based on selected tab
             const SizedBox(height: 24),
           ],
-        ),
+            ),
+          ),
+          Positioned(
+            left: horizontalPadding,
+            right: horizontalPadding,
+            top: 0,
+            child: SuperAdminHomeAppBar(
+              title: _headerLoading ? "Loading..." : _headerName,
+              leadingIcon: Symbols.verified_user,
+              onClose: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -165,46 +182,20 @@ class _AdministratorDetailsScreenState
             ),
           ],
         );
-      case "Credit History":
+      case "Localization":
         return Column(
-          children: [
-            const SizedBox(height: 24),
-            CreditHistoryTab(adminId: widget.id),
-            const SizedBox(height: 24),
-          ],
-        );
-      case "Documents":
-        return Column(
-          children: [
-            const SizedBox(height: 24),
-            DocumentsTab(adminId: widget.id),
-            const SizedBox(height: 24),
+          children: const [
+            SizedBox(height: 24),
+            LocalizationHeader(),
+            SizedBox(height: 24),
           ],
         );
 
-      case "Vehicles":
-        return Column(
-          children: [
-            const SizedBox(height: 24),
-            VehiclesTab(adminId: widget.id),
-            const SizedBox(height: 24),
-          ],
-        );
-
-      case "Setting":
+      case "Settings":
         return Column(
           children: [
             const SizedBox(height: 24),
             AdminSettingsTab(adminId: widget.id),
-            const SizedBox(height: 24),
-          ],
-        );
-
-      case "Roles":
-        return Column(
-          children: [
-            const SizedBox(height: 24),
-            RolesTab(adminId: widget.id),
             const SizedBox(height: 24),
           ],
         );

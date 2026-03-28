@@ -9,6 +9,8 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/superadmin/theme/app_theme.dart';
+import 'package:fleet_stack/main.dart' show themeController;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -196,6 +198,24 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     lat = snapshot.lat;
     lng = snapshot.lng;
     zoom = snapshot.zoom;
+  }
+
+  Future<void> _setThemeMode(String mode) async {
+    if (!mounted) return;
+    if (mode == 'dark') {
+      themeController.setThemeMode(ThemeMode.dark);
+      await AppTheme.setDarkMode(true);
+      return;
+    }
+    if (mode == 'light') {
+      themeController.setThemeMode(ThemeMode.light);
+      await AppTheme.setDarkMode(false);
+      return;
+    }
+    themeController.setThemeMode(ThemeMode.system);
+    final isDark =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    await AppTheme.setDarkMode(isDark);
   }
 
   void _showLoadErrorOnce(String message) {
@@ -600,37 +620,50 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(hp),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // TOP BUTTONS
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ElevatedButton.icon(
+              Text(
+                "Localization",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              Row(
+                children: [
+              OutlinedButton.icon(
                 onPressed: (_saving || _loading) ? null : _resetPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 icon: Icon(
                   Icons.refresh_outlined,
-                  color: colorScheme.onPrimary,
+                  color: colorScheme.onSurface,
                 ),
                 label: Text(
                   "Reset",
                   style: GoogleFonts.inter(
-                    color: colorScheme.onPrimary,
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -661,48 +694,34 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   ),
                 ),
               ),
+                ],
+              ),
             ],
           ),
 
           const SizedBox(height: 16),
 
-          // TITLE
-          Text(
-            "Localization Settings",
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.87),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Configure language, timezone, date formats, and map focus for your application.",
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-              color: colorScheme.onSurface.withOpacity(0.9),
-            ),
-          ),
-
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
 
           // LIVE PREVIEW
           _buildSection(
             context: context,
             title: "Live Preview",
+            trailing: Text(
+              "Lang: $selectedLanguage • Dir: $textDirection • TZ: $timezone",
+              style: GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              textAlign: TextAlign.right,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Lang: $selectedLanguage • Dir: $textDirection • TZ: $timezone",
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -713,6 +732,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         colorScheme,
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _previewItem(
                         "Time",
@@ -721,18 +741,78 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         colorScheme,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _previewItem(
-                            "Map Center",
-                            "$lat, $lng",
-                            width,
-                            colorScheme,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.12),
                           ),
-                          _previewItem("Zoom", "$zoom", width, colorScheme),
-                        ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Map Center",
+                              style: GoogleFonts.inter(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                        3,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.8),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$lat, $lng",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: AdaptiveUtils
+                                            .getSubtitleFontSize(width) -
+                                        3,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Zoom $zoom",
+                                  style: GoogleFonts.inter(
+                                    fontSize: AdaptiveUtils
+                                            .getSubtitleFontSize(width) -
+                                        3,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _previewItem(
+                        "Timezone",
+                        timezone.isEmpty ? "—" : "$timezone\nUnits: $units",
+                        width,
+                        colorScheme,
                       ),
                     ),
                   ],
@@ -746,27 +826,80 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // DEFAULT LANGUAGE
           _buildSection(
             context: context,
-            title: "Default Language",
-            subtitle: "Primary language",
-            child: DropdownButtonFormField<String>(
-              value: _dropdownValueOrNull(_languages, selectedLanguage),
-              hint: Text(
-                _languages.isEmpty ? 'No language options' : 'Select language',
-                style: GoogleFonts.inter(),
-              ),
-              decoration: _dropdownDecoration(context),
-              items: _languages
-                  .map(
-                    (lang) => DropdownMenuItem(value: lang, child: Text(lang)),
-                  )
-                  .toList(),
-              onChanged: _languages.isEmpty
-                  ? null
-                  : (v) {
-                      if (v != null) {
-                        setState(() => selectedLanguage = v);
-                      }
-                    },
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.translate_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Default Language",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Primary language",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_languages, selectedLanguage),
+                  hint: Text(
+                    _languages.isEmpty
+                        ? 'No language options'
+                        : 'Select language',
+                    style: GoogleFonts.inter(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _languages
+                      .map(
+                        (lang) =>
+                            DropdownMenuItem(value: lang, child: Text(lang)),
+                      )
+                      .toList(),
+                  onChanged: _languages.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => selectedLanguage = v);
+                          }
+                        },
+                ),
+              ],
             ),
           ),
 
@@ -775,31 +908,151 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // TEXT DIRECTION
           _buildSection(
             context: context,
-            title: "Text Direction",
-            child: Row(
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ChoiceChip(
-                  label: const Text("LTR"),
-                  selected: textDirection == "LTR",
-                  selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
-                    color: textDirection == "LTR"
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
-                  ),
-                  onSelected: (_) => setState(() => textDirection = "LTR"),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.format_textdirection_l_to_r,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Text Direction",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "LTR / RTL",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                ChoiceChip(
-                  label: const Text("RTL"),
-                  selected: textDirection == "RTL",
-                  selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
-                    color: textDirection == "RTL"
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
                   ),
-                  onSelected: (_) => setState(() => textDirection = "RTL"),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => textDirection = "LTR"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: textDirection == "LTR"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.format_textdirection_l_to_r,
+                                  size: 16,
+                                  color: textDirection == "LTR"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "LTR",
+                                  style: GoogleFonts.inter(
+                                    color: textDirection == "LTR"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => textDirection = "RTL"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: textDirection == "RTL"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.format_textdirection_r_to_l,
+                                  size: 16,
+                                  color: textDirection == "RTL"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "RTL",
+                                  style: GoogleFonts.inter(
+                                    color: textDirection == "RTL"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -810,27 +1063,77 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // DATE FORMAT
           _buildSection(
             context: context,
-            title: "Date Format",
-            subtitle: "Display style",
-            child: DropdownButtonFormField<String>(
-              value: _dropdownValueOrNull(_dateFormats, dateFormat),
-              hint: Text(
-                _dateFormats.isEmpty
-                    ? 'No date format options'
-                    : 'Select date format',
-                style: GoogleFonts.inter(),
-              ),
-              decoration: _dropdownDecoration(context),
-              items: _dateFormats
-                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                  .toList(),
-              onChanged: _dateFormats.isEmpty
-                  ? null
-                  : (v) {
-                      if (v != null) {
-                        setState(() => dateFormat = v);
-                      }
-                    },
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.calendar_month_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Date Format",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Display style",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_dateFormats, dateFormat),
+                  hint: Text(
+                    _dateFormats.isEmpty
+                        ? 'No date format options'
+                        : 'Select date format',
+                    style: GoogleFonts.inter(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _dateFormats
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .toList(),
+                  onChanged: _dateFormats.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => dateFormat = v);
+                          }
+                        },
+                ),
+              ],
             ),
           ),
 
@@ -839,42 +1142,152 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // TIME FORMAT
           _buildSection(
             context: context,
-            title: "Time Format",
+            title: "",
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ChoiceChip(
-                      label: const Text("24-hour clock"),
-                      selected: timeFormat == "24-hour",
-                      selectedColor: colorScheme.primary,
-                      labelStyle: GoogleFonts.inter(
-                        color: timeFormat == "24-hour"
-                            ? colorScheme.onPrimary
-                            : colorScheme.onSurface,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onSelected: (_) => setState(() => timeFormat = "24-hour"),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.schedule_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    ChoiceChip(
-                      label: const Text("12-hour clock"),
-                      selected: timeFormat == "12-hour",
-                      selectedColor: colorScheme.primary,
-                      labelStyle: GoogleFonts.inter(
-                        color: timeFormat == "12-hour"
-                            ? colorScheme.onPrimary
-                            : colorScheme.onSurface,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Time Format",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            timeFormat == "24-hour"
+                                ? "24-hour clock"
+                                : "12-hour clock",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
                       ),
-                      onSelected: (_) => setState(() => timeFormat = "12-hour"),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  "Example: ${getFormattedTime()}",
-                  style: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.8),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => timeFormat = "24-hour"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: timeFormat == "24-hour"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  size: 16,
+                                  color: timeFormat == "24-hour"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "24-hour",
+                                  style: GoogleFonts.inter(
+                                    color: timeFormat == "24-hour"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => timeFormat = "12-hour"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: timeFormat == "12-hour"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  size: 16,
+                                  color: timeFormat == "12-hour"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "12-hour",
+                                  style: GoogleFonts.inter(
+                                    color: timeFormat == "12-hour"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -886,24 +1299,77 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // TIMEZONE
           _buildSection(
             context: context,
-            title: "Timezone",
-            child: DropdownButtonFormField<String>(
-              value: _dropdownValueOrNull(_timezones, timezone),
-              hint: Text(
-                _timezones.isEmpty ? 'No timezone options' : 'Select timezone',
-                style: GoogleFonts.inter(),
-              ),
-              decoration: _dropdownDecoration(context),
-              items: _timezones
-                  .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
-                  .toList(),
-              onChanged: _timezones.isEmpty
-                  ? null
-                  : (v) {
-                      if (v != null) {
-                        setState(() => timezone = v);
-                      }
-                    },
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.public_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Timezone",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "UTC offset",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_timezones, timezone),
+                  hint: Text(
+                    _timezones.isEmpty
+                        ? 'No timezone options'
+                        : 'Select timezone',
+                    style: GoogleFonts.inter(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _timezones
+                      .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
+                      .toList(),
+                  onChanged: _timezones.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => timezone = v);
+                          }
+                        },
+                ),
+              ],
             ),
           ),
 
@@ -912,31 +1378,151 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           // UNITS
           _buildSection(
             context: context,
-            title: "Units",
-            child: Row(
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ChoiceChip(
-                  label: const Text("KM"),
-                  selected: units == "KM",
-                  selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
-                    color: units == "KM"
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
-                  ),
-                  onSelected: (_) => setState(() => units = "KM"),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.straighten_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Units",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Distance units",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                ChoiceChip(
-                  label: const Text("MILES"),
-                  selected: units == "MILES",
-                  selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
-                    color: units == "MILES"
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
                   ),
-                  onSelected: (_) => setState(() => units = "MILES"),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => units = "KM"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: units == "KM"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.straighten,
+                                  size: 16,
+                                  color: units == "KM"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "KM",
+                                  style: GoogleFonts.inter(
+                                    color: units == "KM"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => units = "MILES"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: units == "MILES"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.straighten,
+                                  size: 16,
+                                  color: units == "MILES"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "MILES",
+                                  style: GoogleFonts.inter(
+                                    color: units == "MILES"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -944,56 +1530,352 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
 
           const SizedBox(height: 24),
 
-          // MAP FOCUS
+          // THEME
           _buildSection(
             context: context,
-            title: "Map Focus",
+            title: "",
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildInputField(
-                        context,
-                        "LATITUDE",
-                        lat.toStringAsFixed(4),
-                        (v) => lat = double.tryParse(v) ?? lat,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.palette_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: _buildInputField(
-                        context,
-                        "LONGITUDE",
-                        lng.toStringAsFixed(4),
-                        (v) => lng = double.tryParse(v) ?? lng,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Theme",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Light / Dark / System",
+                            style: GoogleFonts.inter(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  "ZOOM LEVEL",
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
-                Slider(
-                  value: zoom.toDouble(),
-                  min: 1,
-                  max: 22,
-                  divisions: 21,
-                  activeColor: colorScheme.primary,
-                  label: zoom.toString(),
-                  onChanged: (v) => setState(() => zoom = v.toInt()),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<ThemeMode>(
+                  valueListenable: themeController.themeMode,
+                  builder: (context, mode, _) {
+                    final selected = switch (mode) {
+                      ThemeMode.dark => 'dark',
+                      ThemeMode.system => 'system',
+                      _ => 'light',
+                    };
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('light'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'light'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.light_mode_outlined,
+                                      size: 16,
+                                      color: selected == 'light'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Light",
+                                      style: GoogleFonts.inter(
+                                        color: selected == 'light'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('dark'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'dark'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.dark_mode_outlined,
+                                      size: 16,
+                                      color: selected == 'dark'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Dark",
+                                      style: GoogleFonts.inter(
+                                        color: selected == 'dark'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('system'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'system'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.settings_outlined,
+                                      size: 16,
+                                      color: selected == 'system'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "System",
+                                      style: GoogleFonts.inter(
+                                        color: selected == 'system'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
-        ],
-      ),
+
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSection(
+          context: context,
+          title: "Map Focus Coordinates",
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInputField(
+                context,
+                "Latitude (N/S)",
+                lat.toStringAsFixed(4),
+                (v) => lat = double.tryParse(v) ?? lat,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Range: -90 to 90",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                context,
+                "Longitude (E/W)",
+                lng.toStringAsFixed(4),
+                (v) => lng = double.tryParse(v) ?? lng,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Range: -180 to 180",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                context,
+                "Zoom Level",
+                zoom.toString(),
+                (v) => zoom = double.tryParse(v)?.toInt() ?? zoom,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Typical: 1 to 20",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSection(
+          context: context,
+          title: "Quick Location Presets",
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double gap = 12;
+              final double cellWidth = (constraints.maxWidth - gap) / 2;
+              const presets = [
+                {'name': 'New Delhi', 'lat': 28.6139, 'lng': 77.2090},
+                {'name': 'Mumbai', 'lat': 19.0760, 'lng': 72.8777},
+                {'name': 'Bengaluru', 'lat': 12.9716, 'lng': 77.5946},
+                {'name': 'Kolkata', 'lat': 22.5726, 'lng': 88.3639},
+              ];
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: presets.map((preset) {
+                  final name = preset['name'] as String;
+                  final latVal = preset['lat'] as double;
+                  final lngVal = preset['lng'] as double;
+                  return SizedBox(
+                    width: cellWidth,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${latVal.toStringAsFixed(4)}, ${lngVal.toStringAsFixed(4)}',
+                            style: GoogleFonts.inter(
+                              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1054,6 +1936,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     required BuildContext context,
     required String title,
     String? subtitle,
+    Widget? trailing,
     Widget? child,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1077,20 +1960,47 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface.withOpacity(0.87),
-            ),
-          ),
+          if (title.isNotEmpty || trailing != null)
+            if (trailing == null)
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+                ),
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: trailing,
+                    ),
+                  ),
+                ],
+              ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
               subtitle,
               style: GoogleFonts.inter(
-                color: colorScheme.onSurface.withOpacity(0.8),
+                fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.65),
               ),
             ),
           ],
@@ -1106,26 +2016,36 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     double width,
     ColorScheme colorScheme,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface.withOpacity(0.8),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.8),
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            color: colorScheme.onSurface.withOpacity(0.8),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1152,19 +2072,23 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     BuildContext context,
     String label,
     String initial,
-    void Function(String) onChanged,
-  ) {
+    void Function(String) onChanged, {
+    TextStyle? labelStyle,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface.withOpacity(0.87),
-          ),
+          style: labelStyle ??
+              GoogleFonts.inter(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.65),
+              ),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -1173,7 +2097,11 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               TextPosition(offset: initial.length),
             ),
           onChanged: onChanged,
-          style: GoogleFonts.inter(color: colorScheme.onSurface),
+          style: GoogleFonts.inter(
+            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.transparent,
