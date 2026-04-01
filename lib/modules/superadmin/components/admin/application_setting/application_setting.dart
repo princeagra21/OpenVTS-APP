@@ -327,7 +327,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 ),
                 label: Text(
                   "Reset",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -353,7 +353,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 ),
                 label: Text(
                   "Save",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -367,7 +367,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           // TITLE
           Text(
             "Application Settings",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
               fontWeight: FontWeight.w800,
               color: colorScheme.onSurface.withOpacity(0.87),
@@ -376,7 +376,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           const SizedBox(height: 4),
           Text(
             "Configure system-wide settings for your application.",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               color: colorScheme.onSurface.withOpacity(0.9),
             ),
@@ -391,7 +391,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             title: "Current Configuration",
             child: Text(
               "Demo: $demoStatus • Geocoding: $geocodingPrecision • Signup: $signupStatus",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -427,7 +427,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   label: const Text("2 Digits\nCity/Region"),
                   selected: geocodingPrecision == "2 Digits",
                   selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
+                  labelStyle: GoogleFonts.roboto(
                     color: geocodingPrecision == "2 Digits"
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface,
@@ -442,7 +442,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   label: const Text("3 Digits\nStreet Level"),
                   selected: geocodingPrecision == "3 Digits",
                   selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.inter(
+                  labelStyle: GoogleFonts.roboto(
                     color: geocodingPrecision == "3 Digits"
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface,
@@ -480,7 +480,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 const SizedBox(height: 12),
                 Text(
                   "Backups will be retained for the selected period",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
@@ -503,7 +503,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   children: [
                     Text(
                       "Allow New Signups",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface.withOpacity(0.87),
                       ),
@@ -530,14 +530,14 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   signupAllowed
                       ? "New users can register"
                       : "New user registration is disabled",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   "Free Signup Credits",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -557,7 +557,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                       () => freeCredits = int.tryParse(v) ?? freeCredits,
                     );
                   },
-                  style: GoogleFonts.inter(color: colorScheme.onSurface),
+                  style: GoogleFonts.roboto(color: colorScheme.onSurface),
                   decoration: _inputDecoration(
                     context,
                     hint:
@@ -663,7 +663,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -675,7 +675,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             const SizedBox(height: 12),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
@@ -725,7 +725,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -740,7 +740,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               Expanded(
                 child: Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
@@ -767,7 +767,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.6),
       ),
       filled: true,

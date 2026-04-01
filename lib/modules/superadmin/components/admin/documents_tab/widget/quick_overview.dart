@@ -33,7 +33,7 @@ class QuickOverviewScreen extends StatelessWidget {
                   Flexible(
                     child: Text(
                       fileName,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
@@ -53,7 +53,7 @@ class QuickOverviewScreen extends StatelessWidget {
               // SUBTITLE
               Text(
                 "Quick Overview",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),

@@ -28,7 +28,7 @@ class CreditHistoryEmailScreen extends StatelessWidget {
                 children: [
                   Text(
                     "Send Email",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -47,7 +47,7 @@ class CreditHistoryEmailScreen extends StatelessWidget {
               Center(
                 child: Text(
                   "Compose and send an email",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: inputFontSize,
                     color: colorScheme.onSurface.withOpacity(0.54),
                   ),
@@ -92,12 +92,12 @@ class CreditHistoryEmailScreen extends StatelessWidget {
                   maxLines: null,
                   minLines: 5,
                   textAlignVertical: TextAlignVertical.top,
-                  style: GoogleFonts.inter(color: colorScheme.onSurface),
+                  style: GoogleFonts.roboto(color: colorScheme.onSurface),
                   decoration: InputDecoration(
                     labelText: "Message",
-                    labelStyle: GoogleFonts.inter(fontSize: inputFontSize, color: colorScheme.onSurface),
+                    labelStyle: GoogleFonts.roboto(fontSize: inputFontSize, color: colorScheme.onSurface),
                     hintText: "Type your message here",
-                    hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
+                    hintStyle: GoogleFonts.roboto(color: colorScheme.onSurface.withOpacity(0.5)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outline),
@@ -132,7 +132,7 @@ class CreditHistoryEmailScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       "Send",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onPrimary,
@@ -158,12 +158,12 @@ class CreditHistoryEmailScreen extends StatelessWidget {
     required ColorScheme colorScheme,
   }) {
     return TextField(
-      style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
+      style: GoogleFonts.roboto(fontSize: fontSize, color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
+        labelStyle: GoogleFonts.roboto(fontSize: fontSize, color: colorScheme.onSurface),
         hintText: hint,
-        hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.5)),
+        hintStyle: GoogleFonts.roboto(color: colorScheme.onSurface.withOpacity(0.5)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.outline),

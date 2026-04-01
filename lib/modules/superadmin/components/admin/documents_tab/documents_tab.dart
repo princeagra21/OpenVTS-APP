@@ -226,7 +226,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                           children: [
                             TextSpan(
                               text: "Admin Documents",
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface.withOpacity(0.7),
@@ -312,7 +312,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                   children: [
                     Text(
                       "Health Status",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -367,7 +367,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                   children: [
                     Text(
                       "Storage used",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -380,7 +380,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                       children: [
                         Text(
                           "${_usedStorageGb.toStringAsFixed(2)} / ${_totalStorageGb.toStringAsFixed(0)} GB",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
@@ -420,7 +420,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                       children: [
                         Text(
                           "Total docs: $_totalDocs",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface.withOpacity(0.7),
@@ -441,7 +441,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                                 const SizedBox(width: 4),
                                 Text(
                                   "Used",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     color: colorScheme.onSurface.withOpacity(
                                       0.7,
@@ -464,7 +464,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                                 const SizedBox(width: 4),
                                 Text(
                                   "Remaining",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     color: colorScheme.onSurface.withOpacity(
                                       0.7,
@@ -501,7 +501,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
               children: [
                 Text(
                   'No documents found',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface.withOpacity(0.8),
@@ -510,7 +510,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                 const SizedBox(height: 6),
                 Text(
                   'Try adjusting search.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 13,
                     color: colorScheme.onSurface.withOpacity(0.72),
                   ),
@@ -526,7 +526,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
                 Expanded(
                   child: Text(
                     "Couldn't load documents.",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14,
                       color: colorScheme.onSurface.withOpacity(0.75),
                     ),
@@ -565,7 +565,7 @@ class _DocumentsTabState extends State<DocumentsTab> {
         const SizedBox(height: 4),
         Text(
           count,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,

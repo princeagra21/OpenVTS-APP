@@ -59,7 +59,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
         children: [
           Text(
             'Recent Activity',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: titleFontSize + 2,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface.withOpacity(0.85),
@@ -84,7 +84,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
           else if (activities.isEmpty)
             Text(
               'No recent activity from API.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subtitleFontSize,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -109,7 +109,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                       child: Center(
                         child: Text(
                           '$index',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             color: colorScheme.onPrimary,
                             fontSize: subtitleFontSize - 2,
                             fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                         children: [
                           Text(
                             _display(activity.title),
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: titleFontSize,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface.withOpacity(0.87),
@@ -133,7 +133,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${_display(activity.time)} | ${_display(activity.subtitle)}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: subtitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               height: 1.3,

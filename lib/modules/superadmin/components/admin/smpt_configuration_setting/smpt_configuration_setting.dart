@@ -438,7 +438,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                   ),
                   label: Text(
                     "Save Configuration",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
@@ -475,7 +475,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                   ),
                   label: Text(
                     "Send Test Email",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
@@ -491,7 +491,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           // TITLE
           Text(
             "SMTP Configuration",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.87),
@@ -500,7 +500,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           const SizedBox(height: 4),
           Text(
             "Configure your email server settings",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
               fontWeight: FontWeight.w800,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -582,7 +582,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                 const SizedBox(height: 8),
                 Text(
                   "Common: 587, 465, 25",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -602,7 +602,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                     children: [
                       Text(
                         "Use TLS/SSL Encryption",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w800,
@@ -651,7 +651,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                 const SizedBox(height: 8),
                 Text(
                   "For Gmail/Google Workspace, use an App Password",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -800,7 +800,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -814,7 +814,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
             const SizedBox(height: 12),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
@@ -841,7 +841,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width),
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface.withOpacity(0.87),
@@ -851,13 +851,13 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
         TextField(
           obscureText: obscureText,
           controller: controller,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             color: colorScheme.onSurface,
             fontSize: AdaptiveUtils.getTitleFontSize(width),
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.roboto(
               color: colorScheme.onSurface.withOpacity(0.6),
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),

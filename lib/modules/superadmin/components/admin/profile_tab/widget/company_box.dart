@@ -106,7 +106,7 @@ class CompanyBox extends StatelessWidget {
                 children: [
                   Text(
                     "Company",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface.withOpacity(0.7),
@@ -120,7 +120,7 @@ class CompanyBox extends StatelessWidget {
                           companyName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: titleFontSize,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
@@ -192,7 +192,7 @@ class CompanyBox extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
@@ -202,7 +202,7 @@ class CompanyBox extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),

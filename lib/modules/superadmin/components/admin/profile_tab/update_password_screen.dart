@@ -168,7 +168,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 children: [
                   Text(
                     "Update Password",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                     ),
@@ -188,7 +188,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
               Text(
                 "Securely update your account password",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -201,7 +201,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               TextField(
                 controller: _newPasswordController,
                 obscureText: _obscureNew,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   color: colorScheme.onSurface,
                   fontSize: AdaptiveUtils.getTitleFontSize(
                     w,
@@ -209,7 +209,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
                   hintText: "New Password",
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
@@ -239,13 +239,13 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   color: colorScheme.onSurface,
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
                   hintText: "Confirm Password",
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
@@ -287,7 +287,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                         ? const AppShimmer(width: 18, height: 18, radius: 9)
                         : Text(
                             "Update Password",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: labelSize,
                               color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,

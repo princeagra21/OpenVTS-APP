@@ -238,7 +238,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
             children: [
               Text(
                 'Application',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -268,7 +268,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     ),
                     label: Text(
                       "Reset",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
@@ -295,7 +295,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     ),
                     label: Text(
                       "Save",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -321,7 +321,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
               children: [
                 Text(
                   'Current Configuration',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -334,7 +334,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   'Signup: ${signupAllowed ? 'ALLOWED' : 'DISABLED'}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: labelFs,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -346,7 +346,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   children: [
                     Text(
                       'Demo Login',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelFs,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -355,7 +355,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     const SizedBox(height: 4),
                     Text(
                       demoEnabled ? 'Enabled' : 'Disabled',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -369,7 +369,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   children: [
                     Text(
                       'Backup Retention',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelFs,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -378,7 +378,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     const SizedBox(height: 4),
                     Text(
                       backupRetention,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -392,7 +392,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   children: [
                     Text(
                       'Free Signup Credits',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelFs,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -401,7 +401,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     const SizedBox(height: 4),
                     Text(
                       signupCredits.toString(),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -448,7 +448,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     children: [
                       Text(
                         'Demo Login',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w800,
@@ -458,7 +458,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                       const SizedBox(height: 4),
                       Text(
                         demoEnabled ? 'Disable Demo Login' : 'Enable Demo Login',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w600,
@@ -487,7 +487,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                       'Users can access demo mode',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.primary,
@@ -541,7 +541,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                     children: [
                       Text(
                         'Reverse Geocoding',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w800,
@@ -551,7 +551,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                       const SizedBox(height: 4),
                       Text(
                         'Address Precision',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w600,
@@ -596,7 +596,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                             child: Center(
                               child: Text(
                                 "2 Digits",
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   color: geocodingPrecision.contains('2')
                                       ? colorScheme.onPrimary
                                       : colorScheme.onSurface,
@@ -628,7 +628,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                             child: Center(
                               child: Text(
                                 "3 Digits",
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   color: geocodingPrecision.contains('3')
                                       ? colorScheme.onPrimary
                                       : colorScheme.onSurface,
@@ -682,7 +682,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                         children: [
                           Text(
                             'Database Backup',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -692,7 +692,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                           const SizedBox(height: 4),
                           Text(
                             'Retention Period',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w600,
@@ -738,7 +738,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   ],
                   onChanged: (v) =>
                       setState(() => backupRetention = v ?? backupRetention),
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: valueFs,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
@@ -747,7 +747,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                 const SizedBox(height: 8),
                 Text(
                   'Backups will be retained for the selected period',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -774,7 +774,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
             children: [
               Text(
                 'Signup Configuration',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -799,7 +799,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                             children: [
                               Text(
                                 'Allow New Signups',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: AdaptiveUtils
                                           .getSubtitleFontSize(width) -
                                       3,
@@ -810,7 +810,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                               const SizedBox(height: 4),
                               Text(
                                 'New users can register',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(width) -
                                           3,
@@ -846,7 +846,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
               const SizedBox(height: 6),
               Text(
                 'Number of free credits awarded to new users upon signup',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.65),
@@ -874,7 +874,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelFs,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface.withOpacity(0.65),
@@ -904,7 +904,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelFs,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface.withOpacity(0.65),
@@ -933,7 +933,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
               .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
               .toList(),
           onChanged: (v) => onChanged(v ?? value),
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: valueFs,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -960,7 +960,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelFs,
             fontWeight: labelWeight ?? FontWeight.w600,
             color: labelColor ?? colorScheme.onSurface.withOpacity(0.65),
@@ -970,7 +970,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: valueFs,
             fontWeight: FontWeight.w800,
             color: colorScheme.onSurface,

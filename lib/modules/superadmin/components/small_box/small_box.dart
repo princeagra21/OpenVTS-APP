@@ -47,7 +47,7 @@ class SmallTab extends StatelessWidget {
         child: icon == null
             ? Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fontSize ?? defaultFontSize,
                   fontWeight: FontWeight.w600,
                   color:
@@ -67,7 +67,7 @@ class SmallTab extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     label,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: fontSize ?? defaultFontSize,
                       fontWeight: FontWeight.w600,
                       color: selected

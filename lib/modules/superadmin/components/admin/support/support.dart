@@ -259,7 +259,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   children: [
                     Text(
                       "Support Inbox",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: sectionTitleFs,
                         height: 24 / 18,
                         fontWeight: FontWeight.w700,
@@ -272,7 +272,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     else
                       Text(
                         "${_tickets.length} tickets",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: secondaryFs,
                           height: 16 / 12,
                           color: colorScheme.onSurface.withOpacity(0.54),
@@ -312,7 +312,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         const SizedBox(width: 6),
                         Text(
                           "New Ticket",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: buttonFs,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -338,14 +338,14 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: searchFs,
                   height: 20 / 14,
                   color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: "Search tickets",
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: searchFs - 2,
                     height: 16 / 12,
@@ -420,7 +420,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
                 child: Text(
                   "No tickets found",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: secondaryFs,
                     height: 16 / 12,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -525,7 +525,7 @@ Widget _tabPill(
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: tabFs,
           height: 20 / 14,
           fontWeight: FontWeight.w600,
@@ -576,7 +576,7 @@ class _TicketCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     ticket.title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: ticketTitleFs,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -590,7 +590,7 @@ class _TicketCard extends StatelessWidget {
                 if (_normalizeTicketStatus(ticket.status) != 'Closed')
                   Text(
                     '•',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width),
                       fontWeight: FontWeight.w700,
                       color: colorScheme.primary,
@@ -604,7 +604,7 @@ class _TicketCard extends StatelessWidget {
               children: [
                   Text(
                     ticket.id,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: metaFs,
                       height: 14 / 11,
                       color: colorScheme.onSurface.withOpacity(0.54),
@@ -637,7 +637,7 @@ class _TicketCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         ticket.status,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: metaFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -652,7 +652,7 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               'From',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: metaFs,
                 height: 14 / 11,
                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -666,7 +666,7 @@ class _TicketCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     ticket.name,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: secondaryFs,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.8),
@@ -679,7 +679,7 @@ class _TicketCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   createdText,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: secondaryFs,
                     height: 16 / 12,
                     color: colorScheme.onSurface.withOpacity(0.6),
@@ -691,7 +691,7 @@ class _TicketCard extends StatelessWidget {
             if (ticket.desc.isNotEmpty)
               Text(
                 ticket.desc,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: secondaryFs,
                   height: 16 / 12,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -710,7 +710,7 @@ class _TicketCard extends StatelessWidget {
                     children: [
                       Text(
                         'View Ticket',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: secondaryFs,
                           height: 16 / 12,
                           fontWeight: FontWeight.w600,

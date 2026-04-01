@@ -43,7 +43,7 @@ class VehicleUsersTab extends StatelessWidget {
           children: [
             Text(
               'No linked users',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: cs.onSurface,
@@ -52,7 +52,7 @@ class VehicleUsersTab extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'This vehicle has no linked primary user, creator, or driver in the current API response.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 13,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -124,7 +124,7 @@ class VehicleUsersTab extends StatelessWidget {
                         displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: cs.onSurface,
@@ -143,7 +143,7 @@ class VehicleUsersTab extends StatelessWidget {
                       ),
                       child: Text(
                         _displayRole(user),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: cs.primary,
@@ -158,7 +158,7 @@ class VehicleUsersTab extends StatelessWidget {
                     '@$displayUsername',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 13,
                       color: cs.onSurface.withOpacity(0.7),
                     ),
@@ -170,7 +170,7 @@ class VehicleUsersTab extends StatelessWidget {
                     displayEmail,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 13,
                       color: cs.onSurface.withOpacity(0.7),
                     ),
@@ -182,7 +182,7 @@ class VehicleUsersTab extends StatelessWidget {
                     displayPhone,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 13,
                       color: cs.onSurface.withOpacity(0.7),
                     ),
@@ -192,7 +192,7 @@ class VehicleUsersTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'Last seen: $displayLastSeen',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 12,
                       color: cs.onSurface.withOpacity(0.6),
                     ),

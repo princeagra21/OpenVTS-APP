@@ -4,12 +4,14 @@ import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/superadmin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   SuperadminProfile? _profile;
   bool _loadingProfile = false;
+  String _accessToken = '';
   CancelToken? _profileToken;
   ApiClient? _apiClient;
   SuperadminRepository? _repo;
@@ -30,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _loadAccessToken();
     _loadProfile();
   }
 
@@ -48,6 +52,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     _repo = SuperadminRepository(api: _apiClient!);
     _baseUrl = _apiClient!.dio.options.baseUrl.trim();
+  }
+
+  Future<void> _loadAccessToken() async {
+    final token = await TokenStorage.defaultInstance().readAccessToken();
+    if (!mounted) return;
+    setState(() => _accessToken = token?.trim() ?? '');
   }
 
   Future<void> _loadProfile() async {
@@ -86,6 +96,162 @@ class _HomeScreenState extends State<HomeScreen> {
     if (value == null) return fallback;
     final text = value.trim();
     return text.isEmpty ? fallback : text;
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Log out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+    if (shouldLogout != true) return;
+    await PushNotificationsService.instance.unregisterForLogout();
+    await TokenStorage.defaultInstance().clear();
+    if (!mounted) return;
+    context.go('/login');
+  }
+
+  Future<void> _showProfileMenu({
+    required BuildContext anchorContext,
+    required String displayName,
+    required String roleLabel,
+    required String imageUrl,
+    required String initials,
+  }) async {
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlay == null) return;
+    final media = MediaQuery.of(context);
+    final topOffset =
+        media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
+    final rightEdge = overlay.size.width - 12;
+    final menuWidth = 200.0;
+    final position = RelativeRect.fromLTRB(
+      rightEdge - menuWidth,
+      topOffset,
+      12,
+      overlay.size.height - topOffset,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: SizedBox(
+            width: menuWidth,
+            child: Row(
+              children: [
+                _ProfileAvatar(
+                  radius: 22,
+                  fontSize: 14,
+                  colorScheme: Theme.of(context).colorScheme,
+                  imageUrl: imageUrl,
+                  initials: initials,
+                  loading: _loadingProfile,
+                  authToken: _accessToken,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName.isNotEmpty ? displayName : '—',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        roleLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+        PopupMenuItem<String>(
+          value: 'profile',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(child: Text('Profile')),
+              Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+        PopupMenuItem<String>(
+          value: 'password',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(child: Text('Change Password')),
+              Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+        PopupMenuItem<String>(
+          value: 'logout',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              Icon(Icons.logout, size: 18, color: Colors.red),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (!mounted || selected == null) return;
+    if (selected == 'profile') {
+      context.push('/superadmin/settings');
+    } else if (selected == 'password') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Change password not available yet.')),
+      );
+    } else if (selected == 'logout') {
+      await _confirmLogout();
+    }
   }
 
   String _initials(String name, String username) {
@@ -196,7 +362,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final username = _display(profile?.username);
     final initials = _initials(displayName, username);
     final profileImageUrl = _extractProfileImageUrl(profile);
-    final footerText = '$appTitle Super Admin';
+    final currentYear = DateTime.now().year;
+    final footerText = '© $currentYear Fleet Stack All rights reserved.';
     final roleLabel = _display(profile?.roleName, fallback: 'Super Admin');
 
     final List<_HomeShortcut> shortcuts = [
@@ -255,6 +422,11 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: cs.surface,
         toolbarHeight: AppUtils.appBarHeightCustom + 12,
         titleSpacing: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(24),
+          ),
+        ),
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
@@ -268,10 +440,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: AppUtils.spacingExtraSmall),
                     Text(
                       'Fleet OS',
-                      style: AppUtils.headlineSmallBase.copyWith(
+                      style: GoogleFonts.roboto(
                         fontSize: subtitleFontSize,
                         fontWeight: FontWeight.w900,
-                        fontFamily: 'Roboto',
                         color: cs.onSurface,
                         letterSpacing: -0.4,
                       ),
@@ -291,42 +462,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(width: AppUtils.spacingSmall),
                   Row(
                     children: [
-                      _ProfileAvatar(
-                        radius: rightAvatarRadius,
-                        fontSize: rightAvatarFontSize,
-                        colorScheme: cs,
-                        imageUrl: profileImageUrl,
-                        initials: initials,
-                        loading: _loadingProfile,
-                      ),
-                      SizedBox(width: AppUtils.spacingSmall),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: (screenWidth * 0.22).clamp(80, 140),
-                            child: Text(
-                              displayName.isNotEmpty ? displayName : username,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppUtils.bodySmallBase.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'Roboto',
-                                color: cs.onSurface.withOpacity(0.85),
-                              ),
-                            ),
+                      Builder(
+                        builder: (avatarContext) => InkWell(
+                          borderRadius: BorderRadius.circular(
+                            rightAvatarRadius + 4,
                           ),
-                          SizedBox(height: AppUtils.spacingExtraSmall),
-                          Text(
-                            roleLabel,
-                            style: AppUtils.bodySmallBase.copyWith(
-                              fontSize: labelFontSize - 1,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Roboto',
-                              color: cs.onSurface.withOpacity(0.6),
-                            ),
+                          onTap: () => _showProfileMenu(
+                            anchorContext: avatarContext,
+                            displayName:
+                                displayName.isNotEmpty ? displayName : username,
+                            roleLabel: roleLabel,
+                            imageUrl: profileImageUrl,
+                            initials: initials,
                           ),
-                        ],
+                          child: _ProfileAvatar(
+                            radius: rightAvatarRadius,
+                            fontSize: rightAvatarFontSize,
+                            colorScheme: cs,
+                            imageUrl: profileImageUrl,
+                            initials: initials,
+                            loading: _loadingProfile,
+                            authToken: _accessToken,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -340,67 +498,69 @@ class _HomeScreenState extends State<HomeScreen> {
         bottom: false,
         child: CustomScrollView(
           slivers: [
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                hp,
-                AppUtils.spacingMedium,
-                hp * 0.5,
-                AppUtils.spacingLarge,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: AppUtils.spacingLarge),
-                    Center(
-                      child: Image.asset(
-                        logoAsset,
-                        width: (screenWidth * 0.45).clamp(140, 200),
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    SizedBox(height: AppUtils.spacingLarge * 1.5),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: gridGap,
-                      runSpacing: gridGap,
-                      children: shortcuts.map((item) {
-                        return SizedBox(
-                          width: tileSize,
-                          child: _HomeShortcutTile(
-                            item: item,
-                            tileSize: tileSize,
-                            labelFontSize: labelFontSize,
-                            colorScheme: cs,
-                            onTap: () => context.go(item.route),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   hp,
-                  0,
-                  hp,
                   AppUtils.spacingMedium,
+                  hp * 0.5,
+                  AppUtils.spacingLarge,
                 ),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Text(
-                    footerText,
-                    textAlign: TextAlign.center,
-                    style: AppUtils.bodySmallBase.copyWith(
-                      color: cs.onSurface.withOpacity(0.55),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Transform.translate(
+                        offset: const Offset(0, -30),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Center(
+                              child: Transform.translate(
+                                offset: const Offset(0, -40),
+                                child: Image.asset(
+                                  logoAsset,
+                                  width: (screenWidth * 0.45).clamp(140, 200),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: AppUtils.spacingLarge * 1.5),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: gridGap,
+                              runSpacing: gridGap,
+                              children: shortcuts.map((item) {
+                                return SizedBox(
+                                  width: tileSize,
+                                  child: _HomeShortcutTile(
+                                    item: item,
+                                    tileSize: tileSize,
+                                    labelFontSize: labelFontSize,
+                                    colorScheme: cs,
+                                    onTap: () => context.go(item.route),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Text(
+                        footerText,
+                        textAlign: TextAlign.center,
+                        style: AppUtils.bodySmallBase.copyWith(
+                          color: cs.onSurface.withOpacity(0.55),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -528,7 +688,7 @@ class _HomeShortcutTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppUtils.bodySmallBase.copyWith(
+            style: GoogleFonts.roboto(
               fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               color: neutralColor,
@@ -547,6 +707,7 @@ class _ProfileAvatar extends StatelessWidget {
   final String imageUrl;
   final String initials;
   final bool loading;
+  final String authToken;
 
   const _ProfileAvatar({
     required this.radius,
@@ -555,22 +716,37 @@ class _ProfileAvatar extends StatelessWidget {
     required this.imageUrl,
     required this.initials,
     required this.loading,
+    required this.authToken,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl.isNotEmpty) {
+    if (imageUrl.isNotEmpty && authToken.isNotEmpty) {
       final double size = radius * 2;
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: colorScheme.primaryContainer,
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.grey.shade50
+              : colorScheme.surfaceVariant,
+          shape: BoxShape.circle,
+        ),
         child: ClipOval(
           child: CachedNetworkImage(
             imageUrl: imageUrl,
             width: size,
             height: size,
             fit: BoxFit.cover,
-            placeholder: (_, __) => const SizedBox.shrink(),
+            httpHeaders: authToken.isNotEmpty
+                ? {'Authorization': 'Bearer $authToken'}
+                : null,
+            placeholder: (_, __) => _InitialsAvatar(
+              radius: radius,
+              fontSize: fontSize,
+              colorScheme: colorScheme,
+              initials: initials,
+            ),
             errorWidget: (_, __, ___) => _InitialsAvatar(
               radius: radius,
               fontSize: fontSize,
@@ -606,9 +782,17 @@ class _InitialsAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: colorScheme.primaryContainer,
+    final double size = radius * 2;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.grey.shade50
+            : colorScheme.surfaceVariant,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
       child: Text(
         initials,
         style: TextStyle(

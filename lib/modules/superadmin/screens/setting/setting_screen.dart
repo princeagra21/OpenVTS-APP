@@ -159,7 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 "Settings",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface.withOpacity(0.85),
@@ -257,7 +257,7 @@ class _SettingsMenuCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -265,7 +265,7 @@ class _SettingsMenuCard extends StatelessWidget {
                           ),
                           Text(
                             subtitle,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               color:
                                   colorScheme.onSurface.withOpacity(0.65),
@@ -295,7 +295,7 @@ class _SettingsMenuCard extends StatelessWidget {
                     SizedBox(height: hp),
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -303,7 +303,7 @@ class _SettingsMenuCard extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         color: colorScheme.onSurface.withOpacity(0.65),
                       ),

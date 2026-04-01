@@ -54,7 +54,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                         ),
                         child: Text(
                           "Reset",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
@@ -77,7 +77,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                         ),
                         child: Text(
                           "Save All",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -92,7 +92,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                   /// TEXT BELOW BUTTONS
                   Text(
                     "Payment Gateway Configuration",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
@@ -102,7 +102,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
 
                   Text(
                     "Configure and manage your payment processors",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w200,
                       color: Colors.black.withOpacity(0.9),
@@ -127,7 +127,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                         /// HEADER
                         Text(
                           "Active Configuration",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: AdaptiveUtils.getTitleFontSize(width),
                             fontWeight: FontWeight.w700,
                             color: Colors.black87,
@@ -147,7 +147,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "2",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -155,7 +155,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     "Enabled Gateways",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                                       color: Colors.black54,
                                     ),
@@ -171,7 +171,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Not Set",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -179,7 +179,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     "Primary Gateway",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                                       color: Colors.black54,
                                     ),
@@ -195,7 +195,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "14",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -203,7 +203,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     "Total Available",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                                       color: Colors.black54,
                                     ),
@@ -393,7 +393,7 @@ class _PaymentGatewayBoxState extends State<PaymentGatewayBox> {
                   Expanded(
                     child: Text(
                       widget.name,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -411,7 +411,7 @@ class _PaymentGatewayBoxState extends State<PaymentGatewayBox> {
               Flexible(
                 child: Text(
                   widget.region,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
                     color: Colors.black.withOpacity(0.7),
                   ),

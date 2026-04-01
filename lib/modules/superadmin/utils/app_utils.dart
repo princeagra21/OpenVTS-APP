@@ -37,7 +37,7 @@ class AppUtils {
 
   // Font Families
   static const String headingFont = 'Satoshi';
-  // Body font is handled via GoogleFonts.inter()
+  // Body font is handled via GoogleFonts.roboto()
 
   // Text Styles (premium typography: clean, sans-serif, with hierarchy)
   // Base styles without color; colors applied in themes
@@ -60,27 +60,27 @@ class AppUtils {
     fontFamily: headingFont,
   );
 
-  static TextStyle bodyLargeBase = GoogleFonts.inter(
+  static TextStyle bodyLargeBase = GoogleFonts.roboto(
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle bodyMediumBase = GoogleFonts.inter(
+  static TextStyle bodyMediumBase = GoogleFonts.roboto(
     fontSize: 14.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle bodySmallBase = GoogleFonts.inter(
+  static TextStyle bodySmallBase = GoogleFonts.roboto(
     fontSize: 12.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle subtitleBase = GoogleFonts.inter(
+  static TextStyle subtitleBase = GoogleFonts.roboto(
     fontSize: 13.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle buttonTextBase = GoogleFonts.inter(
+  static TextStyle buttonTextBase = GoogleFonts.roboto(
     fontSize: 16.0,
     fontWeight: FontWeight.bold,
   );

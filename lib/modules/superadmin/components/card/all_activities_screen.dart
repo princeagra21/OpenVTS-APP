@@ -419,7 +419,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Select Admin',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -442,7 +442,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                     const EdgeInsets.symmetric(horizontal: 6),
                                 title: Text(
                                   'All Admins',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -467,13 +467,13 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                   const EdgeInsets.symmetric(horizontal: 6),
                               title: Text(
                                 name,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               subtitle: Text(
                                 a.email.isNotEmpty ? a.email : '—',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   color: colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
@@ -526,7 +526,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Date Filter',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -770,7 +770,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                             c['title'] as String,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: titleSize,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -788,7 +788,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                     const SizedBox(height: 8),
                     Text(
                       c['value'] as String,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: valueSize,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -844,7 +844,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -858,7 +858,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                     _capitalizeFirst(
                       _safeString(activity["type"], fallback: "—"),
                     ),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: subFontSize,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -871,7 +871,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       dateStr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: subFontSize - 2,
                         color: colorScheme.onSurface.withOpacity(0.54),
                       ),
@@ -900,7 +900,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               ),
               child: Text(
                 activity["status"],
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   color: colorScheme.onSurface.withOpacity(0.7),
                   fontSize: badgeFontSize - 2,
                 ),
@@ -909,7 +909,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 4),
             Text(
               _relativeTime(date),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -939,7 +939,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -948,7 +948,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 6),
             Text(
               _formatDateOnly(date),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize - 2,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -961,7 +961,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           children: [
             Text(
               _safeString(activity["value"], fallback: "—"),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -970,7 +970,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 4),
             Text(
               _safeString(activity["status"], fallback: ""),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize - 3,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -1001,7 +1001,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -1009,7 +1009,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             ),
             Text(
               _safeString(activity["email"], fallback: ""),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -1019,7 +1019,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
 
         right = Text(
           _formatDateOnly(date),
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: subFontSize - 2,
             color: colorScheme.onSurface.withOpacity(0.54),
           ),
@@ -1185,7 +1185,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                         children: [
                           Text(
                             'Payments',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs - 1,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -1194,7 +1194,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Manage transactions',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs - 3,
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),
@@ -1224,7 +1224,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                               const SizedBox(width: 6),
                               Text(
                                 'Record payment',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fs - 3,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
@@ -1301,7 +1301,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.roboto(
                                           fontSize: fs - 2,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
@@ -1356,7 +1356,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                         _dateFilterLabel,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.roboto(
                                           fontSize: fs - 2,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
@@ -1385,7 +1385,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       _searchQuery.isNotEmpty
                           ? 'No activities found'
                           : 'No activities in selected range',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fs,
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),

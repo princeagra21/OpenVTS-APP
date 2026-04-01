@@ -262,7 +262,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
+      style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
       decoration: InputDecoration(
         filled: true,
         fillColor: colorScheme.surfaceVariant,
@@ -306,7 +306,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
             const SizedBox(width: 8),
             Text(
               unit,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fs,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface.withOpacity(0.87),
@@ -344,7 +344,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs + 2,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -353,7 +353,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -384,7 +384,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
         children: [
           Text(
             "Ignition Source",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs + 2,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -393,7 +393,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
           const SizedBox(height: 4),
           Text(
             "Choose how engine ON/OFF is derived.",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -407,7 +407,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                   activeColor: colorScheme.primary,
                   title: Text(
                     "Ignition Wire",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: fs - 1,
                       color: colorScheme.onSurface,
                     ),
@@ -424,7 +424,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                   activeColor: colorScheme.primary,
                   title: Text(
                     "Motion-Based",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: fs - 1,
                       color: colorScheme.onSurface,
                     ),
@@ -473,7 +473,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                 onPressed: () => setState(_applySnapshot),
                 child: Text(
                   "Reset",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fs - 2,
                     color: colorScheme.onSurface,
                   ),
@@ -502,7 +502,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                     if (_saving) const SizedBox(width: 8),
                     Text(
                       "Save",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fs - 2,
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -518,7 +518,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
             children: [
               Text(
                 "Vehicle Setting Configuration",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fs + 1,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),

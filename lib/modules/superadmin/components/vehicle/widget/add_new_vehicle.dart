@@ -217,7 +217,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 children: [
                   Text(
                     "Add New Vehicle",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -237,7 +237,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               Center(
                 child: Text(
                   "Register a new vehicle",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: labelSize + 2,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -336,7 +336,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           ),
                           child: Text(
                             "Add Vehicle",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: labelSize + 2,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onPrimary,
@@ -386,7 +386,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface.withOpacity(0.87),
@@ -396,10 +396,10 @@ class StylishTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscureText,
-          style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface),
+          style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.roboto(
               color: colorScheme.onSurface.withOpacity(0.6),
               fontSize: fs,
             ),
@@ -467,7 +467,7 @@ class StylishDropdown extends StatelessWidget {
             children: [
               TextSpan(
                 text: label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -503,7 +503,7 @@ class StylishDropdown extends StatelessWidget {
             value: value,
             hint: Text(
               hint,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -517,7 +517,7 @@ class StylishDropdown extends StatelessWidget {
             ),
             dropdownColor: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs,
               color: colorScheme.onSurface,
             ),

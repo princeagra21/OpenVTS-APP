@@ -139,7 +139,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
               children: [
                 Text(
                   "Preview Mode",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width),
                     fontWeight: FontWeight.w800,
                     color: theme.colorScheme.onSurface,
@@ -219,7 +219,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                 children: [
                   Text(
                     "Sample Dashboard",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: theme.colorScheme.onSurface,
@@ -228,7 +228,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                   const SizedBox(height: 12),
                   Text(
                     "This is how your UI will look.",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),

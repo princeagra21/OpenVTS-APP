@@ -513,7 +513,7 @@ class NavigateBox extends StatelessWidget {
         children: [
           Text(
             "System Settings",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -523,7 +523,7 @@ class NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             "Manage platform configuration",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -614,7 +614,7 @@ class SmallTab extends StatelessWidget {
               ],
               Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fontSize,
                   height: 18 / 13,
                   fontWeight: FontWeight.w600,
@@ -708,7 +708,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: buttonFont,
                   height: 16 / 12,
                   fontWeight: FontWeight.w600,
@@ -896,7 +896,7 @@ class _ProfileDatesGrid extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: labelSize,
                 height: 14 / 11,
                 fontWeight: FontWeight.w500,
@@ -906,7 +906,7 @@ class _ProfileDatesGrid extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               loading ? '—' : date,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: valueSize,
                 height: 18 / 13,
                 fontWeight: FontWeight.w700,
@@ -916,7 +916,7 @@ class _ProfileDatesGrid extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               loading ? '—' : time,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: timeSize,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1052,7 +1052,7 @@ class _ProfileEmailCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 12 * scale,
                       height: 16 / 12,
                       fontWeight: FontWeight.w600,
@@ -1161,7 +1161,7 @@ class _ProfilePhoneCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 12 * scale,
                       height: 16 / 12,
                       fontWeight: FontWeight.w600,
@@ -1437,7 +1437,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                     ),
                     child: Text(
                       label,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 13 * scale,
                         height: 18 / 13,
                         fontWeight: FontWeight.w600,
@@ -1514,7 +1514,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
         children: [
           Text(
             "Push Diagnostics",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: headingFs,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1524,7 +1524,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             "Notification permission and push state",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: subtitleFs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1588,7 +1588,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
                       "Notifications are blocked. Open your device settings and allow notifications, then click 'Re-register push'.",
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: alertFs,
                         height: 17 / 12,
                         fontWeight: FontWeight.w500,
@@ -1624,7 +1624,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
                     (state?.registered ?? false)
                         ? "Unregister"
                         : "Re-register",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1652,7 +1652,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
                   ),
                   label: Text(
                     "Send push test",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1689,7 +1689,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1699,7 +1699,7 @@ class _PushDiagnosticsCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -1731,14 +1731,14 @@ class _PushSettingsDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w700,
           color: cs.onSurface,
         ),
       ),
       content: Text(
         message,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w500,
           color: cs.onSurface.withOpacity(0.7),
         ),
@@ -1748,7 +1748,7 @@ class _PushSettingsDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(color: cs.onSurface),
+            style: GoogleFonts.roboto(color: cs.onSurface),
           ),
         ),
         ElevatedButton(
@@ -1761,7 +1761,7 @@ class _PushSettingsDialog extends StatelessWidget {
           ),
           child: Text(
             confirmLabel,
-            style: GoogleFonts.inter(color: cs.onPrimary),
+            style: GoogleFonts.roboto(color: cs.onPrimary),
           ),
         ),
       ],
@@ -1788,14 +1788,14 @@ class _PushRegisterDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w700,
           color: cs.onSurface,
         ),
       ),
       content: Text(
         message,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w500,
           color: cs.onSurface.withOpacity(0.7),
         ),
@@ -1805,7 +1805,7 @@ class _PushRegisterDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(color: cs.onSurface),
+            style: GoogleFonts.roboto(color: cs.onSurface),
           ),
         ),
         ElevatedButton(
@@ -1818,7 +1818,7 @@ class _PushRegisterDialog extends StatelessWidget {
           ),
           child: Text(
             confirmLabel,
-            style: GoogleFonts.inter(color: cs.onPrimary),
+            style: GoogleFonts.roboto(color: cs.onPrimary),
           ),
         ),
       ],
@@ -1836,14 +1836,14 @@ class _PushUnregisterDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         'Unregister push?',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w700,
           color: cs.onSurface,
         ),
       ),
       content: Text(
         'This device will stop receiving push notifications.',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w500,
           color: cs.onSurface.withOpacity(0.7),
         ),
@@ -1853,7 +1853,7 @@ class _PushUnregisterDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(color: cs.onSurface),
+            style: GoogleFonts.roboto(color: cs.onSurface),
           ),
         ),
         ElevatedButton(
@@ -1866,7 +1866,7 @@ class _PushUnregisterDialog extends StatelessWidget {
           ),
           child: Text(
             'Unregister',
-            style: GoogleFonts.inter(color: cs.onPrimary),
+            style: GoogleFonts.roboto(color: cs.onPrimary),
           ),
         ),
       ],
@@ -1884,14 +1884,14 @@ class _PushTestDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         'Send test push?',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w700,
           color: cs.onSurface,
         ),
       ),
       content: Text(
         'We will send a test notification to this device.',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontWeight: FontWeight.w500,
           color: cs.onSurface.withOpacity(0.7),
         ),
@@ -1901,7 +1901,7 @@ class _PushTestDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'Cancel',
-            style: GoogleFonts.inter(color: cs.onSurface),
+            style: GoogleFonts.roboto(color: cs.onSurface),
           ),
         ),
         ElevatedButton(
@@ -1914,7 +1914,7 @@ class _PushTestDialog extends StatelessWidget {
           ),
           child: Text(
             'Send',
-            style: GoogleFonts.inter(color: cs.onPrimary),
+            style: GoogleFonts.roboto(color: cs.onPrimary),
           ),
         ),
       ],
@@ -2053,7 +2053,7 @@ class _ProfileAccountCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 12 * scale,
                       height: 16 / 12,
                       fontWeight: FontWeight.w600,

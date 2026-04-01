@@ -82,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Text(
                         _onboardingData[index]['title']!,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: titleSize,
                           fontWeight: FontWeight.w800,
                           color: colorScheme.onSurface,
@@ -94,7 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Text(
                         _onboardingData[index]['subtitle']!,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: labelSize,
                           height: 1.4,
                           color: colorScheme.onSurface.withOpacity(0.7),
@@ -120,7 +120,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
               child: Text(
                 'Skip',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize,
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -163,7 +163,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _currentPage == _onboardingData.length - 1
                       ? 'Continue'
                       : 'Next',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: labelSize,
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

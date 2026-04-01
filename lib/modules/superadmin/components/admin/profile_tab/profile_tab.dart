@@ -28,6 +28,7 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   AdminProfile? _profile;
   bool _loading = false;
+  bool _statusSubmitting = false;
   bool _errorShown = false;
   bool _loadFailed = false;
   CancelToken? _token;
@@ -266,8 +267,54 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
+  Future<void> _toggleActive() async {
+    if (_statusSubmitting) return;
+    final profile = _profile;
+    if (profile == null) return;
+    setState(() => _statusSubmitting = true);
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      _repo ??= SuperadminRepository(api: _api!);
+      final res = await _repo!.updateAdminStatus(
+        widget.adminId,
+        !profile.isActive,
+      );
+      if (!mounted) return;
+      res.when(
+        success: (_) async {
+          await _loadProfile();
+          if (!mounted) return;
+          setState(() => _statusSubmitting = false);
+        },
+        failure: (_) {
+          if (!mounted) return;
+          setState(() => _statusSubmitting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Couldn't update status.")),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _statusSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't update status.")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const AppShimmer(
+        width: double.infinity,
+        height: 360,
+        radius: 12,
+      );
+    }
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
@@ -313,6 +360,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final phone = _display(p?.phone);
     final isVerified = p?.isVerified == true;
     final companyName = _display(p?.companyName);
+    final socialLabels = _companySocialLabels(p);
     final companyId = _valueFromKeys(p, const [
       'companyId',
       'company_id',
@@ -355,8 +403,6 @@ class _ProfileTabState extends State<ProfileTab> {
     final updatedRaw = _firstNonEmpty([
       p?.data['updatedAt']?.toString(),
       p?.data['updated_at']?.toString(),
-      p?.data['lastLogin']?.toString(),
-      p?.data['last_login']?.toString(),
     ]);
     final createdRaw = _firstNonEmpty([
       p?.createdAt,
@@ -365,6 +411,9 @@ class _ProfileTabState extends State<ProfileTab> {
     ]);
     final updated = _formatDateTime(updatedRaw);
     final created = _formatDateTime(createdRaw);
+    final vehiclesCount = p?.vehiclesCount ?? 0;
+    final credits = p?.credits ?? 0;
+    final lastLogin = _formatDateTime(p?.lastLogin ?? '');
 
     return Container(
       width: double.infinity,
@@ -377,20 +426,21 @@ class _ProfileTabState extends State<ProfileTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Overview",
-                style: GoogleFonts.inter(
-                  fontSize: fsSection,
-                  height: 24 / 18,
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(
+                    "Admin Overview",
+                    style: GoogleFonts.roboto(
+                      fontSize: fsSection,
+                      height: 24 / 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.push<bool>(
@@ -419,11 +469,43 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     label: Text(
                       "Edit",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsAction,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _statusSubmitting ? null : _toggleActive,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: colorScheme.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: Icon(
+                      _profile?.isActive == true
+                          ? Icons.toggle_on
+                          : Icons.toggle_off,
+                      size: fsActionIcon,
+                      color: colorScheme.primary,
+                    ),
+                    label: Text(
+                      _profile?.isActive == true
+                          ? "Set Inactive"
+                          : "Set Active",
+                      style: GoogleFonts.roboto(
+                        fontSize: fsAction,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
@@ -440,9 +522,7 @@ class _ProfileTabState extends State<ProfileTab> {
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: colorScheme.onSurface.withOpacity(0.2),
-                      ),
+                      side: BorderSide(color: colorScheme.primary),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -450,15 +530,15 @@ class _ProfileTabState extends State<ProfileTab> {
                     icon: Icon(
                       Icons.lock_outline,
                       size: fsActionIcon,
-                      color: colorScheme.onSurface,
+                      color: colorScheme.primary,
                     ),
                     label: Text(
                       "Password",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsAction,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
@@ -479,13 +559,15 @@ class _ProfileTabState extends State<ProfileTab> {
             colorScheme: colorScheme,
           ),
           SizedBox(height: padding),
-          _buildDateGrid(
+          _buildAdminMetaGrid(
             context,
             fs: fs,
             colorScheme: colorScheme,
-            updated: updated,
-            created: created,
             loading: loading,
+            vehiclesCount: vehiclesCount.toString(),
+            credits: credits.toString(),
+            lastLogin: lastLogin,
+            created: created,
           ),
           SizedBox(height: padding),
           _buildCompanyCard(
@@ -499,6 +581,7 @@ class _ProfileTabState extends State<ProfileTab> {
             favicon: favicon,
             logoLight: logoLight,
             logoDark: logoDark,
+            socialLabels: socialLabels,
             loading: loading,
           ),
           SizedBox(height: padding),
@@ -565,17 +648,22 @@ class _ProfileTabState extends State<ProfileTab> {
                   color: Theme.of(context).brightness == Brightness.dark
                       ? colorScheme.surfaceVariant
                       : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
+                  shape: BoxShape.circle,
                   border: Border.all(
                     color: colorScheme.onSurface.withOpacity(0.12),
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  Icons.account_circle_outlined,
-                  color: colorScheme.onSurface,
-                  size: 18 * scale,
-                ),
+                child: loading
+                    ? const AppShimmer(width: 24, height: 24, radius: 12)
+                    : Text(
+                        name.isNotEmpty ? name.trim()[0].toUpperCase() : 'A',
+                        style: GoogleFonts.roboto(
+                          fontSize: 16 * scale,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -587,20 +675,23 @@ class _ProfileTabState extends State<ProfileTab> {
                         Expanded(
                           child: loading
                               ? const AppShimmer(
-                                  width: 80,
-                                  height: 16,
+                                  width: 120,
+                                  height: 18,
                                   radius: 8,
                                 )
                               : Text(
-                                  "Account",
-                                  style: GoogleFonts.inter(
-                                    fontSize: labelFs,
-                                    height: 14 / 11,
-                                    fontWeight: FontWeight.w500,
+                                  name,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: titleFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                         ),
+                        const SizedBox(width: 8),
                         loading
                             ? const AppShimmer(
                                 width: 90,
@@ -619,61 +710,59 @@ class _ProfileTabState extends State<ProfileTab> {
                                       : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isVerified
-                                          ? Icons.verified
-                                          : Icons.verified_outlined,
-                                      size: statusIcon,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.8),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      isVerified ? "Verified" : "Not Verified",
-                                      style: GoogleFonts.inter(
-                                        fontSize: statusFs,
-                                        height: 14 / 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.8),
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  _profile?.isActive == true
+                                      ? "Active"
+                                      : "Inactive",
+                                  style: GoogleFonts.roboto(
+                                    fontSize: statusFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.8),
+                                  ),
                                 ),
                               ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    loading
-                        ? const AppShimmer(
-                            width: double.infinity,
-                            height: 18,
-                            radius: 8,
-                          )
-                        : Text(
-                            name,
-                            style: GoogleFonts.inter(
-                              fontSize: titleFs,
-                              height: 20 / 14,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                     const SizedBox(height: 4),
                     loading
-                        ? const AppShimmer(width: 140, height: 14, radius: 8)
+                        ? const AppShimmer(width: 120, height: 14, radius: 8)
                         : Text(
                             username,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: subtitleFs,
                               height: 16 / 12,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                    const SizedBox(height: 6),
+                    loading
+                        ? const AppShimmer(width: 140, height: 14, radius: 8)
+                        : Text(
+                            phone,
+                            style: GoogleFonts.roboto(
+                              fontSize: subtitleFs,
+                              height: 16 / 12,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                    const SizedBox(height: 6),
+                    loading
+                        ? const AppShimmer(width: 160, height: 14, radius: 8)
+                        : Text(
+                            email,
+                            style: GoogleFonts.roboto(
+                              fontSize: subtitleFs,
+                              height: 16 / 12,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface.withOpacity(0.7),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -683,150 +772,20 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(
-                Icons.email_outlined,
-                size: rowIcon,
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: loading
-                    ? const AppShimmer(
-                        width: double.infinity,
-                        height: 14,
-                        radius: 8,
-                      )
-                    : Text(
-                        email,
-                        style: GoogleFonts.inter(
-                          fontSize: subtitleFs,
-                          height: 16 / 12,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-              ),
-              loading
-                  ? const AppShimmer(width: 90, height: 18, radius: 999)
-                  : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
-                            : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isVerified
-                                ? Icons.verified
-                                : Icons.verified_outlined,
-                            size: statusIcon,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isVerified ? "Verified" : "Not Verified",
-                            style: GoogleFonts.inter(
-                              fontSize: statusFs,
-                              height: 14 / 11,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.phone_outlined,
-                size: rowIcon,
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: loading
-                    ? const AppShimmer(
-                        width: double.infinity,
-                        height: 14,
-                        radius: 8,
-                      )
-                    : Text(
-                        phone,
-                        style: GoogleFonts.inter(
-                          fontSize: subtitleFs,
-                          height: 16 / 12,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-              ),
-              loading
-                  ? const AppShimmer(width: 90, height: 18, radius: 999)
-                  : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
-                            : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isVerified
-                                ? Icons.verified
-                                : Icons.verified_outlined,
-                            size: statusIcon,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isVerified ? "Verified" : "Not Verified",
-                            style: GoogleFonts.inter(
-                              fontSize: statusFs,
-                              height: 14 / 11,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildDateGrid(
+  Widget _buildAdminMetaGrid(
     BuildContext context, {
     required double fs,
     required ColorScheme colorScheme,
-    required _DatePair updated,
-    required _DatePair created,
     required bool loading,
+    required String vehiclesCount,
+    required String credits,
+    required _DatePair lastLogin,
+    required _DatePair created,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -839,8 +798,28 @@ class _ProfileTabState extends State<ProfileTab> {
             SizedBox(
               width: cellWidth,
               child: _dateCard(
-                title: "Updated",
-                pair: updated,
+                title: "Vehicles",
+                pair: _DatePair(vehiclesCount, ''),
+                fs: fs,
+                colorScheme: colorScheme,
+                loading: loading,
+              ),
+            ),
+            SizedBox(
+              width: cellWidth,
+              child: _dateCard(
+                title: "Credits",
+                pair: _DatePair(credits, ''),
+                fs: fs,
+                colorScheme: colorScheme,
+                loading: loading,
+              ),
+            ),
+            SizedBox(
+              width: cellWidth,
+              child: _dateCard(
+                title: "Last Login",
+                pair: lastLogin,
                 fs: fs,
                 colorScheme: colorScheme,
                 loading: loading,
@@ -873,6 +852,15 @@ class _ProfileTabState extends State<ProfileTab> {
     final double labelFs = 11 * scale;
     final double valueFs = 14 * scale;
     final double subValueFs = 12 * scale;
+    IconData _titleIcon(String t) {
+      final l = t.toLowerCase();
+      if (l.contains('vehicle')) return Icons.directions_car_outlined;
+      if (l.contains('credit')) return Icons.account_balance_wallet_outlined;
+      if (l.contains('login')) return Icons.schedule;
+      if (l.contains('created')) return Icons.event;
+      return Icons.info_outline;
+    }
+    final hasSub = pair.time.trim().isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -883,39 +871,54 @@ class _ProfileTabState extends State<ProfileTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: labelFs,
-              height: 14 / 11,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 10),
-          loading
-              ? const AppShimmer(width: 120, height: 16, radius: 8)
-              : Text(
-                  pair.date,
-                  style: GoogleFonts.inter(
-                    fontSize: valueFs,
-                    height: 20 / 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-          const SizedBox(height: 6),
-          loading
-              ? const AppShimmer(width: 90, height: 14, radius: 8)
-              : Text(
-                  pair.time,
-                  style: GoogleFonts.inter(
-                    fontSize: subValueFs,
-                    height: 16 / 12,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontSize: labelFs,
+                    height: 14 / 11,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              Icon(
+                _titleIcon(title),
+                size: 14,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          loading
+              ? const AppShimmer(width: 120, height: 18, radius: 8)
+              : Text(
+                  pair.date,
+                  style: GoogleFonts.roboto(
+                    fontSize: valueFs + 2,
+                    height: 22 / 16,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+          if (hasSub) ...[
+            const SizedBox(height: 6),
+            loading
+                ? const AppShimmer(width: 90, height: 14, radius: 8)
+                : Text(
+                    pair.time,
+                    style: GoogleFonts.roboto(
+                      fontSize: subValueFs,
+                      height: 16 / 12,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+          ],
         ],
       ),
     );
@@ -944,7 +947,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -954,7 +957,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -977,6 +980,7 @@ class _ProfileTabState extends State<ProfileTab> {
     required String favicon,
     required String logoLight,
     required String logoDark,
+    required List<String> socialLabels,
     required bool loading,
   }) {
     final double scale = fs / 14;
@@ -1017,46 +1021,77 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
               ),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Company",
-                    style: GoogleFonts.inter(
-                      fontSize: labelFs,
-                      height: 14 / 11,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface.withOpacity(0.7),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Company",
+                      style: GoogleFonts.roboto(
+                        fontSize: labelFs,
+                        height: 14 / 11,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  loading
-                      ? const AppShimmer(width: 180, height: 18, radius: 8)
-                      : Text(
-                          companyName,
-                          style: GoogleFonts.inter(
-                            fontSize: titleFs,
-                            height: 20 / 14,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
+                    const SizedBox(height: 4),
+                    loading
+                        ? const AppShimmer(width: 180, height: 18, radius: 8)
+                        : Text(
+                            companyName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.roboto(
+                              fontSize: titleFs,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                ],
+                    if (!loading && socialLabels.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: socialLabels
+                            .map(
+                              (label) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? colorScheme.surfaceVariant
+                                          : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.12),
+                                  ),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: labelFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _keyValueRow("Company ID", companyId, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Custom Domain", customDomain, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Primary Color", primaryColor, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Favicon", favicon, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Logo Light", logoLight, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Logo Dark", logoDark, fs, colorScheme, loading),
         ],
       ),
     );
@@ -1119,7 +1154,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   children: [
                     Text(
                       "Address",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -1135,7 +1170,7 @@ class _ProfileTabState extends State<ProfileTab> {
                           )
                         : Text(
                             address,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -1164,6 +1199,43 @@ class _ProfileTabState extends State<ProfileTab> {
         ],
       ),
     );
+  }
+
+  List<String> _companySocialLabels(AdminProfile? profile) {
+    final data = profile?.data;
+    if (data == null) return const [];
+    Map<String, dynamic>? company;
+    final companies = data['companies'];
+    if (companies is List && companies.isNotEmpty && companies.first is Map) {
+      company = Map<String, dynamic>.from(
+        companies.first as Map,
+      );
+    }
+    company ??= data['company'] is Map
+        ? Map<String, dynamic>.from(data['company'] as Map)
+        : null;
+    final social = company?['socialLinks'];
+    if (social is! Map) return const [];
+    final labels = <String>[];
+    social.forEach((key, value) {
+      final v = value?.toString() ?? '';
+      if (v.isEmpty) return;
+      labels.add(_titleCaseKey(key.toString()));
+    });
+    return labels;
+  }
+
+  String _titleCaseKey(String key) {
+    final cleaned = key.replaceAll(RegExp(r'[_\\-]+'), ' ').trim();
+    if (cleaned.isEmpty) return key;
+    return cleaned
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .map(
+          (part) =>
+              part.substring(0, 1).toUpperCase() + part.substring(1).toLowerCase(),
+        )
+        .join(' ');
   }
 
   Widget _buildPushDiagnosticsCard(
@@ -1202,7 +1274,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             "Push Diagnostics",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: headingFs,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1212,7 +1284,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 4),
           Text(
             "Notification permission and push state",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: subtitleFs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1274,7 +1346,7 @@ class _ProfileTabState extends State<ProfileTab> {
                       "Notifications are blocked. Open your device settings and allow notifications, then click 'Re-register push'.",
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: alertFs,
                         height: 17 / 12,
                         fontWeight: FontWeight.w500,
@@ -1310,7 +1382,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     (_pushState?.registered ?? false)
                         ? "Unregister push"
                         : "Re-register push",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1338,7 +1410,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                   label: Text(
                     "Send push test",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1375,7 +1447,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1385,7 +1457,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -1412,7 +1484,7 @@ class _ProfileTabState extends State<ProfileTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelFs,
             height: 14 / 11,
             fontWeight: FontWeight.w500,
@@ -1429,7 +1501,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: valueFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -1592,7 +1664,7 @@ class _PushRegisterDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1604,7 +1676,7 @@ class _PushRegisterDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1623,7 +1695,7 @@ class _PushRegisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1641,7 +1713,7 @@ class _PushRegisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       confirmLabel,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1689,7 +1761,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Unregister push?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1701,7 +1773,7 @@ class _PushUnregisterDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               "You're already registered. If you turn it off, this device will stop receiving notifications.",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1720,7 +1792,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1738,7 +1810,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Unregister',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1786,7 +1858,7 @@ class _PushSettingsDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Allow notifications',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1798,7 +1870,7 @@ class _PushSettingsDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               "Notifications are blocked for this device. Open settings to allow notifications and try again.",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1817,7 +1889,7 @@ class _PushSettingsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Later',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1835,7 +1907,7 @@ class _PushSettingsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Open settings',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1883,7 +1955,7 @@ class _PushTestDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Send test push?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1895,7 +1967,7 @@ class _PushTestDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'We will send a sample notification to this device to confirm delivery.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1914,7 +1986,7 @@ class _PushTestDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1932,7 +2004,7 @@ class _PushTestDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Send',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

@@ -251,7 +251,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                       )
                     : Text(
                         _initials(displayName, displayUsername),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -275,7 +275,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                                 )
                               : Text(
                                   displayName,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -302,7 +302,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                                 )
                               : Text(
                                   roleLabel,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -316,7 +316,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                         ? const AppShimmer(width: 120, height: 14, radius: 8)
                         : Text(
                             displayUsername,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
@@ -343,7 +343,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                   ),
                   Text(
                     "Status",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: badgeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
@@ -368,7 +368,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                 ),
                 child: Text(
                   statusLabel,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: badgeFontSize,
                     color: _active ? Colors.green[800] : colorScheme.error,
                     fontWeight: FontWeight.w600,
@@ -389,7 +389,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                 ),
                 child: Text(
                   isVerified ? "Email Verified" : "Email Not Verified",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: isVerified
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface.withOpacity(0.8),
@@ -431,7 +431,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                     child: Center(
                       child: Text(
                         "Edit Profile",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.primary,
@@ -462,7 +462,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                     child: Center(
                       child: Text(
                         "Update Password",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onPrimary,
