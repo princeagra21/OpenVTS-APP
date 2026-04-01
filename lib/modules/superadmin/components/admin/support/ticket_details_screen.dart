@@ -603,7 +603,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                         _detailTitle!.trim().isNotEmpty)
                                     ? _detailTitle!
                                     : widget.ticket.title,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: ticketTitleFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -644,7 +644,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     _detailStatus ?? selectedDropdownStatus,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: metaFs,
                                       height: 14 / 11,
                                       fontWeight: FontWeight.w600,
@@ -671,7 +671,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             if (_titleCase(_detailPriority ?? '').isNotEmpty)
                               '${_titleCase(_detailPriority ?? '')} Priority',
                           ].join(' · '),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: metaFs,
                             height: 14 / 11,
                             color: colorScheme.onSurface.withOpacity(0.6),
@@ -696,7 +696,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             children: [
                               Text(
                                 'From',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: metaFs,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w600,
@@ -707,7 +707,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 fromName,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: bodyFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -719,7 +719,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 fromEmail,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: secondaryFs,
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
@@ -758,7 +758,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 : (value) {
                                     if (value != null) _changeStatus(value);
                                   },
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: secondaryFs,
                               height: 16 / 12,
                               color: colorScheme.onSurface,
@@ -795,7 +795,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 fromName.isNotEmpty
                                     ? fromName[0].toUpperCase()
                                     : '—',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: bodyFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w700,
@@ -811,7 +811,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 children: [
                                   Text(
                                     fromName,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: bodyFs,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -823,7 +823,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     fromDate,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: secondaryFs,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -857,7 +857,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   child: Text(
                                     '—',
                                     textAlign: TextAlign.right,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: secondaryFs,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -892,7 +892,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                         child: Text(
                                           msg.content,
                                           textAlign: TextAlign.right,
-                                          style: GoogleFonts.inter(
+                                          style: GoogleFonts.roboto(
                                             fontSize: bodyFs,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w500,
@@ -963,7 +963,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                               controller: messageController,
                                               minLines: 1,
                                               maxLines: 3,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: bodyFs,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w500,
@@ -972,7 +972,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                               decoration: InputDecoration(
                                                 isDense: true,
                                                 hintText: 'Type a message…',
-                                                hintStyle: GoogleFonts.inter(
+                                                hintStyle: GoogleFonts.roboto(
                                                   fontSize: bodyFs,
                                                   height: 20 / 14,
                                                   fontWeight: FontWeight.w500,
@@ -992,7 +992,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                                     top: 4),
                                                 child: Text(
                                                   _attachment!.filename,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: secondaryFs - 1,
                                                     height: 14 / 11,
                                                     fontWeight: FontWeight.w500,
@@ -1094,7 +1094,7 @@ class _MessagesContainer extends StatelessWidget {
         ),
         child: Text(
           "No ${selectedTab.toLowerCase()} messages for this ticket.",
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: messageBodyFs,
             height: 20 / 14,
             color: colorScheme.onSurface.withOpacity(0.6),
@@ -1133,7 +1133,7 @@ class _MessagesContainer extends StatelessWidget {
                     children: [
                       Text(
                         message.sender,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontWeight: FontWeight.bold,
                           fontSize: messageTitleFs,
                           height: 20 / 14,
@@ -1145,7 +1145,7 @@ class _MessagesContainer extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         message.timestamp,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: metaFs,
                           height: 14 / 11,
                           color: colorScheme.onSurface.withOpacity(0.5),
@@ -1156,7 +1156,7 @@ class _MessagesContainer extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     message.content,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: messageBodyFs,
                       height: 20 / 14,
                       color: colorScheme.onSurface.withOpacity(0.87),
@@ -1206,7 +1206,7 @@ class _LocalTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: small ? (tabFs - 1) : tabFs,
             height: 20 / 14,
             fontWeight: FontWeight.w600,

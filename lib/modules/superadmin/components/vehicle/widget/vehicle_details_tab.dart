@@ -208,7 +208,7 @@ class VehicleDetailsTab extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
             fontWeight: FontWeight.w600,
             color: scheme.onSurface.withOpacity(0.7),
@@ -286,7 +286,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: colorScheme.onSurface.withOpacity(0.6),
             ),
@@ -294,7 +294,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -353,7 +353,7 @@ class VehicleDetailsTab extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -361,7 +361,7 @@ class VehicleDetailsTab extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
@@ -449,7 +449,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -457,7 +457,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: scheme.onSurface,
@@ -525,7 +525,7 @@ class VehicleDetailsTab extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -536,7 +536,7 @@ class VehicleDetailsTab extends StatelessWidget {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: scheme.onSurface,
@@ -599,7 +599,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             ),
           ),
@@ -608,14 +608,14 @@ class VehicleDetailsTab extends StatelessWidget {
             children: [
               Text(
                 date,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 daysLeft,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) - 5,
                   color: scheme.onSurface.withOpacity(0.6),
                 ),
@@ -703,7 +703,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -711,7 +711,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             name,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
             ),
@@ -720,7 +720,7 @@ class VehicleDetailsTab extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               email,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                 color: scheme.onSurface.withOpacity(0.7),
               ),
@@ -730,7 +730,7 @@ class VehicleDetailsTab extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               [phone, username].where((v) => v != '-').join(' • '),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                 color: scheme.onSurface.withOpacity(0.7),
               ),
@@ -785,14 +785,14 @@ class VehicleDetailsTab extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
             color: scheme.onSurface,
           ),
         ),
         Text(
           time,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             color: scheme.onSurface.withOpacity(0.6),
           ),
@@ -909,7 +909,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
         children: [
           Text(
             "Danger Zone",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fontSize + 1,
               fontWeight: FontWeight.bold,
               color: colorScheme.error,
@@ -923,7 +923,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
               Expanded(
                 child: Text(
                   "This action cannot be undone. It will permanently delete this vehicle and remove all associated data.",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fontSize - 2,
                     color: colorScheme.error,
                   ),
@@ -955,7 +955,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
                     if (_submitting) const SizedBox(width: 8),
                     Text(
                       "Delete Vehicle",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fontSize - 2,
                         color: colorScheme.error,
                         fontWeight: FontWeight.w600,

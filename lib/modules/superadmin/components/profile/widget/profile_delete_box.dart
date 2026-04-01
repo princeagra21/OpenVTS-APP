@@ -31,7 +31,7 @@ class ProfileDeleteBox extends StatelessWidget {
           // Header
           Text(
             "Danger Zone",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fontSize + 2,
               fontWeight: FontWeight.bold,
               color: dangerColor,
@@ -47,7 +47,7 @@ class ProfileDeleteBox extends StatelessWidget {
               Expanded(
                 child: Text(
                   "This action cannot be undone. It will permanently delete your account and remove all associated data.",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fontSize,
                     color: dangerColor,
                     height: 1.3,
@@ -70,7 +70,7 @@ class ProfileDeleteBox extends StatelessWidget {
                 ),
                 child: Text(
                   "Delete",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fontSize,
                     color: dangerColor,
                     fontWeight: FontWeight.w600,

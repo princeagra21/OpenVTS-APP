@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
+import 'package:fleet_stack/modules/superadmin/screens/admin/administrator_details_screen.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -104,6 +105,16 @@ class _VehicleScreenState extends State<VehicleScreen> {
     return '';
   }
 
+  String _idFromMap(Object? raw) {
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw.cast());
+      final val =
+          map['uid'] ?? map['id'] ?? map['userId'] ?? map['adminId'] ?? '';
+      return safe(val.toString());
+    }
+    return '';
+  }
+
   String _formatDateLabel(String raw) {
     final dt = _tryParseAnyDate(raw);
     if (dt == null) return safe(raw);
@@ -152,6 +163,24 @@ class _VehicleScreenState extends State<VehicleScreen> {
     final licensePri = _formatDateLabel(v.primaryExpiry);
     final licenseSec = _formatDateLabel(v.secondaryExpiry);
     final timezone = safe(v.gmtOffset);
+    final primaryId = _firstNonEmpty([
+      _idFromMap(raw['userPrimary']),
+      _idFromMap(raw['primaryUser']),
+      safe(
+        raw['primaryUserId']?.toString() ??
+            raw['primary_user_id']?.toString() ??
+            raw['userPrimaryId']?.toString(),
+      ),
+    ]);
+    final addedById = _firstNonEmpty([
+      _idFromMap(raw['userAddedBy']),
+      _idFromMap(raw['addedBy']),
+      safe(
+        raw['addedById']?.toString() ??
+            raw['added_by_id']?.toString() ??
+            raw['userAddedById']?.toString(),
+      ),
+    ]);
 
     return <String, dynamic>{
       "id": safe(v.id),
@@ -164,9 +193,11 @@ class _VehicleScreenState extends State<VehicleScreen> {
       "primary_user_initials": _initials(primaryName),
       "primary_user_name": primaryName,
       "primary_user_username": primaryUsername,
+      "primary_user_id": primaryId,
       "added_by_initials": _initials(addedByName),
       "added_by_name": addedByName,
       "added_by_username": addedByUsername,
+      "added_by_id": addedById,
       "motion": motion,
       "speed": speed,
       "engine": engine,
@@ -374,13 +405,13 @@ class _VehicleScreenState extends State<VehicleScreen> {
             //   ),
             //   child: TextField(
             //     controller: _searchController,
-            //     style: GoogleFonts.inter(
+            //     style: GoogleFonts.roboto(
             //       fontSize: bodyFs,
             //       color: colorScheme.onSurface,
             //     ),
             //     decoration: InputDecoration(
             //       hintText: "Search plate, type, user, IMEI...",
-            //       hintStyle: GoogleFonts.inter(
+            //       hintStyle: GoogleFonts.roboto(
             //         color: colorScheme.onSurface.withOpacity(0.6),
             //         fontSize: bodyFs,
             //       ),
@@ -422,7 +453,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                 children: [
                   Text(
                     "All Vehicles",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -434,7 +465,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     _vehicles.isEmpty
                         ? "No vehicles across your administrators."
                         : "${_vehicles.length} vehicle(s) across all administrators",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: fsSecondary,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.7),
@@ -469,7 +500,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     children: [
                       Text(
                         "Browse Vehicles",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fsSection,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -490,14 +521,14 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsMain,
                         height: 20 / 14,
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: "Search plate, type, user, IMEI...",
-                        hintStyle: GoogleFonts.inter(
+                        hintStyle: GoogleFonts.roboto(
                           color: colorScheme.onSurface.withOpacity(0.5),
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -572,7 +603,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Filter",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -623,7 +654,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                   children: [
                                     Text(
                                       "Records",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -675,7 +706,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Export",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -722,7 +753,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           Expanded(
                             child: Text(
                               'Couldn\'t load vehicles.',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: fsSecondary,
                                 height: 16 / 12,
                                 color: colorScheme.onSurface.withOpacity(0.8),
@@ -748,7 +779,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                         children: [
                           Text(
                             'No vehicles found',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               color: colorScheme.onSurface.withOpacity(0.8),
@@ -758,7 +789,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           const SizedBox(height: 6),
                           Text(
                             'Ask superadmin to assign vehicles.',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fsSecondary,
                               height: 16 / 12,
                               color: colorScheme.onSurface.withOpacity(0.72),
@@ -798,7 +829,11 @@ class _VehicleScreenState extends State<VehicleScreen> {
                       final primaryName = _safeAny(
                         vehicle["primary_user_name"],
                       );
+                      final primaryId = _safeAny(
+                        vehicle["primary_user_id"],
+                      );
                       final addedByName = _safeAny(vehicle["added_by_name"]);
+                      final addedById = _safeAny(vehicle["added_by_id"]);
                       final lastSeenDate = _safeAny(
                         vehicle["last_activity_date"],
                       );
@@ -906,7 +941,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                             children: [
                                               Text(
                                                 displayTitle,
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsMain,
                                                   height: 20 / 14,
                                                   fontWeight: FontWeight.w600,
@@ -945,7 +980,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 ),
                                                 child: Text(
                                                   plate,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: fsMeta,
                                                     height: 14 / 11,
                                                     fontWeight:
@@ -971,7 +1006,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               SizedBox(height: spacing * 0.4),
                                               Text(
                                                 type,
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsSecondary,
                                                   height: 16 / 12,
                                                   fontWeight: FontWeight.w500,
@@ -1024,7 +1059,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 status,
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsMeta,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w600,
@@ -1080,7 +1115,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                     const SizedBox(width: 6),
                                                     Text(
                                                       "IMEI",
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsMeta,
                                                         height: 14 / 11,
                                                         fontWeight:
@@ -1095,7 +1130,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 SizedBox(height: spacing),
                                                 Text(
                                                   imei,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: fsMain,
                                                     height: 20 / 14,
                                                     fontWeight:
@@ -1144,7 +1179,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                     const SizedBox(width: 6),
                                                     Text(
                                                       "SIM",
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsMeta,
                                                         height: 14 / 11,
                                                         fontWeight:
@@ -1159,7 +1194,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 SizedBox(height: spacing),
                                                 Text(
                                                   simNumber,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: fsMain,
                                                     height: 20 / 14,
                                                     fontWeight:
@@ -1182,129 +1217,166 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: spacing * 1.2,
-                                              vertical: spacing - 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.1),
+                                          child: InkWell(
+                                            onTap: primaryId.isNotEmpty &&
+                                                    primaryId != '-'
+                                                ? () {
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            AdministratorDetailsScreen(
+                                                          id: primaryId,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                : null,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: spacing * 1.2,
+                                                vertical: spacing - 2,
                                               ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.person_outline,
-                                                      size: iconSize,
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withOpacity(0.7),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      "Primary",
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: fsMeta,
-                                                        height: 14 / 11,
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                              decoration: BoxDecoration(
+                                                color: colorScheme.surface,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.1),
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.person_outline,
+                                                        size: iconSize,
                                                         color: colorScheme
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                SizedBox(height: spacing),
-                                                Text(
-                                                  primaryName,
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: fsMain,
-                                                    height: 20 / 14,
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    color:
-                                                        colorScheme.onSurface,
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        "Primary",
+                                                        style:
+                                                            GoogleFonts.roboto(
+                                                          fontSize: fsMeta,
+                                                          height: 14 / 11,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color: colorScheme
+                                                              .onSurface
+                                                              .withOpacity(0.7),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  softWrap: false,
-                                                ),
-                                              ],
+                                                  SizedBox(height: spacing),
+                                                  Text(
+                                                    primaryName,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: fsMain,
+                                                      height: 20 / 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: colorScheme
+                                                          .onSurface,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: false,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
                                         SizedBox(width: spacing),
                                         Expanded(
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: spacing * 1.2,
-                                              vertical: spacing - 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.1),
+                                          child: InkWell(
+                                            onTap: addedById.isNotEmpty &&
+                                                    addedById != '-'
+                                                ? () {
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            AdministratorDetailsScreen(
+                                                          id: addedById,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                : null,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: spacing * 1.2,
+                                                vertical: spacing - 2,
                                               ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.person_add_outlined,
-                                                      size: iconSize,
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withOpacity(0.7),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      "Added By",
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: fsMeta,
-                                                        height: 14 / 11,
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                              decoration: BoxDecoration(
+                                                color: colorScheme.surface,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.1),
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons
+                                                            .person_add_outlined,
+                                                        size: iconSize,
                                                         color: colorScheme
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                SizedBox(height: spacing),
-                                                Text(
-                                                  addedByName,
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: fsMain,
-                                                    height: 20 / 14,
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    color:
-                                                        colorScheme.onSurface,
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        "Added By",
+                                                        style:
+                                                            GoogleFonts.roboto(
+                                                          fontSize: fsMeta,
+                                                          height: 14 / 11,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color: colorScheme
+                                                              .onSurface
+                                                              .withOpacity(0.7),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  softWrap: false,
-                                                ),
-                                              ],
+                                                  SizedBox(height: spacing),
+                                                  Text(
+                                                    addedByName,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: fsMain,
+                                                      height: 20 / 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: colorScheme
+                                                          .onSurface,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: false,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1340,7 +1412,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 "Created",
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsMeta,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w500,
@@ -1353,7 +1425,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                           SizedBox(height: spacing),
                                           Text(
                                             createdDate,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsMain,
                                               height: 20 / 14,
                                               fontWeight: FontWeight.w600,
@@ -1366,7 +1438,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                           SizedBox(height: spacing / 2),
                                           Text(
                                             createdTime,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1387,7 +1459,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "VIN: $vin",
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1402,7 +1474,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Timezone: ${_safeAny(vehicle["timezone"])}",
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1421,7 +1493,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Primary license: $licensePri $priStatus",
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1436,7 +1508,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Secondary license: $licenseSec $secStatus",
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1472,7 +1544,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               children: [
                                                 TextSpan(
                                                   text: "Last seen: ",
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: fsMeta,
                                                     height: 14 / 11,
                                                     fontWeight:
@@ -1484,7 +1556,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 TextSpan(
                                                   text:
                                                       "$lastSeenDate $lastSeenTime",
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: fsSecondary,
                                                     height: 16 / 12,
                                                     fontWeight:
@@ -1542,7 +1614,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 "More",
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsMain,
                                                   height: 20 / 14,
                                                   fontWeight: FontWeight.w700,
@@ -1608,7 +1680,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   color: scheme.onSurface.withOpacity(0.6),
@@ -1619,7 +1691,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               ),
               Text(
                 name,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: titleFs,
                   height: 20 / 14,
                   fontWeight: FontWeight.w600,
@@ -1631,7 +1703,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               ),
               Text(
                 username,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: subtitleFs,
                   height: 16 / 12,
                   color: scheme.onSurface.withOpacity(0.6),

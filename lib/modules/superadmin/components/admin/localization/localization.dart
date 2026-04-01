@@ -640,7 +640,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             children: [
               Text(
                 "Localization",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -662,7 +662,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 label: Text(
                   "Reset",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
@@ -688,7 +688,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 label: Text(
                   "Save",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -709,7 +709,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             title: "Live Preview",
             trailing: Text(
               "Lang: $selectedLanguage • Dir: $textDirection • TZ: $timezone",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.8),
@@ -765,7 +765,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           children: [
                             Text(
                               "Map Center",
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                         3,
@@ -781,7 +781,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                   "$lat, $lng",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: AdaptiveUtils
                                             .getSubtitleFontSize(width) -
                                         3,
@@ -792,7 +792,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(height: 6),
                                 Text(
                                   "Zoom $zoom",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: AdaptiveUtils
                                             .getSubtitleFontSize(width) -
                                         3,
@@ -856,7 +856,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Default Language",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -866,7 +866,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Primary language",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -882,7 +882,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     _languages.isEmpty
                         ? 'No language options'
                         : 'Select language',
-                    style: GoogleFonts.inter(),
+                    style: GoogleFonts.roboto(),
                   ),
                   decoration: _dropdownDecoration(context),
                   items: _languages
@@ -938,7 +938,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Text Direction",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -948,7 +948,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "LTR / RTL",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -998,7 +998,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "LTR",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: textDirection == "LTR"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1039,7 +1039,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "RTL",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: textDirection == "RTL"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1093,7 +1093,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Date Format",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1103,7 +1103,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Display style",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1119,7 +1119,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     _dateFormats.isEmpty
                         ? 'No date format options'
                         : 'Select date format',
-                    style: GoogleFonts.inter(),
+                    style: GoogleFonts.roboto(),
                   ),
                   decoration: _dropdownDecoration(context),
                   items: _dateFormats
@@ -1172,7 +1172,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Time Format",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1184,7 +1184,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                             timeFormat == "24-hour"
                                 ? "24-hour clock"
                                 : "12-hour clock",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1234,7 +1234,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "24-hour",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: timeFormat == "24-hour"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1275,7 +1275,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "12-hour",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: timeFormat == "12-hour"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1329,7 +1329,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Timezone",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1339,7 +1339,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "UTC offset",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1355,7 +1355,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     _timezones.isEmpty
                         ? 'No timezone options'
                         : 'Select timezone',
-                    style: GoogleFonts.inter(),
+                    style: GoogleFonts.roboto(),
                   ),
                   decoration: _dropdownDecoration(context),
                   items: _timezones
@@ -1408,7 +1408,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Units",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1418,7 +1418,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Distance units",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1468,7 +1468,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "KM",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: units == "KM"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1509,7 +1509,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "MILES",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: units == "MILES"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1563,7 +1563,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Theme",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1573,7 +1573,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Light / Dark / System",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1631,7 +1631,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "Light",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         color: selected == 'light'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1672,7 +1672,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "Dark",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         color: selected == 'dark'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1713,7 +1713,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "System",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         color: selected == 'system'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1749,7 +1749,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 "Latitude (N/S)",
                 lat.toStringAsFixed(4),
                 (v) => lat = double.tryParse(v) ?? lat,
-                labelStyle: GoogleFonts.inter(
+                labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -1758,7 +1758,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Range: -90 to 90",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -1770,7 +1770,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 "Longitude (E/W)",
                 lng.toStringAsFixed(4),
                 (v) => lng = double.tryParse(v) ?? lng,
-                labelStyle: GoogleFonts.inter(
+                labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -1779,7 +1779,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Range: -180 to 180",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -1791,7 +1791,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 "Zoom Level",
                 zoom.toString(),
                 (v) => zoom = double.tryParse(v)?.toInt() ?? zoom,
-                labelStyle: GoogleFonts.inter(
+                labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -1800,7 +1800,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Typical: 1 to 20",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -1850,7 +1850,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             name,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1860,7 +1860,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             '${latVal.toStringAsFixed(4)}, ${lngVal.toStringAsFixed(4)}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -1964,7 +1964,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             if (trailing == null)
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -1978,7 +1978,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
@@ -1997,7 +1997,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.65),
@@ -2029,7 +2029,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.8),
@@ -2038,7 +2038,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
@@ -2084,7 +2084,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         Text(
           label,
           style: labelStyle ??
-              GoogleFonts.inter(
+              GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.65),
@@ -2097,7 +2097,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               TextPosition(offset: initial.length),
             ),
           onChanged: onChanged,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,

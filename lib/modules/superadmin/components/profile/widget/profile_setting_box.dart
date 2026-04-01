@@ -110,7 +110,7 @@ class ProfileSettingBox extends StatelessWidget {
                       )
                     : Text(
                         _orDash(initials),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -133,7 +133,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 )
                               : Text(
                                   _orDash(displayName),
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -159,7 +159,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 ),
                                 child: Text(
                                   _orDash(roleLabel),
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -173,7 +173,7 @@ class ProfileSettingBox extends StatelessWidget {
                         ? const AppShimmer(width: 180, height: 16, radius: 8)
                         : Text(
                             _orDash(username),
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
@@ -216,7 +216,7 @@ class ProfileSettingBox extends StatelessWidget {
                     isActive == null
                         ? 'Status: -'
                         : (isActive! ? 'Active' : 'Inactive'),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: badgeFontSize,
                       color: (isActive == true)
                           ? Colors.green[800]
@@ -236,7 +236,7 @@ class ProfileSettingBox extends StatelessWidget {
                   ),
                   child: Text(
                     _orDash(email) == '-' ? 'Email: -' : _orDash(email),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: badgeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.85),
                       fontWeight: FontWeight.w600,
@@ -255,7 +255,7 @@ class ProfileSettingBox extends StatelessWidget {
                     ),
                     child: Text(
                       isVerified! ? 'Email Verified' : 'Email Unverified',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: badgeFontSize,
                         color: colorScheme.onSurface.withOpacity(0.85),
                         fontWeight: FontWeight.w600,
@@ -285,7 +285,7 @@ class ProfileSettingBox extends StatelessWidget {
                           ? const AppShimmer(width: 92, height: 14, radius: 8)
                           : Text(
                               'Edit Profile',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: buttonFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.primary,
@@ -310,7 +310,7 @@ class ProfileSettingBox extends StatelessWidget {
                           ? const AppShimmer(width: 122, height: 14, radius: 8)
                           : Text(
                               'Update Password',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: buttonFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onPrimary,

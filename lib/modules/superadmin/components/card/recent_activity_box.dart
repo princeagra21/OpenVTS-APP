@@ -195,7 +195,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: labelSize,
                       fontWeight: FontWeight.w600,
                       color: textColor,
@@ -590,7 +590,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -605,7 +605,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     _capitalizeFirst(
                       _safeString(activity["type"], fallback: "—"),
                     ),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: subFontSize,
                       fontWeight: FontWeight.w500,
                       height: 16 / 12,
@@ -620,7 +620,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                       _formatDate(activity["timeRaw"]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: subFontSize,
                         fontWeight: FontWeight.w500,
                         height: 16 / 12,
@@ -651,7 +651,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               ),
               child: Text(
                 activity["status"],
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   color: colorScheme.onSurface.withOpacity(0.7),
                   fontSize: badgeFontSize,
                   fontWeight: FontWeight.w600,
@@ -662,7 +662,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 4),
             Text(
               _relativeTime(activity["timeRaw"]),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -693,7 +693,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -703,7 +703,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 6),
             Text(
               _formatDateOnly(activity["timeRaw"]),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -717,7 +717,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           children: [
             Text(
               _safeString(activity["value"], fallback: "—"),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -727,7 +727,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 4),
             Text(
               _safeString(activity["status"], fallback: ""),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: badgeFontSize,
                 fontWeight: FontWeight.w600,
                 height: 14 / 11,
@@ -766,7 +766,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -775,7 +775,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             ),
             Text(
               _safeString(activity["email"], fallback: ""),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -787,7 +787,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
         right = Text(
           _formatDateOnly(activity["timeRaw"]),
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: subFontSize,
             fontWeight: FontWeight.w500,
             height: 16 / 12,
@@ -978,7 +978,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     children: [
                       TextSpan(
                         text: title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 18 * scale,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -1025,7 +1025,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                       children: [
                         Text(
                           "View all",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: linkFontSize,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,

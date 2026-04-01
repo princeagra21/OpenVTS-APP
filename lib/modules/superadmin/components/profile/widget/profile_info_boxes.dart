@@ -85,7 +85,7 @@ class ProfileInfoBoxes extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -104,7 +104,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                   )
                 : Text(
                     content,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: contentFontSize,
                       color: colorScheme.onSurface.withOpacity(0.6),
                       height: 1.3,

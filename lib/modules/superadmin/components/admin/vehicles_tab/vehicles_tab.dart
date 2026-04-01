@@ -260,7 +260,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
               children: [
                 Text(
                   _loadFailed ? "Couldn't load vehicles." : 'No vehicles found',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface.withOpacity(0.8),
@@ -270,7 +270,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
                   const SizedBox(height: 6),
                   Text(
                     'Try adjusting search or ask superadmin to assign vehicles.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 13,
                       color: colorScheme.onSurface.withOpacity(0.72),
                     ),
@@ -352,7 +352,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
             children: [
               Text(
                 'Total Vehicles',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -367,7 +367,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
                     )
                   : Text(
                       '$total',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: valueFontSize,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -378,7 +378,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
           const SizedBox(height: 4),
           Text(
             'currently tracked',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: subtitleFontSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -429,7 +429,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelFontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -445,7 +445,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
             const SizedBox(width: 10),
             Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: valueFontSize,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,

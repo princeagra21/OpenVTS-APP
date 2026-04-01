@@ -84,6 +84,30 @@ class _AdminScreenState extends State<AdminScreen> {
     return raw;
   }
 
+  String _formatRecentLogin(String? value) {
+    final raw = _safeText(value, fallback: '');
+    if (raw.isEmpty || raw == '-') return '—';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final local = parsed.toLocal();
+    final m = months[local.month - 1];
+    return '${local.year}, $m ${local.day}';
+  }
+
   Map<String, dynamic> _mapAdmin(AdminListItem a) {
     final name = _safeText(a.name);
     final active = a.isActive;
@@ -109,7 +133,7 @@ class _AdminScreenState extends State<AdminScreen> {
       "status": status,
       "vehicles": a.vehiclesCount == 0 ? '' : a.vehiclesCount.toString(),
       "credits": a.credits == 0 ? '' : a.credits.toString(),
-      "recentLogin": _safeText(a.recentLogin),
+      "recentLogin": _formatRecentLogin(a.recentLogin),
       "active": active,
       "location": _safeText(a.location),
       "joined": _safeText(a.createdAt),
@@ -406,7 +430,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     children: [
                       Text(
                         "Administrators",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fsSection,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -440,7 +464,7 @@ class _AdminScreenState extends State<AdminScreen> {
                               SizedBox(width: spacing / 2),
                               Text(
                                 "New",
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fsMain,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -468,14 +492,14 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsMain,
                         height: 20 / 14,
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: "Search name, email, role, department...",
-                        hintStyle: GoogleFonts.inter(
+                        hintStyle: GoogleFonts.roboto(
                           color: colorScheme.onSurface.withOpacity(0.5),
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -554,7 +578,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Filter",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: fsMain - 3,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -611,7 +635,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                       children: [
                                         Text(
                                           "Records",
-                                          style: GoogleFonts.inter(
+                                          style: GoogleFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -665,7 +689,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Refresh",
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: fsMain - 3,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -706,7 +730,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                 _adminsLoadFailed
                                     ? "Couldn't load admins."
                                     : "No admins found",
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fsSecondary,
                                   height: 16 / 12,
                                   color: colorScheme.onSurface.withOpacity(0.8),
@@ -814,7 +838,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                             alignment: Alignment.center,
                                             child: Text(
                                               admin["initials"],
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 color:
                                                     colorScheme.onSurface,
                                                 fontSize:
@@ -833,19 +857,67 @@ class _AdminScreenState extends State<AdminScreen> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                admin["name"],
-                                                style: GoogleFonts.inter(
-                                                  fontSize: fsMain,
-                                                  height: 20 / 14,
-                                                  fontWeight:
-                                                      FontWeight.w600,
-                                                  color:
-                                                      colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: InkWell(
+                                                      onTap: () {
+                                                        final id = admin['id']
+                                                                ?.toString() ??
+                                                            '';
+                                                        if (id.isEmpty) return;
+                                                        context.push(
+                                                          '/superadmin/admins/details/$id',
+                                                        );
+                                                      },
+                                                      child: Text(
+                                                        admin["name"],
+                                                        style:
+                                                            GoogleFonts.roboto(
+                                                          fontSize: fsMain,
+                                                          height: 20 / 14,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: colorScheme
+                                                              .onSurface,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Transform.scale(
+                                                    scale: 0.75,
+                                                    child: Switch(
+                                                      value: admin["active"],
+                                                      onChanged:
+                                                          _statusSubmittingAdminIds
+                                                                  .contains(
+                                                        admin['id']
+                                                                ?.toString() ??
+                                                            '',
+                                                      )
+                                                              ? null
+                                                              : (v) =>
+                                                                  _toggleAdminStatus(
+                                                                    admin:
+                                                                        admin,
+                                                                    isActive:
+                                                                        v,
+                                                                  ),
+                                                      activeColor:
+                                                          colorScheme.onPrimary,
+                                                      activeTrackColor:
+                                                          colorScheme.primary,
+                                                      inactiveThumbColor:
+                                                          colorScheme.onPrimary,
+                                                      inactiveTrackColor:
+                                                          colorScheme.primary
+                                                              .withOpacity(0.3),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                               SizedBox(height: spacing / 2),
                                               Text(
@@ -854,7 +926,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                       ?.toString(),
                                                   fallback: '—',
                                                 ),
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: fsSecondary,
                                                   height: 16 / 12,
                                                   fontWeight:
@@ -883,7 +955,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -916,7 +988,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -949,7 +1021,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -966,30 +1038,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                 ],
                                               ),
                                             ],
-                                          ),
-                                        ),
-                                        Transform.scale(
-                                          scale: 0.75,
-                                          child: Switch(
-                                            value: admin["active"],
-                                            onChanged:
-                                                _statusSubmittingAdminIds
-                                                        .contains(
-                                                  admin['id']?.toString() ?? '',
-                                                )
-                                                    ? null
-                                                    : (v) => _toggleAdminStatus(
-                                                          admin: admin,
-                                                          isActive: v,
-                                                        ),
-                                            activeColor: colorScheme.onPrimary,
-                                            activeTrackColor:
-                                                colorScheme.primary,
-                                            inactiveThumbColor:
-                                                colorScheme.onPrimary,
-                                            inactiveTrackColor: colorScheme
-                                                .primary
-                                                .withOpacity(0.3),
                                           ),
                                         ),
                                       ],
@@ -1015,7 +1063,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                         children: [
                                           Text(
                                             "Location",
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsMeta,
                                               height: 14 / 11,
                                               fontWeight: FontWeight.w500,
@@ -1031,7 +1079,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                             ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               color: colorScheme.onSurface,
@@ -1086,7 +1134,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                           child: Text(
                                                             "Usage",
                                                             style:
-                                                                GoogleFonts.inter(
+                                                                GoogleFonts.roboto(
                                                               fontSize: fsMeta,
                                                               height: 14 / 11,
                                                               fontWeight:
@@ -1115,7 +1163,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsMain,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -1151,20 +1199,41 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(
-                                                      "Recent login",
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: fsMeta,
-                                                        height: 14 / 11,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.7),
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.schedule,
+                                                          size: iconSize,
+                                                          color: colorScheme
+                                                              .onSurface
+                                                              .withOpacity(0.7),
+                                                        ),
+                                                        SizedBox(
+                                                          width: spacing,
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            "Recent login",
+                                                            style:
+                                                                GoogleFonts.roboto(
+                                                              fontSize: fsMeta,
+                                                              height: 14 / 11,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: colorScheme
+                                                                  .onSurface
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                     SizedBox(
                                                       height: spacing,
@@ -1175,7 +1244,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.inter(
+                                                      style: GoogleFonts.roboto(
                                                         fontSize: fsMain,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -1230,7 +1299,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   )
                                                 : Text(
                                                     "Login",
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.roboto(
                                                       fontSize: fsMain,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -1272,6 +1341,8 @@ class _AdminScreenState extends State<AdminScreen> {
               onClose: () {
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
+                } else {
+                  context.go('/superadmin/home');
                 }
               },
             ),
@@ -1429,7 +1500,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Login as admin?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1441,7 +1512,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'You are about to enter the admin module as $adminName. You can return to superadmin at any time.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1460,7 +1531,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1478,7 +1549,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Login',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

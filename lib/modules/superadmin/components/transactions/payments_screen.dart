@@ -387,7 +387,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               fontWeight: FontWeight.w600,
@@ -397,7 +397,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           const SizedBox(width: 6),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               fontWeight: FontWeight.w700,
@@ -416,7 +416,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final cs = Theme.of(context).colorScheme;
     final scale = (width / 420).clamp(0.9, 1.0);
-    final labelStyle = GoogleFonts.inter(
+    final labelStyle = GoogleFonts.roboto(
       fontSize: 12 * scale,
       height: 16 / 12,
       fontWeight: FontWeight.w600,
@@ -589,7 +589,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                           const SizedBox(height: 12),
                                           Text(
                                             'Select Admin',
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontWeight: FontWeight.w600,
                                               color: cs.onSurface,
                                             ),
@@ -626,7 +626,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.roboto(
                                                       fontSize: 14 * scale,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -638,7 +638,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.roboto(
                                                       fontSize: 12 * scale,
                                                       height: 16 / 12,
                                                       fontWeight:
@@ -694,7 +694,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               : 'All Admins'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: 14 * scale,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w500,
@@ -752,7 +752,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                         const SizedBox(height: 12),
                                         Text(
                                           'Select Date Range',
-                                          style: GoogleFonts.inter(
+                                          style: GoogleFonts.roboto(
                                             fontWeight: FontWeight.w600,
                                             color: cs.onSurface,
                                           ),
@@ -776,7 +776,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                 ),
                                                 title: Text(
                                                   item,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: 14 * scale,
                                                     height: 20 / 14,
                                                     fontWeight:
@@ -818,7 +818,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                     _selectedRange ?? 'Select range',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: 14 * scale,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w500,
@@ -1076,14 +1076,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           ),
                           child: TextField(
                             controller: _searchController,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: 14 * scale,
                               height: 20 / 14,
                               color: cs.onSurface,
                             ),
                             decoration: InputDecoration(
                               hintText: 'Search name, email, or reference',
-                              hintStyle: GoogleFonts.inter(
+                              hintStyle: GoogleFonts.roboto(
                                 color: cs.onSurface.withOpacity(0.5),
                                 fontSize: 12 * scale,
                                 height: 16 / 12,
@@ -1153,7 +1153,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               const SizedBox(height: 12),
                                               Text(
                                                 'Filter Status',
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontWeight: FontWeight.w600,
                                                   color: cs.onSurface,
                                                 ),
@@ -1181,7 +1181,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                       title: Text(
                                                         item,
                                                         style:
-                                                            GoogleFonts.inter(
+                                                            GoogleFonts.roboto(
                                                           fontSize: 14 * scale,
                                                           height: 20 / 14,
                                                           fontWeight:
@@ -1228,7 +1228,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       'Filter',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: 12 * scale,
                                         height: 16 / 12,
                                         fontWeight: FontWeight.w600,
@@ -1266,7 +1266,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       'Refresh',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: 12 * scale,
                                         height: 16 / 12,
                                         fontWeight: FontWeight.w600,
@@ -1304,7 +1304,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       'Export',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: 12 * scale,
                                         height: 16 / 12,
                                         fontWeight: FontWeight.w600,
@@ -1387,7 +1387,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                           children: [
                                             Text(
                                               name,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 14 * scale,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -1399,7 +1399,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                             const SizedBox(height: 4),
                                             Text(
                                               dateText,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 12 * scale,
                                                 height: 16 / 12,
                                                 fontWeight: FontWeight.w500,
@@ -1417,7 +1417,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                         children: [
                                           Text(
                                             amount,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: 14 * scale,
                                               height: 20 / 14,
                                               fontWeight: FontWeight.w700,
@@ -1450,7 +1450,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   statusText,
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.roboto(
                                                     fontSize: 11 * scale,
                                                     height: 14 / 11,
                                                     fontWeight: FontWeight.w600,
@@ -1484,7 +1484,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                             children: [
                                               Text(
                                                 'Mode',
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: 11 * scale,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w500,
@@ -1495,7 +1495,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               const SizedBox(height: 6),
                                               Text(
                                                 mode,
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: 13 * scale,
                                                   height: 18 / 13,
                                                   fontWeight: FontWeight.w600,
@@ -1527,7 +1527,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                             children: [
                                               Text(
                                                 'Type',
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: 11 * scale,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w500,
@@ -1538,7 +1538,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               const SizedBox(height: 6),
                                               Text(
                                                 type,
-                                                style: GoogleFonts.inter(
+                                                style: GoogleFonts.roboto(
                                                   fontSize: 13 * scale,
                                                   height: 18 / 13,
                                                   fontWeight: FontWeight.w600,
@@ -1571,7 +1571,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                       children: [
                                   Text(
                                     '# Reference',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: 11 * scale,
                                       height: 14 / 11,
                                             fontWeight: FontWeight.w500,
@@ -1582,7 +1582,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                         const SizedBox(height: 6),
                                   Text(
                                     reference,
-                                          style: GoogleFonts.inter(
+                                          style: GoogleFonts.roboto(
                                             fontSize: 13 * scale,
                                             height: 18 / 13,
                                             fontWeight: FontWeight.w600,

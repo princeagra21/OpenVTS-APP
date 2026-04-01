@@ -80,7 +80,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                   Expanded(
                     child: Text(
                       'Delete admin?',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -92,7 +92,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
               const SizedBox(height: 16),
               Text(
                 'This will permanently remove the admin and all related data. You can’t undo this action.',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: 14,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -111,7 +111,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                       ),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -129,7 +129,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                       ),
                       child: Text(
                         'Delete',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                        style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -205,7 +205,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
         children: [
           Text(
             "Danger Zone",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fontSize + 2,
               fontWeight: FontWeight.bold,
               color: dangerColor,
@@ -220,7 +220,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
               Expanded(
                 child: Text(
                   "This action cannot be undone. It will permanently delete the user account and remove all associated data.",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fontSize,
                     color: dangerColor,
                     height: 1.3,
@@ -245,7 +245,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                     ? const AppShimmer(width: 18, height: 18, radius: 9)
                     : Text(
                         "Delete",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fontSize,
                           color: dangerColor,
                           fontWeight: FontWeight.w600,

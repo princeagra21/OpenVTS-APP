@@ -54,7 +54,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -195,7 +195,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: cs.onSurface.withOpacity(0.8),
@@ -297,7 +297,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4-5
     final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
-    final titleStyle = GoogleFonts.inter(
+    final titleStyle = GoogleFonts.roboto(
       fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
       color: colorScheme.onSurface,
@@ -527,7 +527,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                           meta: meta, // pass the required argument
                           child: Text(
                             _formatYAxisValue(value),
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: leftTitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.87),
                             ),
@@ -548,7 +548,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               labels[index],
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: bottomTitleFontSize,
                                 color: colorScheme.onSurface.withOpacity(0.54),
                               ),

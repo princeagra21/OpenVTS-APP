@@ -231,7 +231,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                             ),
                             child: Text(
                               plate,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: fs + 6,
                                 fontWeight: FontWeight.w900,
                                 color: colorScheme.onSurface,
@@ -260,7 +260,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                               ),
                               child: Text(
                                 status,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fs - 2,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -559,14 +559,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         const SizedBox(height: 6),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fs - 4,
             color: scheme.onSurface.withOpacity(0.6),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fs - 1,
             fontWeight: FontWeight.bold,
             color: scheme.onSurface,
@@ -597,7 +597,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         children: [
           Text(
             '$label: ',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs - 3,
               fontWeight: FontWeight.w600,
               color: scheme.onSurface.withOpacity(0.65),
@@ -610,7 +610,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fs - 3,
                 fontWeight: FontWeight.w600,
                 color: scheme.onSurface,
@@ -642,7 +642,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: Text(
             safe(value),
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs + 1,
               fontWeight: FontWeight.w600,
             ),

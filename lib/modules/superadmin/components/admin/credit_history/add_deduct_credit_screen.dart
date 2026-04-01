@@ -1,10 +1,17 @@
 // components/admin/credit_history/add_deduct_credit_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddDeductCreditScreen extends StatefulWidget {
-  const AddDeductCreditScreen({super.key});
+  final String adminId;
+
+  const AddDeductCreditScreen({super.key, required this.adminId});
 
   @override
   State<AddDeductCreditScreen> createState() => _AddDeductCreditScreenState();
@@ -14,6 +21,17 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
   String? _selectedAction; // 'add' or 'deduct'
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  bool _submitting = false;
+  ApiClient? _api;
+  CancelToken? _token;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    _token?.cancel('AddDeductCreditScreen disposed');
+    super.dispose();
+  }
 
   // Reusable minimal InputDecoration — similar to EditAdminProfileScreen
   InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
@@ -22,7 +40,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
       ),
@@ -99,7 +117,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                 children: [
                   Text(
                     "Add/Deduct Credits",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -116,7 +134,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
 
               Text(
                 "Manage credits",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -136,7 +154,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                         value: _selectedAction,
                         hint: Text(
                           'Select Action',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             color: colorScheme.onSurface.withOpacity(0.5),
                             fontSize: labelSize,
                           ),
@@ -150,7 +168,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                             _selectedAction = value;
                           });
                         },
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
                         icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
                       ),
 
@@ -160,7 +178,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                       TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
                         decoration: _minimalDecoration(context, hint: "Credit Amount").copyWith(
                           prefixIcon: Icon(Icons.monetization_on_outlined, color: colorScheme.primary, size: 22),
                         ),
@@ -171,7 +189,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                       // Note
                       TextField(
                         controller: _noteController,
-                        style: GoogleFonts.inter(fontSize: labelSize, color: colorScheme.onSurface),
+                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
                         decoration: _minimalDecoration(context, hint: _noteHint).copyWith(
                           prefixIcon: Icon(Icons.note_outlined, color: colorScheme.primary, size: 22),
                         ),
@@ -194,7 +212,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                                 child: Center(
                                   child: Text(
                                     "Cancel",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
@@ -208,8 +226,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                // TODO: Implement add/deduct logic based on _selectedAction, _amountController.text, _noteController.text
-                                Navigator.pop(context);
+                                _submitCredits();
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 18),
@@ -220,7 +237,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                                 child: Center(
                                   child: Text(
                                     _confirmButtonText,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,
@@ -241,5 +258,75 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _submitCredits() async {
+    if (_submitting) return;
+    final action = _selectedAction;
+    if (action == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select an action.')),
+      );
+      return;
+    }
+    final amount = int.tryParse(_amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid credit amount.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    _token?.cancel('New submit');
+    final token = CancelToken();
+    _token = token;
+
+    try {
+      _api ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      final res = await _api!.post(
+        '/superadmin/assigncredits/${widget.adminId}',
+        data: {
+          'credits': amount.toString(),
+          'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',
+        },
+        cancelToken: token,
+      );
+      if (!mounted) return;
+      res.when(
+        success: (_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                action == 'add'
+                    ? 'Credits assigned successfully.'
+                    : 'Credits deducted successfully.',
+              ),
+            ),
+          );
+          Navigator.pop(context);
+        },
+        failure: (err) {
+          final msg = err is ApiException
+              ? (err.message.isNotEmpty
+                  ? err.message
+                  : "Couldn't update credits.")
+              : "Couldn't update credits.";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg)),
+          );
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't update credits.")),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 }

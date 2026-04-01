@@ -337,7 +337,7 @@ class _SuperadminNotificationsScreenState
           children: [
             Text(
               'Inbox',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width),
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
@@ -346,7 +346,7 @@ class _SuperadminNotificationsScreenState
             const SizedBox(height: 4),
             Text(
               '${_items.length} notifications',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -466,7 +466,7 @@ class _NotificationCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -486,7 +486,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
                   child: Text(
                     item.isRead ? 'Read' : 'Unread',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                       fontWeight: FontWeight.w700,
                       color: item.isRead
@@ -500,7 +500,7 @@ class _NotificationCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '$kind • $created',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -512,7 +512,7 @@ class _NotificationCard extends StatelessWidget {
               body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -605,7 +605,7 @@ class _EmptyNotificationsCard extends StatelessWidget {
       ),
       child: Text(
         'No notifications',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
           fontWeight: FontWeight.w700,
           color: colorScheme.onSurface.withOpacity(0.7),

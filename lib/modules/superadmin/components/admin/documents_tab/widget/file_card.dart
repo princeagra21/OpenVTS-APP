@@ -83,7 +83,7 @@ class FileCard extends StatelessWidget {
                 Flexible(
                   child: Text(
                     fileName,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleFontSize,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface.withOpacity(0.7),
@@ -101,7 +101,7 @@ class FileCard extends StatelessWidget {
                   ),
                   child: Text(
                     version,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: smallFontSize,
                       fontWeight: FontWeight.w500,
                       color: colorScheme.onSurface,
@@ -117,7 +117,7 @@ class FileCard extends StatelessWidget {
             Center(
               child: Text(
                 fileSize,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: smallFontSize,
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -136,7 +136,7 @@ class FileCard extends StatelessWidget {
                   children: [
                     Text(
                       "TYPE",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: smallFontSize - 2,
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface.withOpacity(0.6),
@@ -146,7 +146,7 @@ class FileCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       type,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: smallFontSize,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -161,7 +161,7 @@ class FileCard extends StatelessWidget {
                   children: [
                     Text(
                       "TAGS",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: smallFontSize - 2,
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface.withOpacity(0.6),
@@ -182,7 +182,7 @@ class FileCard extends StatelessWidget {
                               ),
                               child: Text(
                                 tag,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: smallFontSize - 2,
                                   color: colorScheme.onSurface,
                                 ),
@@ -204,14 +204,14 @@ class FileCard extends StatelessWidget {
               children: [
                 Text(
                   "Uploaded: $uploadedDate",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: smallFontSize,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
                 Text(
                   "Expiry: $expiryDate",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: smallFontSize,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -239,7 +239,7 @@ class FileCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     status,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: smallFontSize,
                       fontWeight: FontWeight.w600,
                       color: _getStatusColor(status, colorScheme),

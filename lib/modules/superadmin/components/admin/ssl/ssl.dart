@@ -190,7 +190,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
         "$label: $meaningful",
         maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
           color: color ?? cs.onSurface.withOpacity(0.65),
         ),
@@ -273,7 +273,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                 children: [
                   Text.rich(
                     TextSpan(
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                         fontWeight: FontWeight.w800,
                         color: cs.onSurface,
@@ -298,7 +298,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                   const SizedBox(height: 4),
                   Text(
                     "Manage SSL certificates for your domains",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w200,
                       color: cs.onSurface.withOpacity(0.8),
@@ -322,7 +322,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                       ),
                       child: Text(
                         "No domains found.",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           color: cs.onSurface.withOpacity(0.7),
                           fontWeight: FontWeight.w500,
@@ -376,7 +376,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                     domainName,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         width,
                                       ),
@@ -440,7 +440,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                     ),
                                     child: Text(
                                       statusText,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize:
                                             AdaptiveUtils.getSubtitleFontSize(
                                               width,

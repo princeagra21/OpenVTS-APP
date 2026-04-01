@@ -278,7 +278,7 @@ class _RolesTabState extends State<RolesTab> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -315,7 +315,7 @@ class _RolesTabState extends State<RolesTab> {
             filled: true,
             fillColor: colorScheme.surfaceVariant,
           ),
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
@@ -323,7 +323,7 @@ class _RolesTabState extends State<RolesTab> {
           dropdownColor: colorScheme.surface,
           hint: Text(
             hint,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fontSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.6),
@@ -352,7 +352,7 @@ class _RolesTabState extends State<RolesTab> {
       children: [
         Text(
           module,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -368,7 +368,7 @@ class _RolesTabState extends State<RolesTab> {
               showCheckmark: false,
               label: Text(
                 level,
-                style: GoogleFonts.inter(fontSize: fontSize - 1),
+                style: GoogleFonts.roboto(fontSize: fontSize - 1),
               ),
               selected: _permissions[module] == level,
               selectedColor: colorScheme.primary.withOpacity(0.18),
@@ -448,7 +448,7 @@ class _RolesTabState extends State<RolesTab> {
                 const SizedBox(width: 8),
                 Text(
                   'Roles',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -478,7 +478,7 @@ class _RolesTabState extends State<RolesTab> {
             const SizedBox(height: 20),
             Text(
               'Permissions overview for this role',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.7),
@@ -501,7 +501,7 @@ class _RolesTabState extends State<RolesTab> {
                 ),
                 child: Text(
                   'No permissions data from API.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fontSize - 1,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),

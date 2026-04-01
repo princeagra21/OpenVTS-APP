@@ -294,7 +294,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: mainRowFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -324,7 +324,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
           else if (_vehicles.isEmpty)
             Text(
               'No recent vehicles',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -375,7 +375,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -387,7 +387,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                               type,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -416,7 +416,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                             ),
                             child: Text(
                               status,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: metaFs,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w600,
@@ -427,7 +427,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                           const SizedBox(height: 6),
                           Text(
                             timeText,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: metaFs,
                               height: 14 / 11,
                               fontWeight: FontWeight.w500,
@@ -672,7 +672,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: mainRowFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -702,7 +702,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
           else if (_transactions.isEmpty)
             Text(
               'No recent transactions',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -756,7 +756,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -768,7 +768,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                               date,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -784,7 +784,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                         children: [
                           Text(
                             amount,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: mainRowFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -816,7 +816,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                                 const SizedBox(width: 4),
                                 Text(
                                   statusText,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: metaFs,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w600,
@@ -1023,7 +1023,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
           else if (_users.isEmpty)
             Text(
               'No recent users',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1057,7 +1057,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                         alignment: Alignment.center,
                         child: Text(
                           name.isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: mainRowFs,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -1074,7 +1074,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -1086,7 +1086,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                               email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -1099,7 +1099,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                       const SizedBox(width: 12),
                       Text(
                         date,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: metaFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,

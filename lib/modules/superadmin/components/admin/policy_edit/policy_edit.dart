@@ -335,7 +335,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           ),
                           label: Text(
                             "Clear All",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
                             ),
@@ -370,7 +370,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           ),
                           label: Text(
                             "Save All",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onPrimary,
                             ),
@@ -385,7 +385,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                       children: [
                         Text(
                           "User Policy Management",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: fs + 6,
                             fontWeight: FontWeight.w900,
                             color: colorScheme.onSurface.withOpacity(0.9),
@@ -400,7 +400,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                     const SizedBox(height: 8),
                     Text(
                       "Create and manage legal agreements for your users",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fs - 1,
                         color: colorScheme.onSurface.withOpacity(0.7),
                       ),
@@ -426,7 +426,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                         children: [
                           Text(
                             "Select Policy to Edit",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs + 2,
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface.withOpacity(0.9),
@@ -459,7 +459,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                 ),
                               ),
                             ),
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs,
                               color: colorScheme.onSurface,
                             ),
@@ -514,7 +514,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                               const SizedBox(width: 12),
                               Text(
                                 selectedPolicy,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fs + 4,
                                   fontWeight: FontWeight.w800,
                                   color: colorScheme.onSurface.withOpacity(0.9),
@@ -525,7 +525,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           const SizedBox(height: 12),
                           Text(
                             "Configure the policy content and settings",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs - 2,
                               color: colorScheme.onSurface.withOpacity(0.7),
                             ),
@@ -538,7 +538,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                             children: [
                               Text(
                                 "${policyController.text.trim().split(' ').where((e) => e.isNotEmpty).length} words",
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: fs - 2,
                                   fontWeight: FontWeight.w500,
                                   color: colorScheme.onSurface.withOpacity(0.8),
@@ -550,7 +550,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                     : _resetSelectedToTemplate,
                                 child: Text(
                                   "Clear Text",
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: fs - 2,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.primary,
@@ -571,14 +571,14 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                 : (value) => setState(
                                     () => policies[selectedPolicy] = value,
                                   ),
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs,
                               color: colorScheme.onSurface,
                               height: 1.7,
                             ),
                             decoration: InputDecoration(
                               hintText: "Enter policy content here...",
-                              hintStyle: GoogleFonts.inter(
+                              hintStyle: GoogleFonts.roboto(
                                 fontSize: fs,
                                 color: colorScheme.onSurface.withOpacity(0.5),
                               ),
@@ -606,7 +606,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           const SizedBox(height: 16),
                           Text(
                             "Plain text format. Updates will be reflected immediately for users.",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs - 4,
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),

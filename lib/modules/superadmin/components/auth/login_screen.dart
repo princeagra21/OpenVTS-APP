@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Title
         Text(
           'Login',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize + 4,
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
@@ -165,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Enter your credentials',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize - 2,
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
@@ -176,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _passwordController,
           obscureText: _obscurePassword,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
@@ -228,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? const AppShimmer(width: 18, height: 18, radius: 9)
                   : Text(
                       "Login",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -250,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             child: Text(
               "Forgot Password?",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: labelSize - 2,
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -272,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Text(
               'Forgot Password',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: labelSize + 4,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -295,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Enter your email to reset',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize - 2,
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
@@ -306,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
@@ -339,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Center(
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -367,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Center(
                     child: Text(
                       "Proceed",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,

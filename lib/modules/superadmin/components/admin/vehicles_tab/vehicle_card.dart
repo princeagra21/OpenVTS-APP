@@ -69,7 +69,7 @@ class VehicleCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   name,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -91,7 +91,7 @@ class VehicleCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     isActive ? "Active" : "Inactive",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: subtitleFontSize,
                       fontWeight: FontWeight.w600,
                       color: isActive ? colorScheme.primary : colorScheme.error,
@@ -114,7 +114,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Vehicle Information",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -142,7 +142,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Activity",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -171,7 +171,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Licence Status",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -201,7 +201,7 @@ class VehicleCard extends StatelessWidget {
             width: 140,
             child: Text(
               title.toUpperCase(),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -212,7 +212,7 @@ class VehicleCard extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fontSize + 2,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,

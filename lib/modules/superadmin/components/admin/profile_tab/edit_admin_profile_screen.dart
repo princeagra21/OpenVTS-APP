@@ -60,7 +60,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -213,7 +213,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 children: [
                   Text(
                     "Edit Admin Profile",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -234,7 +234,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
               Text(
                 "Update admin details",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -250,7 +250,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Full Name
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -272,7 +272,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Email
                       TextField(
                         controller: _emailController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -341,7 +341,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     _selectedCountry?.phoneCode ?? "234",
-                                    style: GoogleFonts.inter(fontSize: 16),
+                                    style: GoogleFonts.roboto(fontSize: 16),
                                   ),
                                   const Icon(Icons.arrow_drop_down, size: 20),
                                 ],
@@ -356,7 +356,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -381,7 +381,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       // Address
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -403,7 +403,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _countryController,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -424,7 +424,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _stateController,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -452,7 +452,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: TextField(
                               controller: _cityController,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -474,7 +474,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _pincodeController,
                               keyboardType: TextInputType.number,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -515,7 +515,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   )
                                 : Text(
                                     "Save Changes",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,

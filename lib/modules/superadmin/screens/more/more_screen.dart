@@ -163,7 +163,7 @@ class _MoreScreenState extends State<MoreScreen> {
           children: [
             Text(
               "Tools & Settings",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface.withOpacity(0.9),
@@ -220,7 +220,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Log out?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -232,7 +232,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Your current session will end. You will need to log in again to continue.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -251,7 +251,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -269,7 +269,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Log out',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -366,7 +366,7 @@ class _MoreMenuCard extends StatelessWidget {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     1,
@@ -379,7 +379,7 @@ class _MoreMenuCard extends StatelessWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
@@ -419,7 +419,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
@@ -431,7 +431,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),

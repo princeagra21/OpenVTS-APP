@@ -61,7 +61,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
       filled: true,
       fillColor: colorScheme.surface.withOpacity(0.05), // Subtle fill for depth
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: fontSize,
         height: 20 / 14,
@@ -91,7 +91,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   // Reusable label style
   TextStyle _labelStyle(BuildContext context, {required double fontSize}) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GoogleFonts.inter(
+    return GoogleFonts.roboto(
       fontSize: fontSize,
       height: 16 / 12,
       fontWeight: FontWeight.w500,
@@ -124,7 +124,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                 children: [
                   Text(
                     "Create Admin",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize,
                       height: 20 / 16,
                       fontWeight: FontWeight.w700,
@@ -153,7 +153,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
               const SizedBox(height: 8),
               Text(
                 "Fill the details and click create.",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: helperSize,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -176,7 +176,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -202,7 +202,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -267,7 +267,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     "+${_selectedCountry?.phoneCode ?? '91'}",
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.roboto(
                                       fontSize: inputSize,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w500,
@@ -286,7 +286,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: inputSize,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w500,
@@ -314,7 +314,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _usernameController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -340,7 +340,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -365,7 +365,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _companyController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -390,7 +390,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -422,7 +422,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 TextField(
                                   controller: _countryController,
                                   readOnly: true,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -459,7 +459,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 TextField(
                                   controller: _stateController,
                                   readOnly: true,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -502,7 +502,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: _cityController,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -532,7 +532,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 TextField(
                                   controller: _pincodeController,
                                   keyboardType: TextInputType.number,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -563,7 +563,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       TextField(
                         controller: _creditsController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -578,69 +578,72 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 32),
-
-                      // ── Actions ─────────────────────────────────────
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 56,
-                              child: OutlinedButton(
-                                onPressed: () => Navigator.pop(context),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.2),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Cancel",
-                                  style: GoogleFonts.inter(
-                                    fontSize: inputSize,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SizedBox(
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // TODO: Validate inputs and add new admin (e.g., API call)
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  elevation: 0,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Create Admin",
-                                  style: GoogleFonts.inter(
-                                    fontSize: inputSize,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 80),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: colorScheme.onSurface.withOpacity(0.2),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.roboto(
+                        fontSize: inputSize,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: Validate inputs and add new admin (e.g., API call)
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      "Create Admin",
+                      style: GoogleFonts.roboto(
+                        fontSize: inputSize,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
                   ),
                 ),
               ),

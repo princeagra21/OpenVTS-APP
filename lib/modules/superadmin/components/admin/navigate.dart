@@ -46,8 +46,8 @@ class NavigateBox extends StatelessWidget {
         children: [
           /// Header
           Text(
-            "System Settings",
-            style: GoogleFonts.inter(
+            "Admin mobile screens",
+            style: GoogleFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -56,8 +56,8 @@ class NavigateBox extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "Manage platform configuration",
-            style: GoogleFonts.inter(
+            "Switch between the uploaded screens below.",
+            style: GoogleFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,

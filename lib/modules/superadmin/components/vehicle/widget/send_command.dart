@@ -326,7 +326,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
         children: [
           Text(
             "Send Command",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: titleFs + 2,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -335,7 +335,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
           const SizedBox(height: 4),
           Text(
             "${widget.vehiclePlate} • IMEI ${widget.imei?.isNotEmpty == true ? widget.imei : 'N/A'} • ${widget.vehicleModel}",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: smallFs + 1,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -347,7 +347,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 : (_commandNames.isNotEmpty ? _commandNames.first : null),
             decoration: InputDecoration(
               labelText: "Select Command",
-              labelStyle: GoogleFonts.inter(
+              labelStyle: GoogleFonts.roboto(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
@@ -372,7 +372,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 vertical: 12,
               ),
             ),
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: bodyFs,
               color: colorScheme.onSurface,
             ),
@@ -398,7 +398,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 ),
                 child: Text(
                   "Payload",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: smallFs + 2,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onPrimary,
@@ -433,7 +433,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                       const SizedBox(width: 6),
                       Text(
                         "Copy",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: smallFs + 2,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -450,13 +450,13 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
             controller: payload1Controller,
             minLines: 3,
             maxLines: 5,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: bodyFs,
               color: colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               hintText: "Enter payload here...",
-              hintStyle: GoogleFonts.inter(
+              hintStyle: GoogleFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
               filled: true,
@@ -494,7 +494,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 const SizedBox(width: 6),
                 Text(
                   "Request JSON",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: smallFs + 2,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -535,7 +535,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                   ),
                   Text(
                     "Confirm Before Send",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: bodyFs,
                       color: colorScheme.onSurface,
                     ),
@@ -567,7 +567,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                     : Icon(Icons.send, size: 18, color: colorScheme.onPrimary),
                 label: Text(
                   "Send",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: bodyFs,
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
@@ -581,7 +581,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
             children: [
               Text(
                 "Recent commands",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: titleFs,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -618,7 +618,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                         const SizedBox(height: 8),
                         Text(
                           "No recent commands",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: smallFs + 2,
                             color: colorScheme.onSurface.withOpacity(0.6),
                           ),
@@ -636,18 +636,18 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                         dense: true,
                         title: Text(
                           item.name.isNotEmpty ? item.name : 'Command',
-                          style: GoogleFonts.inter(fontSize: smallFs + 1),
+                          style: GoogleFonts.roboto(fontSize: smallFs + 1),
                         ),
                         subtitle: Text(
                           item.createdAt.isNotEmpty ? item.createdAt : '—',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                         trailing: Text(
                           item.status.isNotEmpty ? item.status : 'sent',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),

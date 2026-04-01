@@ -32,7 +32,7 @@ class SuperAdminHomeAppBar extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: SizedBox(
-        height: AppUtils.appBarHeightCustom + 12,
+        height: AppUtils.appBarHeightCustom + 5,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(

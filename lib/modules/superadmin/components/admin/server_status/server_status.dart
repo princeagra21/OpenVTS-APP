@@ -933,7 +933,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           Expanded(
             child: Text(
               "Server",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 16 * scale,
                 height: 20 / 16,
                 fontWeight: FontWeight.w700,
@@ -1007,7 +1007,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsSection,
                         height: 24 / 18,
                         fontWeight: FontWeight.w700,
@@ -1017,7 +1017,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsSecondary,
                         height: 16 / 12,
                         fontWeight: FontWeight.w500,
@@ -1027,37 +1027,26 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                   ],
                 ),
               ),
-              OutlinedButton.icon(
+              OutlinedButton(
                 onPressed: onRefresh,
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
+                  padding: const EdgeInsets.all(8),
+                  side:
+                      BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                icon: SizedBox(
-                  width: 14,
-                  height: 14,
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
                   child: loading
-                      ? const AppShimmer(width: 14, height: 14, radius: 7)
+                      ? const AppShimmer(width: 16, height: 16, radius: 8)
                       : Icon(
                           Icons.refresh_rounded,
                           color: colorScheme.onSurface,
-                          size: 16 * scale,
+                          size: 18 * scale,
                         ),
-                ),
-                label: Text(
-                  "Refresh",
-                  style: GoogleFonts.inter(
-                    fontSize: fsMain,
-                    height: 20 / 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
                 ),
               ),
             ],
@@ -1084,7 +1073,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                         "Local agent status",
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -1096,7 +1085,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                         "Last check \u00b7 $localLastCheck",
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fsSecondary,
                           height: 16 / 12,
                           fontWeight: FontWeight.w500,
@@ -1131,7 +1120,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                       const SizedBox(width: 6),
                       Text(
                         localStatus.trim().isEmpty ? '—' : localStatus,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -1170,7 +1159,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               children: [
                 Text(
                   row.label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -1180,7 +1169,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const SizedBox(height: 2),
                 Text(
                   row.meta,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 11 * scale,
                     height: 14 / 11,
                     color: colorScheme.onSurface.withOpacity(0.6),
@@ -1207,7 +1196,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       ),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: 11 * scale,
           height: 14 / 11,
           fontWeight: FontWeight.w600,
@@ -1245,7 +1234,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14 * scale,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -1255,7 +1244,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const SizedBox(height: 4),
                 Text(
                   message,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 17 / 12,
                     fontWeight: FontWeight.w500,
@@ -1300,7 +1289,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1311,7 +1300,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fsSecondary,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1381,7 +1370,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               Expanded(
                 child: Text(
                   data.label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fsLabel,
                     height: 14 / 11,
                     fontWeight: FontWeight.w500,
@@ -1399,7 +1388,9 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 6),
           Text(
             data.value,
-            style: GoogleFonts.inter(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
               fontSize: fsValue,
               height: 34 / 32,
               fontWeight: FontWeight.w700,
@@ -1409,7 +1400,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 4),
           Text(
             data.subtext,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fsSecondary,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1499,7 +1490,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fsSection,
                     height: 24 / 18,
                     fontWeight: FontWeight.w700,
@@ -1509,7 +1500,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: fsSecondary,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -1677,7 +1668,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                       Flexible(
                         child: Text(
                           name,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: fsTitle,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -1698,7 +1689,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                   children: [
                     Text(
                       "Uptime",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsMeta,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -1710,7 +1701,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                       _formatUptimeAbbrev(
                         uptimeSec ?? 0,
                       ),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: fsSecondary,
                         height: 16 / 12,
                         fontWeight: FontWeight.w600,
@@ -1724,7 +1715,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             const SizedBox(height: 6),
             Text(
               description == '—' ? "No description available." : description,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: fsSecondary,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1768,7 +1759,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               ),
               child: Text(
                 message == '—' ? "No message available." : message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fsSecondary,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -1807,7 +1798,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                         const SizedBox(width: 6),
                         Text(
                           "Refresh",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: fsTitle,
                             height: 20 / 14,
                             fontWeight: FontWeight.w500,
@@ -1843,7 +1834,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                         const SizedBox(width: 6),
                         Text(
                           "Start",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: fsTitle,
                             height: 20 / 14,
                             fontWeight: FontWeight.w500,
@@ -1880,7 +1871,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 11 * scale,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1890,7 +1881,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1916,7 +1907,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       ),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: 11 * scale,
           height: 14 / 11,
           fontWeight: FontWeight.w600,
@@ -1951,7 +1942,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         children: [
           Text(
             "Recommended Action",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs + 5,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1961,7 +1952,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 4),
           Text(
             "Next step based on current system state",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs - 1,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1993,7 +1984,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                     children: [
                       Text(
                         needsAttention ? "Action Required" : "All Good",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fs,
                           height: 18 / 13,
                           fontWeight: FontWeight.w600,
@@ -2003,7 +1994,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                       const SizedBox(height: 4),
                       Text(
                         message,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: fs,
                           height: 18 / 13,
                           fontWeight: FontWeight.w500,
@@ -2015,7 +2006,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             "Overall status is down. Prioritize incident response.",
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: fs,
                               height: 18 / 13,
                               fontWeight: FontWeight.w500,
@@ -2058,7 +2049,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: 18 * scale,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -2069,7 +2060,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const SizedBox(width: 8),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 16 / 12,
                     color: colorScheme.onSurface.withOpacity(0.6),
@@ -2099,7 +2090,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       ),
       child: Text(
         message,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: 12 * scale,
           height: 16 / 12,
           color: colorScheme.onSurface.withOpacity(0.7),
@@ -2133,7 +2124,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               const SizedBox(width: 12),
               Text(
                 "Delete Data (Logs)",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fs + 4,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.error,
@@ -2144,7 +2135,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 12),
           Text(
             "Permanently delete GPS logs for a date range.",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.8),
             ),
@@ -2152,7 +2143,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const SizedBox(height: 24),
           Text(
             "Select date range",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: fs,
               fontWeight: FontWeight.w600,
             ),
@@ -2191,7 +2182,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               ),
               child: Text(
                 "Delete Selected Range",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: fs,
                   color: colorScheme.onError,
                   fontWeight: FontWeight.w600,
@@ -2246,7 +2237,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               const SizedBox(width: 12),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: 18 * scale,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -2257,7 +2248,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const SizedBox(width: 12),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 16 / 12,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -2268,7 +2259,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 const Spacer(),
                 Text(
                   status,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 16 / 12,
                     fontWeight: FontWeight.w600,
@@ -2295,7 +2286,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         children: [
           Text(
             "$label: ",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -2303,7 +2294,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           ),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               color: color ?? colorScheme.onSurface,
@@ -2352,7 +2343,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 12 * scale,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -2360,7 +2351,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             ),
             Text(
               clampedPercent == null ? "—" : "$clampedPercent%",
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 12 * scale,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -2425,7 +2416,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               children: [
                 Text(
                   name,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14 * scale,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -2433,7 +2424,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                 ),
                 Text(
                   "since $since",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 12 * scale,
                     height: 16 / 12,
                     color: Theme.of(
@@ -2476,7 +2467,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         children: [
           Text(
             "$name ",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 14 * scale,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -2484,7 +2475,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           ),
           Text(
             state,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               color: stateColor,
@@ -2493,7 +2484,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           const Spacer(),
           Text(
             "wait:$wait act:$act delay:$delay fail:$fail",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 11 * scale,
               height: 14 / 11,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -2511,7 +2502,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     return ActionChip(
       label: Text(
         label,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.roboto(
           fontSize: 14 * scale,
           height: 20 / 14,
           fontWeight: FontWeight.w600,

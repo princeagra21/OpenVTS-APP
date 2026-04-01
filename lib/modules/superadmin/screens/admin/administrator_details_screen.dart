@@ -2,7 +2,11 @@ import 'package:fleet_stack/modules/superadmin/components/admin/localization/loc
 import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_box.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/profile_tab.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/payments_tab/admin_payments_tab.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/vehicles_tab/admin_vehicles_tab.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/admin_credit_history_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/setting_tab/setting.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/activity_tab/admin_activity_tab.dart';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
@@ -38,8 +42,12 @@ class _AdministratorDetailsScreenState
 
   final List<String> tabs = [
     "Profile",
-    "Localization",
+    "Credit History",
+    "Payments",
+    "Vehicles",
     "Settings",
+    "Role",
+    "Admin Activity",
   ];
 
   @override
@@ -182,6 +190,14 @@ class _AdministratorDetailsScreenState
             ),
           ],
         );
+      case "Settings":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminSettingsTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
       case "Localization":
         return Column(
           children: const [
@@ -190,12 +206,43 @@ class _AdministratorDetailsScreenState
             SizedBox(height: 24),
           ],
         );
-
-      case "Settings":
+      case "Credit History":
         return Column(
           children: [
             const SizedBox(height: 24),
-            AdminSettingsTab(adminId: widget.id),
+            AdminCreditHistoryTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
+      case "Payments":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminPaymentsTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
+      case "Vehicles":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminVehiclesTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
+      case "Role":
+        return Column(
+          children: const [
+            SizedBox(height: 24),
+            Center(child: Text('Coming soon')),
+            SizedBox(height: 24),
+          ],
+        );
+      case "Admin Activity":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminActivityTab(adminId: widget.id),
             const SizedBox(height: 24),
           ],
         );

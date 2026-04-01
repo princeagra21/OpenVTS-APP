@@ -74,7 +74,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                 children: [
                   Text(
                     "Add Document",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -114,7 +114,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
               // Expiry Date
               Text(
                 "Expiry",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: labelSize,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface,
@@ -132,7 +132,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                   ),
                   child: Text(
                     _selectedExpiry ?? "Select date",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: inputFontSize,
                       color: _selectedExpiry == null
                           ? colorScheme.onSurface.withOpacity(0.5)
@@ -168,7 +168,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                   children: [
                     Text(
                       "Drag & drop your file here",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: inputFontSize,
                         color: colorScheme.onSurface.withOpacity(0.87),
                       ),
@@ -176,7 +176,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                     const SizedBox(height: 6),
                     Text(
                       "PDF, Images, DOCX — up to 50 MB",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: inputFontSize - 2,
                         color: colorScheme.onSurface.withOpacity(0.54),
                       ),
@@ -195,7 +195,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                         ),
                         child: Text(
                           _selectedFile ?? "Choose File",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             color: colorScheme.onPrimary,
                             fontSize: inputFontSize,
                             fontWeight: FontWeight.w600,
@@ -234,7 +234,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                   child: Center(
                     child: Text(
                       "Add Document",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -266,7 +266,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -276,10 +276,10 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
         TextField(
           controller: controller,
           maxLines: maxLines,
-          style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
+          style: GoogleFonts.roboto(fontSize: fontSize, color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.roboto(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.5),
             ),

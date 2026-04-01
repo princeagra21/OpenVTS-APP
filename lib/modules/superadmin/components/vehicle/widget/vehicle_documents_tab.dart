@@ -138,7 +138,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       const SizedBox(width: 8),
                       Text(
                         "Vehicle Documents",
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.7),
@@ -198,7 +198,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                   children: [
                     Text(
                       "Health Status",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -250,7 +250,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                   children: [
                     Text(
                       "Storage used",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -262,7 +262,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       children: [
                         Text(
                           "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(2)} GB",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 2,
                             fontWeight: FontWeight.bold,
@@ -307,7 +307,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       children: [
                         Text(
                           "Total docs: $totalDocs",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),
@@ -346,7 +346,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
               children: [
                 Text(
                   'No documents found',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
@@ -355,7 +355,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                 const SizedBox(height: 6),
                 Text(
                   'This vehicle has no uploaded documents in the current API response.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -396,7 +396,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
         const SizedBox(height: 6),
         Text(
           "$count",
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
             fontWeight: FontWeight.bold,
           ),
@@ -420,7 +420,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),

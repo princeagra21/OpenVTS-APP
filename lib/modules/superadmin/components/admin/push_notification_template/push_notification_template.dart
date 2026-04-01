@@ -88,7 +88,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
                     ),
                     label: Text(
                       "Save Changes",
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -105,7 +105,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
               // -----------------------------------------
               Text(
                 "Push Notification Template Settings",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                   fontWeight: FontWeight.w800,
                   color: Colors.black87,
@@ -114,7 +114,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
               const SizedBox(height: 4),
               Text(
                 "Configure and customize push notification templates for various system events.",
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w200,
                   color: Colors.black.withOpacity(0.9),
@@ -146,7 +146,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
               children: [
                 Text(
                   "Select Language",
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: Colors.black87,
@@ -164,7 +164,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
                     isExpanded: true,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     underline: const SizedBox(),
-                    style: GoogleFonts.inter(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+                    style: GoogleFonts.roboto(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() => selectedLanguage = newValue);
@@ -266,7 +266,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: Colors.black87,
@@ -277,7 +277,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
           const SizedBox(height: 24),
           Text(
             "MESSAGE",
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -285,7 +285,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
           ),
           const SizedBox(height: 8),
           TextField(
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
@@ -301,7 +301,7 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.roboto(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
       ),

@@ -107,7 +107,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     final padding = AdaptiveUtils.getHorizontalPadding(width) + 6;
     final topPadding = MediaQuery.of(context).padding.top;
     final scale = (width / 420).clamp(0.9, 1.0);
-    final labelStyle = GoogleFonts.inter(
+    final labelStyle = GoogleFonts.roboto(
       fontSize: 12 * scale,
       height: 16 / 12,
       fontWeight: FontWeight.w600,
@@ -147,7 +147,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                         children: [
                         Text(
                           'Create Ticket (on behalf of Admin)',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 16 * scale,
                             height: 20 / 16,
                             fontWeight: FontWeight.w700,
@@ -216,7 +216,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                               title,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 14 * scale,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -226,7 +226,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                               subtitle,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 12 * scale,
                                                 height: 16 / 12,
                                                 fontWeight: FontWeight.w500,
@@ -274,7 +274,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                           : 'Select admin',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.roboto(
                                         fontSize: 14 * scale,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w500,
@@ -310,7 +310,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                         TextField(
                           controller: _titleController,
                           maxLength: 30,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 14 * scale,
                             height: 20 / 14,
                             fontWeight: FontWeight.w500,
@@ -319,7 +319,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                           decoration: InputDecoration(
                             hintText: 'Brief description of the issue',
                             counterText: '',
-                            hintStyle: GoogleFonts.inter(
+                            hintStyle: GoogleFonts.roboto(
                               fontSize: 14 * scale,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -357,7 +357,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             builder: (_, value, __) {
                               return Text(
                                 '${value.text.length}/30',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: 11 * scale,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w500,
@@ -405,7 +405,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                 return ListTile(
                                                   title: Text(
                                                     item,
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.roboto(
                                                       fontSize: 14 * scale,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -445,7 +445,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                               _selectedCategory ?? 'Select',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 14 * scale,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w500,
@@ -496,7 +496,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                 return ListTile(
                                                   title: Text(
                                                     item,
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.roboto(
                                                       fontSize: 14 * scale,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -536,7 +536,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                               _selectedPriority ?? 'Select',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.roboto(
                                                 fontSize: 14 * scale,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w500,
@@ -579,7 +579,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                           minLines: 5,
                           maxLines: 5,
                           maxLength: 1000,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 14 * scale,
                             height: 20 / 14,
                             fontWeight: FontWeight.w500,
@@ -588,7 +588,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                           decoration: InputDecoration(
                             hintText: 'Describe the issue in detail',
                             counterText: '',
-                            hintStyle: GoogleFonts.inter(
+                            hintStyle: GoogleFonts.roboto(
                               fontSize: 14 * scale,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -626,7 +626,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             builder: (_, value, __) {
                               return Text(
                                 '${value.text.length}/1000',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.roboto(
                                   fontSize: 11 * scale,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w500,
@@ -692,7 +692,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Click to attach files',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 13 * scale,
                                     height: 18 / 13,
                                     fontWeight: FontWeight.w500,
@@ -702,7 +702,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   'Max 5 files, 5MB each',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 11 * scale,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w500,
@@ -722,7 +722,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                             f.filename,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
+                                            style: GoogleFonts.roboto(
                                               fontSize: 11 * scale,
                                               height: 14 / 11,
                                               fontWeight: FontWeight.w500,
@@ -761,7 +761,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 ),
                                 child: Text(
                                   'Cancel',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 14 * scale,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -898,7 +898,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                     : const Icon(Icons.add),
                                 label: Text(
                                   'Create Ticket',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.roboto(
                                     fontSize: 14 * scale,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
