@@ -1,16 +1,58 @@
-# fleek_stack_mobile
+# Fleet Stack Mobile (Flutter)
 
-A new Flutter project.
+A production‑grade Flutter app for Fleet Stack. The project is organized by role‑based modules (`superadmin`, `admin`, `user`) with shared core services and UI utilities.
+
+## Highlights
+- Role‑based navigation and screens (Superadmin/Admin/User)
+- API‑driven UI (Dio + repository layer)
+- Consistent design system utilities (`AdaptiveUtils`, `AppUtils`)
+- Local persistence (SharedPreferences + secure token storage)
+- Shimmer loading states for data‑heavy views
+
+## Project Structure
+```
+lib/
+  core/                 # networking, repositories, models, storage, shared widgets
+  modules/
+    superadmin/         # superadmin screens & components
+    admin/              # admin screens & components
+    user/               # user screens & components
+```
 
 ## Getting Started
+### Prerequisites
+- Flutter SDK (stable)
+- Dart SDK (bundled with Flutter)
 
-This project is a starting point for a Flutter application.
+### Run
+```bash
+flutter pub get
+flutter run -d <device> \
+  --dart-define=APP_ENV=dev \
+  --dart-define=API_BASE_URL=<your_api_url>
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Environment
+The app uses Dart defines (see `AppConfig.fromDartDefine()`):
+- `APP_ENV`
+- `API_BASE_URL`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## API Docs
+Helpful references in the repo root:
+- `FleetStack-API-Reference.md`
+- `FleetStack-API-Reference-Missing.md`
+- `FleetStack-Missing-APIs-Client-Report.md`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Conventions
+- UI text styles use `GoogleFonts.roboto`
+- Layout sizing via `AdaptiveUtils` and `AppUtils`
+- Data fetching via repository classes in `lib/core/repositories`
+
+## Modules
+See module documentation:
+- `lib/modules/superadmin/README.md`
+- `lib/modules/admin/README.md`
+- `lib/modules/user/README.md`
+
+---
+© 2026 Fleet Stack. All rights reserved.
