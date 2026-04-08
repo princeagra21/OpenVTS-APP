@@ -373,9 +373,9 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 padding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
+                topPadding + AppUtils.appBarHeightCustom + 10,
                 padding,
-                84,
+                padding,
               ),
               child: SingleChildScrollView(
                 child: Column(

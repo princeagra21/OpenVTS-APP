@@ -31,10 +31,14 @@ class AdminCalendarRepository {
         if (list != null) {
           for (final item in list) {
             if (item is Map<String, dynamic>) {
-              out.add(AdminCalendarEventItem(item));
+              out.add(AdminCalendarEventItem(_normalizeEventMap(item)));
             } else if (item is Map) {
               out.add(
-                AdminCalendarEventItem(Map<String, dynamic>.from(item.cast())),
+                AdminCalendarEventItem(
+                  _normalizeEventMap(
+                    Map<String, dynamic>.from(item.cast()),
+                  ),
+                ),
               );
             }
           }
@@ -50,14 +54,16 @@ class AdminCalendarRepository {
                 out.add(
                   AdminCalendarEventItem(<String, dynamic>{
                     'date': key,
-                    ...event,
+                    ..._normalizeEventMap(event),
                   }),
                 );
               } else if (event is Map) {
                 out.add(
                   AdminCalendarEventItem(<String, dynamic>{
                     'date': key,
-                    ...Map<String, dynamic>.from(event.cast()),
+                    ..._normalizeEventMap(
+                      Map<String, dynamic>.from(event.cast()),
+                    ),
                   }),
                 );
               }
@@ -67,6 +73,37 @@ class AdminCalendarRepository {
 
         return Result.ok(out);
       },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getCalendarUserDetails(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/calendar/user/$userId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(_asMap(data)),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getCalendarDayDetails({
+    required String date,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/calendar/day',
+      queryParameters: {'date': date},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(_asMap(data)),
       failure: (err) => Result.fail(err),
     );
   }
@@ -106,5 +143,18 @@ class AdminCalendarRepository {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value.cast());
     return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _normalizeEventMap(Map<String, dynamic> raw) {
+    final map = Map<String, dynamic>.from(raw);
+    final type = map['type']?.toString() ?? '';
+    final count = map['count'];
+    final hasTitle = (map['title'] ?? map['name'] ?? map['label']) != null;
+    if (count != null && !hasTitle) {
+      final label = type.isNotEmpty ? type.replaceAll('_', ' ') : 'Events';
+      map['title'] = '$label · $count';
+      map['description'] = 'Count: $count';
+    }
+    return map;
   }
 }

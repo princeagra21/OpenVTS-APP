@@ -10,17 +10,18 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_documents_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_drivers_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_payments_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_profile_tab.dart';
-import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_profile_box.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_tickets_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_vehicles_tab.dart';
+import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdminUserDetailsScreen extends StatefulWidget {
   final String id;
@@ -91,6 +92,12 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
 
   ApiClient? _apiClient;
   AdminUsersRepository? _repo;
+
+  String _safe(String? value, {String fallback = '-'}) {
+    if (value == null) return fallback;
+    final text = value.trim();
+    return text.isEmpty ? fallback : text;
+  }
 
   AdminUsersRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -461,32 +468,65 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(w);
-    final titleFs = AdaptiveUtils.getTitleFontSize(w);
-    final bodyFs = titleFs - 1;
-    final smallFs = titleFs - 3;
-    final subtitle =
-        (_details?.fullName ?? _details?.username ?? 'User Details').trim();
-    final initialsSource = (_details?.summary.initials ?? '--').trim();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final bodyFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
+    final smallFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 8.0
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 10.0
+            : 12.0;
 
-    return AppLayout(
-      title: 'USER',
-      subtitle: subtitle.isEmpty ? 'User Details' : subtitle,
-      showLeftAvatar: false,
-      leftAvatarText: initialsSource.isEmpty ? '--' : initialsSource,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final headerName = _safe(
+      _details?.fullName,
+      fallback: _safe(_details?.username, fallback: 'User Details'),
+    );
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
         children: [
-          AdminUserProfileBox(details: _details, loading: _loadingDetails),
-          SizedBox(height: padding),
-          NavigateBox(
-            selectedTab: _selectedTab,
-            tabs: _tabs,
-            onTabSelected: _selectTab,
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              horizontalPadding,
+              84,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NavigateBox(
+                  selectedTab: _selectedTab,
+                  tabs: _tabs,
+                  title: 'User mobile screens',
+                  subtitle: 'Switch between the user screens below.',
+                  onTabSelected: _selectTab,
+                ),
+                const SizedBox(height: 4),
+                _buildTabContent(bodyFs, smallFs),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          SizedBox(height: padding),
-          _buildTabContent(bodyFs, smallFs),
+          Positioned(
+            left: horizontalPadding,
+            right: horizontalPadding,
+            top: 0,
+            child: AdminHomeAppBar(
+              title: headerName,
+              leadingIcon: Symbols.group,
+              onClose: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -495,46 +535,82 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   Widget _buildTabContent(double bodyFs, double smallFs) {
     switch (_selectedTab) {
       case 'Vehicles':
-        return AdminUserVehiclesTab(
-          items: _vehicles,
-          loading: _loadingVehicles,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserVehiclesTab(
+              items: _vehicles,
+              loading: _loadingVehicles,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Drivers':
-        return AdminUserDriversTab(
-          items: _drivers,
-          loading: _loadingDrivers,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserDriversTab(
+              items: _drivers,
+              loading: _loadingDrivers,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Documents':
-        return AdminUserDocumentsTab(
-          items: _documents,
-          loading: _loadingDocuments,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserDocumentsTab(
+              items: _documents,
+              loading: _loadingDocuments,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Tickets':
-        return AdminUserTicketsTab(
-          items: _tickets,
-          loading: _loadingTickets,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserTicketsTab(
+              items: _tickets,
+              loading: _loadingTickets,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Payments':
-        return AdminUserPaymentsTab(
-          items: _payments,
-          loading: _loadingPayments,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserPaymentsTab(
+              items: _payments,
+              loading: _loadingPayments,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Profile':
       default:
-        return AdminUserProfileTab(
-          details: _details,
-          loading: _loadingDetails,
-          bodyFontSize: bodyFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserProfileTab(
+              details: _details,
+              loading: _loadingDetails,
+              bodyFontSize: bodyFs,
+              userId: widget.id,
+              onRefresh: _loadDetails,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
     }
   }

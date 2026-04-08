@@ -56,12 +56,99 @@ class AdminSupportRepository {
     );
   }
 
+  Future<Result<List<AdminTicketListItem>>> getMyTickets({
+    String? status,
+    String? search,
+    int? page,
+    int? limit,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{};
+    if (status != null && status.trim().isNotEmpty) {
+      query['status'] = status.trim();
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      query['search'] = search.trim();
+    }
+    if (page != null) query['page'] = page;
+    if (limit != null) query['limit'] = limit;
+
+    final res = await api.get(
+      '/admin/mytickets',
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['tickets', 'items', 'rows', 'results', 'data'],
+        );
+        final out = <AdminTicketListItem>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(AdminTicketListItem(item));
+            } else if (item is Map) {
+              out.add(
+                AdminTicketListItem(Map<String, dynamic>.from(item.cast())),
+              );
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<List<AdminTicketMessageItem>>> getTicketMessages(
     String ticketId, {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
       '/admin/tickets/$ticketId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
+        );
+        final out = <AdminTicketMessageItem>[];
+
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(AdminTicketMessageItem(item));
+            } else if (item is Map) {
+              out.add(
+                AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())),
+              );
+            }
+          }
+          return Result.ok(out);
+        }
+
+        final single = _extractMap(data);
+        if (single.isNotEmpty && _messageLike(single)) {
+          out.add(AdminTicketMessageItem(single));
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminTicketMessageItem>>> getMyTicketMessages(
+    String ticketId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/mytickets/$ticketId',
       cancelToken: cancelToken,
     );
 
@@ -140,6 +227,50 @@ class AdminSupportRepository {
     );
   }
 
+  Future<Result<AdminTicketMessageItem?>> sendMyTicketMessage(
+    String ticketId,
+    String message, {
+    bool internal = false,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{'message': message};
+
+    final res = await api.post(
+      '/admin/mytickets/$ticketId/messages',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        if (map.isEmpty) return Result.ok(null);
+
+        if (_messageLike(map)) {
+          return Result.ok(AdminTicketMessageItem(map));
+        }
+
+        final list = _extractList(
+          data,
+          extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
+        );
+        if (list != null && list.isNotEmpty) {
+          final first = list.first;
+          if (first is Map<String, dynamic>) {
+            return Result.ok(AdminTicketMessageItem(first));
+          }
+          if (first is Map) {
+            return Result.ok(
+              AdminTicketMessageItem(Map<String, dynamic>.from(first.cast())),
+            );
+          }
+        }
+        return Result.ok(null);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<void>> updateTicketStatus(
     String ticketId,
     String status, {
@@ -148,6 +279,45 @@ class AdminSupportRepository {
     final res = await api.patch(
       '/admin/tickets/$ticketId/status',
       data: <String, dynamic>{'status': status},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateMyTicketStatus(
+    String ticketId,
+    String status, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/admin/mytickets/$ticketId/status',
+      data: <String, dynamic>{'status': status},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> createTicket({
+    required String userId,
+    required String subject,
+    required String message,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/admin/tickets',
+      data: <String, dynamic>{
+        'userId': userId,
+        'subject': subject,
+        'message': message,
+      },
       cancelToken: cancelToken,
     );
 

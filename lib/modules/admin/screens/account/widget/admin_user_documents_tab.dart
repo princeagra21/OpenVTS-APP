@@ -29,6 +29,11 @@ class AdminUserDocumentsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleFs = 14 * scale;
+    final subtitleFs = 12 * scale;
+    final statusFs = 11 * scale;
     if (loading) {
       return listShimmer(context, count: 3, height: 210);
     }
@@ -57,19 +62,18 @@ class AdminUserDocumentsTab extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         'User Documents',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
+                        style: GoogleFonts.roboto(
+                          fontSize: titleFs,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface.withValues(alpha: 0.7),
-                          letterSpacing: 0.8,
                         ),
                       ),
                     ],
                   ),
                   Text(
                     '$totalDocs total',
-                    style: GoogleFonts.inter(
-                      fontSize: smallFontSize + 1,
+                    style: GoogleFonts.roboto(
+                      fontSize: subtitleFs,
                       color: cs.onSurface,
                     ),
                   ),
@@ -153,11 +157,10 @@ class AdminUserDocumentsTab extends StatelessWidget {
                         Flexible(
                           child: Text(
                             fileName,
-                            style: GoogleFonts.inter(
-                              fontSize: bodyFontSize + 1,
+                            style: GoogleFonts.roboto(
+                              fontSize: titleFs,
                               fontWeight: FontWeight.w600,
                               color: cs.onSurface.withValues(alpha: 0.7),
-                              letterSpacing: 0.8,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -174,9 +177,9 @@ class AdminUserDocumentsTab extends StatelessWidget {
                           ),
                           child: Text(
                             version,
-                            style: GoogleFonts.inter(
-                              fontSize: smallFontSize - 1,
-                              fontWeight: FontWeight.w500,
+                            style: GoogleFonts.roboto(
+                              fontSize: statusFs,
+                              fontWeight: FontWeight.w600,
                               color: cs.onSurface,
                             ),
                           ),
@@ -187,8 +190,8 @@ class AdminUserDocumentsTab extends StatelessWidget {
                     Center(
                       child: Text(
                         _formatBytes(doc.sizeBytes),
-                        style: GoogleFonts.inter(
-                          fontSize: smallFontSize,
+                        style: GoogleFonts.roboto(
+                          fontSize: subtitleFs,
                           color: cs.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
@@ -204,11 +207,10 @@ class AdminUserDocumentsTab extends StatelessWidget {
                             children: [
                               Text(
                                 'TYPE',
-                                style: GoogleFonts.inter(
-                                  fontSize: smallFontSize - 2,
+                                style: GoogleFonts.roboto(
+                                  fontSize: statusFs,
                                   fontWeight: FontWeight.w500,
                                   color: cs.onSurface.withValues(alpha: 0.6),
-                                  letterSpacing: 0.5,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -216,8 +218,8 @@ class AdminUserDocumentsTab extends StatelessWidget {
                                 type,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: smallFontSize,
+                                style: GoogleFonts.roboto(
+                                  fontSize: subtitleFs,
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
                                 ),
@@ -232,11 +234,10 @@ class AdminUserDocumentsTab extends StatelessWidget {
                             children: [
                               Text(
                                 'TAGS',
-                                style: GoogleFonts.inter(
-                                  fontSize: smallFontSize - 2,
+                                style: GoogleFonts.roboto(
+                                  fontSize: statusFs,
                                   fontWeight: FontWeight.w500,
                                   color: cs.onSurface.withValues(alpha: 0.6),
-                                  letterSpacing: 0.5,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -259,8 +260,8 @@ class AdminUserDocumentsTab extends StatelessWidget {
                                         ),
                                         child: Text(
                                           tag,
-                                          style: GoogleFonts.inter(
-                                            fontSize: smallFontSize - 2,
+                                          style: GoogleFonts.roboto(
+                                            fontSize: statusFs,
                                             color: cs.onSurface,
                                           ),
                                         ),
@@ -280,8 +281,8 @@ class AdminUserDocumentsTab extends StatelessWidget {
                         Expanded(
                           child: Text(
                             'Uploaded: $uploadedDate',
-                            style: GoogleFonts.inter(
-                              fontSize: smallFontSize,
+                            style: GoogleFonts.roboto(
+                              fontSize: subtitleFs,
                               color: cs.onSurface.withValues(alpha: 0.6),
                             ),
                             maxLines: 1,
@@ -293,8 +294,8 @@ class AdminUserDocumentsTab extends StatelessWidget {
                           child: Text(
                             'Expiry: $expiryDate',
                             textAlign: TextAlign.end,
-                            style: GoogleFonts.inter(
-                              fontSize: smallFontSize,
+                            style: GoogleFonts.roboto(
+                              fontSize: subtitleFs,
                               color: cs.onSurface.withValues(alpha: 0.6),
                             ),
                             maxLines: 1,
@@ -304,7 +305,7 @@ class AdminUserDocumentsTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    statusChip(context, status, smallFontSize),
+                    statusChip(context, status, statusFs),
                   ],
                 ),
               ),
@@ -321,6 +322,10 @@ class AdminUserDocumentsTab extends StatelessWidget {
     required Color color,
   }) {
     final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleFs = 14 * scale;
+    final subtitleFs = 12 * scale;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       decoration: BoxDecoration(
@@ -333,17 +338,17 @@ class AdminUserDocumentsTab extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.inter(
-              fontSize: bodyFontSize + 1,
-              fontWeight: FontWeight.w700,
+            style: GoogleFonts.roboto(
+              fontSize: titleFs,
+              fontWeight: FontWeight.w600,
               color: cs.onSurface,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: GoogleFonts.inter(
-              fontSize: smallFontSize,
+            style: GoogleFonts.roboto(
+              fontSize: subtitleFs,
               color: cs.onSurface.withValues(alpha: 0.7),
             ),
           ),

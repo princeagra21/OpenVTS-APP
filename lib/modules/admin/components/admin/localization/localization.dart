@@ -1,14 +1,16 @@
+// screens/settings/localization_settings_screen.dart
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_localization_settings.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_localization_repository.dart';
 import 'package:fleet_stack/core/repositories/common_repository.dart';
+import 'package:fleet_stack/core/repositories/admin_localization_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
+import 'package:fleet_stack/main.dart' show themeController;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -21,8 +23,8 @@ class LocalizationSettingsScreen extends StatelessWidget {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
 
     return AppLayout(
-      title: 'FLEET STACK',
-      subtitle: 'Localization',
+      title: "FLEET STACK",
+      subtitle: "Localization",
       actionIcons: const [],
       leftAvatarText: 'FS',
       showLeftAvatar: false,
@@ -46,31 +48,26 @@ class LocalizationHeader extends StatefulWidget {
 }
 
 class _LocalizationHeaderState extends State<LocalizationHeader> {
-  // FleetStack-API-Reference.md + Postman confirmed endpoints:
+  // Postman-confirmed endpoints:
   // - GET /languages
   // - GET /timezones
   // - GET /dateformats
   // - GET /admin/localization
   // - PATCH /admin/localization
-  // PATCH keys used in this screen payload:
-  // language, dateFormat, use24Hour, timezoneOffset, units,
-  // layoutDirection, defaultLat, defaultLon, mapZoom
+  final bool _hasLocalizationSettingsEndpoint = true;
 
   String selectedLanguage = '';
-  String textDirection = '';
+  String textDirection = "LTR";
   String dateFormat = '';
-  String timeFormat = '';
-  String selectedTimezoneOffset = '';
-  String units = '';
-  double? lat;
-  double? lng;
-  int? zoom;
-
-  final TextEditingController _latController = TextEditingController();
-  final TextEditingController _lngController = TextEditingController();
+  String timeFormat = "24-hour";
+  String timezone = '';
+  String units = "KM";
+  double lat = 0;
+  double lng = 0;
+  int zoom = 10;
 
   final DateTime previewDate = DateTime(2025, 12, 7, 15, 28);
-  final List<String> months = const [
+  final List<String> months = [
     '',
     'Jan',
     'Feb',
@@ -86,14 +83,15 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     'Dec',
   ];
 
-  List<ReferenceOption> _languages = const [];
-  List<ReferenceOption> _dateFormats = const [];
-  List<TimezoneOption> _timezones = const [];
+  List<String> _languages = const [];
+  List<String> _dateFormats = const [];
+  List<String> _timezones = const [];
 
   bool _loading = false;
   bool _saving = false;
   bool _loadErrorShown = false;
   bool _saveErrorShown = false;
+  bool _apiUnavailableShown = false;
   DateTime? _lastSaveAt;
 
   CancelToken? _loadToken;
@@ -101,57 +99,78 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
 
   ApiClient? _apiClient;
   CommonRepository? _commonRepo;
-  AdminLocalizationRepository? _repo;
+  AdminLocalizationRepository? _localizationRepo;
 
   _LocalizationSnapshot? _loadedSnapshot;
+
+  CommonRepository _commonRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _commonRepo ??= CommonRepository(api: _apiClient!);
+    return _commonRepo!;
+  }
+
+  AdminLocalizationRepository _localizationRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _localizationRepo ??= AdminLocalizationRepository(api: _apiClient!);
+    return _localizationRepo!;
+  }
 
   @override
   void initState() {
     super.initState();
-    final snapshot = _emptySnapshot();
-    _loadedSnapshot = snapshot;
-    _applySnapshot(snapshot);
+    _loadedSnapshot = _defaultsSnapshot();
     _loadLocalizationData();
   }
 
   @override
   void dispose() {
-    _loadToken?.cancel('Localization screen disposed');
-    _saveToken?.cancel('Localization screen disposed');
-    _latController.dispose();
-    _lngController.dispose();
+    _loadToken?.cancel('Localization disposed');
+    _saveToken?.cancel('Localization disposed');
     super.dispose();
   }
 
-  ApiClient _apiClientOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    return _apiClient!;
+  String getFormattedDate() {
+    String day = previewDate.day.toString().padLeft(2, '0');
+    String month = previewDate.month.toString().padLeft(2, '0');
+    String year = previewDate.year.toString();
+    String monthName = months[previewDate.month];
+
+    return switch (dateFormat) {
+      "dd MMM yyyy" || "DD MMM YYYY" => "$day $monthName $year",
+      "MM/dd/yyyy" || "MM/DD/YYYY" => "$month/$day/$year",
+      "yyyy-MM-dd" || "YYYY-MM-DD" => "$year-$month-$day",
+      _ => "$day $monthName $year",
+    };
   }
 
-  CommonRepository _commonRepoOrCreate() {
-    _commonRepo ??= CommonRepository(api: _apiClientOrCreate());
-    return _commonRepo!;
+  String getFormattedTime() {
+    String minute = previewDate.minute.toString().padLeft(2, '0');
+    if (timeFormat == "24-hour") {
+      return "${previewDate.hour.toString().padLeft(2, '0')}:$minute";
+    } else {
+      int hour = previewDate.hour % 12 == 0 ? 12 : previewDate.hour % 12;
+      String ampm = previewDate.hour >= 12 ? 'PM' : 'AM';
+      return "$hour:$minute $ampm";
+    }
   }
 
-  AdminLocalizationRepository _repoOrCreate() {
-    _repo ??= AdminLocalizationRepository(api: _apiClientOrCreate());
-    return _repo!;
-  }
-
-  _LocalizationSnapshot _emptySnapshot() {
+  _LocalizationSnapshot _defaultsSnapshot() {
     return const _LocalizationSnapshot(
       selectedLanguage: '',
-      textDirection: '',
+      textDirection: 'LTR',
       dateFormat: '',
-      timeFormat: '',
-      selectedTimezoneOffset: '',
-      units: '',
-      lat: null,
-      lng: null,
-      zoom: null,
+      timeFormat: '24-hour',
+      timezone: '',
+      units: 'KM',
+      lat: 0,
+      lng: 0,
+      zoom: 10,
     );
   }
 
@@ -161,7 +180,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       textDirection: textDirection,
       dateFormat: dateFormat,
       timeFormat: timeFormat,
-      selectedTimezoneOffset: selectedTimezoneOffset,
+      timezone: timezone,
       units: units,
       lat: lat,
       lng: lng,
@@ -174,28 +193,29 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     textDirection = snapshot.textDirection;
     dateFormat = snapshot.dateFormat;
     timeFormat = snapshot.timeFormat;
-    selectedTimezoneOffset = snapshot.selectedTimezoneOffset;
+    timezone = snapshot.timezone;
     units = snapshot.units;
     lat = snapshot.lat;
     lng = snapshot.lng;
     zoom = snapshot.zoom;
-
-    _latController.text = snapshot.lat == null
-        ? ''
-        : snapshot.lat!.toStringAsFixed(4);
-    _lngController.text = snapshot.lng == null
-        ? ''
-        : snapshot.lng!.toStringAsFixed(4);
   }
 
-  String _safeDisplay(String value) {
-    final v = value.trim();
-    return v.isEmpty ? '—' : v;
-  }
-
-  bool _isCancelledError(Object err) {
-    return err is ApiException &&
-        err.message.toLowerCase() == 'request cancelled';
+  Future<void> _setThemeMode(String mode) async {
+    if (!mounted) return;
+    if (mode == 'dark') {
+      themeController.setThemeMode(ThemeMode.dark);
+      await AppTheme.setDarkMode(true);
+      return;
+    }
+    if (mode == 'light') {
+      themeController.setThemeMode(ThemeMode.light);
+      await AppTheme.setDarkMode(false);
+      return;
+    }
+    themeController.setThemeMode(ThemeMode.system);
+    final isDark =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    await AppTheme.setDarkMode(isDark);
   }
 
   void _showLoadErrorOnce(String message) {
@@ -206,18 +226,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showSaveErrorOnce(String message) {
-    if (_saveErrorShown || !mounted) return;
-    _saveErrorShown = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
   String _normalizeDirection(String raw, String fallback) {
     final v = raw.trim().toUpperCase();
-    if (v == 'LTR') return 'LTR';
     if (v == 'RTL') return 'RTL';
+    if (v == 'LTR') return 'LTR';
     return fallback;
   }
 
@@ -228,176 +240,47 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return fallback;
   }
 
-  String _timeFormatFromSettings(
-    AdminLocalizationSettings settings,
-    String fallback,
-  ) {
-    if (settings.use24Hour != null) {
-      return settings.use24Hour! ? '24-hour' : '12-hour';
-    }
-
-    final tf = settings.timeFormat.toLowerCase();
-    if (tf.contains('24')) return '24-hour';
-    if (tf.contains('12')) return '12-hour';
-    return fallback;
-  }
-
-  String _pickReferenceValue(
-    String incoming,
-    List<ReferenceOption> options,
-    String fallback,
-  ) {
-    final inTrim = incoming.trim();
-    if (inTrim.isEmpty) return fallback;
+  String _matchChoice(String value, List<String> options, String fallback) {
+    if (value.trim().isEmpty) return fallback;
     for (final option in options) {
-      if (option.value.toLowerCase() == inTrim.toLowerCase()) {
-        return option.value;
+      if (option.toLowerCase() == value.toLowerCase()) {
+        return option;
       }
     }
     return fallback;
   }
 
-  String _pickTimezoneValue(
-    String incoming,
-    List<TimezoneOption> options,
-    String fallback,
-  ) {
-    final inTrim = incoming.trim();
-    if (inTrim.isEmpty) return fallback;
-    for (final option in options) {
-      if (option.value.toLowerCase() == inTrim.toLowerCase()) {
-        return option.value;
-      }
-    }
-    return fallback;
-  }
-
-  List<ReferenceOption> _dedupeReferenceOptions(List<ReferenceOption> options) {
-    final out = <ReferenceOption>[];
+  List<String> _optionsOrFallback(List<String> values, List<String> fallback) {
+    final out = <String>[];
     final seen = <String>{};
-
-    for (final item in options) {
-      final value = item.value.trim();
-      if (value.isEmpty) continue;
-      final key = value.toLowerCase();
+    for (final v in values) {
+      final normalized = v.trim();
+      if (normalized.isEmpty) continue;
+      final key = normalized.toLowerCase();
       if (seen.contains(key)) continue;
       seen.add(key);
-      out.add(
-        ReferenceOption(
-          value: value,
-          label: item.label.trim().isEmpty ? value : item.label.trim(),
-        ),
-      );
+      out.add(normalized);
     }
-
+    if (out.isEmpty) return List<String>.from(fallback);
     return out;
   }
 
-  List<TimezoneOption> _dedupeTimezoneOptions(List<TimezoneOption> options) {
-    final out = <TimezoneOption>[];
-    final seen = <String>{};
-
-    for (final item in options) {
-      final value = item.value.trim();
-      if (value.isEmpty) continue;
-      final key = value.toLowerCase();
-      if (seen.contains(key)) continue;
-      seen.add(key);
-      out.add(
-        TimezoneOption(
-          value: value,
-          label: item.label.trim().isEmpty ? value : item.label.trim(),
-        ),
-      );
-    }
-
-    return out;
+  List<String> _ensureContains(List<String> values, String current) {
+    if (current.trim().isEmpty) return values;
+    final has = values.any((e) => e.toLowerCase() == current.toLowerCase());
+    if (has) return values;
+    return [...values, current];
   }
 
-  List<ReferenceOption> _ensureReferenceOption(
-    List<ReferenceOption> options,
-    String value,
-  ) {
-    final v = value.trim();
-    if (v.isEmpty) return options;
-    final has = options.any((o) => o.value.toLowerCase() == v.toLowerCase());
-    if (has) return options;
-    return [...options, ReferenceOption(value: v, label: v)];
+  String _firstOrEmpty(List<String> values) {
+    if (values.isEmpty) return '';
+    return values.first;
   }
 
-  List<TimezoneOption> _ensureTimezoneOption(
-    List<TimezoneOption> options,
-    String value,
-  ) {
-    final v = value.trim();
-    if (v.isEmpty) return options;
-    final has = options.any((o) => o.value.toLowerCase() == v.toLowerCase());
-    if (has) return options;
-    return [...options, TimezoneOption(value: v, label: v)];
-  }
-
-  String? _selectedReferenceValue(
-    List<ReferenceOption> options,
-    String current,
-  ) {
-    final c = current.trim();
-    if (c.isEmpty) return null;
-    final has = options.any((o) => o.value.toLowerCase() == c.toLowerCase());
-    return has ? c : null;
-  }
-
-  String? _selectedTimezoneValue(List<TimezoneOption> options, String current) {
-    final c = current.trim();
-    if (c.isEmpty) return null;
-    final has = options.any((o) => o.value.toLowerCase() == c.toLowerCase());
-    return has ? c : null;
-  }
-
-  String _formatDatePreview() {
-    if (dateFormat.trim().isEmpty) return '—';
-
-    final day = previewDate.day.toString().padLeft(2, '0');
-    final month = previewDate.month.toString().padLeft(2, '0');
-    final year = previewDate.year.toString();
-    final monthName = months[previewDate.month];
-    final normalized = dateFormat.trim().toUpperCase();
-
-    if (normalized == 'DD MMM YYYY' || normalized == 'DD MMM YYYY') {
-      return '$day $monthName $year';
-    }
-    if (normalized == 'MM/DD/YYYY') {
-      return '$month/$day/$year';
-    }
-    if (normalized == 'YYYY-MM-DD') {
-      return '$year-$month-$day';
-    }
-
-    return '$day $monthName $year';
-  }
-
-  String _formatTimePreview() {
-    if (timeFormat != '24-hour' && timeFormat != '12-hour') {
-      return '—';
-    }
-
-    final minute = previewDate.minute.toString().padLeft(2, '0');
-    if (timeFormat == '24-hour') {
-      return '${previewDate.hour.toString().padLeft(2, '0')}:$minute';
-    }
-
-    final hour = previewDate.hour % 12 == 0 ? 12 : previewDate.hour % 12;
-    final ampm = previewDate.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $ampm';
-  }
-
-  String _formatMapCenterPreview() {
-    if (lat == null || lng == null) return '—';
-    return '${lat!.toStringAsFixed(4)}, ${lng!.toStringAsFixed(4)}';
-  }
-
-  String _formatZoomPreview() {
-    if (zoom == null) return '—';
-    return '$zoom';
+  String? _dropdownValueOrNull(List<String> options, String current) {
+    if (current.trim().isEmpty) return null;
+    final has = options.any((e) => e.toLowerCase() == current.toLowerCase());
+    return has ? current : null;
   }
 
   Future<void> _loadLocalizationData() async {
@@ -408,11 +291,21 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    var nextLanguages = List<ReferenceOption>.from(_languages);
-    var nextDateFormats = List<ReferenceOption>.from(_dateFormats);
-    var nextTimezones = List<TimezoneOption>.from(_timezones);
-    var nextSnapshot = _loadedSnapshot ?? _emptySnapshot();
-    var hadFailure = false;
+    var nextLanguages = List<String>.from(_languages);
+    var nextDateFormats = List<String>.from(_dateFormats);
+    var nextTimezones = List<String>.from(_timezones);
+
+    var nextSelectedLanguage = selectedLanguage;
+    var nextTextDirection = textDirection;
+    var nextDateFormat = dateFormat;
+    var nextTimeFormat = timeFormat;
+    var nextTimezone = timezone;
+    var nextUnits = units;
+    var nextLat = lat;
+    var nextLng = lng;
+    var nextZoom = zoom;
+
+    _LocalizationSnapshot? nextSnapshot = _loadedSnapshot;
 
     try {
       final commonRepo = _commonRepoOrCreate();
@@ -421,18 +314,16 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       if (!mounted) return;
       languagesRes.when(
         success: (items) {
-          nextLanguages = _dedupeReferenceOptions(items);
+          final values = items.map((e) => e.value).toList();
+          nextLanguages = _optionsOrFallback(values, _languages);
         },
         failure: (err) {
-          if (!_isCancelledError(err)) {
-            hadFailure = true;
-            final message =
-                (err is ApiException &&
-                    (err.statusCode == 401 || err.statusCode == 403))
-                ? 'Not authorized to load language options.'
-                : "Couldn't load language options.";
-            _showLoadErrorOnce(message);
-          }
+          final message =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to load reference data.'
+              : "Couldn't load localization reference data.";
+          _showLoadErrorOnce(message);
         },
       );
 
@@ -442,18 +333,16 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       if (!mounted) return;
       dateFormatsRes.when(
         success: (items) {
-          nextDateFormats = _dedupeReferenceOptions(items);
+          final values = items.map((e) => e.value).toList();
+          nextDateFormats = _optionsOrFallback(values, _dateFormats);
         },
         failure: (err) {
-          if (!_isCancelledError(err)) {
-            hadFailure = true;
-            final message =
-                (err is ApiException &&
-                    (err.statusCode == 401 || err.statusCode == 403))
-                ? 'Not authorized to load date format options.'
-                : "Couldn't load date format options.";
-            _showLoadErrorOnce(message);
-          }
+          final message =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to load reference data.'
+              : "Couldn't load localization reference data.";
+          _showLoadErrorOnce(message);
         },
       );
 
@@ -461,100 +350,104 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       if (!mounted) return;
       timezonesRes.when(
         success: (items) {
-          nextTimezones = _dedupeTimezoneOptions(items);
+          final values = items.map((e) => e.value).toList();
+          nextTimezones = _optionsOrFallback(values, _timezones);
         },
         failure: (err) {
-          if (!_isCancelledError(err)) {
-            hadFailure = true;
-            final message =
-                (err is ApiException &&
-                    (err.statusCode == 401 || err.statusCode == 403))
-                ? 'Not authorized to load timezone options.'
-                : "Couldn't load timezone options.";
-            _showLoadErrorOnce(message);
-          }
+          final message =
+              (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to load reference data.'
+              : "Couldn't load localization reference data.";
+          _showLoadErrorOnce(message);
         },
       );
 
-      final settingsRes = await _repoOrCreate().getLocalization(
-        cancelToken: token,
-      );
-      if (!mounted) return;
+      if (_hasLocalizationSettingsEndpoint) {
+        final settingsRes = await _localizationRepoOrCreate().getLocalization(
+          cancelToken: token,
+        );
+        if (!mounted) return;
 
-      settingsRes.when(
-        success: (settings) {
-          nextLanguages = _ensureReferenceOption(
-            nextLanguages,
-            settings.languageCode,
-          );
-          nextDateFormats = _ensureReferenceOption(
-            nextDateFormats,
-            settings.dateFormat,
-          );
-          nextTimezones = _ensureTimezoneOption(
-            nextTimezones,
-            settings.timezone,
-          );
+        settingsRes.when(
+          success: (settings) {
+            nextLanguages = _ensureContains(
+              nextLanguages,
+              settings.languageCode,
+            );
+            nextDateFormats = _ensureContains(
+              nextDateFormats,
+              settings.dateFormat,
+            );
+            nextTimezones = _ensureContains(nextTimezones, settings.timezone);
 
-          final normalizedDirection = _normalizeDirection(
-            settings.direction,
-            nextSnapshot.textDirection,
-          );
-
-          final normalizedUnits = _normalizeUnits(
-            settings.units,
-            nextSnapshot.units,
-          );
-
-          var normalizedZoom = nextSnapshot.zoom;
-          if (settings.mapZoom != null &&
-              settings.mapZoom! >= 1 &&
-              settings.mapZoom! <= 20) {
-            normalizedZoom = settings.mapZoom;
-          }
-
-          nextSnapshot = _LocalizationSnapshot(
-            selectedLanguage: _pickReferenceValue(
+            nextSelectedLanguage = _matchChoice(
               settings.languageCode,
               nextLanguages,
-              nextSnapshot.selectedLanguage,
-            ),
-            textDirection: normalizedDirection,
-            dateFormat: _pickReferenceValue(
+              nextSelectedLanguage,
+            );
+            nextTextDirection = _normalizeDirection(
+              settings.direction,
+              nextTextDirection,
+            );
+            nextDateFormat = _matchChoice(
               settings.dateFormat,
               nextDateFormats,
-              nextSnapshot.dateFormat,
-            ),
-            timeFormat: _timeFormatFromSettings(
-              settings,
-              nextSnapshot.timeFormat,
-            ),
-            selectedTimezoneOffset: _pickTimezoneValue(
+              nextDateFormat,
+            );
+
+            final use24 = settings.use24Hour;
+            if (use24 != null) {
+              nextTimeFormat = use24 ? '24-hour' : '12-hour';
+            } else {
+              final tf = settings.timeFormat.toLowerCase();
+              if (tf.contains('12')) {
+                nextTimeFormat = '12-hour';
+              } else if (tf.contains('24')) {
+                nextTimeFormat = '24-hour';
+              }
+            }
+
+            nextTimezone = _matchChoice(
               settings.timezone,
               nextTimezones,
-              nextSnapshot.selectedTimezoneOffset,
-            ),
-            units: normalizedUnits,
-            lat: settings.mapLat ?? nextSnapshot.lat,
-            lng: settings.mapLng ?? nextSnapshot.lng,
-            zoom: normalizedZoom,
-          );
-        },
-        failure: (err) {
-          if (!_isCancelledError(err)) {
-            hadFailure = true;
+              nextTimezone,
+            );
+            nextUnits = _normalizeUnits(settings.units, nextUnits);
+            if (settings.mapLat != null) nextLat = settings.mapLat!;
+            if (settings.mapLng != null) nextLng = settings.mapLng!;
+            if (settings.mapZoom != null &&
+                settings.mapZoom! >= 1 &&
+                settings.mapZoom! <= 22) {
+              nextZoom = settings.mapZoom!;
+            }
+
+            nextSnapshot = _LocalizationSnapshot(
+              selectedLanguage: nextSelectedLanguage,
+              textDirection: nextTextDirection,
+              dateFormat: nextDateFormat,
+              timeFormat: nextTimeFormat,
+              timezone: nextTimezone,
+              units: nextUnits,
+              lat: nextLat,
+              lng: nextLng,
+              zoom: nextZoom,
+            );
+
+            _loadErrorShown = false;
+          },
+          failure: (err) {
             final message =
                 (err is ApiException &&
                     (err.statusCode == 401 || err.statusCode == 403))
                 ? 'Not authorized to load localization settings.'
                 : "Couldn't load localization settings.";
             _showLoadErrorOnce(message);
-          }
-        },
-      );
+          },
+        );
+      }
     } catch (_) {
-      hadFailure = true;
-      _showLoadErrorOnce("Couldn't load localization settings.");
+      _showLoadErrorOnce("Couldn't load localization data.");
     }
 
     if (!mounted) return;
@@ -563,102 +456,131 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       _languages = nextLanguages;
       _dateFormats = nextDateFormats;
       _timezones = nextTimezones;
-      _loadedSnapshot = nextSnapshot;
-      _applySnapshot(nextSnapshot);
-      if (!hadFailure) {
-        _loadErrorShown = false;
+      selectedLanguage = _matchChoice(
+        nextSelectedLanguage,
+        _languages,
+        _firstOrEmpty(_languages),
+      );
+      textDirection = nextTextDirection;
+      dateFormat = _matchChoice(
+        nextDateFormat,
+        _dateFormats,
+        _firstOrEmpty(_dateFormats),
+      );
+      timeFormat = nextTimeFormat;
+      timezone = _matchChoice(
+        nextTimezone,
+        _timezones,
+        _firstOrEmpty(_timezones),
+      );
+      units = nextUnits;
+      lat = nextLat;
+      lng = nextLng;
+      zoom = nextZoom;
+      _loadedSnapshot ??= _defaultsSnapshot();
+      if (nextSnapshot != null) {
+        _loadedSnapshot = nextSnapshot;
       }
     });
   }
 
-  Future<void> _saveLocalization() async {
-    if (_saving) return;
+  Future<bool> _saveLocalization({bool showSuccess = true}) async {
+    if (!_hasLocalizationSettingsEndpoint) {
+      if (!_apiUnavailableShown && mounted) {
+        _apiUnavailableShown = true;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('API not available yet')));
+      }
+      return false;
+    }
 
+    if (_saving) return false;
     final now = DateTime.now();
-    if (_lastSaveAt != null &&
-        now.difference(_lastSaveAt!).inMilliseconds < 800) {
-      return;
+    final last = _lastSaveAt;
+    if (last != null && now.difference(last).inMilliseconds < 800) {
+      return false;
     }
     _lastSaveAt = now;
 
-    _saveToken?.cancel('Retry save localization');
+    _saveToken?.cancel('Retry localization save');
     final token = CancelToken();
     _saveToken = token;
 
-    if (!mounted) return;
+    if (!mounted) return false;
     setState(() => _saving = true);
 
-    final payload = <String, dynamic>{};
-    if (selectedLanguage.trim().isNotEmpty) {
-      payload['language'] = selectedLanguage.trim();
-    }
-    if (dateFormat.trim().isNotEmpty) {
-      payload['dateFormat'] = dateFormat.trim();
-    }
-    if (timeFormat.trim().isNotEmpty) {
-      payload['use24Hour'] = timeFormat == '24-hour';
-    }
-    if (selectedTimezoneOffset.trim().isNotEmpty) {
-      payload['timezoneOffset'] = selectedTimezoneOffset.trim();
-    }
-    if (units.trim().isNotEmpty) {
-      payload['units'] = units.trim();
-    }
-    if (textDirection.trim().isNotEmpty) {
-      payload['layoutDirection'] = textDirection.trim();
-    }
-    if (lat != null) {
-      payload['defaultLat'] = lat;
-    }
-    if (lng != null) {
-      payload['defaultLon'] = lng;
-    }
-    if (zoom != null) {
-      payload['mapZoom'] = zoom;
-    }
+    final payload = <String, dynamic>{
+      'language': selectedLanguage,
+      'languageCode': selectedLanguage,
+      'dateFormat': dateFormat,
+      'use24Hour': timeFormat == '24-hour',
+      'timeFormat': timeFormat == '24-hour' ? '24H' : '12H',
+      'layoutDirection': textDirection,
+      'direction': textDirection,
+      'timezoneOffset': timezone,
+      'timezone': timezone,
+      'units': units,
+      'distanceUnit': units,
+      'defaultLat': lat.toStringAsFixed(6),
+      'defaultLon': lng.toStringAsFixed(6),
+      'defaultLng': lng.toStringAsFixed(6),
+      'mapZoom': zoom.toString(),
+    };
 
     try {
-      final result = await _repoOrCreate().updateLocalization(
+      final res = await _localizationRepoOrCreate().updateLocalization(
         payload,
         cancelToken: token,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
 
-      result.when(
+      return res.when(
         success: (_) {
           setState(() {
             _saving = false;
             _saveErrorShown = false;
             _loadedSnapshot = _captureCurrentSnapshot();
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Saved')));
+          if (showSuccess) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Saved')));
+          }
+          return true;
         },
         failure: (err) {
           setState(() => _saving = false);
-          if (!_isCancelledError(err)) {
+          if (!_saveErrorShown) {
+            _saveErrorShown = true;
             final message =
                 (err is ApiException &&
                     (err.statusCode == 401 || err.statusCode == 403))
                 ? 'Not authorized to save localization settings.'
                 : "Couldn't save localization settings.";
-            _showSaveErrorOnce(message);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(message)));
           }
+          return false;
         },
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _saving = false);
-      _showSaveErrorOnce("Couldn't save localization settings.");
+      if (!_saveErrorShown) {
+        _saveErrorShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save localization settings.")),
+        );
+      }
+      return false;
     }
   }
 
-  void _onReset() {
-    final snapshot = _loadedSnapshot ?? _emptySnapshot();
-    setState(() {
-      _applySnapshot(snapshot);
-    });
+  void _resetPressed() {
+    final snapshot = _loadedSnapshot ?? _defaultsSnapshot();
+    setState(() => _applySnapshot(snapshot));
   }
 
   @override
@@ -667,529 +589,1318 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Localization Settings',
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withOpacity(0.87),
+    if (_loading) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                AppShimmer(width: 100, height: 36, radius: 8),
+                SizedBox(width: 12),
+                AppShimmer(width: 92, height: 36, radius: 8),
+              ],
             ),
+            const SizedBox(height: 16),
+            const AppShimmer(width: 240, height: 24, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 16, radius: 8),
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(hp),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Configure language, timezone, date formats, and map focus for your application.',
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-              color: colorScheme.onSurface.withOpacity(0.9),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Live Preview',
-            child: _loading
-                ? _buildLivePreviewShimmer(width)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Lang: ${_safeDisplay(selectedLanguage)} • Dir: ${_safeDisplay(textDirection)} • TZ: ${_safeDisplay(selectedTimezoneOffset)}',
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: colorScheme.onSurface.withOpacity(0.87),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _previewItem(
-                              'Date',
-                              _formatDatePreview(),
-                              width,
-                              colorScheme,
-                            ),
-                          ),
-                          Expanded(
-                            child: _previewItem(
-                              'Time',
-                              _formatTimePreview(),
-                              width,
-                              colorScheme,
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _previewItem(
-                                  'Map Center',
-                                  _formatMapCenterPreview(),
-                                  width,
-                                  colorScheme,
-                                ),
-                                const SizedBox(height: 6),
-                                _previewItem(
-                                  'Zoom',
-                                  _formatZoomPreview(),
-                                  width,
-                                  colorScheme,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Default Language',
-            subtitle: 'Primary language',
-            child: _loading
-                ? const AppShimmer(
-                    width: double.infinity,
-                    height: 46,
-                    radius: 16,
-                  )
-                : DropdownButtonFormField<String>(
-                    value: _selectedReferenceValue(
-                      _languages,
-                      selectedLanguage,
-                    ),
-                    decoration: _dropdownDecoration(context),
-                    hint: Text(
-                      '—',
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                      ),
-                    ),
-                    items: _languages
-                        .map(
-                          (e) => DropdownMenuItem<String>(
-                            value: e.value,
-                            child: Text(
-                              e.label,
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                    2,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (_saving)
-                        ? null
-                        : (v) {
-                            if (v == null) return;
-                            setState(() => selectedLanguage = v);
-                          },
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Text Direction',
-            child: _loading
-                ? const AppShimmer(width: 180, height: 32, radius: 16)
-                : Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('LTR'),
-                        selected: textDirection == 'LTR',
-                        selectedColor: colorScheme.primary,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: textDirection == 'LTR'
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: _saving
-                            ? null
-                            : (_) => setState(() => textDirection = 'LTR'),
-                      ),
-                      const SizedBox(width: 12),
-                      ChoiceChip(
-                        label: const Text('RTL'),
-                        selected: textDirection == 'RTL',
-                        selectedColor: colorScheme.primary,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: textDirection == 'RTL'
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: _saving
-                            ? null
-                            : (_) => setState(() => textDirection = 'RTL'),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Date Format',
-            subtitle: 'Display style',
-            child: _loading
-                ? const AppShimmer(
-                    width: double.infinity,
-                    height: 46,
-                    radius: 16,
-                  )
-                : DropdownButtonFormField<String>(
-                    value: _selectedReferenceValue(_dateFormats, dateFormat),
-                    decoration: _dropdownDecoration(context),
-                    hint: Text(
-                      '—',
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                      ),
-                    ),
-                    items: _dateFormats
-                        .map(
-                          (f) => DropdownMenuItem<String>(
-                            value: f.value,
-                            child: Text(
-                              f.label,
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                    2,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (_saving)
-                        ? null
-                        : (v) {
-                            if (v == null) return;
-                            setState(() => dateFormat = v);
-                          },
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Time Format',
-            child: _loading
-                ? const AppShimmer(width: 220, height: 32, radius: 16)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text('24-hour clock'),
-                            selected: timeFormat == '24-hour',
-                            selectedColor: colorScheme.primary,
-                            labelStyle: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              color: timeFormat == '24-hour'
-                                  ? colorScheme.onPrimary
-                                  : colorScheme.onSurface,
-                            ),
-                            onSelected: _saving
-                                ? null
-                                : (_) => setState(() => timeFormat = '24-hour'),
-                          ),
-                          const SizedBox(width: 12),
-                          ChoiceChip(
-                            label: const Text('12-hour clock'),
-                            selected: timeFormat == '12-hour',
-                            selectedColor: colorScheme.primary,
-                            labelStyle: GoogleFonts.inter(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                              color: timeFormat == '12-hour'
-                                  ? colorScheme.onPrimary
-                                  : colorScheme.onSurface,
-                            ),
-                            onSelected: _saving
-                                ? null
-                                : (_) => setState(() => timeFormat = '12-hour'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Example: ${_formatTimePreview()}',
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Timezone',
-            child: _loading
-                ? const AppShimmer(
-                    width: double.infinity,
-                    height: 46,
-                    radius: 16,
-                  )
-                : DropdownButtonFormField<String>(
-                    value: _selectedTimezoneValue(
-                      _timezones,
-                      selectedTimezoneOffset,
-                    ),
-                    decoration: _dropdownDecoration(context),
-                    hint: Text(
-                      '—',
-                      style: GoogleFonts.inter(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                      ),
-                    ),
-                    items: _timezones
-                        .map(
-                          (tz) => DropdownMenuItem<String>(
-                            value: tz.value,
-                            child: Text(
-                              tz.label,
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                    2,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _saving
-                        ? null
-                        : (v) {
-                            if (v == null) return;
-                            setState(() => selectedTimezoneOffset = v);
-                          },
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Units',
-            child: _loading
-                ? const AppShimmer(width: 180, height: 32, radius: 16)
-                : Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('KM'),
-                        selected: units == 'KM',
-                        selectedColor: colorScheme.primary,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: units == 'KM'
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: _saving
-                            ? null
-                            : (_) => setState(() => units = 'KM'),
-                      ),
-                      const SizedBox(width: 12),
-                      ChoiceChip(
-                        label: const Text('MILES'),
-                        selected: units == 'MILES',
-                        selectedColor: colorScheme.primary,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          color: units == 'MILES'
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: _saving
-                            ? null
-                            : (_) => setState(() => units = 'MILES'),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _buildSection(
-            context: context,
-            title: 'Map Focus',
-            child: _loading
-                ? _buildMapFocusShimmer(width)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildInputField(
-                              context,
-                              'LATITUDE',
-                              _latController,
-                              (v) {
-                                final parsed = double.tryParse(v.trim());
-                                if (v.trim().isNotEmpty && parsed == null) {
-                                  return;
-                                }
-                                setState(() => lat = parsed);
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width:
-                                AdaptiveUtils.getLeftSectionSpacing(
-                                  width,
-                                ).toDouble() *
-                                2,
-                          ),
-                          Expanded(
-                            child: _buildInputField(
-                              context,
-                              'LONGITUDE',
-                              _lngController,
-                              (v) {
-                                final parsed = double.tryParse(v.trim());
-                                if (v.trim().isNotEmpty && parsed == null) {
-                                  return;
-                                }
-                                setState(() => lng = parsed);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'ZOOM LEVEL',
-                        style: GoogleFonts.inter(
-                          fontSize:
-                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface.withOpacity(0.87),
-                        ),
-                      ),
-                      Slider(
-                        value: (zoom ?? 10).toDouble(),
-                        min: 1,
-                        max: 20,
-                        divisions: 19,
-                        activeColor: colorScheme.primary,
-                        label: _formatZoomPreview(),
-                        onChanged: _saving
-                            ? null
-                            : (v) => setState(() => zoom = v.toInt()),
-                      ),
-                    ],
-                  ),
-          ),
-
-          const SizedBox(height: 24),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ElevatedButton.icon(
-                onPressed: (_saving || _loading) ? null : _onReset,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
+          // TOP BUTTONS
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Localization",
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              Row(
+                children: [
+              OutlinedButton.icon(
+                onPressed: (_saving || _loading) ? null : _resetPressed,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 icon: Icon(
                   Icons.refresh_outlined,
-                  color: colorScheme.onPrimary,
-                  size: AdaptiveUtils.getIconSize(width),
+                  color: colorScheme.onSurface,
                 ),
                 label: Text(
-                  'Reset',
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                    color: colorScheme.onPrimary,
+                  "Reset",
+                  style: GoogleFonts.roboto(
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: (_saving || _loading) ? null : _saveLocalization,
+                onPressed: (_saving || _loading)
+                    ? null
+                    : () => _saveLocalization(showSuccess: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                icon: _saving
-                    ? const AppShimmer(width: 16, height: 16, radius: 4)
-                    : Icon(
-                        Icons.save_outlined,
-                        color: colorScheme.onPrimary,
-                        size: AdaptiveUtils.getIconSize(width),
-                      ),
+                icon: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: _saving
+                      ? const AppShimmer(width: 18, height: 18, radius: 9)
+                      : Icon(Icons.save_outlined, color: colorScheme.onPrimary),
+                ),
                 label: Text(
-                  'Save',
-                  style: GoogleFonts.inter(
-                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
+                  "Save",
+                  style: GoogleFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+
+          const SizedBox(height: 16),
+
+          const SizedBox(height: 8),
+
+          // LIVE PREVIEW
+          _buildSection(
+            context: context,
+            title: "Live Preview",
+            trailing: Text(
+              "Lang: $selectedLanguage • Dir: $textDirection • TZ: $timezone",
+              style: GoogleFonts.roboto(
+                fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              textAlign: TextAlign.right,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _previewItem(
+                        "Date",
+                        getFormattedDate(),
+                        width,
+                        colorScheme,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _previewItem(
+                        "Time",
+                        getFormattedTime(),
+                        width,
+                        colorScheme,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.12),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Map Center",
+                              style: GoogleFonts.roboto(
+                                fontSize:
+                                    AdaptiveUtils.getSubtitleFontSize(width) -
+                                        3,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface.withOpacity(0.8),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$lat, $lng",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: AdaptiveUtils
+                                            .getSubtitleFontSize(width) -
+                                        3,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Zoom $zoom",
+                                  style: GoogleFonts.roboto(
+                                    fontSize: AdaptiveUtils
+                                            .getSubtitleFontSize(width) -
+                                        3,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _previewItem(
+                        "Timezone",
+                        timezone.isEmpty ? "—" : "$timezone\nUnits: $units",
+                        width,
+                        colorScheme,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // DEFAULT LANGUAGE
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.translate_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Default Language",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Primary language",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_languages, selectedLanguage),
+                  hint: Text(
+                    _languages.isEmpty
+                        ? 'No language options'
+                        : 'Select language',
+                    style: GoogleFonts.roboto(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _languages
+                      .map(
+                        (lang) =>
+                            DropdownMenuItem(value: lang, child: Text(lang)),
+                      )
+                      .toList(),
+                  onChanged: _languages.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => selectedLanguage = v);
+                          }
+                        },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // TEXT DIRECTION
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.format_textdirection_l_to_r,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Text Direction",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "LTR / RTL",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => textDirection = "LTR"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: textDirection == "LTR"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.format_textdirection_l_to_r,
+                                  size: 16,
+                                  color: textDirection == "LTR"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "LTR",
+                                  style: GoogleFonts.roboto(
+                                    color: textDirection == "LTR"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => textDirection = "RTL"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: textDirection == "RTL"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.format_textdirection_r_to_l,
+                                  size: 16,
+                                  color: textDirection == "RTL"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "RTL",
+                                  style: GoogleFonts.roboto(
+                                    color: textDirection == "RTL"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // DATE FORMAT
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.calendar_month_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Date Format",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Display style",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_dateFormats, dateFormat),
+                  hint: Text(
+                    _dateFormats.isEmpty
+                        ? 'No date format options'
+                        : 'Select date format',
+                    style: GoogleFonts.roboto(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _dateFormats
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .toList(),
+                  onChanged: _dateFormats.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => dateFormat = v);
+                          }
+                        },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // TIME FORMAT
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.schedule_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Time Format",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            timeFormat == "24-hour"
+                                ? "24-hour clock"
+                                : "12-hour clock",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => timeFormat = "24-hour"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: timeFormat == "24-hour"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  size: 16,
+                                  color: timeFormat == "24-hour"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "24-hour",
+                                  style: GoogleFonts.roboto(
+                                    color: timeFormat == "24-hour"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => timeFormat = "12-hour"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: timeFormat == "12-hour"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.schedule,
+                                  size: 16,
+                                  color: timeFormat == "12-hour"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "12-hour",
+                                  style: GoogleFonts.roboto(
+                                    color: timeFormat == "12-hour"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // TIMEZONE
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.public_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Timezone",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "UTC offset",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _dropdownValueOrNull(_timezones, timezone),
+                  hint: Text(
+                    _timezones.isEmpty
+                        ? 'No timezone options'
+                        : 'Select timezone',
+                    style: GoogleFonts.roboto(),
+                  ),
+                  decoration: _dropdownDecoration(context),
+                  items: _timezones
+                      .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
+                      .toList(),
+                  onChanged: _timezones.isEmpty
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setState(() => timezone = v);
+                          }
+                        },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // UNITS
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.straighten_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Units",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Distance units",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => units = "KM"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: units == "KM"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.straighten,
+                                  size: 16,
+                                  color: units == "KM"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "KM",
+                                  style: GoogleFonts.roboto(
+                                    color: units == "KM"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => units = "MILES"),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: units == "MILES"
+                                  ? colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.straighten,
+                                  size: 16,
+                                  color: units == "MILES"
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "MILES",
+                                  style: GoogleFonts.roboto(
+                                    color: units == "MILES"
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // THEME
+          _buildSection(
+            context: context,
+            title: "",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? colorScheme.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.palette_outlined,
+                        color: colorScheme.onSurface,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Theme",
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Light / Dark / System",
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<ThemeMode>(
+                  valueListenable: themeController.themeMode,
+                  builder: (context, mode, _) {
+                    final selected = switch (mode) {
+                      ThemeMode.dark => 'dark',
+                      ThemeMode.system => 'system',
+                      _ => 'light',
+                    };
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('light'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'light'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.light_mode_outlined,
+                                      size: 16,
+                                      color: selected == 'light'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Light",
+                                      style: GoogleFonts.roboto(
+                                        color: selected == 'light'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('dark'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'dark'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.dark_mode_outlined,
+                                      size: 16,
+                                      color: selected == 'dark'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Dark",
+                                      style: GoogleFonts.roboto(
+                                        color: selected == 'dark'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _setThemeMode('system'),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == 'system'
+                                      ? colorScheme.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.settings_outlined,
+                                      size: 16,
+                                      color: selected == 'system'
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurface,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "System",
+                                      style: GoogleFonts.roboto(
+                                        color: selected == 'system'
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSection(
+          context: context,
+          title: "Map Focus Coordinates",
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInputField(
+                context,
+                "Latitude (N/S)",
+                lat.toStringAsFixed(4),
+                (v) => lat = double.tryParse(v) ?? lat,
+                labelStyle: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Range: -90 to 90",
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                context,
+                "Longitude (E/W)",
+                lng.toStringAsFixed(4),
+                (v) => lng = double.tryParse(v) ?? lng,
+                labelStyle: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Range: -180 to 180",
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInputField(
+                context,
+                "Zoom Level",
+                zoom.toString(),
+                (v) => zoom = double.tryParse(v)?.toInt() ?? zoom,
+                labelStyle: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Typical: 1 to 20",
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSection(
+          context: context,
+          title: "Quick Location Presets",
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double gap = 12;
+              final double cellWidth = (constraints.maxWidth - gap) / 2;
+              const presets = [
+                {'name': 'New Delhi', 'lat': 28.6139, 'lng': 77.2090},
+                {'name': 'Mumbai', 'lat': 19.0760, 'lng': 72.8777},
+                {'name': 'Bengaluru', 'lat': 12.9716, 'lng': 77.5946},
+                {'name': 'Kolkata', 'lat': 22.5726, 'lng': 88.3639},
+              ];
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: presets.map((preset) {
+                  final name = preset['name'] as String;
+                  final latVal = preset['lat'] as double;
+                  final lngVal = preset['lng'] as double;
+                  return SizedBox(
+                    width: cellWidth,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getTitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface.withOpacity(0.87),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${latVal.toStringAsFixed(4)}, ${lngVal.toStringAsFixed(4)}',
+                            style: GoogleFonts.roboto(
+                              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSection({
-    required BuildContext context,
-    required String title,
-    String? subtitle,
-    Widget? child,
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerCard(width: width, titleWidth: 180, fields: 3),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 200, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 170, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 130, fields: 3),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard({
+    required double width,
+    required double titleWidth,
+    required int fields,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
+    final double labelWidth = (width * 0.24).clamp(90, 180).toDouble();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1208,21 +1919,88 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface.withOpacity(0.87),
-            ),
+          AppShimmer(width: titleWidth, height: 24, radius: 8),
+          const SizedBox(height: 16),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    Widget? child,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title.isNotEmpty || trailing != null)
+            if (trailing == null)
+              Text(
+                title,
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+                ),
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.roboto(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: trailing,
+                    ),
+                  ),
+                ],
+              ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-                color: colorScheme.onSurface.withOpacity(0.8),
+              style: GoogleFonts.roboto(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.65),
               ),
             ),
           ],
@@ -1238,40 +2016,46 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     double width,
     ColorScheme colorScheme,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface.withOpacity(0.8),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.8),
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _safeDisplay(value),
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            color: colorScheme.onSurface.withOpacity(0.8),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   InputDecoration _dropdownDecoration(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
 
     return InputDecoration(
       filled: true,
       fillColor: Colors.transparent,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: AdaptiveUtils.isVerySmallScreen(width) ? 10 : 12,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -1287,9 +2071,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   Widget _buildInputField(
     BuildContext context,
     String label,
-    TextEditingController controller,
-    void Function(String) onChanged,
-  ) {
+    String initial,
+    void Function(String) onChanged, {
+    TextStyle? labelStyle,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
 
@@ -1298,28 +2083,26 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface.withOpacity(0.87),
-          ),
+          style: labelStyle ??
+              GoogleFonts.roboto(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.65),
+              ),
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: controller,
+          controller: TextEditingController(text: initial)
+            ..selection = TextSelection.fromPosition(
+              TextPosition(offset: initial.length),
+            ),
           onChanged: onChanged,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          enabled: !_saving,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
+            fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
-            hintText: '—',
-            hintStyle: GoogleFonts.inter(
-              fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
             filled: true,
             fillColor: Colors.transparent,
             contentPadding: const EdgeInsets.symmetric(
@@ -1342,56 +2125,6 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       ],
     );
   }
-
-  Widget _buildLivePreviewShimmer(double width) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppShimmer(width: 290, height: 14, radius: 8),
-        const SizedBox(height: 12),
-        const Divider(),
-        const SizedBox(height: 12),
-        Row(
-          children: const [
-            Expanded(
-              child: AppShimmer(width: double.infinity, height: 12, radius: 8),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: AppShimmer(width: double.infinity, height: 12, radius: 8),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: AppShimmer(width: double.infinity, height: 12, radius: 8),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMapFocusShimmer(double width) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Row(
-          children: [
-            Expanded(
-              child: AppShimmer(width: double.infinity, height: 44, radius: 16),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: AppShimmer(width: double.infinity, height: 44, radius: 16),
-            ),
-          ],
-        ),
-        SizedBox(height: 24),
-        AppShimmer(width: 130, height: 12, radius: 8),
-        SizedBox(height: 8),
-        AppShimmer(width: double.infinity, height: 18, radius: 8),
-      ],
-    );
-  }
 }
 
 class _LocalizationSnapshot {
@@ -1399,18 +2132,18 @@ class _LocalizationSnapshot {
   final String textDirection;
   final String dateFormat;
   final String timeFormat;
-  final String selectedTimezoneOffset;
+  final String timezone;
   final String units;
-  final double? lat;
-  final double? lng;
-  final int? zoom;
+  final double lat;
+  final double lng;
+  final int zoom;
 
   const _LocalizationSnapshot({
     required this.selectedLanguage,
     required this.textDirection,
     required this.dateFormat,
     required this.timeFormat,
-    required this.selectedTimezoneOffset,
+    required this.timezone,
     required this.units,
     required this.lat,
     required this.lng,

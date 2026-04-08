@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_vehicles_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -524,6 +525,11 @@ class _MapScreenState extends State<MapScreen> {
     return AppLayout(
       title: 'MAP',
       subtitle: 'Vehicle Locations',
+      customTopBar: AdminHomeAppBar(
+        title: 'Vehicle Locations',
+        leadingIcon: Icons.map,
+        onClose: () => context.go('/admin/home'),
+      ),
       actionIcons: const [],
       leftAvatarText: 'MP',
       showAppBar: false,

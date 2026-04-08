@@ -80,6 +80,10 @@ class AdminUserListItem {
   }
 
   String get location {
+    final address = _asMap(raw['address']);
+    final fullAddress = _s(address['fullAddress'] ?? raw['fullAddress']);
+    if (fullAddress.isNotEmpty) return fullAddress;
+
     final city = _firstString(const ['city']);
     final state = _firstString(const ['state', 'stateName']);
     final country = _firstString(const ['country', 'countryName']);
@@ -99,10 +103,9 @@ class AdminUserListItem {
 
   String get roleLabel {
     final role = _firstString(const ['role', 'roleName', 'userType']);
-    final company = _firstString(const [
-      'companyName',
-      'company',
-      'tenantName',
+    final company = _firstNonEmpty([
+      _companyNameFromList(),
+      _firstString(const ['companyName', 'company', 'tenantName']),
     ]);
 
     if (company.isNotEmpty && role.isNotEmpty) {
@@ -160,5 +163,39 @@ class AdminUserListItem {
       if (s == 'false' || s == '0' || s == 'no') return false;
     }
     return null;
+  }
+
+  static Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value.cast());
+    return const <String, dynamic>{};
+  }
+
+  static String _s(Object? value) {
+    if (value == null) return '';
+    final out = value.toString().trim();
+    if (out.toLowerCase() == 'null') return '';
+    return out;
+  }
+
+  String _companyNameFromList() {
+    final list = raw['companies'];
+    if (list is! List) return '';
+    for (final item in list) {
+      if (item is Map) {
+        final map = Map<String, dynamic>.from(item.cast());
+        final name = _s(map['name']);
+        if (name.isNotEmpty) return name;
+      }
+    }
+    return '';
+  }
+
+  static String _firstNonEmpty(List<String> candidates) {
+    for (final value in candidates) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return '';
   }
 }

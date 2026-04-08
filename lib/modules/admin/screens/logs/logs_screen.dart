@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_log_item.dart';
@@ -8,13 +7,13 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_logs_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/screens/logs/log_details_screen.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -24,23 +23,17 @@ class LogsScreen extends StatefulWidget {
 }
 
 class _LogsScreenState extends State<LogsScreen> {
-  // Endpoint truth table (FleetStack-API-Reference.md):
-  // - GET /admin/logs/options
-  // - GET /admin/logs/activity
-  // - GET /admin/logs/events
-  // Repository merges list rows and sorts by latest time.
-  String selectedTab = 'All';
-  final TextEditingController _searchController = TextEditingController();
-
-  List<AdminLogItem>? _logs;
-  bool _loading = false;
-  bool _errorShown = false;
-
-  CancelToken? _loadToken;
-  Timer? _searchDebounce;
-
+  final CancelToken _token = CancelToken();
   ApiClient? _apiClient;
   AdminLogsRepository? _repo;
+  bool _loading = false;
+  bool _errorShown = false;
+  List<AdminLogItem> _items = const <AdminLogItem>[];
+
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+  String _selectedFilter = 'All';
+  DateTimeRange? _dateRange;
 
   AdminLogsRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -51,22 +44,59 @@ class _LogsScreenState extends State<LogsScreen> {
     return _repo!;
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadLogs();
+  }
+
+  @override
+  void dispose() {
+    _token.cancel('LogsScreen disposed');
+    _searchController.dispose();
+    super.dispose();
+  }
+
   bool _isCancelled(Object err) {
     return err is ApiException &&
         err.message.toLowerCase() == 'request cancelled';
   }
 
-  void _showLoadErrorOnce(String message) {
-    if (_errorShown || !mounted) return;
-    _errorShown = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
+  Future<void> _loadLogs() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
 
-  DateTime _safeParseDateTime(String dateStr) {
-    final parsed = _parseLogDate(dateStr);
-    return parsed ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final result = await _repoOrCreate().getLogs(
+      limit: 100,
+      cancelToken: _token,
+    );
+
+    if (!mounted) return;
+
+    result.when(
+      success: (items) {
+        setState(() {
+          _items = items;
+          _loading = false;
+          _errorShown = false;
+        });
+      },
+      failure: (err) {
+        setState(() {
+          _items = const <AdminLogItem>[];
+          _loading = false;
+        });
+        if (_isCancelled(err)) return;
+        if (_errorShown) return;
+        _errorShown = true;
+        final message = err is ApiException
+            ? err.message
+            : "Couldn't load activity logs.";
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
   }
 
   DateTime? _parseLogDate(String? raw) {
@@ -76,16 +106,12 @@ class _LogsScreenState extends State<LogsScreen> {
     final numeric = int.tryParse(value);
     if (numeric != null) {
       if (numeric > 1000000000000) {
-        return DateTime.fromMillisecondsSinceEpoch(
-          numeric,
-          isUtc: true,
-        ).toLocal();
+        return DateTime.fromMillisecondsSinceEpoch(numeric, isUtc: true)
+            .toLocal();
       }
       if (numeric > 1000000000) {
-        return DateTime.fromMillisecondsSinceEpoch(
-          numeric * 1000,
-          isUtc: true,
-        ).toLocal();
+        return DateTime.fromMillisecondsSinceEpoch(numeric * 1000, isUtc: true)
+            .toLocal();
       }
     }
 
@@ -108,610 +134,644 @@ class _LogsScreenState extends State<LogsScreen> {
     return null;
   }
 
-  String _compactRelativeTime(String? raw) {
-    final date = _parseLogDate(raw);
-    if (date == null) return '';
+  String _formatDateTime(DateTime? dt) {
+    if (dt == null) return '—';
+    return DateFormat('d MMM, yyyy · hh:mm a').format(dt);
+  }
 
+  String _timeAgo(DateTime? dt) {
+    if (dt == null) return '—';
     final now = DateTime.now();
-    var diff = now.difference(date);
-    if (diff.isNegative) diff = Duration.zero;
-
-    if (diff.inMinutes < 1) return '0m';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 30) return '${diff.inDays}d';
-    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo';
-    return '${(diff.inDays / 365).floor()}y';
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    if (diff.inDays <= 7) return '${diff.inDays}d ago';
+    return DateFormat('d MMM yyyy').format(dt);
   }
 
-  String? _cleanValue(String? value, {bool hideUnknown = true}) {
-    final out = (value ?? '').trim();
-    if (out.isEmpty) return null;
-    final lower = out.toLowerCase();
-    if (lower == 'null' || lower == '-' || lower == '—') return null;
-    if (hideUnknown && (lower == 'unknown' || lower == 'n/a')) return null;
-    return out;
-  }
-
-  String? _userDisplay(AdminLogItem log) {
-    final user = log.raw['user'];
-    if (user is Map<String, dynamic>) {
-      return _cleanValue(
-        (user['name'] ?? user['username'] ?? user['uid'])?.toString(),
-      );
+  String _stringFromRaw(AdminLogItem log, List<String> keys) {
+    for (final key in keys) {
+      final value = log.raw[key];
+      if (value == null) continue;
+      final out = value.toString().trim();
+      if (out.isNotEmpty && out.toLowerCase() != 'null') return out;
     }
-    if (user is Map) {
-      final map = Map<String, dynamic>.from(user.cast());
-      return _cleanValue(
-        (map['name'] ?? map['username'] ?? map['uid'])?.toString(),
-      );
+    return '';
+  }
+
+  String _actionFor(AdminLogItem log) {
+    final action = _stringFromRaw(log, ['action']);
+    if (action.isNotEmpty) return action;
+    if (log.message.isNotEmpty) return log.message;
+    if (log.type.isNotEmpty) return log.type;
+    return 'Activity';
+  }
+
+  String _entityFor(AdminLogItem log) {
+    final entity = _stringFromRaw(log, ['entity', 'entityName']);
+    if (entity.isNotEmpty) return entity;
+    if (log.entity.isNotEmpty) return log.entity;
+    return '—';
+  }
+
+  int? _entityId(AdminLogItem log) {
+    final raw = log.raw['entityId'] ?? log.raw['id'] ?? log.raw['uid'];
+    if (raw is int) return raw;
+    if (raw is String) return int.tryParse(raw);
+    return null;
+  }
+
+  String _pathFor(AdminLogItem log) {
+    final meta = log.raw['meta'];
+    if (meta is Map) {
+      final map = Map<String, dynamic>.from(meta.cast());
+      final value = map['path'];
+      if (value != null) return value.toString();
+    }
+    return _stringFromRaw(log, ['path']);
+  }
+
+  String _methodFor(AdminLogItem log) {
+    final meta = log.raw['meta'];
+    if (meta is Map) {
+      final map = Map<String, dynamic>.from(meta.cast());
+      final value = map['method'];
+      if (value != null) return value.toString();
+    }
+    return _stringFromRaw(log, ['method']);
+  }
+
+  int? _durationMs(AdminLogItem log) {
+    final meta = log.raw['meta'];
+    if (meta is Map) {
+      final map = Map<String, dynamic>.from(meta.cast());
+      final value = map['durationMs'];
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
     }
     return null;
   }
 
-  String _toTitleWords(String raw) {
-    final source = raw.trim();
-    if (source.isEmpty) return '';
-    final words = source
-        .replaceAll('.', ' ')
-        .replaceAll('_', ' ')
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .map((w) {
-          final lower = w.toLowerCase();
-          if (lower.length <= 1) return lower.toUpperCase();
-          return lower[0].toUpperCase() + lower.substring(1);
-        })
-        .toList();
-    return words.join(' ');
+  IconData _iconForAction(String action) {
+    final a = action.toLowerCase();
+    if (a.contains('vehicle_sensor') || a.contains('sensor')) {
+      return Icons.flash_on;
+    }
+    if (a.contains('payment') || a.contains('renew')) {
+      return Icons.payments_outlined;
+    }
+    if (a.contains('vehicle')) {
+      return Icons.directions_car_outlined;
+    }
+    if (a.contains('driver')) {
+      return Icons.person_outline;
+    }
+    if (a.contains('team')) {
+      return Icons.group_outlined;
+    }
+    if (a.contains('user') || a.contains('users')) {
+      return Icons.person_search_outlined;
+    }
+    if (a.contains('link')) {
+      return Icons.link_outlined;
+    }
+    if (a.contains('unlink')) {
+      return Icons.link_off_outlined;
+    }
+    return Icons.event_note_outlined;
   }
 
-  String _summaryLabel(AdminLogItem log) {
-    final actionRaw = _cleanValue(log.raw['action']?.toString());
-    final action = actionRaw == null ? null : _toTitleWords(actionRaw);
-    final entity = _cleanValue(log.entity);
-    final user = _userDisplay(log);
-
-    if (entity != null && action != null) return '$entity • $action';
-    if (user != null && action != null) return '$user • $action';
-    if (action != null) return action;
-    if (entity != null) return entity;
-    if (user != null) return user;
-
-    final type = _cleanValue(log.type);
-    if (type != null) return type;
-    return 'Activity';
+  List<AdminLogItem> _filteredItems() {
+    final q = _query.trim().toLowerCase();
+    final now = DateTime.now();
+    final range = _dateRange ??
+        DateTimeRange(
+          start: now.subtract(const Duration(days: 30)),
+          end: now,
+        );
+    return _items.where((log) {
+      final createdAt = _parseLogDate(log.time);
+      if (createdAt != null) {
+        if (createdAt.isBefore(range.start) || createdAt.isAfter(range.end)) {
+          return false;
+        }
+      }
+      if (_selectedFilter != 'All') {
+        final hay = '${_actionFor(log)} ${_entityFor(log)} ${log.type}'
+            .toUpperCase();
+        if (!hay.contains(_selectedFilter)) return false;
+      }
+      if (q.isEmpty) return true;
+      final hay = <String>[
+        _actionFor(log),
+        _entityFor(log),
+        _entityId(log)?.toString() ?? '',
+        _stringFromRaw(log, ['ip', 'ipAddress']),
+        _stringFromRaw(log, ['browser', 'userAgent']),
+        _stringFromRaw(log, ['platform', 'os', 'device']),
+        _pathFor(log),
+        _methodFor(log),
+        _durationMs(log)?.toString() ?? '',
+        log.message,
+        log.type,
+        log.channel,
+      ].join(' ').toLowerCase();
+      return hay.contains(q);
+    }).toList();
   }
 
-  Future<void> _loadLogs() async {
-    _loadToken?.cancel('Reload logs');
-    final token = CancelToken();
-    _loadToken = token;
-
-    if (!mounted) return;
-    setState(() => _loading = true);
-
-    final result = await _repoOrCreate().getLogs(
-      search: _searchController.text.trim(),
-      level: selectedTab,
-      limit: 100,
-      cancelToken: token,
+  Widget _infoCell({
+    required String label,
+    required String value,
+    required ColorScheme colorScheme,
+    required double labelSize,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.onSurface.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
     );
-
-    if (!mounted) return;
-
-    result.when(
-      success: (items) {
-        setState(() {
-          _logs = items;
-          _loading = false;
-          _errorShown = false;
-        });
-      },
-      failure: (err) {
-        setState(() {
-          _logs = const <AdminLogItem>[];
-          _loading = false;
-        });
-        if (_isCancelled(err)) return;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't load logs.";
-        _showLoadErrorOnce(message);
-      },
-    );
-  }
-
-  void _onSearchChanged() {
-    if (mounted) setState(() {});
-
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
-      _loadLogs();
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(_onSearchChanged);
-    _loadLogs();
-  }
-
-  @override
-  void dispose() {
-    _loadToken?.cancel('LogsScreen disposed');
-    _searchDebounce?.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double smallFs = titleFs - 3;
-    final double iconSize = titleFs + 2;
-    final double cardPadding = hp + 4;
-
-    final allLogs = _logs ?? const <AdminLogItem>[];
-    final searchQuery = _searchController.text.trim().toLowerCase();
-
-    bool matchesTab(AdminLogItem log) {
-      if (selectedTab == 'All') return true;
-      if (selectedTab == 'Info') return log.normalizedSeverity == 'info';
-      if (selectedTab == 'Warning') return log.normalizedSeverity == 'warning';
-      if (selectedTab == 'Error') return log.normalizedSeverity == 'error';
-      return true;
-    }
-
-    bool matchesSearch(AdminLogItem log) {
-      if (searchQuery.isEmpty) return true;
-      final fields = [
-        log.time,
-        log.type,
-        log.entity,
-        log.message,
-        log.severity,
-        log.channel,
-      ];
-      return fields.any((v) => v.toLowerCase().contains(searchQuery));
-    }
-
-    final filteredLogs =
-        allLogs.where((log) => matchesTab(log) && matchesSearch(log)).toList()
-          ..sort(
-            (a, b) => _safeParseDateTime(
-              b.time,
-            ).compareTo(_safeParseDateTime(a.time)),
-          );
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final headerSize = 18 * scale;
+    final labelSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final items = _filteredItems();
+    final rangeLabel = _dateRange == null
+        ? 'Date range'
+        : '${DateFormat('d MMM').format(_dateRange!.start)}'
+            ' - ${DateFormat('d MMM').format(_dateRange!.end)}';
 
     return AppLayout(
       title: 'ADMIN',
       subtitle: 'Logs & Activity',
-      actionIcons: const [CupertinoIcons.gear],
+      showAppBar: false,
+      customTopBar: AdminHomeAppBar(
+        title: 'Logs & Activity',
+        leadingIcon: Icons.list_alt,
+        onClose: () => context.go('/admin/home'),
+      ),
+      actionIcons: const [Icons.settings],
       showLeftAvatar: false,
       leftAvatarText: 'SA',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search time, type, entity, message...',
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.primary.withOpacity(0.7),
-                  ),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Colors.transparent,
-                      width: 0,
+      child: _loading
+          ? const AppShimmer(
+              width: double.infinity,
+              height: 320,
+              radius: 12,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.08),
                     ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: hp,
-                    vertical: hp,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: hp),
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ['All', 'Info', 'Warning', 'Error'].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () {
-                    if (selectedTab == tab) return;
-                    setState(() => selectedTab = tab);
-                    _loadLogs();
-                  },
-                );
-              }).toList(),
-            ),
-            SizedBox(height: hp),
-            Text(
-              'Showing ${filteredLogs.length} of ${allLogs.length} logs',
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                color: colorScheme.onSurface.withOpacity(0.87),
-              ),
-            ),
-            SizedBox(height: spacing * 1.5),
-            if (_loading)
-              ...List.generate(
-                3,
-                (_) => _buildShimmerCard(
-                  colorScheme,
-                  width,
-                  hp,
-                  spacing,
-                  cardPadding,
-                ),
-              )
-            else if (filteredLogs.isEmpty)
-              _buildEmptyStateCard(
-                colorScheme: colorScheme,
-                bodyFs: bodyFs,
-                cardPadding: cardPadding,
-                hp: hp,
-              )
-            else
-              ...filteredLogs.map(
-                (log) => _buildLogCard(
-                  log: log,
-                  colorScheme: colorScheme,
-                  width: width,
-                  spacing: spacing,
-                  hp: hp,
-                  bodyFs: bodyFs,
-                  smallFs: smallFs,
-                  iconSize: iconSize,
-                  cardPadding: cardPadding,
-                ),
-              ),
-            SizedBox(height: hp * 3),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyStateCard({
-    required ColorScheme colorScheme,
-    required double bodyFs,
-    required double cardPadding,
-    required double hp,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Text(
-          'No logs found',
-          style: GoogleFonts.inter(
-            fontSize: bodyFs + 1,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerCard(
-    ColorScheme colorScheme,
-    double width,
-    double hp,
-    double spacing,
-    double cardPadding,
-  ) {
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppShimmer(
-              width: AdaptiveUtils.getAvatarSize(width),
-              height: AdaptiveUtils.getAvatarSize(width),
-              radius: AdaptiveUtils.getAvatarSize(width) / 2,
-            ),
-            SizedBox(width: spacing * 1.5),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppShimmer(width: 180, height: 14, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: double.infinity, height: 13, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 120, height: 13, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 90, height: 13, radius: 7),
-                  SizedBox(height: 10),
-                  AppShimmer(width: 170, height: 12, radius: 6),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogCard({
-    required AdminLogItem log,
-    required ColorScheme colorScheme,
-    required double width,
-    required double spacing,
-    required double hp,
-    required double bodyFs,
-    required double smallFs,
-    required double iconSize,
-    required double cardPadding,
-  }) {
-    final severity = _cleanValue(log.normalizedSeverity, hideUnknown: false);
-    final severityColor = getSeverityColor(severity ?? '');
-    final summary = _summaryLabel(log);
-    final relativeTime = _compactRelativeTime(log.time);
-    final message = _cleanValue(log.message);
-    final type = _cleanValue(log.type);
-    final channel = _cleanValue(log.channel);
-    final user = _userDisplay(log);
-    final entityId = _cleanValue(log.raw['entityId']?.toString());
-
-    final detailRows = <Widget>[];
-    void addRow(Widget row) {
-      if (detailRows.isNotEmpty) {
-        detailRows.add(SizedBox(height: spacing / 2));
-      }
-      detailRows.add(row);
-    }
-
-    Widget buildInfoRow({required IconData icon, required String value}) {
-      return Row(
-        children: [
-          Icon(
-            icon,
-            size: iconSize,
-            color: colorScheme.primary.withOpacity(0.6),
-          ),
-          SizedBox(width: spacing),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (message != null) {
-      addRow(buildInfoRow(icon: CupertinoIcons.text_bubble, value: message));
-    }
-    if (type != null) {
-      addRow(buildInfoRow(icon: CupertinoIcons.tag, value: type));
-    }
-    if (user != null) {
-      addRow(buildInfoRow(icon: CupertinoIcons.person, value: user));
-    }
-    if (channel != null) {
-      addRow(buildInfoRow(icon: CupertinoIcons.device_laptop, value: channel));
-    }
-    if (entityId != null) {
-      addRow(buildInfoRow(icon: CupertinoIcons.number, value: 'ID: $entityId'));
-    }
-
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(25),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => AdminLogDetailsScreen(log: log),
-                ),
-              );
-            },
-            child: Padding(
-              padding: EdgeInsets.all(cardPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: AdaptiveUtils.getAvatarSize(width),
-                        height: AdaptiveUtils.getAvatarSize(width),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.primary.withOpacity(0.6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Admin Activity',
+                              style: GoogleFonts.roboto(
+                                fontSize: headerSize,
+                                height: 24 / 18,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _loading ? null : _loadLogs,
+                            icon: Icon(
+                              Icons.refresh,
+                              size: 18,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _query = v),
+                        decoration: InputDecoration(
+                          hintText: 'Search activity...',
+                          hintStyle: GoogleFonts.roboto(
+                            fontSize: labelSize,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 1.5,
+                            ),
                           ),
                         ),
-                        child: Icon(
-                          _getIconForType((type ?? '').toLowerCase()),
-                          size: AdaptiveUtils.getFsAvatarFontSize(width),
-                          color: colorScheme.primary,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
                         ),
                       ),
-                      SizedBox(width: spacing * 1.5),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    summary,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs + 2,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (_selectedFilter == value) return;
+                                setState(() => _selectedFilter = value);
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(value: 'All', child: Text('All')),
+                                PopupMenuItem(
+                                  value: 'ADMIN',
+                                  child: Text('Admin'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'USER',
+                                  child: Text('User'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'VEHICLE',
+                                  child: Text('Vehicle'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'PAYMENT',
+                                  child: Text('Payment'),
+                                ),
+                              ],
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color:
+                                        colorScheme.onSurface.withOpacity(0.12),
                                   ),
                                 ),
-                                if (relativeTime.isNotEmpty) ...[
-                                  SizedBox(width: spacing),
-                                  Text(
-                                    relativeTime,
-                                    style: GoogleFonts.inter(
-                                      fontSize: smallFs + 1,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface.withOpacity(
-                                        0.75,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.tune,
+                                      size: 16,
+                                      color:
+                                          colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _selectedFilter,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: labelSize,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            if (severity != null) ...[
-                              SizedBox(height: spacing / 2),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: spacing + 4,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: severityColor.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    severity.toUpperCase(),
-                                    style: GoogleFonts.inter(
-                                      fontSize: smallFs,
-                                      fontWeight: FontWeight.w600,
-                                      color: severityColor,
-                                    ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                            ],
-                            if (detailRows.isNotEmpty) ...[
-                              SizedBox(height: spacing / 2),
-                              ...detailRows,
-                            ],
-                          ],
-                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final now = DateTime.now();
+                                DateTime? start = _dateRange?.start;
+                                DateTime? end = _dateRange?.end;
+                                final picked =
+                                    await showDialog<DateTimeRange>(
+                                  context: context,
+                                  builder: (ctx) {
+                                    var selection = <DateTime?>[start, end];
+                                    return Dialog(
+                                      insetPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 24,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: StatefulBuilder(
+                                          builder: (context, setDialogState) {
+                                            return CalendarDatePicker2(
+                                              config: CalendarDatePicker2Config(
+                                                calendarType:
+                                                    CalendarDatePicker2Type
+                                                        .range,
+                                                currentDate: now,
+                                                selectedDayHighlightColor:
+                                                    colorScheme.primary,
+                                                firstDate: DateTime(2020, 1, 1),
+                                                lastDate: DateTime(2035, 12, 31),
+                                              ),
+                                              value: selection,
+                                              onValueChanged: (values) {
+                                                setDialogState(() {
+                                                  selection = values;
+                                                });
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                if (!mounted) return;
+                                if (picked == null) return;
+                                setState(() => _dateRange = picked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color:
+                                        colorScheme.onSurface.withOpacity(0.12),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today_outlined,
+                                      size: 16,
+                                      color:
+                                          colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        rangeLabel,
+                                        style: GoogleFonts.roboto(
+                                          fontSize: labelSize,
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      items.isEmpty
+                          ? Text(
+                              'No activity found',
+                              style: GoogleFonts.roboto(
+                                fontSize: labelSize,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            )
+                          : Column(
+                              children: items.map((log) {
+                                final action = _actionFor(log);
+                                final entity = _entityFor(log);
+                                final createdAt = _parseLogDate(log.time);
+                                final ip =
+                                    _stringFromRaw(log, ['ip', 'ipAddress']);
+                                final browser = _stringFromRaw(
+                                  log,
+                                  ['browser', 'userAgent'],
+                                );
+                                final platform = _stringFromRaw(
+                                  log,
+                                  ['platform', 'os', 'device'],
+                                );
+                                return Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.08),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                          .brightness ==
+                                                      Brightness.light
+                                                  ? Colors.grey.shade50
+                                                  : colorScheme.surfaceVariant,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Icon(
+                                              _iconForAction(action),
+                                              size: 18,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.7),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  action.isNotEmpty
+                                                      ? action
+                                                      : 'Activity',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: headerSize - 1,
+                                                    fontWeight: FontWeight.w700,
+                                                    color:
+                                                        colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                                .brightness ==
+                                                            Brightness.light
+                                                        ? Colors.grey.shade50
+                                                        : colorScheme
+                                                            .surfaceVariant,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      999,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    entity.isNotEmpty
+                                                        ? entity
+                                                        : '—',
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: colorScheme
+                                                          .onSurface,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _infoCell(
+                                              label: 'IP',
+                                              value:
+                                                  ip.isNotEmpty ? ip : '—',
+                                              colorScheme: colorScheme,
+                                              labelSize: labelSize,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: _infoCell(
+                                              label: 'Browser',
+                                              value: browser.isNotEmpty
+                                                  ? browser
+                                                  : '—',
+                                              colorScheme: colorScheme,
+                                              labelSize: labelSize,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _infoCell(
+                                              label: 'OS',
+                                              value: platform.isNotEmpty
+                                                  ? platform
+                                                  : '—',
+                                              colorScheme: colorScheme,
+                                              labelSize: labelSize,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: _infoCell(
+                                              label: _timeAgo(createdAt),
+                                              value: _formatDateTime(createdAt),
+                                              colorScheme: colorScheme,
+                                              labelSize: labelSize,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
     );
-  }
-
-  Color getSeverityColor(String severity) {
-    if (severity.isEmpty) return Colors.grey;
-    if (severity == 'info') return Colors.blue;
-    if (severity == 'warning') return Colors.orange;
-    if (severity == 'error') return Colors.red;
-    return Colors.grey;
-  }
-
-  IconData _getIconForType(String type) {
-    if (type.contains('vehicle')) return CupertinoIcons.car;
-    if (type.contains('user')) return CupertinoIcons.person;
-    if (type.contains('driver')) return CupertinoIcons.person_alt_circle;
-    return CupertinoIcons.info;
   }
 }

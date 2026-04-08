@@ -8,14 +8,13 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_drivers_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class DriverScreen extends StatefulWidget {
   const DriverScreen({super.key});
@@ -34,6 +33,7 @@ class _DriverScreenState extends State<DriverScreen> {
 
   String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
+  int _pageSize = 10;
 
   List<AdminDriverListItem>? _drivers;
   bool _loading = false;
@@ -94,17 +94,6 @@ class _DriverScreenState extends State<DriverScreen> {
     return AdminDriverListItem.normalizeStatus(raw, isActive: isActive);
   }
 
-  String? _statusQueryForTab(String tab) {
-    switch (tab.toLowerCase()) {
-      case 'active':
-        return 'active';
-      case 'inactive':
-        return 'inactive';
-      default:
-        return null;
-    }
-  }
-
   bool _isCancelled(Object err) {
     return err is ApiException &&
         err.message.toLowerCase() == 'request cancelled';
@@ -129,9 +118,9 @@ class _DriverScreenState extends State<DriverScreen> {
     try {
       final result = await _repoOrCreate().getDrivers(
         search: _searchController.text.trim(),
-        status: _statusQueryForTab(selectedTab),
+        status: null,
         page: 1,
-        limit: 100,
+        limit: 50,
         cancelToken: token,
       );
       if (!mounted) return;
@@ -223,22 +212,6 @@ class _DriverScreenState extends State<DriverScreen> {
     if (trimmed.isEmpty) return '—';
     if (trimmed.toLowerCase() == 'null') return '—';
     return trimmed;
-  }
-
-  Future<void> _makePhoneCall(String rawPhone) async {
-    final phone = rawPhone.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (phone.trim().isEmpty) return;
-
-    final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-      return;
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not open dialer for $rawPhone')),
-    );
   }
 
   Future<void> _toggleDriverActive(
@@ -353,187 +326,476 @@ class _DriverScreenState extends State<DriverScreen> {
     return colorScheme.primary;
   }
 
+  String _initials(String source) {
+    final clean = source.trim();
+    if (clean.isEmpty || clean == '—') return '--';
+    final parts = clean
+        .split(RegExp(r'\\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '--';
+    return parts.take(2).map((part) => part[0]).join().toUpperCase();
+  }
+
+  String _formatDateOnly(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return '—';
+    final dt = DateTime.tryParse(value);
+    if (dt == null) return value;
+    final local = dt.toLocal();
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final day = local.day.toString().padLeft(2, '0');
+    final month = months[local.month - 1];
+    final year = local.year.toString();
+    return '$day $month $year';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double smallFs = titleFs - 3;
-    final double iconSize = titleFs + 2;
-    final double cardPadding = hp + 4;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final scale = (screenWidth / 390).clamp(0.9, 1.05);
+    final fsSection = 18 * scale;
+    final fsMain = 14 * scale;
+    final fsSecondary = 12 * scale;
+    final fsMeta = 11 * scale;
+    final iconSize = 18.0;
+    final cardPadding = padding + 4;
 
     final allDrivers = _drivers ?? const <AdminDriverListItem>[];
-    final filteredDrivers = _applyLocalFilters(allDrivers);
+    var filteredDrivers = _applyLocalFilters(allDrivers);
+    if (filteredDrivers.length > _pageSize) {
+      filteredDrivers = filteredDrivers.take(_pageSize).toList();
+    }
+    final showNoData = !_loading && filteredDrivers.isEmpty;
 
-    return AppLayout(
-      title: 'ADMIN',
-      subtitle: 'Drivers Management',
-      actionIcons: const [CupertinoIcons.add],
-      showLeftAvatar: false,
-      leftAvatarText: 'SA',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search name, username, phone, email...',
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.primary.withOpacity(0.7),
-                  ),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Colors.transparent,
-                      width: 0,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: hp,
-                    vertical: hp,
-                  ),
-                ),
-              ),
+    final topPadding = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              padding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              padding,
+              84,
             ),
-            SizedBox(height: hp),
-
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ['All', 'Active', 'Inactive'].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () {
-                    if (selectedTab == tab) return;
-                    setState(() => selectedTab = tab);
-                    _loadDrivers();
-                  },
-                );
-              }).toList(),
-            ),
-            SizedBox(height: hp),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Showing ${filteredDrivers.length} of ${allDrivers.length} drivers',
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs,
-                    color: colorScheme.onSurface.withOpacity(0.87),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colorScheme.surfaceVariant),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Drivers",
+                            style: GoogleFonts.roboto(
+                              fontSize: fsSection,
+                              height: 24 / 18,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => context.push('/admin/drivers/add'),
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: padding * 1.2,
+                                vertical: spacing,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    size: iconSize,
+                                    color: colorScheme.surface,
+                                  ),
+                                  SizedBox(width: spacing / 2),
+                                  Text(
+                                    "New",
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.surface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: padding),
+                      Container(
+                        height: padding * 3.5,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.1),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMain,
+                            height: 20 / 14,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Search name, email, status, location...",
+                            hintStyle: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: fsSecondary,
+                              height: 16 / 12,
+                            ),
+                            prefixIcon: Icon(
+                              CupertinoIcons.search,
+                              size: iconSize + 2,
+                              color: colorScheme.onSurface,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: padding,
+                              vertical: padding,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: padding),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double gap = spacing;
+                          final double cellWidth =
+                              (constraints.maxWidth - gap * 2) / 3;
+                          return Wrap(
+                            spacing: gap,
+                            runSpacing: gap,
+                            children: [
+                              SizedBox(
+                                width: cellWidth,
+                                child: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (selectedTab == value) return;
+                                    setState(() => selectedTab = value);
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(
+                                      value: "All",
+                                      child: Text('All'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Active",
+                                      child: Text('Active'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Inactive",
+                                      child: Text('Inactive'),
+                                    ),
+                                  ],
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.tune,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Text(
+                                          "Filter",
+                                          style: GoogleFonts.roboto(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: cellWidth,
+                                child: PopupMenuButton<int>(
+                                  onSelected: (value) {
+                                    if (_pageSize == value) return;
+                                    setState(() => _pageSize = value);
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(
+                                      value: 10,
+                                      child: Text('10'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 25,
+                                      child: Text('25'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 50,
+                                      child: Text('50'),
+                                    ),
+                                  ],
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              "Records",
+                                              style: GoogleFonts.roboto(
+                                                fontSize: fsMain - 3,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(width: spacing / 2),
+                                            Icon(
+                                              Icons.keyboard_arrow_down,
+                                              size: iconSize,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: cellWidth,
+                                child: InkWell(
+                                  onTap: _loadDrivers,
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  hoverColor: Colors.transparent,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.refresh,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Text(
+                                          "Refresh",
+                                          style: GoogleFonts.roboto(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      SizedBox(height: padding),
+                      if (showNoData)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: padding),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(cardPadding),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _errorShown
+                                        ? "Couldn't load drivers."
+                                        : "No drivers found",
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.8),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (_errorShown)
+                                  TextButton(
+                                    onPressed: _loadDrivers,
+                                    child: const Text('Retry'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (_loading)
+                        ...List<Widget>.generate(
+                          3,
+                          (index) => _buildDriverSkeletonCard(
+                            padding: padding,
+                            spacing: spacing,
+                            cardPadding: cardPadding,
+                            screenWidth: screenWidth,
+                            bodyFs: fsMain,
+                            smallFs: fsMeta,
+                          ),
+                        ),
+                      if (!showNoData && !_loading)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredDrivers.length,
+                          itemBuilder: (context, index) {
+                            final driver = filteredDrivers[index];
+                            return _buildDriverCardBody(
+                              driver: driver,
+                              colorScheme: colorScheme,
+                              width: screenWidth,
+                              spacing: spacing,
+                              fsMain: fsMain,
+                              fsSecondary: fsSecondary,
+                              fsMeta: fsMeta,
+                              iconSize: iconSize,
+                              cardPadding: cardPadding,
+                              padding: padding,
+                            );
+                          },
+                        ),
+                    ],
                   ),
                 ),
+                SizedBox(height: padding * 2),
               ],
             ),
-            SizedBox(height: spacing * 1.5),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: _loading
-                  ? 3
-                  : (filteredDrivers.isEmpty ? 1 : filteredDrivers.length),
-              itemBuilder: (context, index) {
-                if (_loading) {
-                  return _buildShimmerCard(
-                    colorScheme,
-                    isDark,
-                    width,
-                    hp,
-                    spacing,
-                    bodyFs,
-                    iconSize,
-                    cardPadding,
-                  );
-                }
-
-                if (filteredDrivers.isEmpty) {
-                  return _buildEmptyStateCard(
-                    colorScheme: colorScheme,
-                    bodyFs: bodyFs,
-                    smallFs: smallFs,
-                    cardPadding: cardPadding,
-                    hp: hp,
-                  );
-                }
-
-                return _buildDriverCardBody(
-                  driver: filteredDrivers[index],
-                  colorScheme: colorScheme,
-                  isDark: isDark,
-                  width: width,
-                  spacing: spacing,
-                  bodyFs: bodyFs,
-                  smallFs: smallFs,
-                  iconSize: iconSize,
-                  cardPadding: cardPadding,
-                  hp: hp,
-                );
-              },
+          ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: AdminHomeAppBar(
+              title: 'Drivers',
+              leadingIcon: Icons.badge,
+              onClose: () => context.go('/admin/home'),
             ),
-
-            SizedBox(height: hp * 3),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildShimmerCard(
-    ColorScheme colorScheme,
-    bool isDark,
-    double width,
-    double hp,
-    double spacing,
-    double bodyFs,
-    double iconSize,
-    double cardPadding,
-  ) {
-    final avatarSize = AdaptiveUtils.getAvatarSize(width);
+  Widget _buildDriverSkeletonCard({
+    required double padding,
+    required double spacing,
+    required double cardPadding,
+    required double screenWidth,
+    required double bodyFs,
+    required double smallFs,
+  }) {
+    final avatarSize = AdaptiveUtils.getAvatarSize(screenWidth);
 
     return Container(
-      margin: EdgeInsets.only(bottom: hp),
+      margin: EdgeInsets.only(bottom: padding),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -543,117 +805,94 @@ class _DriverScreenState extends State<DriverScreen> {
           ),
         ],
       ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppShimmer(
-                  width: avatarSize,
-                  height: avatarSize,
-                  radius: avatarSize / 2,
-                ),
-                SizedBox(width: spacing * 1.5),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppShimmer(
-                              width: 180,
-                              height: 16,
-                              radius: 8,
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmer(
+                    width: avatarSize,
+                    height: avatarSize,
+                    radius: avatarSize / 2,
+                  ),
+                  SizedBox(width: spacing * 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppShimmer(
+                                width: double.infinity,
+                                height: bodyFs + 8,
+                                radius: 8,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          AppShimmer(width: 80, height: 22, radius: 11),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      AppShimmer(width: 160, height: 14, radius: 7),
-                      SizedBox(height: 8),
-                      AppShimmer(width: 220, height: 14, radius: 7),
-                      SizedBox(height: 8),
-                      AppShimmer(width: 240, height: 14, radius: 7),
-                      SizedBox(height: 8),
-                      AppShimmer(width: 240, height: 14, radius: 7),
-                    ],
+                            SizedBox(width: spacing),
+                            AppShimmer(
+                              width: 70,
+                              height: smallFs + 10,
+                              radius: 999,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: screenWidth * 0.35,
+                          height: bodyFs + 8,
+                          radius: 8,
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: screenWidth * 0.45,
+                          height: bodyFs + 6,
+                          radius: 8,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: spacing * 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                AppShimmer(width: 180, height: 12, radius: 6),
-                AppShimmer(width: 42, height: 22, radius: 11),
-              ],
-            ),
-            SizedBox(height: spacing),
-            Divider(color: colorScheme.outline.withOpacity(0.3)),
-            SizedBox(height: spacing),
-            const AppShimmer(width: 160, height: 12, radius: 6),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyStateCard({
-    required ColorScheme colorScheme,
-    required double bodyFs,
-    required double smallFs,
-    required double cardPadding,
-    required double hp,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-      margin: EdgeInsets.only(bottom: hp),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
-          child: Padding(
-            padding: EdgeInsets.all(cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'No drivers found',
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs + 1,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
+                ],
+              ),
+              SizedBox(height: spacing * 2),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: bodyFs + 18,
+                      radius: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ask superadmin to assign drivers.',
-                  style: GoogleFonts.inter(
-                    fontSize: smallFs + 1,
-                    color: colorScheme.onSurface.withOpacity(0.72),
+                  SizedBox(width: spacing),
+                  Expanded(
+                    child: AppShimmer(
+                      width: double.infinity,
+                      height: bodyFs + 18,
+                      radius: 12,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              SizedBox(height: spacing * 2),
+              AppShimmer(
+                width: screenWidth * 0.4,
+                height: smallFs + 10,
+                radius: 8,
+              ),
+              SizedBox(height: spacing),
+              AppShimmer(
+                width: double.infinity,
+                height: smallFs + 10,
+                radius: 8,
+              ),
+            ],
           ),
         ),
       ),
@@ -661,35 +900,32 @@ class _DriverScreenState extends State<DriverScreen> {
   }
 
   Widget _buildDriverCardBody({
-    required AdminDriverListItem? driver,
+    required AdminDriverListItem driver,
     required ColorScheme colorScheme,
-    required bool isDark,
     required double width,
     required double spacing,
-    required double bodyFs,
-    required double smallFs,
+    required double fsMain,
+    required double fsSecondary,
+    required double fsMeta,
     required double iconSize,
     required double cardPadding,
-    required double hp,
+    required double padding,
   }) {
-    final isPlaceholder = driver == null;
-    final driverId = driver?.id.trim() ?? '';
+    final driverId = driver.id.trim();
     final isUpdating = _updating[driverId] == true;
 
-    final name = _safe(driver?.fullName);
-    final username = _safe(driver?.username);
-    final phone = _safe(driver?.fullPhone);
-    final email = _safe(driver?.email);
-    final address = _safe(driver?.addressLocation);
-    final status = _safe(driver?.statusLabel);
-    final lastActivity = _safe(driver?.lastActivityAt);
-    final expiry = _safe(driver?.expiryDate);
-    final enabled = driver?.isActive ?? false;
+    final name = _safe(driver.fullName);
+    final username = _safe(driver.username);
+    final phone = _safe(driver.fullPhone);
+    final email = _safe(driver.email);
+    final address = _safe(driver.addressLocation);
+    final primaryUser = _safe(driver.primaryUserName);
+    final createdAt = _formatDateOnly(driver.raw['createdAt']?.toString());
+    final enabled = driver.isActive;
+    final initials = _initials(name);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-      margin: EdgeInsets.only(bottom: hp),
+    return Container(
+      margin: EdgeInsets.only(bottom: padding),
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
@@ -703,11 +939,14 @@ class _DriverScreenState extends State<DriverScreen> {
           ],
         ),
         child: Material(
-          color: Colors.transparent,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(25),
           child: InkWell(
             borderRadius: BorderRadius.circular(25),
-            onTap: isPlaceholder || driverId.isEmpty
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            onTap: driverId.isEmpty
                 ? null
                 : () => context.push('/admin/drivers/details/$driverId'),
             child: Padding(
@@ -718,22 +957,33 @@ class _DriverScreenState extends State<DriverScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: AdaptiveUtils.getAvatarSize(width),
-                        height: AdaptiveUtils.getAvatarSize(width),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.primary.withOpacity(0.3),
+                      CircleAvatar(
+                        backgroundColor: colorScheme.surface,
+                        radius: AdaptiveUtils.getAvatarSize(width) / 2,
+                        foregroundColor: colorScheme.onSurface,
+                        child: Container(
+                          width: AdaptiveUtils.getAvatarSize(width),
+                          height: AdaptiveUtils.getAvatarSize(width),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            initials,
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface,
+                              fontSize:
+                                  AdaptiveUtils.getFsAvatarFontSize(width),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        child: Icon(
-                          CupertinoIcons.person,
-                          size: AdaptiveUtils.getFsAvatarFontSize(width),
-                          color: colorScheme.primary,
-                        ),
                       ),
-                      SizedBox(width: spacing * 1.5),
+                      SizedBox(width: spacing * 2),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,37 +993,31 @@ class _DriverScreenState extends State<DriverScreen> {
                                 Expanded(
                                   child: Text(
                                     name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs + 2,
-                                      fontWeight: FontWeight.bold,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
                                       color: colorScheme.onSurface,
                                     ),
-                                  ),
-                                ),
-                                SizedBox(width: spacing),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: spacing + 4,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _statusBgColor(status),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    status.toUpperCase(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
-                                      fontSize: smallFs,
-                                      fontWeight: FontWeight.w600,
-                                      color: _statusTextColor(
-                                        status,
-                                        colorScheme,
-                                      ),
-                                    ),
+                                  ),
+                                ),
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: Switch(
+                                    value: enabled,
+                                    onChanged: isUpdating
+                                        ? null
+                                        : (v) => _toggleDriverActive(
+                                              driver!,
+                                              v,
+                                            ),
+                                    activeColor: colorScheme.onPrimary,
+                                    activeTrackColor: colorScheme.primary,
+                                    inactiveThumbColor: colorScheme.onPrimary,
+                                    inactiveTrackColor:
+                                        colorScheme.primary.withOpacity(0.3),
                                   ),
                                 ),
                               ],
@@ -782,64 +1026,23 @@ class _DriverScreenState extends State<DriverScreen> {
                             Row(
                               children: [
                                 Icon(
-                                  CupertinoIcons.at,
+                                  Icons.person_outline,
                                   size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withOpacity(0.7),
                                 ),
                                 SizedBox(width: spacing),
                                 Expanded(
                                   child: Text(
                                     username,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
                                       fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: spacing / 2),
-                            Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.phone,
-                                  size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.87),
-                                ),
-                                SizedBox(width: spacing),
-                                Expanded(
-                                  child: Text(
-                                    phone,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: 'Call $name',
-                                  onPressed: isPlaceholder || phone == '—'
-                                      ? null
-                                      : () => _makePhoneCall(phone),
-                                  padding: EdgeInsets.zero,
-                                  constraints: BoxConstraints(
-                                    minWidth: 48,
-                                    minHeight: iconSize,
-                                  ),
-                                  icon: Icon(
-                                    Icons.call,
-                                    size: iconSize,
-                                    color: isDark
-                                        ? colorScheme.primary
-                                        : Colors.green,
                                   ),
                                 ),
                               ],
@@ -850,20 +1053,21 @@ class _DriverScreenState extends State<DriverScreen> {
                                 Icon(
                                   CupertinoIcons.mail,
                                   size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withOpacity(0.7),
                                 ),
                                 SizedBox(width: spacing),
                                 Expanded(
                                   child: Text(
                                     email,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
-                                    ),
                                   ),
                                 ),
                               ],
@@ -872,22 +1076,48 @@ class _DriverScreenState extends State<DriverScreen> {
                             Row(
                               children: [
                                 Icon(
-                                  CupertinoIcons.location,
+                                  CupertinoIcons.phone,
                                   size: iconSize,
-                                  color: colorScheme.primary.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withOpacity(0.7),
                                 ),
                                 SizedBox(width: spacing),
                                 Expanded(
                                   child: Text(
-                                    address,
+                                    phone,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    style: GoogleFonts.inter(
-                                      fontSize: bodyFs,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user_outlined,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    primaryUser,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
                                       fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -897,57 +1127,140 @@ class _DriverScreenState extends State<DriverScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: spacing * 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Last Activity: $lastActivity',
+                  SizedBox(height: spacing * 1.5),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padding,
+                      vertical: spacing,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.1),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Location",
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMeta,
+                            height: 14 / 11,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        SizedBox(height: spacing / 2),
+                        Text(
+                          address,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.roboto(
+                            fontSize: fsSecondary,
+                            height: 16 / 12,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: spacing),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padding,
+                      vertical: spacing - 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.1),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: iconSize,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Text(
+                              "Joined",
+                              style: GoogleFonts.roboto(
+                                fontSize: fsMeta,
+                                height: 14 / 11,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        Text(
+                          createdAt,
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMain,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: smallFs + 1,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withOpacity(0.87),
-                          ),
                         ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: spacing),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padding,
+                    vertical: spacing * 1.6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chevron_right,
+                        size: iconSize,
+                        color: colorScheme.onPrimary,
                       ),
-                      Transform.scale(
-                        scale: 0.85,
-                        child: IgnorePointer(
-                          ignoring: isPlaceholder || isUpdating,
-                          child: Switch(
-                            value: enabled,
-                            activeColor: colorScheme.onPrimary,
-                            activeTrackColor: colorScheme.primary,
-                            inactiveThumbColor: colorScheme.onSurfaceVariant,
-                            inactiveTrackColor: colorScheme.surfaceVariant,
-                            onChanged: isPlaceholder
-                                ? null
-                                : (v) => _toggleDriverActive(driver, v),
-                          ),
+                      SizedBox(width: spacing),
+                      Text(
+                        "View",
+                        style: GoogleFonts.roboto(
+                          fontSize: fsMain,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onPrimary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                  SizedBox(height: spacing),
-                  Divider(color: colorScheme.outline.withOpacity(0.3)),
-                  SizedBox(height: spacing),
-                  Text(
-                    'Expiry: $expiry',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: smallFs,
-                      color: colorScheme.onSurface.withOpacity(0.54),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

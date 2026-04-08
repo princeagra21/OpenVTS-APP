@@ -2,59 +2,48 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_user_list_item.dart';
+import 'package:fleet_stack/core/models/admin_device_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
+import 'package:fleet_stack/core/repositories/admin_devices_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../utils/adaptive_utils.dart';
-
-class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+class InventoryScreen extends StatefulWidget {
+  const InventoryScreen({super.key});
 
   @override
-  State<UserScreen> createState() => _UserScreenState();
+  State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _UserScreenState extends State<UserScreen> {
-  // Endpoint truth (FleetStack-API-Reference.md + Postman):
-  // - GET /admin/users (query: search, status, page, limit where supported)
-  // - GET /admin/users/:id
-  // - PATCH /admin/users/:id (status toggle key used: isActive)
-  // Users list extraction supports: userslist | users | data.userslist | data.users | items.
-
+class _InventoryScreenState extends State<InventoryScreen> {
   String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
   int _pageSize = 10;
 
-  List<AdminUserListItem>? _users;
+  List<AdminDeviceListItem>? _devices;
   bool _loading = false;
   bool _errorShown = false;
 
   CancelToken? _loadToken;
-  final Map<String, bool> _updatingUser = <String, bool>{};
-  final Map<String, CancelToken> _toggleTokens = <String, CancelToken>{};
-
   Timer? _searchDebounce;
 
   ApiClient? _apiClient;
-  AdminUsersRepository? _repo;
+  AdminDevicesRepository? _repo;
 
-  AdminUsersRepository _repoOrCreate() {
+  AdminDevicesRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
       config: AppConfig.fromDartDefine(),
       tokenStorage: TokenStorage.defaultInstance(),
     );
-    _repo ??= AdminUsersRepository(api: _apiClient!);
+    _repo ??= AdminDevicesRepository(api: _apiClient!);
     return _repo!;
   }
 
@@ -62,16 +51,12 @@ class _UserScreenState extends State<UserScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    _loadUsers();
+    _loadDevices();
   }
 
   @override
   void dispose() {
-    _loadToken?.cancel('Users screen disposed');
-    for (final token in _toggleTokens.values) {
-      token.cancel('Users screen disposed');
-    }
-    _toggleTokens.clear();
+    _loadToken?.cancel('Inventory screen disposed');
     _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -82,40 +67,10 @@ class _UserScreenState extends State<UserScreen> {
     if (mounted) {
       setState(() {});
     }
-
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 250), () {
-      _loadUsers();
+      _loadDevices();
     });
-  }
-
-  String normalizeStatus(String? raw, {bool? isActive}) {
-    final value = (raw ?? '').trim().toLowerCase();
-    if (value.isEmpty) {
-      if (isActive == true) return 'active';
-      if (isActive == false) return 'disabled';
-      return '';
-    }
-
-    if (value == 'enabled' || value == 'enable' || value == 'verified') {
-      return 'active';
-    }
-    if (value == 'inactive' || value == 'disable' || value == 'disabled') {
-      return 'disabled';
-    }
-    if (value == 'pending') return 'pending';
-
-    if (value.contains('pend')) return 'pending';
-    if (value.contains('disable') || value.contains('inactiv')) {
-      return 'disabled';
-    }
-    if (value.contains('enable') ||
-        value.contains('active') ||
-        value.contains('verify')) {
-      return 'active';
-    }
-
-    return value;
   }
 
   bool _isCancelled(Object err) {
@@ -131,8 +86,8 @@ class _UserScreenState extends State<UserScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _loadUsers() async {
-    _loadToken?.cancel('Reload users');
+  Future<void> _loadDevices() async {
+    _loadToken?.cancel('Reload inventory');
     final token = CancelToken();
     _loadToken = token;
 
@@ -140,7 +95,7 @@ class _UserScreenState extends State<UserScreen> {
     setState(() => _loading = true);
 
     try {
-      final result = await _repoOrCreate().getUsers(
+      final result = await _repoOrCreate().getDevices(
         search: _searchController.text.trim(),
         status: null,
         page: 1,
@@ -152,159 +107,58 @@ class _UserScreenState extends State<UserScreen> {
       result.when(
         success: (items) {
           setState(() {
-            _users = items;
+            _devices = items;
             _loading = false;
             _errorShown = false;
           });
         },
         failure: (err) {
           setState(() {
-            _users = const [];
+            _devices = const [];
             _loading = false;
           });
-
           if (_isCancelled(err)) return;
-
           final message =
               (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
-              ? 'Not authorized to load users.'
-              : "Couldn't load users.";
+              ? 'Not authorized to load inventory.'
+              : "Couldn't load inventory.";
           _showLoadErrorOnce(message);
         },
       );
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _users = const [];
+        _devices = const [];
         _loading = false;
       });
-      _showLoadErrorOnce("Couldn't load users.");
+      _showLoadErrorOnce("Couldn't load inventory.");
     }
   }
 
-  List<AdminUserListItem> _applyLocalFilters(List<AdminUserListItem> source) {
+  List<AdminDeviceListItem> _applyLocalFilters(List<AdminDeviceListItem> source) {
     final query = _searchController.text.trim().toLowerCase();
 
-    bool tabMatch(AdminUserListItem user) {
+    bool tabMatch(AdminDeviceListItem item) {
       if (selectedTab == 'All') return true;
-      final expectedStatus = normalizeStatus(selectedTab);
-      final actualStatus = normalizeStatus(
-        user.statusLabel,
-        isActive: user.isActive,
-      );
-      return expectedStatus == actualStatus;
+      final expected = selectedTab.toLowerCase();
+      final actual = item.statusFilterValue.toLowerCase();
+      return expected == actual;
     }
 
-    bool queryMatch(AdminUserListItem user) {
+    bool queryMatch(AdminDeviceListItem item) {
       if (query.isEmpty) return true;
-
       final fields = [
-        user.fullName,
-        user.fullPhone,
-        user.username,
-        user.email,
-        normalizeStatus(user.statusLabel, isActive: user.isActive),
-        user.vehiclesCount.toString(),
-        user.location,
-        user.joinedAt,
-        user.roleLabel,
+        item.imei,
+        item.simNumber,
+        item.typeName,
+        item.statusLabel,
+        item.expiryDate,
       ];
-
       return fields.any((v) => v.toLowerCase().contains(query));
     }
 
-    return source.where((u) => tabMatch(u) && queryMatch(u)).toList();
-  }
-
-  Future<void> _toggleUserActive(AdminUserListItem user, bool nextValue) async {
-    final userId = user.id.trim();
-    if (userId.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User ID is missing.')));
-      return;
-    }
-
-    if (_updatingUser[userId] == true) return;
-
-    final previousValue = user.isActive;
-    _setUserActiveOptimistic(userId, nextValue);
-
-    setState(() {
-      _updatingUser[userId] = true;
-    });
-
-    _toggleTokens[userId]?.cancel('Replace status toggle request');
-    final token = CancelToken();
-    _toggleTokens[userId] = token;
-
-    try {
-      final result = await _repoOrCreate().updateUserStatus(
-        userId,
-        nextValue,
-        cancelToken: token,
-      );
-      if (!mounted) return;
-
-      result.when(
-        success: (_) {
-          setState(() {
-            _updatingUser.remove(userId);
-            _toggleTokens.remove(userId);
-          });
-        },
-        failure: (err) {
-          setState(() {
-            _setUserActiveOptimistic(userId, previousValue);
-            _updatingUser.remove(userId);
-            _toggleTokens.remove(userId);
-          });
-
-          if (_isCancelled(err)) return;
-
-          final message =
-              (err is ApiException &&
-                  (err.statusCode == 401 || err.statusCode == 403))
-              ? 'Not authorized to update user status.'
-              : "Couldn't update user status.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _setUserActiveOptimistic(userId, previousValue);
-        _updatingUser.remove(userId);
-        _toggleTokens.remove(userId);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't update user status.")),
-      );
-    }
-  }
-
-  void _setUserActiveOptimistic(String userId, bool isActive) {
-    final list = _users;
-    if (list == null) return;
-
-    final updated = list.map((user) {
-      if (user.id != userId) return user;
-      final raw = Map<String, dynamic>.from(user.raw);
-      raw['isActive'] = isActive;
-      raw['active'] = isActive;
-      if (!isActive) {
-        raw['status'] = 'Disabled';
-      } else if (user.statusLabel.toLowerCase() == 'disabled') {
-        raw['status'] = 'Verified';
-      }
-      return AdminUserListItem.fromRaw(raw);
-    }).toList();
-
-    _users = updated;
+    return source.where((d) => tabMatch(d) && queryMatch(d)).toList();
   }
 
   String _safe(String value) {
@@ -318,9 +172,12 @@ class _UserScreenState extends State<UserScreen> {
     if (text.isEmpty || text == '—') return '—';
     final parsed = DateTime.tryParse(text);
     if (parsed == null) return text;
-    return DateFormat('dd MMM yyyy').format(parsed.toLocal());
+    final local = parsed.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    return '$day/$month/$year';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -336,14 +193,12 @@ class _UserScreenState extends State<UserScreen> {
     final iconSize = 18.0;
     final cardPadding = padding + 4;
 
-    final allUsers = _users ?? const <AdminUserListItem>[];
-    var filteredUsers = _applyLocalFilters(allUsers);
-
-    if (filteredUsers.length > _pageSize) {
-      filteredUsers = filteredUsers.take(_pageSize).toList();
+    final allDevices = _devices ?? const <AdminDeviceListItem>[];
+    var filteredDevices = _applyLocalFilters(allDevices);
+    if (filteredDevices.length > _pageSize) {
+      filteredDevices = filteredDevices.take(_pageSize).toList();
     }
-
-    final showNoData = !_loading && filteredUsers.isEmpty;
+    final showNoData = !_loading && filteredDevices.isEmpty;
 
     final topPadding = MediaQuery.of(context).padding.top;
     return Scaffold(
@@ -376,7 +231,7 @@ class _UserScreenState extends State<UserScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Users",
+                            "Inventory",
                             style: GoogleFonts.roboto(
                               fontSize: fsSection,
                               height: 24 / 18,
@@ -384,42 +239,7 @@ class _UserScreenState extends State<UserScreen> {
                               color: colorScheme.onSurface,
                             ),
                           ),
-                          InkWell(
-                            onTap: () => context.push('/admin/users/add'),
-                            borderRadius: BorderRadius.circular(12),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: padding * 1.2,
-                                vertical: spacing,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.onSurface,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.add,
-                                    size: iconSize,
-                                    color: colorScheme.surface,
-                                  ),
-                                  SizedBox(width: spacing / 2),
-                                  Text(
-                                    "New",
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsMain,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.surface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          const SizedBox(width: 8),
                         ],
                       ),
                       SizedBox(height: padding),
@@ -440,7 +260,7 @@ class _UserScreenState extends State<UserScreen> {
                             color: colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
-                            hintText: "Search name, email, role, department...",
+                            hintText: "Search IMEI, SIM, type, status...",
                             hintStyle: GoogleFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.5),
                               fontSize: fsSecondary,
@@ -488,12 +308,12 @@ class _UserScreenState extends State<UserScreen> {
                                       child: Text('Active'),
                                     ),
                                     PopupMenuItem(
-                                      value: "Disabled",
-                                      child: Text('Disabled'),
+                                      value: "Maintenance",
+                                      child: Text('Maintenance'),
                                     ),
                                     PopupMenuItem(
-                                      value: "Pending",
-                                      child: Text('Pending'),
+                                      value: "Inactive",
+                                      child: Text('Inactive'),
                                     ),
                                   ],
                                   child: Container(
@@ -603,7 +423,7 @@ class _UserScreenState extends State<UserScreen> {
                               SizedBox(
                                 width: cellWidth,
                                 child: InkWell(
-                                  onTap: _loadUsers,
+                                  onTap: _loadDevices,
                                   borderRadius: BorderRadius.circular(12),
                                   splashColor: Colors.transparent,
                                   highlightColor: Colors.transparent,
@@ -672,8 +492,8 @@ class _UserScreenState extends State<UserScreen> {
                                 Expanded(
                                   child: Text(
                                     _errorShown
-                                        ? "Couldn't load users."
-                                        : "No users found",
+                                        ? "Couldn't load inventory."
+                                        : "No devices found",
                                     style: GoogleFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
@@ -685,7 +505,7 @@ class _UserScreenState extends State<UserScreen> {
                                 ),
                                 if (_errorShown)
                                   TextButton(
-                                    onPressed: _loadUsers,
+                                    onPressed: _loadDevices,
                                     child: const Text('Retry'),
                                   ),
                               ],
@@ -695,7 +515,7 @@ class _UserScreenState extends State<UserScreen> {
                       if (_loading)
                         ...List<Widget>.generate(
                           3,
-                          (index) => _buildUserSkeletonCard(
+                          (index) => _buildDeviceSkeletonCard(
                             padding: padding,
                             spacing: spacing,
                             cardPadding: cardPadding,
@@ -709,11 +529,11 @@ class _UserScreenState extends State<UserScreen> {
                           shrinkWrap: true,
                           padding: EdgeInsets.zero,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filteredUsers.length,
+                          itemCount: filteredDevices.length,
                           itemBuilder: (context, index) {
-                            final user = filteredUsers[index];
-                            return _buildUserCard(
-                              user,
+                            final device = filteredDevices[index];
+                            return _buildDeviceCard(
+                              device,
                               colorScheme,
                               padding,
                               spacing,
@@ -738,8 +558,8 @@ class _UserScreenState extends State<UserScreen> {
             right: padding,
             top: 0,
             child: AdminHomeAppBar(
-              title: 'Users',
-              leadingIcon: Icons.group,
+              title: 'Inventory',
+              leadingIcon: Icons.inventory_2,
               onClose: () => context.go('/admin/home'),
             ),
           ),
@@ -748,7 +568,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildUserSkeletonCard({
+  Widget _buildDeviceSkeletonCard({
     required double padding,
     required double spacing,
     required double cardPadding,
@@ -862,8 +682,8 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildUserCard(
-    AdminUserListItem user,
+  Widget _buildDeviceCard(
+    AdminDeviceListItem device,
     ColorScheme colorScheme,
     double padding,
     double spacing,
@@ -874,16 +694,11 @@ class _UserScreenState extends State<UserScreen> {
     double cardPadding,
     double screenWidth,
   ) {
-    final name = _safe(user.fullName);
-    final email = _safe(user.email);
-    final phone = _safe(user.fullPhone);
-    final username = _safe(user.username);
-    final role = _safe(user.roleLabel);
-    final location = _safe(user.location);
-    final joined = _formatDateOnly(user.joinedAt);
-    final initials = _safe(user.initials);
-    final userId = user.id.trim();
-    final isUpdating = _updatingUser[userId] == true;
+    final imei = _safe(device.imei);
+    final type = _safe(device.typeName);
+    final sim = _safe(device.simNumber);
+    final status = _safe(device.statusLabel);
+    final created = _formatDateOnly(device.raw['createdAt']?.toString() ?? '');
 
     return Container(
       margin: EdgeInsets.only(bottom: padding),
@@ -900,327 +715,192 @@ class _UserScreenState extends State<UserScreen> {
       child: Material(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(25),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          onTap: userId.isEmpty
-              ? null
-              : () => context.push('/admin/users/details/$userId'),
-          child: Padding(
-            padding: EdgeInsets.all(cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: colorScheme.surface,
-                      radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
-                      foregroundColor: colorScheme.onSurface,
-                      child: Container(
-                        width: AdaptiveUtils.getAvatarSize(screenWidth),
-                        height: AdaptiveUtils.getAvatarSize(screenWidth),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.onSurface.withOpacity(0.12),
-                          ),
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: colorScheme.surface,
+                    radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                    foregroundColor: colorScheme.onSurface,
+                    child: Container(
+                      width: AdaptiveUtils.getAvatarSize(screenWidth),
+                      height: AdaptiveUtils.getAvatarSize(screenWidth),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.12),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initials,
-                          style: GoogleFonts.roboto(
-                            color: colorScheme.onSurface,
-                            fontSize:
-                                AdaptiveUtils.getFsAvatarFontSize(screenWidth),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.memory,
+                        size: AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                    SizedBox(width: spacing * 2),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: userId.isEmpty
-                                      ? null
-                                      : () => context.push(
-                                            '/admin/users/details/$userId',
-                                          ),
-                                  child: Text(
-                                    name,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsMain,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                  ),
+                  SizedBox(width: spacing * 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                imei,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsMain,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? colorScheme.surfaceVariant
+                                    : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                status,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsMeta,
+                                  height: 14 / 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface.withOpacity(0.8),
                                 ),
                               ),
-                              Transform.scale(
-                                scale: 0.75,
-                                child: Switch(
-                                  value: user.isActive,
-                                  onChanged: isUpdating
-                                      ? null
-                                      : (v) => _toggleUserActive(user, v),
-                                  activeColor: colorScheme.onPrimary,
-                                  activeTrackColor: colorScheme.primary,
-                                  inactiveThumbColor: colorScheme.onPrimary,
-                                  inactiveTrackColor:
-                                      colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing / 2),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.settings_input_component,
+                              size: iconSize,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Text(
+                                type,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsSecondary,
+                                  height: 16 / 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurface
+                                      .withOpacity(0.7),
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing / 2),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.sim_card_outlined,
+                              size: iconSize,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Text(
+                                sim,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsSecondary,
+                                  height: 16 / 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurface
+                                      .withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: spacing * 1.5),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: padding,
+                  vertical: spacing - 2,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.1),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: iconSize,
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        SizedBox(width: spacing),
+                        Expanded(
+                          child: Text(
+                            "Created",
+                            style: GoogleFonts.roboto(
+                              fontSize: fsMeta,
+                              height: 14 / 11,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: iconSize,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  username,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: fsSecondary,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                CupertinoIcons.mail,
-                                size: iconSize,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  email,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: fsSecondary,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                CupertinoIcons.phone,
-                                size: iconSize,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  phone,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: fsSecondary,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.apartment,
-                                size: iconSize,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  role,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: fsSecondary,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: spacing),
+                    Text(
+                      created,
+                      style: GoogleFonts.roboto(
+                        fontSize: fsMain,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                SizedBox(height: spacing * 1.5),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: spacing,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Location",
-                        style: GoogleFonts.roboto(
-                          fontSize: fsMeta,
-                          height: 14 / 11,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      SizedBox(height: spacing / 2),
-                      Text(
-                        location,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
-                          fontSize: fsSecondary,
-                          height: 16 / 12,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: spacing),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: spacing - 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colorScheme.onSurface.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.schedule,
-                            size: iconSize,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                          SizedBox(width: spacing),
-                          Expanded(
-                            child: Text(
-                              "Joined",
-                              style: GoogleFonts.roboto(
-                                fontSize: fsMeta,
-                                height: 14 / 11,
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: spacing),
-                      Text(
-                        joined,
-                        style: GoogleFonts.roboto(
-                          fontSize: fsMain,
-                          height: 20 / 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: spacing),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: spacing * 1.6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chevron_right,
-                        size: iconSize,
-                        color: colorScheme.onPrimary,
-                      ),
-                      SizedBox(width: spacing),
-                      Text(
-                        "View",
-                        style: GoogleFonts.roboto(
-                          fontSize: fsMain,
-                          height: 20 / 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

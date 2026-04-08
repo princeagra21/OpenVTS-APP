@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +11,6 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_utils.dart';
 import '../../utils/adaptive_utils.dart';
-import 'dart:ui';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -151,9 +151,6 @@ class _CustomAppBarState extends State<CustomAppBar>
     final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final double blurAmount = widget.scrollOffset > 20 ? 20 : 0;
-    final double bgOpacity = widget.scrollOffset > 20 ? 0.7 : 0.0;
-
     final double horizontalPadding = AdaptiveUtils.getHorizontalPadding(
       screenWidth,
     );
@@ -183,6 +180,9 @@ class _CustomAppBarState extends State<CustomAppBar>
 
     final bool showTitleAndSubtitle =
         !widget.showLogo && !widget.showLeftAvatar;
+
+    final double blurAmount = widget.scrollOffset > 20 ? 20 : 0;
+    final double bgOpacity = widget.scrollOffset > 20 ? 0.7 : 0.0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark

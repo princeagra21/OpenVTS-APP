@@ -20,6 +20,11 @@ class AdminUserTicketsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleFs = 14 * scale;
+    final subtitleFs = 12 * scale;
+    final statusFs = 11 * scale;
     if (loading) {
       return listShimmer(context, count: 3, height: 102);
     }
@@ -52,15 +57,15 @@ class AdminUserTicketsTab extends StatelessWidget {
                         safeText(ticket.subject),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: bodyFontSize + 1,
-                          fontWeight: FontWeight.w700,
+                        style: GoogleFonts.roboto(
+                          fontSize: titleFs,
+                          fontWeight: FontWeight.w600,
                           color: cs.onSurface,
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    statusChip(context, ticket.statusLabel, smallFontSize),
+                    statusChip(context, ticket.statusLabel, statusFs),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -68,16 +73,16 @@ class AdminUserTicketsTab extends StatelessWidget {
                   context,
                   'Ticket',
                   safeText(ticket.ticketNumber),
-                  bodyFontSize,
+                  subtitleFs,
                 ),
                 const SizedBox(height: 8),
-                detailLine(context, 'Summary', summary, bodyFontSize),
+                detailLine(context, 'Summary', summary, subtitleFs),
                 const SizedBox(height: 8),
                 detailLine(
                   context,
                   'Created',
                   formatDateLabel(ticket.createdAt),
-                  bodyFontSize,
+                  subtitleFs,
                 ),
               ],
             ),

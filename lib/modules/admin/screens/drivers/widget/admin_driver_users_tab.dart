@@ -1,5 +1,6 @@
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_details_ui.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -20,6 +21,13 @@ class AdminDriverUsersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(width);
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleFs = 14 * scale;
+    final subtitleFs = 12 * scale;
+    final statusFs = 11 * scale;
+    final iconSize = subtitleFs + 2;
     if (loading) {
       return listShimmer(context, count: 3, height: 108);
     }
@@ -33,6 +41,13 @@ class AdminDriverUsersTab extends StatelessWidget {
 
     return Column(
       children: items.map((user) {
+        final name = safeText(user.fullName);
+        final username = safeText(user.username);
+        final email = safeText(user.email);
+        final phone = safeText(user.fullPhone);
+        final role = safeText(user.roleLabel);
+        final location = safeText(user.location);
+        final joined = _formatDateOnly(user.joinedAt);
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: detailsCard(
@@ -41,71 +56,330 @@ class AdminDriverUsersTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CircleAvatar(
-                      radius: 22,
-                      backgroundColor: cs.primary,
-                      child: Text(
-                        user.initials,
-                        style: GoogleFonts.inter(
-                          color: cs.onPrimary,
-                          fontSize: smallFontSize + 1,
-                          fontWeight: FontWeight.w700,
+                      backgroundColor: cs.surface,
+                      radius: AdaptiveUtils.getAvatarSize(width) / 2,
+                      foregroundColor: cs.onSurface,
+                      child: Container(
+                        width: AdaptiveUtils.getAvatarSize(width),
+                        height: AdaptiveUtils.getAvatarSize(width),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: cs.onSurface.withOpacity(0.12),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          user.initials,
+                          style: GoogleFonts.roboto(
+                            color: cs.onSurface,
+                            fontSize: AdaptiveUtils.getFsAvatarFontSize(width),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: spacing * 2),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            safeText(user.fullName),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: bodyFontSize + 1,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurface,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: titleFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? cs.surfaceVariant
+                                      : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  safeText(user.statusLabel),
+                                  style: GoogleFonts.roboto(
+                                    fontSize: statusFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface.withOpacity(0.8),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            safeText(user.email),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: smallFontSize + 1,
-                              color: cs.onSurface.withValues(alpha: 0.75),
-                            ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: iconSize,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  username,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.mail_outline,
+                                size: iconSize,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  email,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.phone_outlined,
+                                size: iconSize,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  phone,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.apartment,
+                                size: iconSize,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  role,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    statusChip(context, user.statusLabel, smallFontSize),
                   ],
                 ),
-                const SizedBox(height: 12),
-                detailLine(
-                  context,
-                  'Phone',
-                  safeText(user.fullPhone),
-                  bodyFontSize,
+                SizedBox(height: spacing * 1.5),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final gap = spacing;
+                    final cellWidth = (constraints.maxWidth - gap) / 2;
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: [
+                        SizedBox(
+                          width: cellWidth,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  AdaptiveUtils.getHorizontalPadding(width),
+                              vertical: spacing,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cs.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: cs.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Role",
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.6),
+                                  ),
+                                ),
+                                SizedBox(height: spacing / 2),
+                                Text(
+                                  role,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: subtitleFs,
+                                    height: 16 / 12,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: cellWidth,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  AdaptiveUtils.getHorizontalPadding(width),
+                              vertical: spacing - 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cs.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: cs.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.schedule,
+                                      size: iconSize,
+                                      color: cs.onSurface.withOpacity(0.7),
+                                    ),
+                                    SizedBox(width: spacing),
+                                    Expanded(
+                                      child: Text(
+                                        "Joined",
+                                        style: GoogleFonts.roboto(
+                                          fontSize: subtitleFs,
+                                          height: 14 / 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: spacing),
+                                Text(
+                                  joined,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: titleFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 8),
-                detailLine(
-                  context,
-                  'Location',
-                  safeText(user.location),
-                  bodyFontSize,
-                ),
-                const SizedBox(height: 8),
-                detailLine(
-                  context,
-                  'Joined',
-                  formatDateLabel(user.joinedAt),
-                  bodyFontSize,
+                SizedBox(height: spacing),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AdaptiveUtils.getHorizontalPadding(width),
+                    vertical: spacing,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: cs.onSurface.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Location",
+                        style: GoogleFonts.roboto(
+                          fontSize: subtitleFs,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      SizedBox(height: spacing / 2),
+                      Text(
+                        location,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontSize: subtitleFs,
+                          height: 16 / 12,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -113,5 +387,31 @@ class AdminDriverUsersTab extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+
+  String _formatDateOnly(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return '—';
+    final dt = DateTime.tryParse(value);
+    if (dt == null) return value;
+    final local = dt.toLocal();
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final day = local.day.toString().padLeft(2, '0');
+    final month = months[local.month - 1];
+    final year = local.year.toString();
+    return '$day $month $year';
   }
 }
