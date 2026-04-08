@@ -1,7 +1,9 @@
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 
 class RolesScreen extends StatefulWidget {
   const RolesScreen({super.key});
@@ -147,6 +149,12 @@ class _RolesScreenState extends State<RolesScreen> {
     return AppLayout(
       title: "FLEET STACK",
       subtitle: "Role Permissions",
+      showAppBar: false,
+      customTopBar: AdminHomeAppBar(
+        title: 'Role Permissions',
+        leadingIcon: Icons.admin_panel_settings,
+        onClose: () => context.go('/admin/home'),
+      ),
       actionIcons: const [],
       leftAvatarText: 'FS',
       showLeftAvatar: false,

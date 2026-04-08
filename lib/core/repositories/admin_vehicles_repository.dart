@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/models/admin_vehicle_details.dart';
 import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
+import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
+import 'package:fleet_stack/core/models/vehicle_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
@@ -68,6 +70,41 @@ class AdminVehiclesRepository {
     return res.when(
       success: (data) =>
           Result.ok(AdminVehicleDetails.fromRaw(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminUserListItem>>> getLinkedUsers(
+    String vehicleId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/linkusers/$vehicleId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['users', 'rows', 'items', 'data'],
+        );
+        final out = <AdminUserListItem>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(AdminUserListItem.fromRaw(item));
+            } else if (item is Map) {
+              out.add(
+                AdminUserListItem.fromRaw(
+                  Map<String, dynamic>.from(item.cast()),
+                ),
+              );
+            }
+          }
+        }
+        return Result.ok(out);
+      },
       failure: (err) => Result.fail(err),
     );
   }
@@ -171,6 +208,71 @@ class AdminVehiclesRepository {
     return _mapPointListResult(
       res,
       extraKeys: const ['points', 'trail', 'history'],
+    );
+  }
+
+  Future<Result<VehicleConfig>> getVehicleConfig(
+    String vehicleId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/vehicles/$vehicleId/config',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(VehicleConfig(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateVehicleConfig(
+    String vehicleId,
+    VehicleConfigUpdate payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/admin/vehicles/$vehicleId/config',
+      data: payload.toJson(),
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<Map<String, dynamic>>>> getVehicleLogsByImei(
+    String imei, {
+    Map<String, dynamic>? query,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/vehicles/by-imei/$imei/logs',
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['items', 'logs', 'rows', 'data'],
+        );
+        final out = <Map<String, dynamic>>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(item);
+            } else if (item is Map) {
+              out.add(Map<String, dynamic>.from(item.cast()));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
     );
   }
 

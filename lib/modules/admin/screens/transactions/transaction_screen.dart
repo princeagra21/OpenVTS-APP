@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
@@ -9,15 +10,15 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_transactions_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -33,12 +34,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
   // - GET /admin/transactions/analytics
   //   Response keys used: data.data (totalTransactions, totalsByCurrency, statusBreakdown)
 
-  String selectedTab = 'All';
+  String _statusFilter = 'All';
+  String? _selectedRange;
+  String? _fromDate;
+  String? _toDate;
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _tabScrollController = ScrollController();
-
-  late final List<String> _tabs;
-  late final List<GlobalKey> _tabKeys;
 
   List<AdminTransactionItem>? _items;
   AdminTransactionsSummary? _summary;
@@ -79,9 +79,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   void initState() {
     super.initState();
-    _tabs = ['All', 'Success', 'Pending', 'Failed', 'Refunded'];
-    _tabKeys = List.generate(_tabs.length, (_) => GlobalKey());
-
     _searchController.addListener(_onSearchChanged);
     _loadTransactions();
   }
@@ -92,7 +89,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
     _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _tabScrollController.dispose();
     super.dispose();
   }
 
@@ -107,7 +103,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     });
   }
 
-  String? _statusQueryForTab(String tab) {
+  String? _statusQuery(String tab) {
     final normalized = AdminTransactionItem.normalizeStatus(tab);
     if (normalized.isEmpty || normalized == 'all') return null;
     return normalized;
@@ -139,9 +135,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
       final listRes = await repo.getTransactions(
         search: _searchController.text.trim(),
-        status: _statusQueryForTab(selectedTab),
+        status: _statusQuery(_statusFilter),
         page: 1,
         limit: 100,
+        from: _fromDate,
+        to: _toDate,
         cancelToken: token,
       );
 
@@ -229,8 +227,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
     final query = _searchController.text.trim().toLowerCase();
 
     bool tabMatch(AdminTransactionItem item) {
-      if (selectedTab == 'All') return true;
-      final expected = AdminTransactionItem.normalizeStatus(selectedTab);
+      if (_statusFilter == 'All') return true;
+      final expected = AdminTransactionItem.normalizeStatus(_statusFilter);
       final actual = item.normalizedStatus;
       return expected == actual;
     }
@@ -283,18 +281,31 @@ class _TransactionScreenState extends State<TransactionScreen> {
     return null;
   }
 
-  String _displayDate(String raw) {
-    final date = _tryParseDate(raw);
-    if (date == null) return '—';
-
-    final dd = date.day.toString().padLeft(2, '0');
-    final mm = date.month.toString().padLeft(2, '0');
-    final yyyy = date.year.toString();
-    final hh = date.hour.toString().padLeft(2, '0');
-    final min = date.minute.toString().padLeft(2, '0');
-    final ss = date.second.toString().padLeft(2, '0');
-
-    return '$dd/$mm/$yyyy, $hh:$min:$ss';
+  String _formatDateTime(String raw) {
+    if (raw.trim().isEmpty) return '—';
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final m = months[dt.month - 1];
+      final h = dt.hour.toString().padLeft(2, '0');
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} $m ${dt.year} · $h:$min';
+    } catch (_) {
+      return '—';
+    }
   }
 
   String _safe(String value) {
@@ -308,725 +319,1354 @@ class _TransactionScreenState extends State<TransactionScreen> {
     final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
     final sign = value < 0 ? '-' : '';
     final absValue = value.abs();
-
     final fixed = absValue.toStringAsFixed(2);
     final parts = fixed.split('.');
     final intPart = parts[0];
     final fracPart = parts[1];
-
     final withCommas = intPart.replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
       (m) => ',',
     );
-
     return '$sign$symbol$withCommas.$fracPart';
   }
 
-  String _formatCredits(int? value) {
+  String _formatAmount(double? value, String currency) {
     if (value == null) return '—';
-    if (value > 0) return '+$value';
-    return value.toString();
+    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
+    final isWhole = value % 1 == 0;
+    final formatted = isWhole
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(2);
+    return '$symbol$formatted';
   }
 
-  Color _statusColor(String normalized) {
-    if (normalized == 'success') return Colors.green;
-    if (normalized == 'pending') return Colors.orange;
-    if (normalized == 'failed' || normalized == 'refunded') return Colors.red;
-    return Colors.grey;
+  String _formatInrCompact(double value) {
+    if (value <= 0) return '₹0';
+    if (value >= 10000000) {
+      return '₹${(value / 10000000).toStringAsFixed(1)}Cr';
+    }
+    if (value >= 100000) {
+      return '₹${(value / 100000).toStringAsFixed(1)}L';
+    }
+    if (value >= 1000) {
+      return '₹${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return '₹${value.toStringAsFixed(0)}';
+  }
+
+  double _parseAmount(AdminTransactionItem t) {
+    return t.amount ?? 0;
+  }
+
+  String _titleCase(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return '—';
+    return v
+        .toLowerCase()
+        .split(RegExp(r'[_\s]+'))
+        .where((p) => p.isNotEmpty)
+        .map((p) => p[0].toUpperCase() + p.substring(1))
+        .join(' ');
+  }
+
+  (String, IconData, Color) _statusMeta(String raw, ColorScheme cs) {
+    final s = raw.toLowerCase();
+    if (s.contains('success')) {
+      return ('SUCCESS', Icons.check_circle, cs.primary);
+    }
+    if (s.contains('pending') || s.contains('processing')) {
+      return ('PENDING', Icons.schedule, cs.primary.withOpacity(0.7));
+    }
+    if (s.contains('fail') || s.contains('decline')) {
+      return ('FAILED', Icons.cancel, cs.primary.withOpacity(0.5));
+    }
+    if (s.contains('refund')) {
+      return ('REFUNDED', Icons.reply, cs.primary.withOpacity(0.5));
+    }
+    return ('UNKNOWN', Icons.help_outline, cs.onSurface.withOpacity(0.6));
+  }
+
+  String _csvEscape(String value) {
+    final needsQuote =
+        value.contains(',') || value.contains('"') || value.contains('\n');
+    final cleaned = value.replaceAll('"', '""');
+    return needsQuote ? '"$cleaned"' : cleaned;
+  }
+
+  Future<void> _exportCsv(List<AdminTransactionItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No transactions to export.')),
+      );
+      return;
+    }
+    final headers = [
+      'ID',
+      'Name',
+      'Email',
+      'Amount',
+      'Currency',
+      'Status',
+      'Payment Mode',
+      'Payment Type',
+      'Reference',
+      'Created At',
+    ];
+    final rows = <List<String>>[];
+    for (final t in items) {
+      final name = _transactionName(t);
+      final email = _transactionEmail(t);
+      rows.add([
+        t.id,
+        name,
+        email,
+        (t.amount ?? 0).toString(),
+        t.currency,
+        t.statusLabel,
+        t.raw['paymentMode']?.toString() ?? '',
+        t.raw['paymentType']?.toString() ?? '',
+        t.raw['reference']?.toString() ?? '',
+        t.createdAt,
+      ]);
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(headers.map(_csvEscape).join(','));
+    for (final row in rows) {
+      buffer.writeln(row.map(_csvEscape).join(','));
+    }
+
+    final filename =
+        'transactions_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final file = File('${Directory.systemTemp.path}/$filename');
+    await file.writeAsString(buffer.toString());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exported CSV: ${file.path}')),
+    );
+  }
+
+  Widget _summaryCard(
+    BuildContext context, {
+    required double width,
+    required String title,
+    required String value,
+    required double titleSize,
+    required double valueSize,
+    required IconData icon,
+    required double padding,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: width,
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding - 2),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.roboto(
+                  fontSize: titleSize,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
+              ),
+              Icon(icon, size: titleSize + 2, color: cs.onSurface),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: valueSize,
+              height: 24 / 18,
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusPill(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required Color color,
+    required double scale,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? cs.surfaceVariant
+            : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface.withOpacity(0.75),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _transactionName(AdminTransactionItem t) {
+    final raw = t.raw;
+    String? name;
+    if (raw['fromUser'] is Map) {
+      name = (raw['fromUser'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty && raw['user'] is Map) {
+      name = (raw['user'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty && raw['actor'] is Map) {
+      name = (raw['actor'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty) {
+      name = raw['fromUserName']?.toString();
+    }
+    if ((name ?? '').isEmpty) {
+      name = raw['name']?.toString();
+    }
+    return _safe(name ?? '—');
+  }
+
+  String _transactionEmail(AdminTransactionItem t) {
+    final raw = t.raw;
+    String? email;
+    if (raw['fromUser'] is Map) {
+      email = (raw['fromUser'] as Map)['email']?.toString();
+    }
+    if ((email ?? '').isEmpty && raw['user'] is Map) {
+      email = (raw['user'] as Map)['email']?.toString();
+    }
+    if ((email ?? '').isEmpty) {
+      email = raw['fromUserEmail']?.toString();
+    }
+    if ((email ?? '').isEmpty) {
+      email = raw['email']?.toString();
+    }
+    return _safe(email ?? '');
+  }
+
+  void _applyDateRange(String label) {
+    final now = DateTime.now();
+    DateTime from;
+    DateTime to;
+    if (label == 'Today') {
+      from = DateTime(now.year, now.month, now.day);
+      to = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    } else if (label == 'Last 7 days') {
+      from = now.subtract(const Duration(days: 6));
+      to = now;
+    } else if (label == 'Last 30 days') {
+      from = now.subtract(const Duration(days: 29));
+      to = now;
+    } else if (label == 'This month') {
+      from = DateTime(now.year, now.month, 1);
+      to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+    } else {
+      _fromDate = null;
+      _toDate = null;
+      return;
+    }
+    _fromDate = _dateOnly(from);
+    _toDate = _dateOnly(to);
+  }
+
+  String _dateOnly(DateTime dt) {
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double smallFs = titleFs - 3;
-    final double iconSize = titleFs + 2;
-    final double cardPadding = hp + 4;
+    final width = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(width) + 6;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final cs = Theme.of(context).colorScheme;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final labelStyle = GoogleFonts.roboto(
+      fontSize: 12 * scale,
+      height: 16 / 12,
+      fontWeight: FontWeight.w600,
+      color: cs.onSurface.withOpacity(0.7),
+    );
 
+    final query = _searchController.text.trim().toLowerCase();
     final allItems = _items ?? const <AdminTransactionItem>[];
-    final filteredTransactions = _applyLocalFilters(allItems);
+    final filteredTransactions = allItems.where((t) {
+      final status = t.statusLabel.toLowerCase();
+      final matchesStatus = _statusFilter == 'All' ||
+          (_statusFilter == 'Success' && status.contains('success')) ||
+          (_statusFilter == 'Pending' &&
+              (status.contains('pending') || status.contains('processing'))) ||
+          (_statusFilter == 'Failed' && status.contains('fail'));
+      if (!matchesStatus) return false;
+      if (query.isEmpty) return true;
+      final name = _transactionName(t).toLowerCase();
+      final email = _transactionEmail(t).toLowerCase();
+      final reference = (t.raw['reference']?.toString() ?? '').toLowerCase();
+      return name.contains(query) ||
+          email.contains(query) ||
+          reference.contains(query);
+    }).toList();
 
-    final availableCredits = _summary?.availableCredits;
+    final totalTxns = allItems.length;
+    final success = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('success');
+    }).toList();
+    final pending = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('pending') || s.contains('processing');
+    }).toList();
+    final failed = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('fail') || s.contains('decline');
+    }).toList();
+    final revenue =
+        success.fold<double>(0, (sum, t) => sum + _parseAmount(t));
+    final successRate =
+        totalTxns == 0 ? 0 : ((success.length / totalTxns) * 100).round();
 
-    final processedAmount =
-        _summary?.processed30DaysAmount ??
-        _summary?.amountFromTotalsByCurrency ??
-        _derivedProcessed30DaysAmount;
-
-    final availableCreditsText = availableCredits != null
-        ? availableCredits.toString()
-        : '—';
-    final processedText = processedAmount != null
-        ? _formatCurrency(
-            processedAmount,
-            currency: _summary?.currency ?? 'INR',
-          )
-        : '—';
-
-    return AppLayout(
-      title: 'ADMIN',
-      subtitle: 'Transactions',
-      actionIcons: const [],
-      showLeftAvatar: false,
-      leftAvatarText: 'SA',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                padding,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                padding,
+                padding,
               ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search invoice, description, method...',
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Colors.transparent,
-                      width: 0,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: hp,
-                    vertical: hp,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: hp),
-
-            Container(
-              padding: EdgeInsets.symmetric(vertical: hp),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _statBox(
-                    'Available Credits',
-                    availableCreditsText,
-                    '',
-                    bodyFs,
-                    smallFs,
-                    colorScheme,
-                    spacing,
-                    loading: _loading,
-                  ),
-                  _statBox(
-                    'Processed (30 days)',
-                    processedText,
-                    '',
-                    bodyFs,
-                    smallFs,
-                    colorScheme,
-                    spacing,
-                    loading: _loading,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: hp),
-
-            SizedBox(
-              height: hp * 3,
-              child: Scrollbar(
-                controller: _tabScrollController,
-                thumbVisibility: true,
-                trackVisibility: true,
-                thickness: 1,
-                radius: const Radius.circular(8),
-                child: SingleChildScrollView(
-                  controller: _tabScrollController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: spacing),
-                  child: Row(
-                    children: List.generate(_tabs.length, (index) {
-                      final tab = _tabs[index];
-                      return Padding(
-                        padding: EdgeInsets.only(right: spacing),
-                        child: KeyedSubtree(
-                          key: _tabKeys[index],
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 5.0),
-                            child: SmallTab(
-                              label: tab,
-                              selected: selectedTab == tab,
-                              onTap: () {
-                                if (selectedTab == tab) return;
-
-                                setState(() => selectedTab = tab);
-                                _loadTransactions();
-
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  final ctx = _tabKeys[index].currentContext;
-                                  if (ctx != null) {
-                                    Scrollable.ensureVisible(
-                                      ctx,
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      alignment: 0.5,
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-            ),
-
-            SizedBox(height: hp),
-
-            Text(
-              'Showing ${filteredTransactions.length} of ${allItems.length} transactions',
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                color: colorScheme.onSurface.withOpacity(0.87),
-              ),
-            ),
-            SizedBox(height: spacing * 1.5),
-
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: _loading
-                  ? 3
-                  : (filteredTransactions.isEmpty
-                        ? 1
-                        : filteredTransactions.length),
-              itemBuilder: (context, index) {
-                if (_loading) {
-                  return _buildShimmerCard(
-                    colorScheme,
-                    width,
-                    hp,
-                    spacing,
-                    cardPadding,
-                  );
-                }
-
-                if (filteredTransactions.isEmpty) {
-                  return _buildEmptyStateCard(
-                    colorScheme: colorScheme,
-                    hp: hp,
-                    bodyFs: bodyFs,
-                    smallFs: smallFs,
-                    cardPadding: cardPadding,
-                  );
-                }
-
-                return _buildTransactionCard(
-                  tran: filteredTransactions[index],
-                  colorScheme: colorScheme,
-                  width: width,
-                  hp: hp,
-                  spacing: spacing,
-                  bodyFs: bodyFs,
-                  smallFs: smallFs,
-                  iconSize: iconSize,
-                  cardPadding: cardPadding,
-                );
-              },
-            ),
-
-            SizedBox(height: hp * 3),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerCard(
-    ColorScheme colorScheme,
-    double width,
-    double hp,
-    double spacing,
-    double cardPadding,
-  ) {
-    final avatarSize = AdaptiveUtils.getAvatarSize(width);
-
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppShimmer(
-              width: avatarSize,
-              height: avatarSize,
-              radius: avatarSize / 2,
-            ),
-            SizedBox(width: spacing * 1.5),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      AppShimmer(width: 130, height: 12, radius: 6),
-                      Spacer(),
-                      AppShimmer(width: 88, height: 22, radius: 11),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 210, height: 16, radius: 8),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 140, height: 14, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 220, height: 14, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 110, height: 14, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 190, height: 14, radius: 7),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyStateCard({
-    required ColorScheme colorScheme,
-    required double hp,
-    required double bodyFs,
-    required double smallFs,
-    required double cardPadding,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'No transactions found',
-              style: GoogleFonts.inter(
-                fontSize: bodyFs + 1,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting search.',
-              style: GoogleFonts.inter(
-                fontSize: smallFs + 1,
-                color: colorScheme.onSurface.withOpacity(0.72),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionCard({
-    required AdminTransactionItem? tran,
-    required ColorScheme colorScheme,
-    required double width,
-    required double hp,
-    required double spacing,
-    required double bodyFs,
-    required double smallFs,
-    required double iconSize,
-    required double cardPadding,
-  }) {
-    final isPlaceholder = tran == null;
-
-    final date = _safe(_displayDate(tran?.createdAt ?? ''));
-    final statusLabel = _safe(tran?.statusLabel ?? '');
-    final normalizedStatus = tran?.normalizedStatus ?? '';
-    final statusColor = _statusColor(normalizedStatus);
-
-    final invoice = _safe(tran?.invoiceNumber ?? '');
-    final fsId = _safe(tran?.reference ?? '');
-    final description = _safe(tran?.description ?? '');
-    final method = _safe(tran?.method ?? '');
-    final credits = _formatCredits(tran?.credits);
-    final amount = tran?.amount != null
-        ? _formatCurrency(tran!.amount!, currency: tran.currency)
-        : '—';
-
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(25),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(25),
-          onTap: () {},
-          child: Padding(
-            padding: EdgeInsets.all(cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              child: SingleChildScrollView(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: AdaptiveUtils.getAvatarSize(width),
-                      height: AdaptiveUtils.getAvatarSize(width),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: colorScheme.primary.withOpacity(0.6),
+                          color: cs.onSurface.withOpacity(0.1),
                         ),
                       ),
-                      child: Icon(
-                        CupertinoIcons.money_dollar_circle,
-                        size: AdaptiveUtils.getFsAvatarFontSize(width),
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    SizedBox(width: spacing * 1.5),
-                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  date,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: smallFs,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.6,
+                              Text(
+                                'Transactions',
+                                style: AppUtils.headlineSmallBase.copyWith(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(width) +
+                                          2,
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => context.push('/admin/payments/add'),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      Icon(Icons.add,
+                                          size: 16, color: Colors.white),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Record',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
+                          Text('Date Range', style: labelStyle),
+                          const SizedBox(height: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              final chosen =
+                                  await showModalBottomSheet<String>(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: cs.surface,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                ),
+                                builder: (ctx) {
+                                  final items = [
+                                    'Today',
+                                    'Last 7 days',
+                                    'Last 30 days',
+                                    'This month',
+                                  ];
+                                  return SafeArea(
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 42,
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: cs.onSurface
+                                                  .withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Select Date Range',
+                                            style: GoogleFonts.roboto(
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.onSurface,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            height: MediaQuery.of(ctx)
+                                                    .size
+                                                    .height *
+                                                0.7,
+                                            child: ListView.separated(
+                                              itemCount: items.length,
+                                              separatorBuilder: (_, __) =>
+                                                  const SizedBox(height: 8),
+                                              itemBuilder: (_, index) {
+                                                final item = items[index];
+                                                return ListTile(
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                  ),
+                                                  title: Text(
+                                                    item,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: 14 * scale,
+                                                      height: 20 / 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  onTap: () =>
+                                                      Navigator.pop(ctx, item),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                              if (chosen != null) {
+                                setState(() => _selectedRange = chosen);
+                                _applyDateRange(chosen);
+                                _loadTransactions();
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: cs.onSurface.withOpacity(0.12),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _selectedRange ?? 'Select range',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14 * scale,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: cs.onSurface,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              SizedBox(width: spacing),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: spacing + 4,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  statusLabel,
-                                  style: GoogleFonts.inter(
-                                    fontSize: smallFs,
-                                    fontWeight: FontWeight.w600,
-                                    color: statusColor,
+                                  Icon(
+                                    Icons.expand_more,
+                                    color: cs.onSurface.withOpacity(0.6),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Text(
-                            invoice,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: bodyFs + 2,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
                             ),
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  fsId,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: bodyFs,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  CupertinoIcons.doc_on_clipboard,
-                                  size: iconSize - 4,
-                                  color: colorScheme.primary,
-                                ),
-                                onPressed: isPlaceholder || fsId == '—'
-                                    ? null
-                                    : () {
-                                        Clipboard.setData(
-                                          ClipboardData(text: fsId),
-                                        );
-                                      },
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Text(
-                            description,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: bodyFs,
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Text(
-                            method,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: bodyFs,
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Credits: $credits',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: bodyFs - 1,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  'Amount: $amount',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.right,
-                                  style: GoogleFonts.inter(
-                                    fontSize: bodyFs - 1,
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                    PopupMenuButton<String>(
-                      icon: Icon(
-                        CupertinoIcons.ellipsis_vertical,
-                        color: colorScheme.primary.withOpacity(0.6),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(
+                        AdaptiveUtils.getHorizontalPadding(width),
                       ),
-                      onSelected: (String value) {
-                        if (isPlaceholder) return;
-
-                        if (value == 'details') {
-                          _showDebugUnavailableOnce(
-                            message: 'Details API not available yet',
-                            alreadyShown: _detailsApiUnavailableShown,
-                            markShown: () => _detailsApiUnavailableShown = true,
-                          );
-
-                          final id = tran.id.trim();
-                          if (id.isNotEmpty) {
-                            context.push(
-                              '/admin/transactions/details/$id',
-                              extra: tran.raw,
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.08),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Overview',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          SizedBox(
+                            height:
+                                AdaptiveUtils.getLeftSectionSpacing(width) + 8,
+                          ),
+                          if (_loading)
+                            const AppShimmer(
+                              width: double.infinity,
+                              height: 120,
+                              radius: 16,
+                            )
+                          else
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final spacing = AdaptiveUtils
+                                        .getLeftSectionSpacing(width) +
+                                    6;
+                                final maxWidth = constraints.maxWidth;
+                                final columns = 2;
+                                final totalSpacing = spacing * (columns - 1);
+                                final itemWidth =
+                                    (maxWidth - totalSpacing) / columns;
+                                final titleFontSize =
+                                    AdaptiveUtils.getTitleFontSize(width) + 1;
+                                final valueFontSize =
+                                    AdaptiveUtils.getSubtitleFontSize(width) + 4;
+                                return Wrap(
+                                  spacing: spacing,
+                                  runSpacing: spacing,
+                                  children: [
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'REVENUE',
+                                      value: _formatInrCompact(revenue),
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.payments,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'SUCCESSFUL',
+                                      value: '${success.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.check_circle,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'PENDING',
+                                      value: '${pending.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.schedule,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'FAILED',
+                                      value: '${failed.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.cancel,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'SUCCESS RATE',
+                                      value: '$successRate%',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.percent,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'TOTAL TXNS',
+                                      value: '$totalTxns',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.receipt_long,
+                                      padding: spacing,
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Transaction Status',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _statusPill(
+                                context,
+                                label: 'Success',
+                                value: '$successRate%',
+                                color: cs.primary,
+                                scale: scale,
+                              ),
+                              const SizedBox(width: 10),
+                              _statusPill(
+                                context,
+                                label: 'Pending',
+                                value:
+                                    '${totalTxns == 0 ? 0 : ((pending.length / totalTxns) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.7),
+                                scale: scale,
+                              ),
+                              const SizedBox(width: 10),
+                              _statusPill(
+                                context,
+                                label: 'Failed',
+                                value:
+                                    '${totalTxns == 0 ? 0 : ((failed.length / totalTxns) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.5),
+                                scale: scale,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              value: totalTxns == 0
+                                  ? 0
+                                  : (success.length / totalTxns).clamp(0, 1),
+                              minHeight: 8,
+                              backgroundColor: cs.onSurface.withOpacity(0.08),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(cs.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: cs.surfaceVariant),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Transactions',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            height:
+                                AdaptiveUtils.getHorizontalPadding(width) * 3.5,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: cs.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              style: GoogleFonts.roboto(
+                                fontSize: 14 * scale,
+                                height: 20 / 14,
+                                color: cs.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Search name, email, or reference',
+                                hintStyle: GoogleFonts.roboto(
+                                  color: cs.onSurface.withOpacity(0.5),
+                                  fontSize: 12 * scale,
+                                  height: 16 / 12,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  size: AdaptiveUtils.getIconSize(width),
+                                  color: cs.onSurface,
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      AdaptiveUtils.getHorizontalPadding(width),
+                                  vertical:
+                                      AdaptiveUtils.getHorizontalPadding(width),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final chosen =
+                                        await showModalBottomSheet<String>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: cs.surface,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(16),
+                                        ),
+                                      ),
+                                      builder: (ctx) {
+                                        final items = [
+                                          'All',
+                                          'Success',
+                                          'Pending',
+                                          'Failed',
+                                        ];
+                                        return SafeArea(
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              16,
+                                              16,
+                                              16,
+                                              8,
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 42,
+                                                  height: 4,
+                                                  decoration: BoxDecoration(
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(2),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Text(
+                                                  'Filter Status',
+                                                  style: GoogleFonts.roboto(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                SizedBox(
+                                                  height: MediaQuery.of(ctx)
+                                                          .size
+                                                          .height *
+                                                      0.7,
+                                                  child: ListView.separated(
+                                                    itemCount: items.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        const SizedBox(
+                                                      height: 8,
+                                                    ),
+                                                    itemBuilder: (_, index) {
+                                                      final item = items[index];
+                                                      return ListTile(
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                        ),
+                                                        title: Text(
+                                                          item,
+                                                          style:
+                                                              GoogleFonts.roboto(
+                                                            fontSize: 14 * scale,
+                                                            height: 20 / 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        onTap: () =>
+                                                            Navigator.pop(
+                                                          ctx,
+                                                          item,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                    if (chosen != null) {
+                                      setState(() => _statusFilter = chosen);
+                                      _loadTransactions();
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.tune,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Filter',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: _loadTransactions,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.refresh,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Refresh',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () => _exportCsv(filteredTransactions),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.upload,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Export',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...filteredTransactions.map((t) {
+                            final name = _transactionName(t);
+                            final dateText = _formatDateTime(t.createdAt);
+                            final amount = _formatAmount(t.amount, t.currency);
+                            final (statusText, statusIcon, statusColor) =
+                                _statusMeta(t.statusLabel, cs);
+                            final mode = _titleCase(
+                              t.raw['paymentMode']?.toString() ?? '—',
                             );
-                          }
-                        } else if (value == 'receipt') {
-                          _showDebugUnavailableOnce(
-                            message: 'Receipt API not available yet',
-                            alreadyShown: _receiptApiUnavailableShown,
-                            markShown: () => _receiptApiUnavailableShown = true,
-                          );
-                        } else if (value == 'copy') {
-                          if (fsId != '—') {
-                            Clipboard.setData(ClipboardData(text: fsId));
-                          }
-                        }
-                      },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<String>>[
-                            PopupMenuItem<String>(
-                              value: 'details',
-                              child: ListTile(
-                                leading: Icon(
-                                  Icons.visibility,
-                                  color: colorScheme.primary,
-                                ),
-                                title: const Text('View details'),
+                            final type = _titleCase(
+                              t.raw['paymentType']?.toString() ?? '—',
+                            );
+                            final reference = t.raw['reference']?.toString() ??
+                                t.reference;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: cs.surface,
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'receipt',
-                              child: ListTile(
-                                leading: Icon(
-                                  Icons.receipt,
-                                  color: colorScheme.primary,
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 40 * scale,
+                                          height: 40 * scale,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: Theme.of(context)
+                                                        .brightness ==
+                                                    Brightness.dark
+                                                ? cs.surfaceVariant
+                                                : Colors.grey.shade50,
+                                            border: Border.all(
+                                              color:
+                                                  cs.outline.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.person_outline,
+                                            size: 18 * scale,
+                                            color: cs.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                name,
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 14 * scale,
+                                                  height: 20 / 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: cs.onSurface,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                dateText,
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 12 * scale,
+                                                  height: 16 / 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: cs.onSurface
+                                                      .withOpacity(0.6),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              amount,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: 14 * scale,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: cs.onSurface,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                            .brightness ==
+                                                        Brightness.dark
+                                                    ? cs.surfaceVariant
+                                                    : Colors.grey.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    statusIcon,
+                                                    size: 14 * scale,
+                                                    color: statusColor,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    statusText,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: 11 * scale,
+                                                      height: 14 / 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: statusColor,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: cs.onSurface
+                                                    .withOpacity(0.12),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Mode',
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 11 * scale,
+                                                    height: 14 / 11,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  mode,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 13 * scale,
+                                                    height: 18 / 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: cs.onSurface
+                                                    .withOpacity(0.12),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Type',
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 11 * scale,
+                                                    height: 14 / 11,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  type,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 13 * scale,
+                                                    height: 18 / 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: cs.onSurface.withOpacity(0.12),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '# Reference',
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 11 * scale,
+                                              height: 14 / 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: cs.onSurface
+                                                  .withOpacity(0.6),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            reference.isEmpty ? '—' : reference,
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 13 * scale,
+                                              height: 18 / 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.onSurface,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                title: const Text('Receipt'),
                               ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'copy',
-                              child: ListTile(
-                                leading: Icon(
-                                  Icons.content_copy,
-                                  color: colorScheme.primary,
-                                ),
-                                title: const Text('Copy reference'),
-                              ),
-                            ),
-                          ],
+                            );
+                          }),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: Container(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF0A0A0A)
+                  : const Color(0xFFF5F5F7),
+              child: const AdminHomeAppBar(
+                title: 'Transactions',
+                leadingIcon: Icons.receipt_long,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _statBox(
-    String title,
-    String value,
-    String subtitle,
-    double bodyFs,
-    double smallFs,
-    ColorScheme colorScheme,
-    double spacing, {
-    required bool loading,
-  }) {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacing / 2),
-        child: Column(
-          children: [
-            loading
-                ? const AppShimmer(width: 120, height: 12, radius: 6)
-                : Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: smallFs,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-            const SizedBox(height: 6),
-            loading
-                ? const AppShimmer(width: 110, height: 16, radius: 8)
-                : Text(
-                    value,
-                    style: GoogleFonts.inter(
-                      fontSize: bodyFs,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
-            if (subtitle.isNotEmpty)
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: smallFs - 1,
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

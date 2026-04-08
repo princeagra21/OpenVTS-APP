@@ -7,14 +7,15 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_drivers_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_documents_tab.dart';
-import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_profile_box.dart';
 import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_profile_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_users_tab.dart';
+import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdminDriverDetailsScreen extends StatefulWidget {
   final String id;
@@ -268,32 +269,62 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(w);
-    final titleFs = AdaptiveUtils.getTitleFontSize(w);
-    final bodyFs = titleFs - 1;
-    final smallFs = titleFs - 3;
-    final subtitle =
-        (_details?.fullName ?? _details?.username ?? 'Driver Details').trim();
-    final initialsSource = (_details?.initials ?? '--').trim();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bodyFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
+    final smallFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 8.0
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 10.0
+            : 12.0;
 
-    return AppLayout(
-      title: 'DRIVER',
-      subtitle: subtitle.isEmpty ? 'Driver Details' : subtitle,
-      showLeftAvatar: false,
-      leftAvatarText: initialsSource.isEmpty ? '--' : initialsSource,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final headerName =
+        (_details?.fullName ?? _details?.username ?? 'Driver Details').trim();
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
         children: [
-          AdminDriverProfileBox(details: _details, loading: _loadingDetails),
-          SizedBox(height: padding),
-          NavigateBox(
-            selectedTab: _selectedTab,
-            tabs: _tabs,
-            onTabSelected: _selectTab,
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              horizontalPadding,
+              84,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NavigateBox(
+                  selectedTab: _selectedTab,
+                  tabs: _tabs,
+                  title: 'Driver mobile screens',
+                  subtitle: 'Switch between the driver screens below.',
+                  onTabSelected: _selectTab,
+                ),
+                const SizedBox(height: 4),
+                _buildTabContent(bodyFs, smallFs),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          SizedBox(height: padding),
-          _buildTabContent(bodyFs, smallFs),
+          Positioned(
+            left: horizontalPadding,
+            right: horizontalPadding,
+            top: 0,
+            child: AdminHomeAppBar(
+              title: headerName.isEmpty ? 'Driver Details' : headerName,
+              leadingIcon: Symbols.badge,
+              onClose: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -302,25 +333,45 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
   Widget _buildTabContent(double bodyFs, double smallFs) {
     switch (_selectedTab) {
       case 'Documents':
-        return AdminDriverDocumentsTab(
-          items: _documents,
-          loading: _loadingDocuments,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminDriverDocumentsTab(
+              items: _documents,
+              loading: _loadingDocuments,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Users':
-        return AdminDriverUsersTab(
-          items: _users,
-          loading: _loadingUsers,
-          bodyFontSize: bodyFs,
-          smallFontSize: smallFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminDriverUsersTab(
+              items: _users,
+              loading: _loadingUsers,
+              bodyFontSize: bodyFs,
+              smallFontSize: smallFs,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
       case 'Profile':
       default:
-        return AdminDriverProfileTab(
-          details: _details,
-          loading: _loadingDetails,
-          bodyFontSize: bodyFs,
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminDriverProfileTab(
+              details: _details,
+              loading: _loadingDetails,
+              bodyFontSize: bodyFs,
+              driverId: widget.id,
+              onRefresh: _loadDetails,
+            ),
+            const SizedBox(height: 24),
+          ],
         );
     }
   }

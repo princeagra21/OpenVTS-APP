@@ -1,8 +1,12 @@
-// screens/plans/edit_plan_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_pricing_plans_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 class EditPlanScreen extends StatefulWidget {
   final Map<String, dynamic> plan;
@@ -17,26 +21,36 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _currencyController = TextEditingController();
+
+  final CancelToken _token = CancelToken();
+  ApiClient? _apiClient;
+  AdminPricingPlansRepository? _repo;
+
+  bool _submitting = false;
 
   late Map<String, dynamic> plan;
+
+  AdminPricingPlansRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= AdminPricingPlansRepository(api: _apiClient!);
+    return _repo!;
+  }
 
   @override
   void initState() {
     super.initState();
-    plan = widget.plan; // Now use widget.plan instead of GoRouterState
+    plan = widget.plan;
 
-    // Populate controllers from widget.plan
-    _nameController.text = plan['name'];
-    _descriptionController.text = plan['description'];
-
-    final priceStr = plan['price'].toString().replaceAll('₹', '').replaceAll(',', '').trim();
-    _priceController.text = priceStr;
-
-    final durationStr = plan['duration'].toString().split(' ')[0];
-    _durationController.text = durationStr;
+    _nameController.text = (plan['name'] ?? '').toString();
+    _currencyController.text = (plan['currency'] ?? '').toString();
+    _priceController.text = (plan['price'] ?? '').toString();
+    _durationController.text = (plan['durationDays'] ?? '').toString();
 
     _priceController.addListener(() => setState(() {}));
     _durationController.addListener(() => setState(() {}));
@@ -44,11 +58,57 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
 
   @override
   void dispose() {
+    _token.cancel('EditPlanScreen disposed');
     _nameController.dispose();
-    _descriptionController.dispose();
     _priceController.dispose();
     _durationController.dispose();
+    _currencyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final id = (plan['id'] ?? '').toString();
+    final name = _nameController.text.trim();
+    final currency = _currencyController.text.trim();
+    final price = num.tryParse(_priceController.text.trim());
+    final durationDays = int.tryParse(_durationController.text.trim());
+
+    if (id.isEmpty || price == null || durationDays == null || currency.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid price, duration, currency.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    final result = await _repoOrCreate().updatePlan(
+      id: id,
+      name: name,
+      durationDays: durationDays,
+      price: price,
+      currency: currency,
+      cancelToken: _token,
+    );
+
+    if (!mounted) return;
+
+    result.when(
+      success: (_) {
+        setState(() => _submitting = false);
+        Navigator.pop(context, true);
+      },
+      failure: (err) {
+        setState(() => _submitting = false);
+        final message = err is ApiException
+            ? err.message
+            : 'Failed to update plan.';
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
   }
 
   @override
@@ -57,28 +117,13 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
 
-    final f = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
-
-    String formattedPrice = '₹0.00';
-    String formattedDuration = '0 days';
-    String expiryDate = 'N/A';
-
-    if (_priceController.text.isNotEmpty) {
-      try {
-        final price = double.parse(_priceController.text);
-        formattedPrice = f.format(price);
-      } catch (_) {}
-    }
-
-    if (_durationController.text.isNotEmpty) {
-      try {
-        final duration = int.parse(_durationController.text);
-        formattedDuration = '$duration days';
-        final currentDate = DateTime(2025, 12, 25);
-        final expiry = currentDate.add(Duration(days: duration));
-        expiryDate = DateFormat('MMM d, yyyy').format(expiry);
-      } catch (_) {}
-    }
+    final currency = _currencyController.text.trim();
+    final priceText = _priceController.text.trim().isEmpty
+        ? '0'
+        : _priceController.text.trim();
+    final durationText = _durationController.text.trim().isEmpty
+        ? '0'
+        : _durationController.text.trim();
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -88,13 +133,12 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── HEADER ─────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Edit Plan",
-                    style: GoogleFonts.inter(
+                    'Edit Plan',
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -102,13 +146,11 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  )
+                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // ─── FORM ───────────────────────────────
               Expanded(
                 child: Form(
                   key: _formKey,
@@ -116,57 +158,47 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                     child: Column(
                       children: [
                         StylishTextField(
-                          label: "Plan Name",
-                          hint: "e.g. Annual Basic",
+                          label: 'Plan Name',
+                          hint: 'e.g. Annual Basic',
                           controller: _nameController,
                           prefixIcon: Icons.label_rounded,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Description",
-                          hint: "e.g. Essential tracking",
-                          controller: _descriptionController,
-                          prefixIcon: Icons.description_rounded,
+                          label: 'Currency',
+                          hint: 'e.g. INR',
+                          controller: _currencyController,
+                          prefixIcon: Icons.currency_exchange,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
-                          maxLines: 3,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Price (INR)",
-                          hint: "e.g. 1499",
+                          label: 'Price',
+                          hint: 'e.g. 1499',
                           controller: _priceController,
-                          prefixIcon: Icons.currency_rupee_rounded,
+                          prefixIcon: Icons.attach_money,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                           keyboardType: TextInputType.number,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Duration (days)",
-                          hint: "e.g. 365",
+                          label: 'Duration (days)',
+                          hint: 'e.g. 365',
                           controller: _durationController,
                           prefixIcon: Icons.calendar_today_rounded,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                           keyboardType: TextInputType.number,
                         ),
-
                         const SizedBox(height: 32),
-
-                        // ─── PREVIEW ────────────────────────────
                         Container(
                           padding: const EdgeInsets.all(25),
                           decoration: BoxDecoration(
@@ -174,15 +206,17 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: Column(
                             children: [
                               Text(
-                                "Preview",
-                                style: GoogleFonts.inter(
+                                'Preview',
+                                style: GoogleFonts.roboto(
                                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                                   fontWeight: FontWeight.bold,
                                   color: cs.onSurface,
@@ -190,9 +224,10 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Quick check before saving.",
-                                style: GoogleFonts.inter(
-                                  fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
+                                'Quick check before saving.',
+                                style: GoogleFonts.roboto(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(w) - 2,
                                   color: cs.onSurface.withOpacity(0.6),
                                 ),
                               ),
@@ -206,53 +241,52 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _previewRow("Price", formattedPrice, cs),
+                                    _previewRow(
+                                      'Price',
+                                      '${currency.isNotEmpty ? '$currency ' : ''}$priceText',
+                                      cs,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _previewRow("Duration", formattedDuration, cs),
-                                    const SizedBox(height: 8),
-                                    _previewRow("If installed today", "Expiry: $expiryDate", cs),
+                                    _previewRow(
+                                      'Duration',
+                                      '$durationText days',
+                                      cs,
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 32),
-
-                        // ─── ACTION BUTTONS ─────────────────
                         Row(
                           children: [
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: _submitting
+                                    ? null
+                                    : () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(color: cs.primary.withOpacity(0.2)),
+                                    side: BorderSide(
+                                      color: cs.primary.withOpacity(0.2),
+                                    ),
                                   ),
                                 ),
                                 child: Text(
-                                  "Cancel",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  'Cancel',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    // UPDATE LOGIC
-                                    // For example, update the plan map and pop
-                                    plan['name'] = _nameController.text;
-                                    plan['description'] = _descriptionController.text;
-                                    plan['price'] = formattedPrice;
-                                    plan['duration'] = formattedDuration;
-                                    Navigator.pop(context);
-                                  }
-                                },
+                                onPressed: _submitting ? null : _submit,
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
@@ -260,8 +294,10 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  "Update Plan",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  _submitting ? 'Updating...' : 'Update Plan',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -272,7 +308,7 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20,)
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -286,14 +322,14 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: 12,
             color: cs.onSurface.withOpacity(0.8),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -304,9 +340,6 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
   }
 }
 
-/// ───────────────────────────────────────────────
-/// STYLISH TEXT FIELD (UPDATED)
-/// ───────────────────────────────────────────────
 class StylishTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -339,8 +372,10 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
+          style: GoogleFonts.roboto(
+            fontWeight: FontWeight.w600,
+            fontSize: fs,
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -352,7 +387,7 @@ class StylishTextField extends StatelessWidget {
             fillColor: cs.surface,
             filled: true,
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.roboto(
               color: cs.onSurface.withOpacity(0.6),
               fontSize: fs,
             ),
@@ -362,8 +397,7 @@ class StylishTextField extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  BorderSide(color: cs.outline.withOpacity(0.3)),
+              borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),

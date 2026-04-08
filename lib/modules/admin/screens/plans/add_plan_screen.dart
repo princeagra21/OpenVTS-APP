@@ -1,8 +1,12 @@
-// screens/plans/add_plan_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_pricing_plans_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart' show AdaptiveUtils;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 class AddPlanScreen extends StatefulWidget {
   const AddPlanScreen({super.key});
@@ -15,24 +19,84 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _currencyController = TextEditingController();
+
+  final CancelToken _token = CancelToken();
+  ApiClient? _apiClient;
+  AdminPricingPlansRepository? _repo;
+
+  bool _submitting = false;
+
+  AdminPricingPlansRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= AdminPricingPlansRepository(api: _apiClient!);
+    return _repo!;
+  }
 
   @override
   void initState() {
     super.initState();
     _priceController.addListener(() => setState(() {}));
     _durationController.addListener(() => setState(() {}));
+    _currencyController.text = 'INR';
   }
 
   @override
   void dispose() {
+    _token.cancel('AddPlanScreen disposed');
     _nameController.dispose();
-    _descriptionController.dispose();
     _priceController.dispose();
     _durationController.dispose();
+    _currencyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final name = _nameController.text.trim();
+    final currency = _currencyController.text.trim();
+    final price = num.tryParse(_priceController.text.trim());
+    final durationDays = int.tryParse(_durationController.text.trim());
+
+    if (price == null || durationDays == null || currency.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid price, duration, currency.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    final result = await _repoOrCreate().createPlan(
+      name: name,
+      durationDays: durationDays,
+      price: price,
+      currency: currency,
+      cancelToken: _token,
+    );
+
+    if (!mounted) return;
+
+    result.when(
+      success: (_) {
+        setState(() => _submitting = false);
+        Navigator.pop(context, true);
+      },
+      failure: (err) {
+        setState(() => _submitting = false);
+        final message = err is ApiException
+            ? err.message
+            : 'Failed to create plan.';
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
   }
 
   @override
@@ -41,28 +105,13 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
 
-    final f = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
-
-    String formattedPrice = '₹0.00';
-    String formattedDuration = '0 days';
-    String expiryDate = 'N/A';
-
-    if (_priceController.text.isNotEmpty) {
-      try {
-        final price = double.parse(_priceController.text);
-        formattedPrice = f.format(price);
-      } catch (_) {}
-    }
-
-    if (_durationController.text.isNotEmpty) {
-      try {
-        final duration = int.parse(_durationController.text);
-        formattedDuration = '$duration days';
-        final currentDate = DateTime(2025, 12, 25);
-        final expiry = currentDate.add(Duration(days: duration));
-        expiryDate = DateFormat('MMM d, yyyy').format(expiry);
-      } catch (_) {}
-    }
+    final currency = _currencyController.text.trim();
+    final priceText = _priceController.text.trim().isEmpty
+        ? '0'
+        : _priceController.text.trim();
+    final durationText = _durationController.text.trim().isEmpty
+        ? '0'
+        : _durationController.text.trim();
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -72,13 +121,12 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── HEADER ─────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Add Plan",
-                    style: GoogleFonts.inter(
+                    'Add Plan',
+                    style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -86,13 +134,11 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  )
+                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // ─── FORM ───────────────────────────────
               Expanded(
                 child: Form(
                   key: _formKey,
@@ -100,57 +146,47 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                     child: Column(
                       children: [
                         StylishTextField(
-                          label: "Plan Name",
-                          hint: "e.g. Annual Basic",
+                          label: 'Plan Name',
+                          hint: 'e.g. Annual Basic',
                           controller: _nameController,
                           prefixIcon: Icons.label_rounded,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Description",
-                          hint: "e.g. Essential tracking",
-                          controller: _descriptionController,
-                          prefixIcon: Icons.description_rounded,
+                          label: 'Currency',
+                          hint: 'e.g. INR',
+                          controller: _currencyController,
+                          prefixIcon: Icons.currency_exchange,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
-                          maxLines: 3,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Price (INR)",
-                          hint: "e.g. 1499",
+                          label: 'Price',
+                          hint: 'e.g. 1499',
                           controller: _priceController,
-                          prefixIcon: Icons.currency_rupee_rounded,
+                          prefixIcon: Icons.attach_money,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                           keyboardType: TextInputType.number,
                         ),
-
                         const SizedBox(height: 16),
-
                         StylishTextField(
-                          label: "Duration (days)",
-                          hint: "e.g. 365",
+                          label: 'Duration (days)',
+                          hint: 'e.g. 365',
                           controller: _durationController,
                           prefixIcon: Icons.calendar_today_rounded,
                           validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                              v == null || v.isEmpty ? 'Required' : null,
                           width: w,
                           keyboardType: TextInputType.number,
                         ),
-
                         const SizedBox(height: 32),
-
-                        // ─── PREVIEW ────────────────────────────
                         Container(
                           padding: const EdgeInsets.all(25),
                           decoration: BoxDecoration(
@@ -158,15 +194,17 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: Column(
                             children: [
                               Text(
-                                "Preview",
-                                style: GoogleFonts.inter(
+                                'Preview',
+                                style: GoogleFonts.roboto(
                                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                                   fontWeight: FontWeight.bold,
                                   color: cs.onSurface,
@@ -174,9 +212,10 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Quick check before saving.",
-                                style: GoogleFonts.inter(
-                                  fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
+                                'Quick check before saving.',
+                                style: GoogleFonts.roboto(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(w) - 2,
                                   color: cs.onSurface.withOpacity(0.6),
                                 ),
                               ),
@@ -190,47 +229,52 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _previewRow("Price", formattedPrice, cs),
+                                    _previewRow(
+                                      'Price',
+                                      '${currency.isNotEmpty ? '$currency ' : ''}$priceText',
+                                      cs,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _previewRow("Duration", formattedDuration, cs),
-                                    const SizedBox(height: 8),
-                                    _previewRow("If installed today", "Expiry: $expiryDate", cs),
+                                    _previewRow(
+                                      'Duration',
+                                      '$durationText days',
+                                      cs,
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 32),
-
-                        // ─── ACTION BUTTONS ─────────────────
                         Row(
                           children: [
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: _submitting
+                                    ? null
+                                    : () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(color: cs.primary.withOpacity(0.2)),
+                                    side: BorderSide(
+                                      color: cs.primary.withOpacity(0.2),
+                                    ),
                                   ),
                                 ),
                                 child: Text(
-                                  "Cancel",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  'Cancel',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    // SUBMIT LOGIC
-                                  }
-                                },
+                                onPressed: _submitting ? null : _submit,
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(36),
                                   shape: RoundedRectangleBorder(
@@ -238,8 +282,10 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  "Save Plan",
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                  _submitting ? 'Saving...' : 'Save Plan',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -250,7 +296,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20,)
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -264,14 +310,14 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: 12,
             color: cs.onSurface.withOpacity(0.8),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.roboto(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -282,9 +328,6 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
   }
 }
 
-/// ───────────────────────────────────────────────
-/// STYLISH TEXT FIELD (UPDATED)
-/// ───────────────────────────────────────────────
 class StylishTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -317,8 +360,10 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
+          style: GoogleFonts.roboto(
+            fontWeight: FontWeight.w600,
+            fontSize: fs,
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -330,7 +375,7 @@ class StylishTextField extends StatelessWidget {
             fillColor: cs.surface,
             filled: true,
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: GoogleFonts.roboto(
               color: cs.onSurface.withOpacity(0.6),
               fontSize: fs,
             ),
@@ -340,8 +385,7 @@ class StylishTextField extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  BorderSide(color: cs.outline.withOpacity(0.3)),
+              borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),

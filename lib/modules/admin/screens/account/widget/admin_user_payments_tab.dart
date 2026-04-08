@@ -1,6 +1,6 @@
 import 'package:fleet_stack/core/models/admin_transaction_item.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_details_ui.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,384 +18,360 @@ class AdminUserPaymentsTab extends StatelessWidget {
     required this.smallFontSize,
   });
 
-  String _formatAmount(double amount, {String currency = 'INR'}) {
-    final hasDecimals = amount % 1 != 0;
-    final number = hasDecimals
-        ? amount.toStringAsFixed(2)
-        : amount.toStringAsFixed(0);
-    return '$currency $number';
-  }
-
-  String _formatItemAmount(AdminTransactionItem item) {
-    final amount = item.amount;
-    if (amount == null) return '—';
-    return _formatAmount(
-      amount,
-      currency: safeText(item.currency, fallback: 'INR'),
-    );
-  }
-
-  bool _isOnline(AdminTransactionItem item) {
-    final method = item.method.toLowerCase();
-    return method.contains('stripe') ||
-        method.contains('razor') ||
-        method.contains('gateway') ||
-        method.contains('card') ||
-        method.contains('online');
-  }
-
-  DateTime? _parseDate(String raw) => DateTime.tryParse(raw)?.toLocal();
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final showNoData = !loading && items.isEmpty;
+    if (loading) {
+      return const AppShimmer(width: double.infinity, height: 320, radius: 12);
+    }
+    final cs = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth) + 4;
+    final double titleSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double scale = AdaptiveUtils.getTitleFontSize(screenWidth) / 14;
+    final double headerSize = 18 * scale;
 
-    final now = DateTime.now();
-    double todaySettled = 0;
-    double monthSettled = 0;
-    double online = 0;
-    double manual = 0;
-
-    for (final item in items) {
-      final amount = item.amount ?? 0;
-      final date = _parseDate(item.createdAt);
-      final isSuccess = item.normalizedStatus == 'success';
-
-      if (isSuccess && date != null) {
-        if (date.year == now.year && date.month == now.month) {
-          monthSettled += amount;
-          if (date.day == now.day) {
-            todaySettled += amount;
-          }
-        }
-      }
-
-      if (_isOnline(item)) {
-        online += amount;
-      } else {
-        manual += amount;
+    int success = 0;
+    int pending = 0;
+    int failed = 0;
+    for (final t in items) {
+      final s = t.normalizedStatus.toLowerCase();
+      if (s.contains('success')) {
+        success++;
+      } else if (s.contains('pending') || s.contains('processing')) {
+        pending++;
+      } else if (s.contains('fail') || s.contains('decline')) {
+        failed++;
       }
     }
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _statBox(
-                    context,
-                    'Collected Today',
-                    loading ? '—' : _formatAmount(todaySettled),
-                    'Settled only',
-                  ),
-                  _statBox(
-                    context,
-                    'This Month',
-                    loading ? '—' : _formatAmount(monthSettled),
-                    'Settled only',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _statBox(
-                    context,
-                    'Online',
-                    loading ? '—' : _formatAmount(online),
-                    'Gateway / card',
-                  ),
-                  _statBox(
-                    context,
-                    'Manual',
-                    loading ? '—' : _formatAmount(manual),
-                    'Bank / offline',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'History',
-                          style: GoogleFonts.inter(
-                            fontSize: bodyFontSize + 2,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        if (loading)
-                          const WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 8),
-                              child: AppShimmer(
-                                width: 14,
-                                height: 14,
-                                radius: 7,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${items.length} items',
-                    style: GoogleFonts.inter(
-                      fontSize: bodyFontSize,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Divider(color: colorScheme.onSurface.withValues(alpha: 0.1)),
-              const SizedBox(height: 12),
-              if (loading)
-                Column(
-                  children: List<Widget>.generate(
-                    3,
-                    (_) => _historySkeleton(colorScheme),
-                  ),
-                ),
-              if (showNoData)
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'No payments found',
-                        style: GoogleFonts.inter(
-                          fontSize: bodyFontSize,
-                          color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'This user has no payment history yet.',
-                        style: GoogleFonts.inter(
-                          fontSize: smallFontSize + 1,
-                          color: colorScheme.onSurface.withValues(alpha: 0.72),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (!showNoData && !loading)
-                Column(
-                  children: items
-                      .map(
-                        (payment) => _historyRow(context, payment, colorScheme),
-                      )
-                      .toList(),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statBox(
-    BuildContext context,
-    String title,
-    String content,
-    String subtitle,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Container(
-        height: 108,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: bodyFontSize - 1,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Text(
-                content,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFontSize + 2,
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                  height: 1.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: GoogleFonts.inter(
-                fontSize: smallFontSize,
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _historySkeleton(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.05),
-          ),
-        ),
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppShimmer(width: double.infinity, height: 14, radius: 8),
-                SizedBox(height: 6),
-                AppShimmer(width: 160, height: 12, radius: 8),
-              ],
-            ),
-          ),
-          SizedBox(width: 12),
-          AppShimmer(width: 70, height: 16, radius: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _historyRow(
-    BuildContext context,
-    AdminTransactionItem payment,
-    ColorScheme colorScheme,
-  ) {
-    final description = safeText(
-      payment.description.isNotEmpty ? payment.description : payment.method,
-    );
-    final amount = _formatItemAmount(payment);
-    final amountColor = payment.normalizedStatus == 'failed'
-        ? colorScheme.error
-        : colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.05),
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 12.0;
+              final cardWidth = (constraints.maxWidth - (gap * 2)) / 3;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Successful',
+                    value: loading ? '—' : success.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Pending',
+                    value: loading ? '—' : pending.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Failed',
+                    value: loading ? '—' : failed.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  description,
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFontSize,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  formatDateLabel(payment.createdAt),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withValues(alpha: 0.54),
+                  'Recent Transactions',
+                  style: GoogleFonts.roboto(
+                    fontSize: headerSize,
+                    height: 24 / 18,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
                   ),
                 ),
+                const SizedBox(height: 12),
+                if (loading)
+                  Text(
+                    'Loading...',
+                    style: GoogleFonts.roboto(
+                      fontSize: labelSize,
+                      color: cs.onSurface.withOpacity(0.6),
+                    ),
+                  )
+                else if (items.isEmpty)
+                  Text(
+                    'No transactions found.',
+                    style: GoogleFonts.roboto(
+                      fontSize: labelSize,
+                      color: cs.onSurface.withOpacity(0.6),
+                    ),
+                  )
+                else
+                  Column(
+                    children: items
+                        .map(
+                          (t) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              children: [
+                                _transactionRow(context, t),
+                                const SizedBox(height: 10),
+                                Divider(
+                                  height: 1,
+                                  color: cs.onSurface.withOpacity(0.08),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCard(
+    BuildContext context, {
+    required double width,
+    required String label,
+    required String value,
+    required double labelSize,
+    required double valueSize,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                amount,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: amountColor,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.roboto(
+                    fontSize: labelSize - 1,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              statusChip(context, payment.statusLabel, smallFontSize),
+              const SizedBox(width: 6),
+              Icon(
+                _iconFor(label),
+                size: 16,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: valueSize + 4,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconFor(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('success')) return Icons.check_circle_outline;
+    if (l.contains('pending')) return Icons.schedule_outlined;
+    if (l.contains('fail')) return Icons.cancel_outlined;
+    return Icons.help_outline;
+  }
+
+  Widget _transactionRow(BuildContext context, AdminTransactionItem t) {
+    final cs = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double valueSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final name = _safeText(
+      t.raw['fromUser'] is Map
+          ? (t.raw['fromUser'] as Map)['name']?.toString()
+          : null,
+    );
+    final date = _formatDateTimeWithSeconds(t.createdAt);
+    final modeRaw = t.method;
+    final mode = _titleCase(modeRaw.replaceAll('_', ' '));
+    final reference = _safeText(t.reference);
+    final amountText = _formatAmount(t.amount, currency: t.currency);
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            date,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              color: cs.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      amountText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: valueSize + 2,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? cs.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        t.statusLabel,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      mode.isEmpty ? '—' : mode,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: valueSize + 1,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      reference,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: labelSize,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: labelSize,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatDateTimeWithSeconds(String raw) {
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    final local = dt.toLocal();
+    final m = local.month.toString();
+    final d = local.day.toString();
+    final y = local.year.toString();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final second = local.second.toString().padLeft(2, '0');
+    final amPm = local.hour >= 12 ? 'PM' : 'AM';
+    return '$m/$d/$y, $hour:$minute:$second $amPm';
+  }
+
+  String _titleCase(String input) {
+    return input
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .map((p) => p[0].toUpperCase() + p.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  String _safeText(String? value, {String fallback = '—'}) {
+    final trimmed = (value ?? '').trim();
+    if (trimmed.isEmpty || trimmed.toLowerCase() == 'null') return fallback;
+    return trimmed;
+  }
+
+  String _formatAmount(double? amount, {String currency = 'INR'}) {
+    if (amount == null) return '—';
+    final hasDecimals = amount % 1 != 0;
+    final number =
+        hasDecimals ? amount.toStringAsFixed(2) : amount.toStringAsFixed(0);
+    return '$currency $number';
   }
 }

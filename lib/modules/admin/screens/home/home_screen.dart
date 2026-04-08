@@ -1,27 +1,21 @@
-// lib/screens/home/home_screen.dart
-// -----------------------------
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_dashboard_summary.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_dashboard_repository.dart';
-import 'package:fleet_stack/core/repositories/admin_vehicle_repository.dart';
+import 'package:fleet_stack/core/repositories/admin_profile_repository.dart';
+import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/main.dart';
-import 'package:fleet_stack/modules/admin/components/card/actions_buttons.dart';
-import 'package:fleet_stack/modules/admin/components/card/fleet_card.dart';
-import 'package:fleet_stack/modules/admin/components/card/recent_activity_box.dart';
-import 'package:fleet_stack/modules/admin/components/card/search_bar.dart';
-import 'package:fleet_stack/modules/admin/components/card/vehicle_status_box.dart';
-import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
-import '../../layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/components/admin/update_password_screen.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,462 +25,845 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedLanguage = 'EN';
-  AdminDashboardSummary? _summary;
-  List<AdminVehiclePreviewItem>? _vehiclePreview;
-  bool _loading = false;
-  bool _loadingVehiclesPreview = false;
-  bool _errorShown = false;
-  bool _vehiclesErrorShown = false;
-  CancelToken? _token;
-  CancelToken? _vehiclesToken;
+  CancelToken? _badgeToken;
+  Timer? _badgeRefreshTimer;
+  ApiClient? _apiClient;
+  RoleNotificationsRepository? _repo;
+  int _unreadCount = 0;
+  AdminProfile? _profile;
+  bool _loadingProfile = false;
+  CancelToken? _profileToken;
+  AdminProfileRepository? _profileRepo;
 
-  ApiClient? _api;
-  AdminDashboardRepository? _repo;
-  AdminVehicleRepository? _vehicleRepo;
+  String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSummary();
-    _loadVehiclePreview();
+  RoleNotificationsRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= RoleNotificationsRepository(
+      api: _apiClient!,
+      pathPrefix: '/admin/notifications',
+    );
+    return _repo!;
   }
 
-  @override
-  void dispose() {
-    _token?.cancel('Admin home disposed');
-    _vehiclesToken?.cancel('Admin home disposed');
-    super.dispose();
+  AdminProfileRepository _profileRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _profileRepo ??= AdminProfileRepository(api: _apiClient!);
+    return _profileRepo!;
   }
 
-  /// Confirmed API source (FleetStack-API-Reference.md):
-  /// - GET /admin/dashboard/summary?rk=0[&currency=INR]
-  /// Keys used:
-  /// - totals.totalVehicles
-  /// - totals.totalUsers
-  /// - expiry.thisMonth
-  /// - expired / expiredCount (if present)
-  /// - vehicleLiveStatus.running/stop/inactive/noData
-  Future<void> _loadSummary() async {
-    _token?.cancel('Reload dashboard summary');
+  Future<void> _loadUnreadCount() async {
+    _badgeToken?.cancel('Reload home notifications badge');
     final token = CancelToken();
-    _token = token;
+    _badgeToken = token;
+
+    _repo = null;
+    final result = await _repoOrCreate().getNotifications(cancelToken: token);
+    if (!mounted) return;
+
+    result.when(
+      success: (items) {
+        final unread = items.where((item) => !item.isRead).length;
+        if (!mounted) return;
+        setState(() => _unreadCount = unread);
+      },
+      failure: (_) {
+        if (!mounted) return;
+        setState(() => _unreadCount = 0);
+      },
+    );
+  }
+
+  void _startBadgeRefresh() {
+    _badgeRefreshTimer?.cancel();
+    _badgeRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _loadUnreadCount();
+    });
+  }
+
+  Future<void> _loadProfile() async {
+    _profileToken?.cancel('Reload profile');
+    final token = CancelToken();
+    _profileToken = token;
 
     if (!mounted) return;
-    setState(() => _loading = true);
+    setState(() => _loadingProfile = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
-      _repo ??= AdminDashboardRepository(api: _api!);
-
-      final res = await _repo!.getAdminDashboardSummary(cancelToken: token);
-      if (!mounted) return;
-
-      res.when(
-        success: (data) {
-          if (kDebugMode) {
-            debugPrint(
-              '[Admin Home] GET /admin/dashboard/summary status=2xx '
-              'vehicles=${data.totalVehicles} users=${data.totalUsers} '
-              'expiring30d=${data.expiring30d} expired=${data.expired} '
-              'running=${data.running} stop=${data.stop} '
-              'notWorking=${data.notWorking48h} noData=${data.noData}',
-            );
-          }
-
-          if (!mounted) return;
-          setState(() {
-            _summary = data;
-            _loading = false;
-            _errorShown = false;
-          });
-        },
-        failure: (error) {
-          if (kDebugMode) {
-            final status = error is ApiException ? error.statusCode : null;
-            debugPrint(
-              '[Admin Home] GET /admin/dashboard/summary status=${status ?? 'error'}',
-            );
-          }
-
-          if (!mounted) return;
-          setState(() {
-            _summary = null;
-            _loading = false;
-          });
-
-          if (_errorShown) return;
-          _errorShown = true;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Couldn't load dashboard summary.")),
-          );
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _summary = null;
-        _loading = false;
-      });
-      if (_errorShown) return;
-      _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load dashboard summary.")),
-      );
-    }
-  }
-
-  Future<void> _loadVehiclePreview() async {
-    _vehiclesToken?.cancel('Reload vehicle preview');
-    final token = CancelToken();
-    _vehiclesToken = token;
-
-    if (!mounted) return;
-    setState(() => _loadingVehiclesPreview = true);
-
-    try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
-      _vehicleRepo ??= AdminVehicleRepository(api: _api!);
-
-      final listRes = await _vehicleRepo!.getVehiclePreviewList(
-        limit: 5,
+      final res = await _profileRepoOrCreate().getMyProfile(
         cancelToken: token,
       );
       if (!mounted) return;
 
-      await listRes.when(
-        success: (items) async {
-          var merged = items;
-
-          if (items.isNotEmpty) {
-            final ids = items
-                .map((e) => e.id.trim())
-                .where((e) => e.isNotEmpty)
-                .toList();
-            final imeis = items
-                .map((e) => e.imei.trim())
-                .where((e) => e.isNotEmpty)
-                .toList();
-
-            final liveRes = await _vehicleRepo!.getVehicleLiveStatus(
-              vehicleIds: ids,
-              imeis: imeis,
-              cancelToken: token,
-            );
-
-            merged = liveRes.when(
-              success: (statusMap) {
-                return items.map((item) {
-                  final byId = statusMap[item.id.trim()];
-                  final byImei = statusMap[item.imei.trim()];
-                  return item.withLiveStatus(byId ?? byImei);
-                }).toList();
-              },
-              failure: (_) => items,
-            );
-          }
-
-          if (kDebugMode) {
-            debugPrint(
-              '[Admin Home] GET /admin/vehicles + /admin/map-telemetry '
-              'status=2xx count=${merged.length}',
-            );
-          }
-
+      res.when(
+        success: (profile) {
           if (!mounted) return;
           setState(() {
-            _vehiclePreview = merged;
-            _loadingVehiclesPreview = false;
-            _vehiclesErrorShown = false;
+            _profile = profile;
+            _loadingProfile = false;
           });
         },
-        failure: (error) async {
-          if (kDebugMode) {
-            final status = error is ApiException ? error.statusCode : null;
-            debugPrint(
-              '[Admin Home] GET /admin/vehicles status=${status ?? 'error'}',
-            );
+        failure: (error) {
+          if (error is ApiException &&
+              (error.statusCode == 401 || error.statusCode == 403)) {
+            if (!mounted) return;
+            setState(() {
+              _profile = null;
+              _loadingProfile = false;
+            });
+            return;
           }
-
           if (!mounted) return;
           setState(() {
-            _vehiclePreview = null;
-            _loadingVehiclesPreview = false;
+            _profile = null;
+            _loadingProfile = false;
           });
-
-          if (_vehiclesErrorShown) return;
-          _vehiclesErrorShown = true;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Couldn't load vehicles preview.")),
-          );
         },
       );
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _vehiclePreview = null;
-        _loadingVehiclesPreview = false;
+        _profile = null;
+        _loadingProfile = false;
       });
-      if (_vehiclesErrorShown) return;
-      _vehiclesErrorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load vehicles preview.")),
-      );
     }
   }
 
-  /// Stylish popup (top-right card). Uses showGeneralDialog for custom animation.
-  Future<void> _showLanguagePicker(BuildContext context) async {
-    final chosen = await showGeneralDialog<String?>(
+  String _initials(String name, String username) {
+    final source = name.isNotEmpty ? name : username;
+    final clean = source.replaceAll('@', ' ').trim();
+    if (clean.isEmpty) return '--';
+    final parts =
+        clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return '--';
+    return parts.take(2).map((e) => e[0]).join().toUpperCase();
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
       context: context,
-      barrierLabel: "Language",
-      barrierDismissible: true,
-      barrierColor: Colors.black45,
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (ctx, anim1, anim2) {
-        // pageBuilder must return something — actual UI is in transitionBuilder
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (ctx, anim, secondaryAnim, child) {
-        final theme = Theme.of(context);
-        // Position the popup near the top-right .
-        return SafeArea(
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 72.0, right: 14.0),
-              child: FadeTransition(
-                opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.97, end: 1.0).animate(
-                    CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-                  ),
-                  child: Material(
-                    color: theme.colorScheme.surface,
-                    elevation: 18,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 220,
-                        maxWidth: 260,
+      builder: (_) => const _LogoutConfirmDialog(),
+    );
+    if (shouldLogout != true) return;
+    final storage = TokenStorage.defaultInstance();
+    final superToken = await storage.readImpersonatorToken();
+    if (superToken != null && superToken.isNotEmpty) {
+      await storage.writeAccessToken(superToken);
+      await storage.clearImpersonatorToken();
+      if (!mounted) return;
+      context.go('/superadmin/home');
+      return;
+    }
+    await storage.clear();
+    if (!mounted) return;
+    context.go('/login');
+  }
+
+  Future<void> _showProfileMenu({
+    required BuildContext anchorContext,
+    required String displayName,
+    required String roleLabel,
+    required String initials,
+  }) async {
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlay == null) return;
+    final media = MediaQuery.of(context);
+    final topOffset =
+        media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
+    final rightEdge = overlay.size.width - 12;
+    final menuWidth = 200.0;
+    final position = RelativeRect.fromLTRB(
+      rightEdge - menuWidth,
+      topOffset,
+      12,
+      overlay.size.height - topOffset,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: SizedBox(
+            width: menuWidth,
+            child: Row(
+              children: [
+                _ProfileAvatar(
+                  radius: 22,
+                  fontSize: 14,
+                  colorScheme: Theme.of(context).colorScheme,
+                  initials: initials,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName.isNotEmpty ? displayName : '—',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      child: IntrinsicWidth(
+                      const SizedBox(height: 2),
+                      Text(
+                        roleLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'profile',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(child: Text('Profile')),
+              Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'password',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(child: Text('Change Password')),
+              Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'logout',
+          height: 36,
+          child: Row(
+            children: const [
+              Expanded(
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              Icon(Icons.logout, size: 18, color: Colors.red),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (!mounted || selected == null) return;
+    if (selected == 'profile') {
+      context.push('/admin/profile');
+    } else if (selected == 'password') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const UpdatePasswordScreen(),
+        ),
+      );
+    } else if (selected == 'logout') {
+      await _confirmLogout();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadCount();
+    _startBadgeRefresh();
+    _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _badgeRefreshTimer?.cancel();
+    _badgeToken?.cancel('HomeScreen disposed');
+    _profileToken?.cancel('HomeScreen disposed');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final double hp = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth);
+    final double subtitleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double bellNotificationFontSize =
+        AdaptiveUtils.getBellNotificationFontSize(screenWidth);
+
+    final double gridGap = hp * 1.3;
+    final double tileSize = (screenWidth - (hp * 2) - (gridGap * 2)) / 3;
+    final double labelFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+
+    final String logoAsset = isDark
+        ? 'assets/image/logo-dark.png'
+        : 'assets/image/logo-light.png';
+
+    const footerText = '© 2026 Fleet Stack All rights reserved.';
+
+    final List<_HomeShortcut> shortcuts = [
+      _HomeShortcut(
+        label: 'Dashboard',
+        icon: Symbols.dashboard,
+        route: '/admin/dashboard',
+      ),
+      _HomeShortcut(label: 'Users', icon: Symbols.group, route: '/admin/users'),
+      _HomeShortcut(
+        label: 'Vehicles',
+        icon: Symbols.directions_car,
+        route: '/admin/vehicles',
+      ),
+      _HomeShortcut(
+        label: 'Drivers',
+        icon: Symbols.badge,
+        route: '/admin/drivers',
+      ),
+      _HomeShortcut(label: 'Team', icon: Symbols.groups, route: '/admin/teams'),
+      _HomeShortcut(
+        label: 'Inventory',
+        icon: Symbols.inventory_2,
+        route: '/admin/inventory',
+      ),
+      _HomeShortcut(label: 'Maps', icon: Symbols.map, route: '/admin/map'),
+      _HomeShortcut(
+        label: 'Transactions',
+        icon: Symbols.receipt_long,
+        route: '/admin/transactions',
+      ),
+      _HomeShortcut(
+        label: 'Payments',
+        icon: Symbols.credit_card,
+        route: '/admin/payments',
+      ),
+      _HomeShortcut(
+        label: 'Support',
+        icon: Symbols.help,
+        route: '/admin/support',
+      ),
+      _HomeShortcut(
+        label: 'Calendar',
+        icon: Symbols.date_range,
+        route: '/admin/calendar',
+      ),
+      _HomeShortcut(label: 'Logs', icon: Symbols.list_alt, route: '/admin/logs'),
+      _HomeShortcut(
+        label: 'Plans',
+        icon: Symbols.widgets,
+        route: '/admin/plans',
+      ),
+      _HomeShortcut(
+        label: 'Roles',
+        icon: Symbols.admin_panel_settings,
+        route: '/admin/roles',
+      ),
+      _HomeShortcut(
+        label: 'Settings',
+        icon: Symbols.settings,
+        route: '/admin/settings',
+      ),
+    ];
+
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: cs.surface,
+        toolbarHeight: AppUtils.appBarHeightCustom + 12,
+        titleSpacing: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(24),
+          ),
+        ),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: AppUtils.spacingExtraSmall),
+                    Text(
+                      'Fleet OS',
+                      style: GoogleFonts.roboto(
+                        fontSize: subtitleFontSize,
+                        fontWeight: FontWeight.w900,
+                        color: cs.onSurface,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  _HeaderIconButton(
+                    icon: CupertinoIcons.bell,
+                    size: buttonSize,
+                    iconSize: iconSize,
+                    colorScheme: cs,
+                    badgeText: _badgeText,
+                    showBadge: _unreadCount > 0,
+                    badgeFontSize: bellNotificationFontSize,
+                    onTap: () => context.push('/admin/notifications'),
+                  ),
+                  SizedBox(width: AppUtils.spacingSmall),
+                  Builder(
+                    builder: (avatarContext) => InkWell(
+                      borderRadius: BorderRadius.circular(buttonSize / 2),
+                      onTap: () {
+                        final profile = _profile;
+                        final name = profile?.fullName.trim() ?? '';
+                        final username = profile?.username.trim() ?? '';
+                        final displayName =
+                            name.isNotEmpty ? name : username;
+                        final roleLabel =
+                            username.isNotEmpty ? username : 'Administrator';
+                        _showProfileMenu(
+                          anchorContext: avatarContext,
+                          displayName: displayName,
+                          roleLabel: roleLabel,
+                          initials: _initials(name, username),
+                        );
+                      },
+                      child: _ProfileAvatar(
+                        radius: AdaptiveUtils.getRightAvatarRadius(screenWidth),
+                        fontSize:
+                            AdaptiveUtils.getRightAvatarFontSize(screenWidth),
+                        colorScheme: cs,
+                        initials: _initials(
+                          _profile?.fullName ?? '',
+                          _profile?.username ?? '',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  hp,
+                  AppUtils.spacingMedium,
+                  hp * 0.5,
+                  AppUtils.spacingLarge,
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Transform.translate(
+                        offset: const Offset(0, -30),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Header
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Language',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  const Spacer(),
-                                  GestureDetector(
-                                    onTap: () => Navigator.of(ctx).pop(),
-                                    child: Container(
-                                      height: 32,
-                                      width: 32,
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
-                                            .withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 18,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            // Options
-                            _languageTile(ctx, 'EN', 'English', '🇬🇧'),
-                            _languageTile(ctx, 'FR', 'Français', '🇫🇷'),
-                            _languageTile(ctx, 'ES', 'Español', '🇪🇸'),
-                            const SizedBox(height: 8),
-                            // Optional footer / small caption
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                'App language will update after selection.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                            SizedBox(height: AppUtils.spacingLarge * 1.5),
+                            Center(
+                              child: Transform.translate(
+                                offset: const Offset(0, -40),
+                                child: Image.asset(
+                                  logoAsset,
+                                  width: (screenWidth * 0.45).clamp(140, 200),
+                                  fit: BoxFit.contain,
                                 ),
                               ),
+                            ),
+                            SizedBox(height: AppUtils.spacingLarge * 1.5),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: gridGap,
+                              runSpacing: gridGap,
+                              children: shortcuts.map((item) {
+                                return SizedBox(
+                                  width: tileSize,
+                                  child: _HomeShortcutTile(
+                                    item: item,
+                                    tileSize: tileSize,
+                                    labelFontSize: labelFontSize,
+                                    colorScheme: cs,
+                                    onTap: () => context.go(item.route),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (chosen != null && chosen != _selectedLanguage) {
-      setState(() {
-        _selectedLanguage = chosen;
-      });
-      // TODO: Hook into your localization provider here.
-      debugPrint('Language changed to: $chosen');
-    }
-  }
-
-  Widget _languageTile(
-    BuildContext ctx,
-    String code,
-    String label,
-    String flag,
-  ) {
-    final theme = Theme.of(ctx);
-    final bool selected = code == _selectedLanguage;
-
-    return InkWell(
-      onTap: () => Navigator.of(ctx).pop(code),
-      borderRadius: BorderRadius.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            // flag circle
-            Container(
-              height: 36,
-              width: 36,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: theme.colorScheme.primary.withOpacity(0.06),
-              ),
-              alignment: Alignment.center,
-              child: Text(flag, style: const TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Text(
+                        footerText,
+                        textAlign: TextAlign.center,
+                        style: AppUtils.bodySmallBase.copyWith(
+                          color: cs.onSurface.withOpacity(0.55),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    code,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            if (selected)
-              Container(
-                height: 28,
-                width: 28,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check,
-                  size: 16,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
           ],
         ),
       ),
     );
   }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final ColorScheme colorScheme;
+  final bool showBadge;
+  final String badgeText;
+  final double badgeFontSize;
+  final VoidCallback onTap;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.size,
+    required this.iconSize,
+    required this.colorScheme,
+    required this.showBadge,
+    required this.badgeText,
+    required this.badgeFontSize,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final themeIcon = isDark ? Icons.light_mode : Icons.dark_mode;
-
-    return AppLayout(
-      title: "FLEET STACK",
-      subtitle: "Overview",
-      // action icons: language, theme toggle, notifications
-      actionIcons: [Icons.language, themeIcon, CupertinoIcons.bell],
-
-      // onActionTaps must map 1:1 with actionIcons order
-      onActionTaps: [
-        // Language tap -> stylish popup
-        () => _showLanguagePicker(context),
-
-        // Theme tap -> toggle light/dark immediately (non-blocking)
-        () {
-          final isCurrentlyDark =
-              Theme.of(context).brightness == Brightness.dark;
-          final newDarkMode = !isCurrentlyDark;
-
-          // update controller (instant UI update if your controller notifies listeners)
-          themeController.setDarkMode(newDarkMode);
-
-          // persist (non-blocking)
-          AppTheme.setDarkMode(newDarkMode);
-
-          // If using the Default brand, ensure brand matches mode
-          if (AppTheme.brandColor == AppTheme.defaultBrand ||
-              AppTheme.brandColor == AppTheme.defaultDarkBrand) {
-            final forcedBrand = newDarkMode
-                ? AppTheme.defaultDarkBrand
-                : AppTheme.defaultBrand;
-            themeController.setBrand(forcedBrand);
-            AppTheme.setBrand(forcedBrand);
-          }
-        },
-
-        // Notifications tap
-        () => context.push('/admin/notifications'),
-      ],
-
-      leftAvatarText: 'FS',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(size / 2),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          const AppSearchBar(),
-          const SizedBox(height: 12),
-          const ActionsButtons(),
-          const SizedBox(height: 24),
-          FleetOverviewBox(summary: _summary, loading: _loading),
-          const SizedBox(height: 24),
-          VehicleStatusBox(summary: _summary, loading: _loading),
-          const SizedBox(height: 24),
-          RecentActivityBox(
-            vehicles: _vehiclePreview,
-            loading: _loadingVehiclesPreview,
+          Container(
+            height: size,
+            width: size,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: colorScheme.primary,
+            ),
           ),
-          const SizedBox(height: 24),
+          if (showBadge)
+            Positioned(
+              top: -size * 0.15,
+              right: -size * 0.15,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onPrimary,
+                    fontSize: badgeFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeShortcut {
+  final String label;
+  final IconData icon;
+  final String route;
+
+  const _HomeShortcut({
+    required this.label,
+    required this.icon,
+    required this.route,
+  });
+}
+
+class _HomeShortcutTile extends StatelessWidget {
+  final _HomeShortcut item;
+  final double tileSize;
+  final double labelFontSize;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  const _HomeShortcutTile({
+    required this.item,
+    required this.tileSize,
+    required this.labelFontSize,
+    required this.colorScheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color neutralColor = cs.onSurface.withOpacity(isDark ? 0.86 : 0.75);
+    final double iconContainerSize = tileSize * 0.6;
+    final double iconSize = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 20
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 22
+            : 24;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppUtils.borderRadiusMedium,
+      splashColor: cs.surfaceVariant.withOpacity(0.4),
+      highlightColor: cs.surfaceVariant.withOpacity(0.4),
+      hoverColor: cs.surfaceVariant.withOpacity(0.4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: iconContainerSize,
+            width: iconContainerSize,
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: const BorderRadius.all(Radius.circular(24)),
+              border: Border.all(
+                color: cs.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              item.icon,
+              size: iconSize,
+              color: cs.primary,
+            ),
+          ),
+          SizedBox(height: AppUtils.spacingSmall),
+          Text(
+            item.label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: labelFontSize,
+              fontWeight: FontWeight.w600,
+              color: neutralColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  final double radius;
+  final double fontSize;
+  final ColorScheme colorScheme;
+  final String initials;
+
+  const _ProfileAvatar({
+    required this.radius,
+    required this.fontSize,
+    required this.colorScheme,
+    required this.initials,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double size = radius * 2;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.grey.shade50
+            : colorScheme.surfaceVariant,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: GoogleFonts.roboto(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutConfirmDialog extends StatelessWidget {
+  const _LogoutConfirmDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.square_arrow_right,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Log out?',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your current session will end. You will need to log in again to continue.',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Log out',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

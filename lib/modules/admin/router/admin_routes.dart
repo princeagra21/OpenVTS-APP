@@ -45,12 +45,15 @@ import 'package:fleet_stack/modules/admin/screens/renewals/extend_license_screen
 import 'package:fleet_stack/modules/admin/screens/renewals/suspend_access_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/renewals/send_reminder_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/plans/edit_plan_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/dashboard/dashboard_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/home/home_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/inventory/inventory_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> adminRoutes = [
   GoRoute(path: '/admin/home', builder: (_, __) => const HomeScreen()),
   GoRoute(path: '/admin', builder: (_, __) => const HomeScreen()),
+  GoRoute(path: '/admin/dashboard', builder: (_, __) => const DashboardScreen()),
   GoRoute(path: '/admin/map', builder: (_, __) => const MapScreen()),
   GoRoute(path: '/admin/more', builder: (_, __) => const MoreScreen()),
   GoRoute(path: '/admin/users', builder: (_, __) => const UserScreen()),
@@ -80,6 +83,7 @@ final List<GoRoute> adminRoutes = [
     builder: (_, __) => const AddDriverScreen(),
   ),
   GoRoute(path: '/admin/teams', builder: (_, __) => const TeamScreen()),
+  GoRoute(path: '/admin/inventory', builder: (_, __) => const InventoryScreen()),
   GoRoute(path: '/admin/teams/add', builder: (_, __) => const AddTeamScreen()),
   GoRoute(path: '/admin/devices', builder: (_, __) => const DeviceScreen()),
   GoRoute(

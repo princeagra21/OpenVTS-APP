@@ -318,7 +318,12 @@ class _AdminScreenState extends State<AdminScreen> {
       if (!mounted) return;
       res.when(
         success: (token) async {
-          await TokenStorage.defaultInstance().writeAccessToken(token);
+          final storage = TokenStorage.defaultInstance();
+          final currentToken = await storage.readAccessToken();
+          if (currentToken != null && currentToken.isNotEmpty) {
+            await storage.writeImpersonatorToken(currentToken);
+          }
+          await storage.writeAccessToken(token);
           if (!mounted) return;
           context.go('/admin/home');
         },

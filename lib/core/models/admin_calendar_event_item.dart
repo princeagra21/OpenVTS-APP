@@ -22,7 +22,7 @@ class AdminCalendarEventItem {
   String get type =>
       _string(raw['type'] ?? raw['category'] ?? raw['eventType']);
 
-  String get date => _string(
+  String get dateString => _string(
     raw['date'] ??
         raw['eventDate'] ??
         raw['day'] ??
@@ -31,13 +31,29 @@ class AdminCalendarEventItem {
         raw['createdAt'],
   );
 
+  DateTime? get date => _tryParse(dateString);
+
   String get time => _string(
     raw['time'] ??
         raw['eventTime'] ??
         raw['startTime'] ??
-        raw['hour'] ??
-        raw['createdAt'],
+        raw['hour'],
   );
+  DateTime? get dateParsed => date;
+
+  DateTime? get createdAt {
+    final candidates = [
+      raw['createdAt'],
+      raw['updatedAt'],
+      raw['timestamp'],
+      raw['time'],
+    ];
+    for (final c in candidates) {
+      final dt = _tryParse(_string(c));
+      if (dt != null) return dt;
+    }
+    return null;
+  }
 
   String get adminId => _string(raw['adminId'] ?? raw['createdByAdminId']);
   String get userId => _string(raw['userId'] ?? raw['uid']);
@@ -45,7 +61,7 @@ class AdminCalendarEventItem {
       _string(raw['vehicleId'] ?? raw['vehicle'] ?? raw['vehicle_id']);
 
   DateTime? get dateTime {
-    final dt = _tryParse(date);
+    final dt = date;
     if (dt != null) return dt;
     return _tryParse(time);
   }

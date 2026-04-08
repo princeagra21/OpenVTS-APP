@@ -65,7 +65,9 @@ class AdminVehicleListItem {
   }
 
   String get primaryUserName {
-    final nested = _asMap(raw['primaryUser']);
+    final nested = _asMap(raw['primaryUser']).isNotEmpty
+        ? _asMap(raw['primaryUser'])
+        : _asMap(raw['userPrimary']);
     final explicit = _s(
       nested['name'] ??
           raw['primaryUserName'] ??

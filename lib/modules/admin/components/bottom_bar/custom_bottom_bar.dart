@@ -62,7 +62,7 @@ class CustomBottomBar extends StatelessWidget {
     ];
 
     /// UPDATED LABELS
-    final List<String> labels = ['Home', 'Map', 'settings', 'More'];
+    final List<String> labels = ['Dashboard', 'Map', 'Settings', 'More'];
 
     /// UPDATED ROUTES
     final List<String> routes = [
@@ -78,6 +78,9 @@ class CustomBottomBar extends StatelessWidget {
         currentIndex = i;
         break;
       }
+    }
+    if (currentIndex == null && currentPath.startsWith('/admin/dashboard')) {
+      currentIndex = 0;
     }
 
     if (currentIndex == null) {
