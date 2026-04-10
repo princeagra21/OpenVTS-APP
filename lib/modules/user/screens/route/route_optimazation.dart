@@ -7,6 +7,8 @@ import 'package:fleet_stack/core/repositories/user_routes_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_map_location_screen.dart';
@@ -14,6 +16,7 @@ import 'package:fleet_stack/modules/user/screens/route/assign_driver_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -635,6 +638,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
     final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
     final iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final topOffset = AppUtils.appBarHeightCustom;
     final bottomMargin =
         MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
 
@@ -653,6 +657,12 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     return AppLayout(
       title: 'MAP',
       subtitle: 'Route Optimization',
+      customTopBar: UserHomeAppBar(
+        title: 'Route Optimization',
+        leadingIcon: Icons.route_outlined,
+        onClose: () => context.go('/user/home'),
+      ),
+      customTopBarPadding: EdgeInsets.zero,
       actionIcons: const [],
       onActionTaps: const [],
       showAppBar: false,
@@ -761,7 +771,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 ],
               ),
               Positioned(
-                top: 0,
+                top: topOffset,
                 left: 0,
                 right: 0,
                 child: Container(

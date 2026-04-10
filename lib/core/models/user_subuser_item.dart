@@ -3,7 +3,8 @@ class UserSubUserItem {
 
   const UserSubUserItem(this.raw);
 
-  String get id => _string(raw['id'] ?? raw['_id'] ?? raw['userId']);
+  String get id =>
+      _string(raw['id'] ?? raw['_id'] ?? raw['userId'] ?? raw['uid']);
 
   String get name => _string(
     raw['name'] ?? raw['fullName'] ?? raw['full_name'] ?? raw['username'],
@@ -60,6 +61,8 @@ class UserSubUserItem {
 
     return '—';
   }
+
+  String get createdAtLabel => _string(raw['createdAt'] ?? raw['created_at']);
 
   static String _string(Object? value) {
     if (value == null) return '';

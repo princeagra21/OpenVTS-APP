@@ -2,35 +2,105 @@ import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
 import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
-import 'package:fleet_stack/core/models/user_ticket_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_support_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+
+import 'new_ticket_screen.dart';
+
+String _formatDateTimeDisplay(String raw) {
+  if (raw.trim().isEmpty) return '—';
+  try {
+    final dt = DateTime.parse(raw).toLocal();
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = months[dt.month - 1];
+    final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${dt.day} $month, $hour12:$minute $suffix';
+  } catch (_) {
+    return '—';
+  }
+}
+
+String _normalizeTicketStatus(String raw) {
+  final status = raw.trim();
+  final s = status.toLowerCase().replaceAll('_', ' ').replaceAll('-', ' ');
+  if (s.isEmpty) return 'Open';
+  if (s.contains('close')) return 'Closed';
+  if (s.contains('answer') || s.contains('resolve')) return 'Answered';
+  if (s.contains('hold')) return 'Hold';
+  if (s.contains('process') || s.contains('progress') || s.contains('pending')) {
+    return 'In Process';
+  }
+  if (s.contains('open') || s.contains('new')) return 'Open';
+  return status;
+}
+
+double _supportScale(double width) {
+  if (width >= 900) return 1;
+  if (width < 360) return -1;
+  return 0;
+}
+
+String _titleCase(String value) {
+  final v = value.trim();
+  if (v.isEmpty) return '';
+  return v
+      .toLowerCase()
+      .split(RegExp(r'\\s+|_+|-+'))
+      .where((p) => p.isNotEmpty)
+      .map((p) => p[0].toUpperCase() + p.substring(1))
+      .join(' ');
+}
 
 Color _statusColor(String status, ColorScheme colorScheme) {
-  switch (AdminTicketListItem.normalizeStatus(status)) {
-    case "open":
+  switch (_normalizeTicketStatus(status)) {
+    case 'Open':
       return colorScheme.primary;
-    case "in_process":
-    case "in_progress":
+    case 'In Process':
       return Colors.orange;
-    case "resolved":
-    case "answered":
+    case 'Answered':
       return Colors.green;
-    case "hold":
+    case 'Hold':
       return Colors.purple;
-    case "closed":
+    case 'Closed':
       return colorScheme.error;
     default:
       return colorScheme.onSurfaceVariant;
   }
+}
+
+IconData _statusIcon(String status) {
+  final s = _normalizeTicketStatus(status);
+  if (s == 'Closed') return Icons.check_circle_outline;
+  if (s == 'Answered') return Icons.mark_email_read_outlined;
+  if (s == 'Hold') return Icons.pause_circle_outline;
+  if (s == 'In Process') return Icons.schedule_outlined;
+  return Icons.radio_button_unchecked;
 }
 
 class SupportScreen extends StatefulWidget {
@@ -41,35 +111,21 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  // FleetStack-API-Reference.md confirmed:
-  // - GET  /user/tickets
+  // User support endpoints:
+  // - GET /user/tickets
   // - POST /user/tickets
-  // - GET  /user/tickets/:id
+  // - GET /user/tickets/:id
   // - POST /user/tickets/:id
-  //
-  // Live backend mismatch found:
-  // - Postman create body uses `subject`
-  // - Live backend requires `title` + `category`
-  // This screen currently wires list + conversation + reply only.
+  List<AdminTicketListItem>? _tickets;
+  bool _loading = false;
+  bool _loadErrorShown = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedTab = 'All';
+
+  CancelToken? _loadToken;
+
   ApiClient? _apiClient;
   UserSupportRepository? _repo;
-  CancelToken? _token;
-
-  List<AdminTicketListItem> _tickets = <AdminTicketListItem>[];
-  bool _loading = false;
-  bool _errorShown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadTickets();
-  }
-
-  @override
-  void dispose() {
-    _token?.cancel('User support disposed');
-    super.dispose();
-  }
 
   UserSupportRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -80,107 +136,334 @@ class _SupportScreenState extends State<SupportScreen> {
     return _repo!;
   }
 
-  bool _isCancelled(Object error) {
-    return error is ApiException &&
-        error.message.toLowerCase() == 'request cancelled';
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  void _showLoadErrorOnce(String message) {
+    if (_loadErrorShown || !mounted) return;
+    _loadErrorShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadTickets() async {
-    _token?.cancel('Reload user tickets');
+    _loadToken?.cancel('Reload tickets');
     final token = CancelToken();
-    _token = token;
+    _loadToken = token;
 
     if (!mounted) return;
     setState(() => _loading = true);
 
     final result = await _repoOrCreate().getTickets(cancelToken: token);
-    if (!mounted || token.isCancelled) return;
+
+    if (!mounted) return;
 
     result.when(
       success: (items) {
         setState(() {
           _tickets = items;
           _loading = false;
-          _errorShown = false;
+          _loadErrorShown = false;
         });
       },
-      failure: (error) {
-        setState(() => _loading = false);
-        if (_isCancelled(error) || _errorShown) return;
-        _errorShown = true;
-        final msg = error is ApiException && error.message.trim().isNotEmpty
-            ? error.message
+      failure: (err) {
+        setState(() {
+          _tickets = const <AdminTicketListItem>[];
+          _loading = false;
+        });
+        if (_isCancelled(err)) return;
+        final message = err is ApiException
+            ? err.message
             : "Couldn't load tickets.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        _showLoadErrorOnce(message);
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTickets();
+  }
+
+  @override
+  void dispose() {
+    _loadToken?.cancel('SupportScreen disposed');
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
+    final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
+    final double topPadding = MediaQuery.of(context).padding.top;
 
-    return AppLayout(
-      title: "FLEET STACK",
-      subtitle: "Support",
-      actionIcons: const [],
-      leftAvatarText: 'FS',
-      showLeftAvatar: false,
-      horizontalPadding: 3,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(hp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Inbox",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
+    final double sectionTitleFs = 18 + scale;
+    final double buttonFs = 14 + scale;
+    final double searchFs = 14 + scale;
+    final double secondaryFs = 12 + scale;
+
+    final tickets = _tickets ?? const <AdminTicketListItem>[];
+    final showListSkeleton = _loading && tickets.isEmpty;
+    final query = _searchController.text.trim().toLowerCase();
+    final filteredTickets = tickets.where((t) {
+      final matchesSearch = query.isEmpty ||
+          t.subject.toLowerCase().contains(query) ||
+          t.ticketNumber.toLowerCase().contains(query) ||
+          t.ownerName.toLowerCase().contains(query) ||
+          t.id.toLowerCase().contains(query);
+      final matchesTab = _selectedTab == 'All' ||
+          AdminTicketListItem.normalizeStatus(t.statusLabel) ==
+              AdminTicketListItem.normalizeStatus(_selectedTab);
+      return matchesSearch && matchesTab;
+    }).toList();
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                hp,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                hp,
+                hp,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "${_tickets.length} tickets",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width),
-                color: colorScheme.onSurface.withOpacity(0.54),
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            const SizedBox(height: 16),
-            if (_loading)
-              ...List.generate(
-                3,
-                (_) => _TicketShimmerCard(horizontalPadding: hp),
-              )
-            else if (_tickets.isEmpty)
-              _EmptyTicketCard(horizontalPadding: hp)
-            else
-              ..._tickets.map(
-                (ticket) => _TicketCard(
-                  ticket: ticket,
-                  onTap: () async {
-                    final refreshed = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TicketDetailsScreen(ticket: ticket),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(hp),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.08),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Support Inbox',
+                              style: GoogleFonts.roboto(
+                                fontSize: sectionTitleFs,
+                                height: 24 / 18,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (showListSkeleton)
+                              const AppShimmer(
+                                width: 96,
+                                height: 14,
+                                radius: 8,
+                              )
+                            else
+                              Text(
+                                '${tickets.length} tickets',
+                                style: GoogleFonts.roboto(
+                                  fontSize: secondaryFs,
+                                  height: 16 / 12,
+                                  color: colorScheme.onSurface.withOpacity(0.54),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                          ],
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NewTicketScreen(),
+                              ),
+                            ).then((value) {
+                              if (value == true) _loadTickets();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add,
+                                  size: AdaptiveUtils.getIconSize(width),
+                                  color: colorScheme.onPrimary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'New Ticket',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: buttonFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      height: hp * 3.8,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                        ),
                       ),
-                    );
-                    if (refreshed == true) {
-                      _loadTickets();
-                    }
-                  },
+                      child: TextField(
+                        controller: _searchController,
+                        style: GoogleFonts.roboto(
+                          fontSize: searchFs,
+                          height: 20 / 14,
+                          color: colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search tickets',
+                          hintStyle: GoogleFonts.roboto(
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                            fontSize: searchFs - 2,
+                            height: 16 / 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            size: AdaptiveUtils.getIconSize(width) + 2,
+                            color: colorScheme.onSurface,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: hp,
+                            vertical: hp,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _tabPill(
+                            context,
+                            label: 'All',
+                            selected: _selectedTab == 'All',
+                            onTap: () => setState(() => _selectedTab = 'All'),
+                          ),
+                          const SizedBox(width: 8),
+                          _tabPill(
+                            context,
+                            label: 'Open',
+                            selected: _selectedTab == 'Open',
+                            onTap: () => setState(() => _selectedTab = 'Open'),
+                          ),
+                          const SizedBox(width: 8),
+                          _tabPill(
+                            context,
+                            label: 'In Process',
+                            selected: _selectedTab == 'In Process',
+                            onTap: () =>
+                                setState(() => _selectedTab = 'In Process'),
+                          ),
+                          const SizedBox(width: 8),
+                          _tabPill(
+                            context,
+                            label: 'Closed',
+                            selected: _selectedTab == 'Closed',
+                            onTap: () => setState(() => _selectedTab = 'Closed'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (showListSkeleton)
+                      ...List<Widget>.generate(
+                        4,
+                        (_) => const _TicketCardShimmer(),
+                      )
+                    else if (filteredTickets.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Text(
+                          'No tickets found',
+                          style: GoogleFonts.roboto(
+                            fontSize: secondaryFs,
+                            height: 16 / 12,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      )
+                    else
+                      ...filteredTickets.map(
+                        (ticket) => _TicketCard(
+                          ticket: ticket,
+                          onTap: () async {
+                            final changed = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    TicketDetailsScreen(ticket: ticket),
+                              ),
+                            );
+                            if (changed == true && mounted) {
+                              _loadTickets();
+                            }
+                          },
+                        ),
+                      ),
+                  ],
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+          Positioned(
+            left: hp,
+            right: hp,
+            top: 0,
+            child: UserHomeAppBar(
+              title: 'Support',
+              leadingIcon: Icons.support_agent_outlined,
+              onClose: () => context.go('/user/home'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -196,44 +479,34 @@ class TicketDetailsScreen extends StatefulWidget {
 }
 
 class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
+  String selectedLocalTab = 'Conversation';
+  late String selectedDropdownStatus;
   final TextEditingController messageController = TextEditingController();
-  final List<String> statusOptions = [
-    "Closed",
-    "Open",
-    "In Process",
-    "Answered",
-    "Hold",
+
+  final List<String> statusOptions = const [
+    'Closed',
+    'Open',
+    'In Process',
+    'Answered',
+    'Hold',
   ];
 
-  ApiClient? _apiClient;
-  UserSupportRepository? _repo;
-  CancelToken? _loadToken;
-  CancelToken? _sendToken;
+  List<AdminTicketMessageItem> _messages = const <AdminTicketMessageItem>[];
 
-  String selectedLocalTab = "Conversation";
-  String? selectedDropdownStatus;
-  UserTicketDetails? _ticket;
-  List<AdminTicketMessageItem> _messages = <AdminTicketMessageItem>[];
-  bool _loading = false;
+  bool _loadingMessages = false;
   bool _sending = false;
-  bool _loadErrorShown = false;
+  bool _hasChanges = false;
+  PickedFilePayload? _attachment;
+
+  bool _messagesErrorShown = false;
   bool _sendErrorShown = false;
   bool _aiUnavailableShown = false;
 
-  @override
-  void initState() {
-    super.initState();
-    selectedDropdownStatus = _dropdownStatusValue(widget.ticket.status);
-    _loadDetails();
-  }
+  CancelToken? _messagesToken;
+  CancelToken? _sendToken;
 
-  @override
-  void dispose() {
-    _loadToken?.cancel('Ticket details disposed');
-    _sendToken?.cancel('Ticket details disposed');
-    messageController.dispose();
-    super.dispose();
-  }
+  ApiClient? _apiClient;
+  UserSupportRepository? _repo;
 
   UserSupportRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -244,30 +517,84 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     return _repo!;
   }
 
-  bool _isCancelled(Object error) {
-    return error is ApiException &&
-        error.message.toLowerCase() == 'request cancelled';
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
   }
 
-  String _safe(String? value, {String fallback = '—'}) {
-    final trimmed = value?.trim() ?? '';
-    return trimmed.isEmpty ? fallback : trimmed;
+  @override
+  void initState() {
+    super.initState();
+    selectedDropdownStatus = _toDisplayStatus(widget.ticket.status);
+    _loadMessages();
   }
 
-  String _formatDateTime(String raw) {
-    final trimmed = raw.trim();
-    if (trimmed.isEmpty) return '—';
-    final parsed = DateTime.tryParse(trimmed);
-    if (parsed == null) return trimmed;
-    final local = parsed.toLocal();
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${two(local.day)}/${two(local.month)}/${local.year}, '
-        '${two(local.hour)}:${two(local.minute)}';
+  @override
+  void dispose() {
+    _messagesToken?.cancel('TicketDetailsScreen disposed');
+    _sendToken?.cancel('TicketDetailsScreen disposed');
+    messageController.dispose();
+    super.dispose();
   }
 
-  String? _dropdownStatusValue(String? rawStatus) {
-    final normalized = UserTicketDetails.normalizeStatus(rawStatus);
+  Future<void> _pickAttachment() async {
+    final file = await pickSingleFilePayload();
+    if (!mounted) return;
+    if (file == null) return;
+    if (file.bytes.length > 5 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Max file size is 5MB.')),
+      );
+      return;
+    }
+    setState(() => _attachment = file);
+  }
+
+  Future<void> _loadMessages() async {
+    _messagesToken?.cancel('Reload ticket messages');
+    final token = CancelToken();
+    _messagesToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingMessages = true);
+
+    final result = await _repoOrCreate().getTicketDetails(
+      widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
+      cancelToken: token,
+    );
+
+    if (!mounted) return;
+
+    result.when(
+      success: (details) {
+        setState(() {
+          _messages = details.messages;
+          _loadingMessages = false;
+          _messagesErrorShown = false;
+        });
+      },
+      failure: (err) {
+        setState(() {
+          _messages = const <AdminTicketMessageItem>[];
+          _loadingMessages = false;
+        });
+        if (_isCancelled(err) || _messagesErrorShown) return;
+        _messagesErrorShown = true;
+        final message = err is ApiException
+            ? err.message
+            : "Couldn't load conversation.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
+  }
+
+  String _toDisplayStatus(String raw) {
+    final normalized = AdminTicketListItem.normalizeStatus(raw);
     switch (normalized) {
+      case 'closed':
+        return 'Closed';
       case 'open':
         return 'Open';
       case 'in_process':
@@ -279,108 +606,72 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       case 'hold':
       case 'on_hold':
         return 'Hold';
-      case 'closed':
-        return 'Closed';
       default:
-        final direct = (rawStatus ?? '').trim();
-        return statusOptions.contains(direct) ? direct : null;
+        return 'Open';
     }
-  }
-
-  Future<void> _loadDetails() async {
-    _loadToken?.cancel('Reload ticket details');
-    final token = CancelToken();
-    _loadToken = token;
-
-    if (!mounted) return;
-    setState(() => _loading = true);
-
-    final result = await _repoOrCreate().getTicketDetails(
-      widget.ticket.id,
-      cancelToken: token,
-    );
-    if (!mounted || token.isCancelled) return;
-
-    result.when(
-      success: (details) {
-        setState(() {
-          _ticket = details;
-          _messages = details.messages;
-          selectedDropdownStatus = _dropdownStatusValue(details.status);
-          _loading = false;
-          _loadErrorShown = false;
-        });
-      },
-      failure: (error) {
-        setState(() => _loading = false);
-        if (_isCancelled(error) || _loadErrorShown) return;
-        _loadErrorShown = true;
-        final msg = error is ApiException && error.message.trim().isNotEmpty
-            ? error.message
-            : "Couldn't load ticket.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
-      },
-    );
   }
 
   Future<void> _sendMessage() async {
     if (_sending) return;
     final text = messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Message cannot be empty.')));
+      return;
+    }
 
-    _sendToken?.cancel('Restart send ticket message');
-    final token = CancelToken();
-    _sendToken = token;
-
-    if (!mounted) return;
     setState(() {
       _sending = true;
       _sendErrorShown = false;
     });
 
+    _sendToken?.cancel('Replace send message');
+    final token = CancelToken();
+    _sendToken = token;
+    final isInternal = selectedLocalTab == 'Internal Note';
     final result = await _repoOrCreate().sendTicketMessage(
-      widget.ticket.id,
+      widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       text,
       cancelToken: token,
     );
-    if (!mounted || token.isCancelled) return;
+
+    if (!mounted) return;
 
     result.when(
-      success: (message) {
-        final appended =
-            message ??
+      success: (item) {
+        final msg =
+            item ??
             AdminTicketMessageItem(<String, dynamic>{
+              'senderName': 'You',
               'message': text,
               'createdAt': DateTime.now().toIso8601String(),
-              'senderName': 'You',
+              'isInternal': isInternal,
             });
+
         setState(() {
+          _messages = <AdminTicketMessageItem>[..._messages, msg];
           _sending = false;
-          _messages = [..._messages, appended];
+          _hasChanges = true;
         });
         messageController.clear();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Message sent')));
       },
-      failure: (error) {
+      failure: (err) {
         setState(() => _sending = false);
-        if (_isCancelled(error) || _sendErrorShown) return;
+        if (_isCancelled(err) || _sendErrorShown) return;
         _sendErrorShown = true;
-        final msg = error is ApiException && error.message.trim().isNotEmpty
-            ? error.message
+        final message = err is ApiException
+            ? err.message
             : "Couldn't send message.";
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
 
-  void _showAiUnavailable() {
-    if (!kDebugMode || _aiUnavailableShown) return;
+  void _showAiUnavailableOnce() {
+    if (!kDebugMode || _aiUnavailableShown || !mounted) return;
     _aiUnavailableShown = true;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('AI answer API not available yet')),
@@ -403,10 +694,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
-      ),
     );
   }
 
@@ -414,247 +701,525 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
+    final double scale = _supportScale(w);
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
-    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
-    final double labelSize = AdaptiveUtils.getTitleFontSize(w);
-    final details = _ticket;
+    final double ticketTitleFs = 14 + scale;
+    final double bodyFs = 14 + scale;
+    final double secondaryFs = 12 + scale;
+    final double metaFs = 11 + scale;
+    final raw = widget.ticket.raw;
+    final String fromName =
+        widget.ticket.ownerName.isNotEmpty ? widget.ticket.ownerName : '—';
+    String fromEmail = '—';
+    final rawEmail = raw['email']?.toString().trim() ?? '';
+    if (rawEmail.isNotEmpty) {
+      fromEmail = rawEmail;
+    } else if (raw['fromUser'] is Map) {
+      final email = (raw['fromUser'] as Map)['email']?.toString().trim() ?? '';
+      if (email.isNotEmpty) fromEmail = email;
+    }
+    final String fromDate = _formatDateTimeDisplay(
+      widget.ticket.updatedAt.isNotEmpty
+          ? widget.ticket.updatedAt
+          : widget.ticket.createdAt,
+    );
+    final filteredMessages =
+        (selectedLocalTab == 'Conversation'
+                ? _messages.where((m) => !m.isInternal)
+                : _messages.where((m) => m.isInternal))
+            .toList();
+    final bool showDetailsSkeleton =
+        _loadingMessages && _messages.isEmpty;
 
-    final filteredMessages = selectedLocalTab == "Conversation"
-        ? _messages.where((m) => !m.isInternal).toList()
-        : _messages.where((m) => m.isInternal).toList();
+    final double topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                padding,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                padding,
+                padding,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      _safe(details?.title, fallback: widget.ticket.subject),
-                      style: GoogleFonts.inter(
-                        fontSize: titleSize + 2,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface.withOpacity(0.9),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context, _messages.isNotEmpty),
-                    child: Icon(
-                      Icons.close,
-                      size: 28,
-                      color: colorScheme.onSurface.withOpacity(0.8),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "${_safe(details?.ticketNo, fallback: widget.ticket.ticketNumber.isEmpty ? widget.ticket.id : widget.ticket.ticketNumber)} • ${_safe(widget.ticket.ownerName, fallback: 'You')}",
-                style: GoogleFonts.inter(
-                  fontSize: labelSize - 2,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withOpacity(0.87),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        key: ValueKey(
-                          selectedDropdownStatus ?? 'ticket-status-empty',
-                        ),
-                        decoration: _dropdownDecoration(context),
-                        initialValue: selectedDropdownStatus,
-                        disabledHint: Text(
-                          'Status unavailable',
-                          style: GoogleFonts.inter(
-                            fontSize: labelSize,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        items: statusOptions
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.ticket.subject.isNotEmpty
+                                    ? widget.ticket.subject
+                                    : 'Support Ticket',
+                                style: GoogleFonts.roboto(
+                                  fontSize: ticketTitleFs,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            )
-                            .toList(),
-                        onChanged: null,
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
-                        ),
-                        icon: Icon(
-                          Icons.arrow_drop_down,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Ticket owner: ${_safe(widget.ticket.ownerName, fallback: 'You')}",
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize - 2,
-                          color: colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Created: ${_formatDateTime(details?.createdAt ?? widget.ticket.createdAt)} • Updated: ${_formatDateTime(details?.updatedAt ?? widget.ticket.updatedAt)}",
-                        style: GoogleFonts.inter(
-                          fontSize: labelSize - 2,
-                          color: colorScheme.onSurface.withOpacity(0.54),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Wrap(
-                        spacing: 12,
-                        children: ["Conversation", "Internal Note"].map((tab) {
-                          return _LocalTab(
-                            label: tab,
-                            selected: tab == selectedLocalTab,
-                            onTap: () => setState(() => selectedLocalTab = tab),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      _MessagesContainer(
-                        messages: filteredMessages,
-                        selectedTab: selectedLocalTab,
-                        loading: _loading,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: messageController,
-                        maxLines: 5,
-                        style: GoogleFonts.inter(color: colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          hintText: "Write your message...",
-                          hintStyle: GoogleFonts.inter(
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: colorScheme.outline.withOpacity(0.3),
                             ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          InkWell(
-                            onTap: _showAiUnavailable,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
+                            const SizedBox(width: 8),
+                            Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                                horizontal: 10,
+                                vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: colorScheme.outline.withOpacity(0.3),
+                                  color: _statusColor(
+                                    selectedDropdownStatus,
+                                    colorScheme,
+                                  ).withOpacity(0.4),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.smart_toy,
-                                    size: 18,
-                                    color: colorScheme.primary,
+                                    _statusIcon(selectedDropdownStatus),
+                                    size: AdaptiveUtils.getIconSize(w) - 4,
+                                    color: _statusColor(
+                                      selectedDropdownStatus,
+                                      colorScheme,
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    "Generate Answer",
-                                    style: GoogleFonts.inter(
+                                    selectedDropdownStatus,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: metaFs,
+                                      height: 14 / 11,
                                       fontWeight: FontWeight.w600,
-                                      color: colorScheme.primary,
+                                      color: _statusColor(
+                                        selectedDropdownStatus,
+                                        colorScheme,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const SizedBox(height: 6),
+                        Text(
+                          [
+                            widget.ticket.ticketNumber.isNotEmpty
+                                ? widget.ticket.ticketNumber
+                                : widget.ticket.id,
+                            if (_titleCase(widget.ticket.category).isNotEmpty)
+                              _titleCase(widget.ticket.category),
+                            if (_titleCase(widget.ticket.priority).isNotEmpty)
+                              '${_titleCase(widget.ticket.priority)} Priority',
+                          ].join(' · '),
+                          style: GoogleFonts.roboto(
+                            fontSize: metaFs,
+                            height: 14 / 11,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(width: 12),
-                          InkWell(
-                            onTap: _sending ? null : _sendMessage,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'From',
+                                style: GoogleFonts.roboto(
+                                  fontSize: metaFs,
+                                  height: 14 / 11,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.6),
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: BorderRadius.circular(12),
+                              const SizedBox(height: 6),
+                              Text(
+                                fromName,
+                                style: GoogleFonts.roboto(
+                                  fontSize: bodyFs,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.send,
-                                    color: colorScheme.onPrimary,
-                                    size: 18,
+                              const SizedBox(height: 4),
+                              Text(
+                                fromEmail,
+                                style: GoogleFonts.roboto(
+                                  fontSize: secondaryFs,
+                                  height: 16 / 12,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (showDetailsSkeleton)
+                          const AppShimmer(
+                            width: double.infinity,
+                            height: 52,
+                            radius: 16,
+                          )
+                        else
+                          DropdownButtonFormField<String>(
+                            decoration: _dropdownDecoration(context),
+                            value: statusOptions.contains(selectedDropdownStatus)
+                                ? selectedDropdownStatus
+                                : null,
+                            items: statusOptions
+                                .map(
+                                  (status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status),
                                   ),
-                                  const SizedBox(width: 6),
-                                  _sending
-                                      ? const AppShimmer(
-                                          width: 36,
-                                          height: 14,
-                                          radius: 7,
-                                        )
-                                      : Text(
-                                          "Send",
-                                          style: GoogleFonts.inter(
-                                            color: colorScheme.onPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
+                                )
+                                .toList(),
+                            onChanged: null,
+                            style: GoogleFonts.roboto(
+                              fontSize: secondaryFs,
+                              height: 16 / 12,
+                              color: colorScheme.onSurface,
+                            ),
+                            icon: Icon(
+                              Icons.arrow_drop_down,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor:
+                                  colorScheme.onSurface.withOpacity(0.06),
+                              child: Text(
+                                fromName.isNotEmpty
+                                    ? fromName[0].toUpperCase()
+                                    : '—',
+                                style: GoogleFonts.roboto(
+                                  fontSize: bodyFs,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fromName,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: bodyFs,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    fromDate,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: secondaryFs,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ],
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const SizedBox(height: 6),
+                        Container(
+                          width: double.infinity,
+                          height: 160,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                        ],
-                      ),
-                    ],
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: filteredMessages.isEmpty
+                              ? Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    '—',
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: secondaryFs,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  itemCount: filteredMessages.length,
+                                  padding: EdgeInsets.zero,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 8),
+                                  itemBuilder: (context, index) {
+                                    final msg = filteredMessages[index];
+                                    return Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.12),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          msg.message,
+                                          textAlign: TextAlign.right,
+                                          style: GoogleFonts.roboto(
+                                            fontSize: bodyFs,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.08),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: _pickAttachment,
+                                        child: Container(
+                                          height: 32,
+                                          width: 32,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.06),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.attach_file,
+                                            size: 16,
+                                            color: colorScheme.onSurface
+                                                .withOpacity(0.6),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            TextField(
+                                              controller: messageController,
+                                              minLines: 1,
+                                              maxLines: 3,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: bodyFs,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                hintText: 'Type a message…',
+                                                hintStyle: GoogleFonts.roboto(
+                                                  fontSize: bodyFs,
+                                                  height: 20 / 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.6),
+                                                ),
+                                                filled: true,
+                                                fillColor: Colors.transparent,
+                                                border: InputBorder.none,
+                                                enabledBorder: InputBorder.none,
+                                                focusedBorder: InputBorder.none,
+                                              ),
+                                            ),
+                                            if (_attachment != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 4),
+                                                child: Text(
+                                                  _attachment!.filename,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: secondaryFs - 1,
+                                                    height: 14 / 11,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      GestureDetector(
+                                        onTap: _sending ? null : _sendMessage,
+                                        child: Container(
+                                          height: 38,
+                                          width: 38,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: colorScheme.primary,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.send,
+                                            size: 18,
+                                            color: colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: Container(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF0A0A0A)
+                  : const Color(0xFFF5F5F7),
+              child: UserHomeAppBar(
+                title: widget.ticket.ticketNumber.isNotEmpty
+                    ? widget.ticket.ticketNumber
+                    : widget.ticket.id,
+                leadingIcon: Icons.confirmation_number_outlined,
+                onClose: () => Navigator.pop(context, _hasChanges),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -671,17 +1236,6 @@ class _MessagesContainer extends StatelessWidget {
     required this.loading,
   });
 
-  String _formatDateTime(String raw) {
-    final trimmed = raw.trim();
-    if (trimmed.isEmpty) return '—';
-    final parsed = DateTime.tryParse(trimmed);
-    if (parsed == null) return trimmed;
-    final local = parsed.toLocal();
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${two(local.day)}/${two(local.month)}/${local.year}, '
-        '${two(local.hour)}:${two(local.minute)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -691,30 +1245,22 @@ class _MessagesContainer extends StatelessWidget {
       return Container(
         width: double.infinity,
         height: messageHeight,
-        alignment: Alignment.topLeft,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
         ),
-        child: Column(
-          children: List.generate(
-            3,
-            (_) => const Padding(
-              padding: EdgeInsets.only(bottom: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppShimmer(width: 140, height: 12, radius: 6),
-                  SizedBox(height: 8),
-                  AppShimmer(width: double.infinity, height: 14, radius: 7),
-                  SizedBox(height: 8),
-                  AppShimmer(width: 220, height: 14, radius: 7),
-                ],
-              ),
-            ),
-          ),
+        child: ListView(
+          children: const [
+            AppShimmer(width: 160, height: 12, radius: 6),
+            SizedBox(height: 8),
+            AppShimmer(width: double.infinity, height: 14, radius: 7),
+            SizedBox(height: 14),
+            AppShimmer(width: 130, height: 12, radius: 6),
+            SizedBox(height: 8),
+            AppShimmer(width: double.infinity, height: 14, radius: 7),
+          ],
         ),
       );
     }
@@ -731,7 +1277,7 @@ class _MessagesContainer extends StatelessWidget {
           border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
         ),
         child: Text(
-          "No ${selectedTab.toLowerCase()} messages for this ticket.",
+          'No ${selectedTab.toLowerCase()} messages for this ticket.',
           style: GoogleFonts.inter(
             color: colorScheme.onSurface.withOpacity(0.6),
           ),
@@ -762,9 +1308,7 @@ class _MessagesContainer extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        message.senderName.isEmpty ? 'You' : message.senderName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        message.senderName.isEmpty ? '—' : message.senderName,
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -772,11 +1316,13 @@ class _MessagesContainer extends StatelessWidget {
                               ? Colors.purple
                               : colorScheme.onSurface,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _formatDateTime(message.createdAt),
+                      message.createdAt.isEmpty ? '—' : message.createdAt,
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: colorScheme.onSurface.withOpacity(0.5),
@@ -786,7 +1332,7 @@ class _MessagesContainer extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  message.message,
+                  message.message.isEmpty ? '—' : message.message,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -801,66 +1347,130 @@ class _MessagesContainer extends StatelessWidget {
   }
 }
 
-class _LocalTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _LocalTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final bool small = width < 420;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: small ? 12 : 16,
-          vertical: small ? 6 : 8,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: small ? 11 : 13,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
+Widget _tabPill(
+  BuildContext context, {
+  required String label,
+  required bool selected,
+  required VoidCallback onTap,
+}) {
+  final cs = Theme.of(context).colorScheme;
+  final width = MediaQuery.of(context).size.width;
+  final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
+  final double tabFs = 14 + scale;
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(999),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: selected ? cs.onSurface : Colors.transparent,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.roboto(
+          fontSize: tabFs,
+          height: 20 / 14,
+          fontWeight: FontWeight.w600,
+          color: selected ? cs.surface : cs.onSurface,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _TicketCard extends StatelessWidget {
-  final AdminTicketListItem ticket;
-  final VoidCallback onTap;
-
-  const _TicketCard({required this.ticket, required this.onTap});
+class _TicketCardShimmer extends StatelessWidget {
+  const _TicketCardShimmer();
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final Color statusColor = _statusColor(ticket.status, colorScheme);
-    final summary = ticket.description.isNotEmpty
-        ? ticket.description
-        : [
-            if (ticket.category.isNotEmpty) ticket.category,
-            if (ticket.priority.isNotEmpty) ticket.priority,
-          ].join(' • ');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: 220, height: 16, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 170, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 78, height: 14, radius: 8),
+          SizedBox(height: 12),
+          AppShimmer(width: double.infinity, height: 14, radius: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketCard extends StatelessWidget {
+  final AdminTicketListItem? ticket;
+  final VoidCallback? onTap;
+
+  const _TicketCard({required this.ticket, required this.onTap});
+
+  String _safe(String value) {
+    final out = value.trim();
+    if (out.isEmpty || out.toLowerCase() == 'null') return '—';
+    return out;
+  }
+
+  String _formatShortDate(String raw) {
+    if (raw.trim().isEmpty) return '—';
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final y = dt.year.toString();
+      return '$d/$m/$y';
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+
+    if (ticket == null) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Text(
+          'No tickets found',
+          style: GoogleFonts.roboto(
+            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      );
+    }
+
+    final status = _safe(ticket?.statusLabel ?? '');
+    final statusColor = _statusColor(status, colorScheme);
+    final category = _safe(ticket?.category ?? '');
+    final priority = _safe(ticket?.priority ?? '');
+    final createdText = _formatShortDate(_safe(ticket?.createdAt ?? ''));
 
     return InkWell(
       onTap: onTap,
@@ -878,8 +1488,8 @@ class _TicketCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ticket.subject.isEmpty ? 'Untitled ticket' : ticket.subject,
-              style: GoogleFonts.inter(
+              _safe(ticket?.subject ?? ''),
+              style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -888,112 +1498,124 @@ class _TicketCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 6),
-            Text(
-              "${ticket.ticketNumber.isEmpty ? ticket.id : ticket.ticketNumber} • ${ticket.ownerName.isEmpty ? 'You' : ticket.ownerName}",
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                color: colorScheme.onSurface.withOpacity(0.54),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              ticket.statusLabel,
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                fontWeight: FontWeight.w800,
-                color: statusColor,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    _safe(
+                      ticket?.ticketNumber.isNotEmpty == true
+                          ? ticket!.ticketNumber
+                          : ticket?.id ?? '',
+                    ),
+                    style: GoogleFonts.roboto(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      color: colorScheme.onSurface.withOpacity(0.54),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: statusColor.withOpacity(0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _statusIcon(status),
+                        size: AdaptiveUtils.getIconSize(width) - 4,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        status,
+                        style: GoogleFonts.roboto(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            Text(
-              summary.isEmpty ? '—' : summary,
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getTitleFontSize(width),
-                color: colorScheme.onSurface.withOpacity(0.87),
+            if (category != '—' || priority != '—' || createdText != '—')
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      [
+                        if (category != '—') _titleCase(category),
+                        if (priority != '—')
+                          '${_titleCase(priority)} Priority',
+                      ].join(' · '),
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                        height: 16 / 12,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (createdText != '—')
+                    Text(
+                      createdText,
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                        height: 16 / 12,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                ],
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View Ticket',
+                        style: GoogleFonts.roboto(
+                          fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right,
+                        size: AdaptiveUtils.getIconSize(width),
+                        color: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _TicketShimmerCard extends StatelessWidget {
-  final double horizontalPadding;
-
-  const _TicketShimmerCard({required this.horizontalPadding});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(horizontalPadding),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppShimmer(width: 220, height: 18, radius: 8),
-          SizedBox(height: 8),
-          AppShimmer(width: 180, height: 14, radius: 7),
-          SizedBox(height: 8),
-          AppShimmer(width: 72, height: 14, radius: 7),
-          SizedBox(height: 10),
-          AppShimmer(width: double.infinity, height: 14, radius: 7),
-          SizedBox(height: 8),
-          AppShimmer(width: 240, height: 14, radius: 7),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyTicketCard extends StatelessWidget {
-  final double horizontalPadding;
-
-  const _EmptyTicketCard({required this.horizontalPadding});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(horizontalPadding),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'No tickets found',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Open a support ticket from the web console if you need help.',
-            style: GoogleFonts.inter(
-              color: colorScheme.onSurface.withOpacity(0.65),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -9,14 +9,24 @@ class UserSubUsersRepository {
   const UserSubUsersRepository({required this.api});
 
   Future<Result<List<UserSubUserItem>>> getSubUsers({
+    int page = 1,
+    int limit = 10,
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/subusers', cancelToken: cancelToken);
+    final res = await api.get(
+      '/user/subusers',
+      queryParameters: {'page': page, 'limit': limit},
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
         final map = _extractMap(data);
-        final items = _extractList(map['items'] ?? map['data']);
+        final dataNode = map['data'];
+        final itemsNode = map['items'] ??
+            (dataNode is Map ? dataNode['items'] : null) ??
+            dataNode;
+        final items = _extractList(itemsNode);
         final out = <UserSubUserItem>[];
         for (final item in items) {
           if (item is Map<String, dynamic>) {
@@ -43,6 +53,105 @@ class UserSubUsersRepository {
 
     return res.when(
       success: (data) => Result.ok(UserSubUserItem(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<UserSubUserItem>> getSubUserDetails(
+    String id, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/user/subusers/$id',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        final inner = map['data'];
+        final resolved = inner is Map
+            ? Map<String, dynamic>.from(inner.cast())
+            : map;
+        return Result.ok(UserSubUserItem(resolved));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<Map<String, dynamic>>>> getSubUserVehicles(
+    String id, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/user/subusers/$id/vehicles',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        final dataNode = map['data'];
+        final itemsNode = map['items'] ??
+            (dataNode is Map ? dataNode['items'] : null) ??
+            dataNode;
+        final items = _extractList(itemsNode);
+        final out = <Map<String, dynamic>>[];
+        for (final item in items) {
+          if (item is Map<String, dynamic>) {
+            out.add(item);
+          } else if (item is Map) {
+            out.add(Map<String, dynamic>.from(item.cast()));
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> deleteSubUser(
+    String id, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.delete(
+      '/user/subusers/$id',
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> assignVehicle(
+    String id,
+    List<int> vehicleIds, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/user/subusers/$id/vehicles/assign',
+      data: {'vehicleIds': vehicleIds},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> unassignVehicle(
+    String id,
+    List<int> vehicleIds, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/user/subusers/$id/vehicles/unassign',
+      data: {'vehicleIds': vehicleIds},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
     );
   }

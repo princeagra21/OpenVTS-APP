@@ -77,6 +77,38 @@ class UserDriversRepository {
     );
   }
 
+  Future<Result<void>> deleteDriver(
+    String driverId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.delete(
+      '/user/drivers/$driverId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateDriver(
+    String driverId,
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/user/drivers/$driverId',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   List? _extractList(Object? data, {List<String> extraKeys = const []}) {
     if (data is List) return data;
     final keys = <String>['data', 'items', 'result', 'results', ...extraKeys];

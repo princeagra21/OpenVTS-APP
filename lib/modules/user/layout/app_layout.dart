@@ -1,4 +1,4 @@
-import 'package:fleet_stack/modules/admin/components/appbars/custom_appbar.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/bottom_bar/custom_bottom_bar.dart';
@@ -23,6 +23,9 @@ class AppLayout extends StatefulWidget {
   /// NEW OPTIONS
   final double horizontalPadding;
   final bool showAppBar;
+  final Widget? customTopBar;
+  final EdgeInsets customTopBarPadding;
+  final double? customTopBarHeight;
 
   /// If true, instructs the CustomAppBar to not automatically show its leading/back button.
   /// Requires CustomAppBar to accept a `showLeading` boolean (defaulting to true in CustomAppBar).
@@ -41,6 +44,9 @@ class AppLayout extends StatefulWidget {
     this.horizontalPadding = 20.0,
     this.showAppBar = true,
     this.disableAppBarLeading = true,
+    this.customTopBar,
+    this.customTopBarPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.customTopBarHeight,
   });
 
   @override
@@ -51,6 +57,32 @@ class _AppLayoutState extends State<AppLayout> {
   double _scrollOffset = 0.0;
   bool _isSearching = false;
   late TextEditingController _searchController;
+
+  IconData _iconForTitle(String title) {
+    final t = title.trim().toLowerCase();
+    if (t.contains('map')) return Icons.map_outlined;
+    if (t.contains('vehicle')) return Icons.directions_car_outlined;
+    if (t.contains('driver')) return Icons.badge_outlined;
+    if (t.contains('support') || t.contains('ticket')) {
+      return Icons.support_agent_outlined;
+    }
+    if (t.contains('transaction')) return Icons.receipt_long_outlined;
+    if (t.contains('payment')) return Icons.credit_card_outlined;
+    if (t.contains('notification')) return Icons.notifications_outlined;
+    if (t.contains('setting')) return Icons.settings_outlined;
+    if (t.contains('profile')) return Icons.person_outline;
+    if (t.contains('report')) return Icons.assessment_outlined;
+    if (t.contains('route')) return Icons.route_outlined;
+    if (t.contains('landmark') || t.contains('geofence')) {
+      return Icons.location_on_outlined;
+    }
+    if (t.contains('admin')) return Icons.admin_panel_settings_outlined;
+    if (t.contains('sub user') || t.contains('user')) {
+      return Icons.group_outlined;
+    }
+    if (t.contains('log')) return Icons.list_alt_outlined;
+    return Icons.apps_outlined;
+  }
 
   @override
   void initState() {
@@ -163,7 +195,7 @@ class _AppLayoutState extends State<AppLayout> {
             ),
           ),
 
-          /// CUSTOM APP BAR with animated opacity and ignore pointer when searching
+          /// HOME-STYLE APP BAR (matches Admin/Superadmin screen appbar)
           if (widget.showAppBar)
             Positioned(
               left: 0,
@@ -174,23 +206,29 @@ class _AppLayoutState extends State<AppLayout> {
                 child: AnimatedOpacity(
                   opacity: _isSearching ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 250),
-                  child: CustomAppBar(
-                    title: widget.title,
-                    subtitle: widget.subtitle,
-                    icons: widget.actionIcons ?? [],
-                    onIconTaps:
-                        effectiveTaps, // Use effective taps with search handling
-                    enableBellBadge: true,
-                    notificationPathPrefix: '/user/notifications',
-                    showLeftAvatar: widget.showLeftAvatar,
-                    showRightAvatar: widget.showRightAvatar,
-                    leftAvatarText: widget.leftAvatarText,
-                    scrollOffset: _scrollOffset, // Pass the dynamic offset
-                    // Instruct CustomAppBar to NOT show its automatic leading (back) button.
-                    // If CustomAppBar exposes a parameter to control its leading/back button,
-                    // add it there; otherwise control navigation from this layout.
+                  child: UserHomeAppBar(
+                    title: widget.subtitle.trim().isNotEmpty
+                        ? widget.subtitle
+                        : widget.title,
+                    leadingIcon: _iconForTitle(
+                      widget.subtitle.trim().isNotEmpty
+                          ? widget.subtitle
+                          : widget.title,
+                    ),
+                    onClose: () => context.go('/user/home'),
                   ),
                 ),
+              ),
+            ),
+
+          if (widget.customTopBar != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: Padding(
+                padding: widget.customTopBarPadding,
+                child: widget.customTopBar!,
               ),
             ),
 
@@ -373,8 +411,8 @@ class _AppLayoutState extends State<AppLayout> {
         ],
       ),
 
-      /// FIXED BOTTOM BAR
-      bottomNavigationBar: const CustomBottomBar(),
+      /// FIXED BOTTOM BAR (removed for user module)
+      bottomNavigationBar: null,
     );
   }
 }

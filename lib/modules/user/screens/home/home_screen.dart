@@ -1,24 +1,21 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
-import 'package:fleet_stack/core/models/user_recent_alert_item.dart';
-import 'package:fleet_stack/core/models/user_top_asset_item.dart';
-import 'package:fleet_stack/core/models/user_usage_last_7_days.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_home_repository.dart';
+import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
+import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/main.dart';
-import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/fleet_card.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/recent_activity_box.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/search_bar.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/top_customers_box.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/screens/profile/widget/update_password_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,367 +25,836 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // FleetStack-API-Reference.md confirmed User Home endpoints:
-  // - GET /user/dashboard/fleet-status
-  // - GET /user/dashboard/usage-last-7-days
-  // - GET /user/dashboard/recent-alerts
-  // - GET /user/dashboard/top-performing-assets
+  CancelToken? _badgeToken;
+  Timer? _badgeRefreshTimer;
+  ApiClient? _apiClient;
+  RoleNotificationsRepository? _repo;
+  int _unreadCount = 0;
+  AdminProfile? _profile;
+  bool _loadingProfile = false;
+  CancelToken? _profileToken;
+  UserProfileRepository? _profileRepo;
 
-  String _selectedLanguage = 'EN';
-  String _overviewMode = 'Fleet';
+  String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
-  ApiClient? _api;
-  UserHomeRepository? _repo;
-  CancelToken? _loadToken;
+  RoleNotificationsRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= RoleNotificationsRepository(
+      api: _apiClient!,
+      pathPrefix: '/user/notifications',
+    );
+    return _repo!;
+  }
 
-  bool _loading = false;
-  bool _errorShown = false;
+  UserProfileRepository _profileRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _profileRepo ??= UserProfileRepository(api: _apiClient!);
+    return _profileRepo!;
+  }
 
-  UserFleetStatusSummary? _fleetStatus;
-  UserUsageLast7Days? _usageLast7Days;
-  List<UserRecentAlertItem>? _recentAlerts;
-  List<UserTopAssetItem>? _topAssets;
+  Future<void> _loadUnreadCount() async {
+    _badgeToken?.cancel('Reload home notifications badge');
+    final token = CancelToken();
+    _badgeToken = token;
+
+    _repo = null;
+    final result = await _repoOrCreate().getNotifications(cancelToken: token);
+    if (!mounted) return;
+
+    result.when(
+      success: (items) {
+        final unread = items.where((item) => !item.isRead).length;
+        if (!mounted) return;
+        setState(() => _unreadCount = unread);
+      },
+      failure: (_) {
+        if (!mounted) return;
+        setState(() => _unreadCount = 0);
+      },
+    );
+  }
+
+  void _startBadgeRefresh() {
+    _badgeRefreshTimer?.cancel();
+    _badgeRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _loadUnreadCount();
+    });
+  }
+
+  Future<void> _loadProfile() async {
+    _profileToken?.cancel('Reload profile');
+    final token = CancelToken();
+    _profileToken = token;
+
+    if (!mounted) return;
+    setState(() => _loadingProfile = true);
+
+    try {
+      final res = await _profileRepoOrCreate().getMyProfile(
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (profile) {
+          if (!mounted) return;
+          setState(() {
+            _profile = profile;
+            _loadingProfile = false;
+          });
+        },
+        failure: (error) {
+          if (error is ApiException &&
+              (error.statusCode == 401 || error.statusCode == 403)) {
+            if (!mounted) return;
+            setState(() {
+              _profile = null;
+              _loadingProfile = false;
+            });
+            return;
+          }
+          if (!mounted) return;
+          setState(() {
+            _profile = null;
+            _loadingProfile = false;
+          });
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _profile = null;
+        _loadingProfile = false;
+      });
+    }
+  }
+
+  String _initials(String name, String username) {
+    final source = name.isNotEmpty ? name : username;
+    final clean = source.replaceAll('@', ' ').trim();
+    if (clean.isEmpty) return '--';
+    final parts =
+        clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return '--';
+    return parts.take(2).map((e) => e[0]).join().toUpperCase();
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _LogoutConfirmDialog(),
+    );
+    if (shouldLogout != true) return;
+    await TokenStorage.defaultInstance().clear();
+    if (!mounted) return;
+    context.go('/login');
+  }
+
+  Future<void> _showProfileMenu({
+    required BuildContext anchorContext,
+    required String displayName,
+    required String roleLabel,
+    required String initials,
+  }) async {
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlay == null) return;
+    final media = MediaQuery.of(context);
+    final topOffset =
+        media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
+    final rightEdge = overlay.size.width - 12;
+    final menuWidth = 200.0;
+    final position = RelativeRect.fromLTRB(
+      rightEdge - menuWidth,
+      topOffset,
+      12,
+      overlay.size.height - topOffset,
+    );
+
+    final cs = Theme.of(context).colorScheme;
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: SizedBox(
+            width: menuWidth,
+            child: Row(
+              children: [
+                _ProfileAvatar(
+                  radius: 22,
+                  fontSize: 14,
+                  colorScheme: Theme.of(context).colorScheme,
+                  initials: initials,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName.isNotEmpty ? displayName : '—',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        roleLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.roboto(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'profile',
+          height: 36,
+          child: Row(
+            children: [
+              const Expanded(child: Text('Profile')),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: cs.primary,
+              ),
+            ],
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'password',
+          height: 36,
+          child: Row(
+            children: [
+              const Expanded(child: Text('Change Password')),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: cs.primary,
+              ),
+            ],
+          ),
+        ),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
+        PopupMenuItem<String>(
+          value: 'logout',
+          height: 36,
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              const Icon(Icons.logout, size: 18, color: Colors.red),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (!mounted || selected == null) return;
+    if (selected == 'profile') {
+      context.push('/user/profile');
+    } else if (selected == 'password') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const UpdatePasswordScreen(),
+        ),
+      );
+    } else if (selected == 'logout') {
+      await _confirmLogout();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadHome();
+    _loadUnreadCount();
+    _startBadgeRefresh();
+    _loadProfile();
   }
 
   @override
   void dispose() {
-    _loadToken?.cancel('User home disposed');
+    _badgeRefreshTimer?.cancel();
+    _badgeToken?.cancel('HomeScreen disposed');
+    _profileToken?.cancel('HomeScreen disposed');
     super.dispose();
   }
 
-  UserHomeRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= UserHomeRepository(api: _api!);
-    return _repo!;
-  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDark = theme.brightness == Brightness.dark;
 
-  Future<void> _loadHome() async {
-    _loadToken?.cancel('Reload user home');
-    final token = CancelToken();
-    _loadToken = token;
+    final double hp = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth);
+    final double subtitleFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double bellNotificationFontSize =
+        AdaptiveUtils.getBellNotificationFontSize(screenWidth);
 
-    if (!mounted) return;
-    setState(() => _loading = true);
+    final double gridGap = hp * 1.3;
+    final double tileSize = (screenWidth - (hp * 2) - (gridGap * 2)) / 3;
+    final double labelFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
-    UserFleetStatusSummary? nextFleet = _fleetStatus;
-    UserUsageLast7Days? nextUsage = _usageLast7Days;
-    List<UserRecentAlertItem>? nextAlerts = _recentAlerts;
-    List<UserTopAssetItem>? nextTopAssets = _topAssets;
+    final String logoAsset = isDark
+        ? 'assets/image/logo-dark.png'
+        : 'assets/image/logo-light.png';
 
-    bool hasFailure = false;
-    String? errorMessage;
+    const footerText = '© 2026 Fleet Stack All rights reserved.';
 
-    void captureFailure(Object error, String fallback) {
-      if (error is ApiException &&
-          error.message.trim() == 'Request cancelled') {
-        return;
-      }
-      hasFailure = true;
-      if (errorMessage == null || errorMessage!.trim().isEmpty) {
-        if (error is ApiException && error.message.trim().isNotEmpty) {
-          errorMessage = error.message;
-        } else {
-          errorMessage = fallback;
-        }
-      }
-    }
+    final List<_HomeShortcut> shortcuts = [
+      _HomeShortcut(
+        label: 'Dashboard',
+        icon: Symbols.dashboard,
+        route: '/user/dashboard',
+      ),
+      _HomeShortcut(
+        label: 'Vehicles',
+        icon: Symbols.directions_car,
+        route: '/user/vehicles',
+      ),
+      _HomeShortcut(label: 'Maps', icon: Symbols.map, route: '/user/maps'),
+      _HomeShortcut(
+        label: 'Landmarks Studio',
+        icon: Symbols.location_on,
+        route: '/user/geofence',
+      ),
+      _HomeShortcut(
+        label: 'Share Track Link',
+        icon: Symbols.share,
+        route: '/user/share-track',
+      ),
+      _HomeShortcut(
+        label: 'Route Optimization',
+        icon: Symbols.route,
+        route: '/user/route-optimization',
+      ),
+      _HomeShortcut(
+        label: 'Support',
+        icon: Symbols.help,
+        route: '/user/support',
+      ),
+      _HomeShortcut(
+        label: 'Transactions',
+        icon: Symbols.receipt_long,
+        route: '/user/transactions',
+      ),
+      _HomeShortcut(
+        label: 'Settings',
+        icon: Symbols.settings,
+        route: '/user/settings',
+      ),
+      _HomeShortcut(
+        label: 'Accounts',
+        icon: Symbols.group,
+        route: '/user/accounts',
+      ),
+      _HomeShortcut(
+        label: 'Notifications',
+        icon: Symbols.notifications,
+        route: '/user/notifications/push',
+      ),
+    ];
 
-    final repo = _repoOrCreate();
-
-    final fleetRes = await repo.getFleetStatus(cancelToken: token);
-    if (!mounted || token.isCancelled) return;
-    fleetRes.when(
-      success: (data) => nextFleet = data,
-      failure: (error) => captureFailure(error, "Couldn't load fleet status."),
-    );
-
-    final usageRes = await repo.getUsageLast7Days(cancelToken: token);
-    if (!mounted || token.isCancelled) return;
-    usageRes.when(
-      success: (data) => nextUsage = data,
-      failure: (error) => captureFailure(error, "Couldn't load usage summary."),
-    );
-
-    final alertsRes = await repo.getRecentAlerts(cancelToken: token);
-    if (!mounted || token.isCancelled) return;
-    alertsRes.when(
-      success: (data) => nextAlerts = data,
-      failure: (error) => captureFailure(error, "Couldn't load recent alerts."),
-    );
-
-    final topAssetsRes = await repo.getTopPerformingAssets(cancelToken: token);
-    if (!mounted || token.isCancelled) return;
-    topAssetsRes.when(
-      success: (data) => nextTopAssets = data,
-      failure: (error) =>
-          captureFailure(error, "Couldn't load top performing assets."),
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _fleetStatus = nextFleet;
-      _usageLast7Days = nextUsage;
-      _recentAlerts = nextAlerts;
-      _topAssets = nextTopAssets;
-      _loading = false;
-      if (!hasFailure) {
-        _errorShown = false;
-      }
-    });
-
-    if (!hasFailure || _errorShown || !mounted) return;
-    _errorShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(errorMessage ?? "Couldn't load dashboard.")),
-    );
-  }
-
-  Future<void> _showLanguagePicker(BuildContext context) async {
-    final chosen = await showGeneralDialog<String?>(
-      context: context,
-      barrierLabel: 'Language',
-      barrierDismissible: true,
-      barrierColor: Colors.black45,
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (ctx, anim1, anim2) {
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (ctx, anim, secondaryAnim, child) {
-        final theme = Theme.of(context);
-        return SafeArea(
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 72.0, right: 14.0),
-              child: FadeTransition(
-                opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.97, end: 1.0).animate(
-                    CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-                  ),
-                  child: Material(
-                    color: theme.colorScheme.surface,
-                    elevation: 18,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 220,
-                        maxWidth: 260,
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: cs.surface,
+        toolbarHeight: AppUtils.appBarHeightCustom + 12,
+        titleSpacing: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(24),
+          ),
+        ),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: AppUtils.spacingExtraSmall),
+                    Text(
+                      'Fleet OS',
+                      style: GoogleFonts.roboto(
+                        fontSize: subtitleFontSize,
+                        fontWeight: FontWeight.w900,
+                        color: cs.onSurface,
+                        letterSpacing: -0.4,
                       ),
-                      child: IntrinsicWidth(
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  _HeaderIconButton(
+                    icon: CupertinoIcons.bell,
+                    size: buttonSize,
+                    iconSize: iconSize,
+                    colorScheme: cs,
+                    badgeText: _badgeText,
+                    showBadge: _unreadCount > 0,
+                    badgeFontSize: bellNotificationFontSize,
+                    onTap: () => context.push('/user/notifications'),
+                  ),
+                  SizedBox(width: AppUtils.spacingSmall),
+                  Builder(
+                    builder: (avatarContext) => InkWell(
+                      borderRadius: BorderRadius.circular(buttonSize / 2),
+                      onTap: () {
+                        final profile = _profile;
+                        final name = profile?.fullName.trim() ?? '';
+                        final username = profile?.username.trim() ?? '';
+                        final displayName =
+                            name.isNotEmpty ? name : username;
+                        final roleLabel = username.isNotEmpty ? username : 'User';
+                        _showProfileMenu(
+                          anchorContext: avatarContext,
+                          displayName: displayName,
+                          roleLabel: roleLabel,
+                          initials: _initials(name, username),
+                        );
+                      },
+                      child: _ProfileAvatar(
+                        radius: AdaptiveUtils.getRightAvatarRadius(screenWidth),
+                        fontSize:
+                            AdaptiveUtils.getRightAvatarFontSize(screenWidth),
+                        colorScheme: cs,
+                        initials: _initials(
+                          _profile?.fullName ?? '',
+                          _profile?.username ?? '',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  hp,
+                  AppUtils.spacingMedium,
+                  hp * 0.5,
+                  AppUtils.spacingLarge,
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Transform.translate(
+                        offset: const Offset(0, -30),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'Language',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  const Spacer(),
-                                  GestureDetector(
-                                    onTap: () => Navigator.of(ctx).pop(),
-                                    child: Container(
-                                      height: 32,
-                                      width: 32,
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
-                                            .withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 18,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            _languageTile(ctx, 'EN', 'English', '🇬🇧'),
-                            _languageTile(ctx, 'FR', 'Français', '🇫🇷'),
-                            _languageTile(ctx, 'ES', 'Español', '🇪🇸'),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                'App language will update after selection.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                            SizedBox(height: AppUtils.spacingLarge * 1.5),
+                            Center(
+                              child: Transform.translate(
+                                offset: const Offset(0, -40),
+                                child: Image.asset(
+                                  logoAsset,
+                                  width: (screenWidth * 0.45).clamp(140, 200),
+                                  fit: BoxFit.contain,
                                 ),
                               ),
+                            ),
+                            SizedBox(height: AppUtils.spacingLarge * 1.5),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: gridGap,
+                              runSpacing: gridGap,
+                              children: shortcuts.map((item) {
+                                return SizedBox(
+                                  width: tileSize,
+                                  child: _HomeShortcutTile(
+                                    item: item,
+                                    tileSize: tileSize,
+                                    labelFontSize: labelFontSize,
+                                    colorScheme: cs,
+                                    onTap: () => context.go(item.route),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (chosen == null || chosen == _selectedLanguage || !mounted) return;
-    setState(() => _selectedLanguage = chosen);
-    debugPrint('Language changed to: $chosen');
-  }
-
-  Widget _languageTile(
-    BuildContext ctx,
-    String code,
-    String label,
-    String flag,
-  ) {
-    final theme = Theme.of(ctx);
-    final selected = code == _selectedLanguage;
-
-    return InkWell(
-      onTap: () => Navigator.of(ctx).pop(code),
-      borderRadius: BorderRadius.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              height: 36,
-              width: 36,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: theme.colorScheme.primary.withOpacity(0.06),
-              ),
-              alignment: Alignment.center,
-              child: Text(flag, style: const TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Text(
+                        footerText,
+                        textAlign: TextAlign.center,
+                        style: AppUtils.bodySmallBase.copyWith(
+                          color: cs.onSurface.withOpacity(0.55),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    code,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            if (selected)
-              Container(
-                height: 28,
-                width: 28,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check,
-                  size: 16,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
           ],
         ),
       ),
     );
   }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final ColorScheme colorScheme;
+  final bool showBadge;
+  final String badgeText;
+  final double badgeFontSize;
+  final VoidCallback onTap;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.size,
+    required this.iconSize,
+    required this.colorScheme,
+    required this.showBadge,
+    required this.badgeText,
+    required this.badgeFontSize,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themeIcon = isDark ? Icons.light_mode : Icons.dark_mode;
-
-    return AppLayout(
-      title: 'FLEET STACK',
-      subtitle: 'Overview',
-      actionIcons: [Icons.language, themeIcon, CupertinoIcons.bell],
-      onActionTaps: [
-        () => _showLanguagePicker(context),
-        () {
-          final isCurrentlyDark =
-              Theme.of(context).brightness == Brightness.dark;
-          final newDarkMode = !isCurrentlyDark;
-
-          themeController.setDarkMode(newDarkMode);
-          AppTheme.setDarkMode(newDarkMode);
-
-          if (AppTheme.brandColor == AppTheme.defaultBrand ||
-              AppTheme.brandColor == AppTheme.defaultDarkBrand) {
-            final forcedBrand = newDarkMode
-                ? AppTheme.defaultDarkBrand
-                : AppTheme.defaultBrand;
-            themeController.setBrand(forcedBrand);
-            AppTheme.setBrand(forcedBrand);
-          }
-        },
-        () => context.push('/user/notifications'),
-      ],
-      leftAvatarText: 'FS',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(size / 2),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          const AppSearchBar(),
-          const SizedBox(height: 12),
-          const SizedBox(height: 24),
-          OverviewBox(
-            mode: _overviewMode,
-            onModeChanged: (newMode) {
-              if (!mounted) return;
-              setState(() => _overviewMode = newMode);
-            },
-            loading: _loading,
-            fleetStatus: _fleetStatus,
-            usage: _usageLast7Days,
-            alertCount: _recentAlerts?.length,
-          ),
-          const SizedBox(height: 24),
-          if (_overviewMode == 'Fleet') ...[
-            VehicleStatusBox(loading: _loading, summary: _fleetStatus),
-            const SizedBox(height: 24),
-          ],
-          if (_overviewMode == 'Fleet')
-            RecentActivityBox(
-              loading: _loading,
-              items: _recentAlerts ?? const <UserRecentAlertItem>[],
-            )
-          else
-            TopCustomersBox(
-              loading: _loading,
-              items: _topAssets ?? const <UserTopAssetItem>[],
+          Container(
+            height: size,
+            width: size,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
             ),
-          const SizedBox(height: 24),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: colorScheme.primary,
+            ),
+          ),
+          if (showBadge)
+            Positioned(
+              top: -size * 0.15,
+              right: -size * 0.15,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onPrimary,
+                    fontSize: badgeFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeShortcut {
+  final String label;
+  final IconData icon;
+  final String route;
+
+  const _HomeShortcut({
+    required this.label,
+    required this.icon,
+    required this.route,
+  });
+}
+
+class _HomeShortcutTile extends StatelessWidget {
+  final _HomeShortcut item;
+  final double tileSize;
+  final double labelFontSize;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  const _HomeShortcutTile({
+    required this.item,
+    required this.tileSize,
+    required this.labelFontSize,
+    required this.colorScheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color neutralColor = cs.onSurface.withOpacity(isDark ? 0.86 : 0.75);
+    final double iconContainerSize = tileSize * 0.6;
+    final double iconSize = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 20
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 22
+            : 24;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppUtils.borderRadiusMedium,
+      splashColor: cs.surfaceVariant.withOpacity(0.4),
+      highlightColor: cs.surfaceVariant.withOpacity(0.4),
+      hoverColor: cs.surfaceVariant.withOpacity(0.4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: iconContainerSize,
+            width: iconContainerSize,
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: const BorderRadius.all(Radius.circular(24)),
+              border: Border.all(
+                color: cs.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              item.icon,
+              size: iconSize,
+              color: cs.primary,
+            ),
+          ),
+          SizedBox(height: AppUtils.spacingSmall),
+          Text(
+            item.label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: labelFontSize,
+              fontWeight: FontWeight.w600,
+              color: neutralColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  final double radius;
+  final double fontSize;
+  final ColorScheme colorScheme;
+  final String initials;
+
+  const _ProfileAvatar({
+    required this.radius,
+    required this.fontSize,
+    required this.colorScheme,
+    required this.initials,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double size = radius * 2;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.grey.shade50
+            : colorScheme.surfaceVariant,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: GoogleFonts.roboto(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutConfirmDialog extends StatelessWidget {
+  const _LogoutConfirmDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.square_arrow_right,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Log out?',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your current session will end. You will need to log in again to continue.',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Log out',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

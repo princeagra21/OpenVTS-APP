@@ -1,23 +1,22 @@
-// screens/transactions/transaction_screen.dart
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_transaction_item.dart';
-import 'package:fleet_stack/core/models/user_transactions_page.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_transactions_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -27,48 +26,27 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  // FleetStack-API-Reference.md confirmed:
-  // - GET /user/transactions
-  //
-  // Query keys used:
-  // - q
-  // - status
-  // - page
-  // - limit
-  //
-  // No User transaction details/receipt endpoint is confirmed in MD/Postman.
-  String selectedTab = "All";
+  // Endpoint truth table (FleetStack-API-Reference.md + Postman):
+  // - GET /user/transactions (query: q, status, page, limit)
+
+  String _statusFilter = 'All';
+  String? _selectedRange;
+  String? _fromDate;
+  String? _toDate;
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _tabScrollController = ScrollController();
-  late final List<String> _tabs;
-  late final List<GlobalKey> _tabKeys;
+
+  List<AdminTransactionItem>? _items;
+
+  bool _loading = false;
+  bool _errorShown = false;
+  bool _detailsApiUnavailableShown = false;
+  bool _receiptApiUnavailableShown = false;
+
+  CancelToken? _loadToken;
+  Timer? _searchDebounce;
 
   ApiClient? _apiClient;
   UserTransactionsRepository? _repo;
-  CancelToken? _token;
-  Timer? _debounce;
-
-  UserTransactionsPage? _pageData;
-  bool _loading = false;
-  bool _errorShown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabs = ["All", "Success", "Pending", "Failed", "Refunded"];
-    _tabKeys = List.generate(_tabs.length, (_) => GlobalKey());
-    _searchController.addListener(_scheduleReload);
-    _loadTransactions();
-  }
-
-  @override
-  void dispose() {
-    _token?.cancel('User transactions disposed');
-    _debounce?.cancel();
-    _searchController.dispose();
-    _tabScrollController.dispose();
-    super.dispose();
-  }
 
   UserTransactionsRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -79,814 +57,1503 @@ class _TransactionScreenState extends State<TransactionScreen> {
     return _repo!;
   }
 
-  bool _isCancelled(Object error) {
-    return error is ApiException &&
-        error.message.toLowerCase() == 'request cancelled';
+  void _showDebugUnavailableOnce({
+    required String message,
+    required bool alreadyShown,
+    required void Function() markShown,
+  }) {
+    if (!kDebugMode || alreadyShown || !mounted) return;
+    markShown();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _scheduleReload() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), _loadTransactions);
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _loadTransactions();
   }
 
-  String _normalizeStatusTab(String tab) {
-    final value = tab.trim().toLowerCase();
-    if (value == 'all') return '';
-    return value;
+  @override
+  void dispose() {
+    _loadToken?.cancel('TransactionScreen disposed');
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      _loadTransactions();
+    });
+  }
+
+  String? _statusQuery(String tab) {
+    final normalized = AdminTransactionItem.normalizeStatus(tab);
+    if (normalized.isEmpty || normalized == 'all') return null;
+    return normalized;
+  }
+
+  bool _isCancelled(Object err) {
+    return err is ApiException &&
+        err.message.toLowerCase() == 'request cancelled';
+  }
+
+  void _showLoadErrorOnce(String message) {
+    if (_errorShown || !mounted) return;
+    _errorShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadTransactions() async {
-    _token?.cancel('Reload user transactions');
+    _loadToken?.cancel('Reload transactions');
     final token = CancelToken();
-    _token = token;
+    _loadToken = token;
 
     if (!mounted) return;
     setState(() => _loading = true);
 
-    final result = await _repoOrCreate().getTransactions(
-      query: _searchController.text,
-      status: _normalizeStatusTab(selectedTab),
-      page: 1,
-      limit: 100,
-      cancelToken: token,
-    );
-    if (!mounted || token.isCancelled) return;
+    try {
+      final repo = _repoOrCreate();
 
-    result.when(
-      success: (page) {
-        setState(() {
-          _pageData = page;
-          _loading = false;
+      final listRes = await repo.getTransactions(
+        query: _searchController.text.trim(),
+        status: _statusQuery(_statusFilter),
+        page: 1,
+        limit: 100,
+        cancelToken: token,
+      );
+
+      if (!mounted) return;
+
+      List<AdminTransactionItem> items = const <AdminTransactionItem>[];
+      Object? firstError;
+
+      listRes.when(
+        success: (data) {
+          items = data.items;
+        },
+        failure: (err) {
+          firstError ??= err;
+        },
+      );
+
+      setState(() {
+        _items = items;
+        _loading = false;
+        if (firstError == null) {
           _errorShown = false;
-        });
-      },
-      failure: (error) {
-        setState(() => _loading = false);
-        if (_isCancelled(error) || _errorShown) return;
-        _errorShown = true;
-        final msg = error is ApiException && error.message.trim().isNotEmpty
-            ? error.message
-            : "Couldn't load transactions.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
-      },
-    );
-  }
+        }
+      });
 
-  Color _statusColor(String normalizedStatus) {
-    switch (normalizedStatus) {
-      case 'success':
-        return Colors.green;
-      case 'pending':
-        return Colors.orange;
-      case 'failed':
-      case 'refunded':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      if (firstError != null && !_isCancelled(firstError!)) {
+        _showLoadErrorOnce("Couldn't load transactions.");
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _items = const <AdminTransactionItem>[];
+        _loading = false;
+      });
+      _showLoadErrorOnce("Couldn't load transactions.");
     }
   }
 
-  String _formatDate(String raw) {
+  DateTime? _tryParseDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+
+    final parsedIso = DateTime.tryParse(value);
+    if (parsedIso != null) return parsedIso;
+
+    final datePart = value.split(',').first.trim();
+    final slash = datePart.split('/');
+    if (slash.length == 3) {
+      final d = int.tryParse(slash[0]);
+      final m = int.tryParse(slash[1]);
+      final y = int.tryParse(slash[2]);
+      if (d != null && m != null && y != null) {
+        return DateTime(y, m, d);
+      }
+    }
+
+    return null;
+  }
+
+  String _formatDateTime(String raw) {
     if (raw.trim().isEmpty) return '—';
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return raw;
-    final local = parsed.toLocal();
-    return '${_two(local.day)}/${_two(local.month)}/${local.year}, '
-        '${_two(local.hour)}:${_two(local.minute)}:${_two(local.second)}';
-  }
-
-  String _formatAmount(AdminTransactionItem item) {
-    if (item.amount == null) return '—';
-    final symbol = item.currency.toUpperCase() == 'INR'
-        ? '₹'
-        : '${item.currency} ';
-    return '$symbol${_formatNumber(item.amount!)}';
-  }
-
-  String _formatCredits(AdminTransactionItem item) {
-    if (item.credits == null) return '—';
-    final value = item.credits!;
-    if (value > 0) return '+$value';
-    return value.toString();
-  }
-
-  int _availableCredits(List<AdminTransactionItem> items) {
-    var total = 0;
-    for (final item in items) {
-      final credits = item.credits;
-      if (credits == null) continue;
-      if (item.normalizedStatus == 'success' ||
-          item.normalizedStatus == 'refunded') {
-        total += credits;
-      }
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final m = months[dt.month - 1];
+      final h = dt.hour.toString().padLeft(2, '0');
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day} $m ${dt.year} · $h:$min';
+    } catch (_) {
+      return '—';
     }
-    return total;
   }
 
-  double _processed30Days(List<AdminTransactionItem> items) {
+  String _safe(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '—';
+    if (trimmed.toLowerCase() == 'null') return '—';
+    return trimmed;
+  }
+
+  String _formatCurrency(num value, {String currency = 'INR'}) {
+    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
+    final sign = value < 0 ? '-' : '';
+    final absValue = value.abs();
+    final fixed = absValue.toStringAsFixed(2);
+    final parts = fixed.split('.');
+    final intPart = parts[0];
+    final fracPart = parts[1];
+    final withCommas = intPart.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (m) => ',',
+    );
+    return '$sign$symbol$withCommas.$fracPart';
+  }
+
+  String _formatAmount(double? value, String currency) {
+    if (value == null) return '—';
+    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
+    final isWhole = value % 1 == 0;
+    final formatted = isWhole
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(2);
+    return '$symbol$formatted';
+  }
+
+  String _formatInrCompact(double value) {
+    if (value <= 0) return '₹0';
+    if (value >= 10000000) {
+      return '₹${(value / 10000000).toStringAsFixed(1)}Cr';
+    }
+    if (value >= 100000) {
+      return '₹${(value / 100000).toStringAsFixed(1)}L';
+    }
+    if (value >= 1000) {
+      return '₹${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return '₹${value.toStringAsFixed(0)}';
+  }
+
+  double _parseAmount(AdminTransactionItem t) {
+    return t.amount ?? 0;
+  }
+
+  String _titleCase(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return '—';
+    return v
+        .toLowerCase()
+        .split(RegExp(r'[_\s]+'))
+        .where((p) => p.isNotEmpty)
+        .map((p) => p[0].toUpperCase() + p.substring(1))
+        .join(' ');
+  }
+
+  (String, IconData, Color) _statusMeta(String raw, ColorScheme cs) {
+    final s = raw.toLowerCase();
+    if (s.contains('success')) {
+      return ('SUCCESS', Icons.check_circle, cs.primary);
+    }
+    if (s.contains('pending') || s.contains('processing')) {
+      return ('PENDING', Icons.schedule, cs.primary.withOpacity(0.7));
+    }
+    if (s.contains('fail') || s.contains('decline')) {
+      return ('FAILED', Icons.cancel, cs.primary.withOpacity(0.5));
+    }
+    if (s.contains('refund')) {
+      return ('REFUNDED', Icons.reply, cs.primary.withOpacity(0.5));
+    }
+    return ('UNKNOWN', Icons.help_outline, cs.onSurface.withOpacity(0.6));
+  }
+
+  String _csvEscape(String value) {
+    final needsQuote =
+        value.contains(',') || value.contains('"') || value.contains('\n');
+    final cleaned = value.replaceAll('"', '""');
+    return needsQuote ? '"$cleaned"' : cleaned;
+  }
+
+  Future<void> _exportCsv(List<AdminTransactionItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No transactions to export.')),
+      );
+      return;
+    }
+    final headers = [
+      'ID',
+      'Name',
+      'Email',
+      'Amount',
+      'Currency',
+      'Status',
+      'Payment Mode',
+      'Payment Type',
+      'Reference',
+      'Created At',
+    ];
+    final rows = <List<String>>[];
+    for (final t in items) {
+      final name = _transactionName(t);
+      final email = _transactionEmail(t);
+      rows.add([
+        t.id,
+        name,
+        email,
+        (t.amount ?? 0).toString(),
+        t.currency,
+        t.statusLabel,
+        t.raw['paymentMode']?.toString() ?? '',
+        t.raw['paymentType']?.toString() ?? '',
+        t.raw['reference']?.toString() ?? '',
+        t.createdAt,
+      ]);
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(headers.map(_csvEscape).join(','));
+    for (final row in rows) {
+      buffer.writeln(row.map(_csvEscape).join(','));
+    }
+
+    final filename =
+        'transactions_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final file = File('${Directory.systemTemp.path}/$filename');
+    await file.writeAsString(buffer.toString());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Exported CSV: ${file.path}')),
+    );
+  }
+
+  Widget _summaryCard(
+    BuildContext context, {
+    required double width,
+    required String title,
+    required String value,
+    required double titleSize,
+    required double valueSize,
+    required IconData icon,
+    required double padding,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: width,
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding - 2),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.roboto(
+                  fontSize: titleSize,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
+              ),
+              Icon(icon, size: titleSize + 2, color: cs.onSurface),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: valueSize,
+              height: 24 / 18,
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusPill(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required Color color,
+    required double scale,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? cs.surfaceVariant
+            : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface.withOpacity(0.75),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _transactionName(AdminTransactionItem t) {
+    final raw = t.raw;
+    String? name;
+    if (raw['fromUser'] is Map) {
+      name = (raw['fromUser'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty && raw['user'] is Map) {
+      name = (raw['user'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty && raw['actor'] is Map) {
+      name = (raw['actor'] as Map)['name']?.toString();
+    }
+    if ((name ?? '').isEmpty) {
+      name = raw['fromUserName']?.toString();
+    }
+    if ((name ?? '').isEmpty) {
+      name = raw['name']?.toString();
+    }
+    return _safe(name ?? '—');
+  }
+
+  String _transactionEmail(AdminTransactionItem t) {
+    final raw = t.raw;
+    String? email;
+    if (raw['fromUser'] is Map) {
+      email = (raw['fromUser'] as Map)['email']?.toString();
+    }
+    if ((email ?? '').isEmpty && raw['user'] is Map) {
+      email = (raw['user'] as Map)['email']?.toString();
+    }
+    if ((email ?? '').isEmpty) {
+      email = raw['fromUserEmail']?.toString();
+    }
+    if ((email ?? '').isEmpty) {
+      email = raw['email']?.toString();
+    }
+    return _safe(email ?? '');
+  }
+
+  void _applyDateRange(String label) {
     final now = DateTime.now();
-    var total = 0.0;
-    for (final item in items) {
-      if (item.normalizedStatus != 'success') continue;
-      final amount = item.amount;
-      final parsedDate = DateTime.tryParse(item.createdAt);
-      if (amount == null || parsedDate == null) continue;
-      if (now.difference(parsedDate.toLocal()).inDays <= 30) {
-        total += amount;
-      }
+    DateTime from;
+    DateTime to;
+    if (label == 'Today') {
+      from = DateTime(now.year, now.month, now.day);
+      to = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    } else if (label == 'Last 7 days') {
+      from = now.subtract(const Duration(days: 6));
+      to = now;
+    } else if (label == 'Last 30 days') {
+      from = now.subtract(const Duration(days: 29));
+      to = now;
+    } else if (label == 'This month') {
+      from = DateTime(now.year, now.month, 1);
+      to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+    } else {
+      _fromDate = null;
+      _toDate = null;
+      return;
     }
-    return total;
+    _fromDate = _dateOnly(from);
+    _toDate = _dateOnly(to);
   }
 
-  String _two(int value) => value.toString().padLeft(2, '0');
-
-  String _formatNumber(double value) {
-    final negative = value < 0;
-    final absolute = value.abs().toStringAsFixed(2);
-    final parts = absolute.split('.');
-    var whole = parts.first;
-    final decimals = parts.last;
-
-    if (whole.length > 3) {
-      final lastThree = whole.substring(whole.length - 3);
-      var prefix = whole.substring(0, whole.length - 3);
-      final groups = <String>[];
-      while (prefix.length > 2) {
-        groups.insert(0, prefix.substring(prefix.length - 2));
-        prefix = prefix.substring(0, prefix.length - 2);
-      }
-      if (prefix.isNotEmpty) {
-        groups.insert(0, prefix);
-      }
-      whole = '${groups.join(',')},$lastThree';
-    }
-
-    return '${negative ? '-' : ''}$whole.$decimals';
-  }
-
-  Widget _buildShimmerStat(ColorScheme colorScheme) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          children: const [
-            AppShimmer(width: 110, height: 12, radius: 6),
-            SizedBox(height: 8),
-            AppShimmer(width: 70, height: 18, radius: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerCard(
-    ColorScheme colorScheme,
-    double width,
-    double hp,
-    double spacing,
-    double iconSize,
-    double cardPadding,
-  ) {
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            AppShimmer(width: 48, height: 48, radius: 24),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppShimmer(
-                          width: double.infinity,
-                          height: 12,
-                          radius: 6,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      AppShimmer(width: 74, height: 24, radius: 12),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  AppShimmer(width: 220, height: 18, radius: 8),
-                  SizedBox(height: 10),
-                  AppShimmer(width: 180, height: 14, radius: 7),
-                  SizedBox(height: 10),
-                  AppShimmer(width: double.infinity, height: 14, radius: 7),
-                  SizedBox(height: 10),
-                  AppShimmer(width: 120, height: 14, radius: 7),
-                  SizedBox(height: 10),
-                  AppShimmer(width: 170, height: 14, radius: 7),
-                ],
-              ),
-            ),
-            SizedBox(width: 12),
-            AppShimmer(width: 28, height: 28, radius: 14),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyCard(ColorScheme colorScheme, double hp, double bodyFs) {
-    return Container(
-      margin: EdgeInsets.only(bottom: hp),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(hp + 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'No transactions found',
-              style: GoogleFonts.inter(
-                fontSize: bodyFs + 1,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Transactions will appear here once payments are recorded.',
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                color: colorScheme.onSurface.withOpacity(0.65),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _dateOnly(DateTime dt) {
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double smallFs = titleFs - 3;
-    final double iconSize = titleFs + 2;
-    final double cardPadding = hp + 4;
+    final width = MediaQuery.of(context).size.width;
+    final padding = AdaptiveUtils.getHorizontalPadding(width) + 6;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final cs = Theme.of(context).colorScheme;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final labelStyle = GoogleFonts.roboto(
+      fontSize: 12 * scale,
+      height: 16 / 12,
+      fontWeight: FontWeight.w600,
+      color: cs.onSurface.withOpacity(0.7),
+    );
 
-    final items = _pageData?.items ?? const <AdminTransactionItem>[];
-    final totalTransactions = _pageData?.total ?? items.length;
-    final availableCredits = _availableCredits(items);
-    final processed30Days = _processed30Days(items);
-    final processed30DaysLabel = '₹${_formatNumber(processed30Days)}';
+    final query = _searchController.text.trim().toLowerCase();
+    final allItems = _items ?? const <AdminTransactionItem>[];
+    final rangeStart =
+        _fromDate == null ? null : DateTime.tryParse(_fromDate!);
+    final rangeEnd = _toDate == null
+        ? null
+        : DateTime.tryParse(_toDate!)?.add(const Duration(hours: 23, minutes: 59, seconds: 59));
 
-    return AppLayout(
-      title: "USER",
-      subtitle: "Transactions",
-      actionIcons: const [],
-      showLeftAvatar: false,
-      leftAvatarText: 'SA',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+    final filteredTransactions = allItems.where((t) {
+      final status = t.statusLabel.toLowerCase();
+      final matchesStatus = _statusFilter == 'All' ||
+          (_statusFilter == 'Success' && status.contains('success')) ||
+          (_statusFilter == 'Pending' &&
+              (status.contains('pending') || status.contains('processing'))) ||
+          (_statusFilter == 'Failed' && status.contains('fail'));
+      if (!matchesStatus) return false;
+      if (rangeStart != null || rangeEnd != null) {
+        final created = _tryParseDate(t.createdAt);
+        if (created == null) return false;
+        if (rangeStart != null && created.isBefore(rangeStart)) return false;
+        if (rangeEnd != null && created.isAfter(rangeEnd)) return false;
+      }
+      if (query.isEmpty) return true;
+      final name = _transactionName(t).toLowerCase();
+      final email = _transactionEmail(t).toLowerCase();
+      final reference = (t.raw['reference']?.toString() ?? '').toLowerCase();
+      return name.contains(query) ||
+          email.contains(query) ||
+          reference.contains(query);
+    }).toList();
+
+    final totalTxns = allItems.length;
+    final success = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('success');
+    }).toList();
+    final pending = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('pending') || s.contains('processing');
+    }).toList();
+    final failed = allItems.where((t) {
+      final s = t.statusLabel.toLowerCase();
+      return s.contains('fail') || s.contains('decline');
+    }).toList();
+    final revenue =
+        success.fold<double>(0, (sum, t) => sum + _parseAmount(t));
+    final successRate =
+        totalTxns == 0 ? 0 : ((success.length / totalTxns) * 100).round();
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                padding,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                padding,
+                padding,
               ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Search invoice, description, method...",
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Colors.transparent,
-                      width: 0,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: hp,
-                    vertical: hp,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: hp),
-            Container(
-              padding: EdgeInsets.symmetric(vertical: hp),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: _loading
-                    ? [
-                        _buildShimmerStat(colorScheme),
-                        _buildShimmerStat(colorScheme),
-                      ]
-                    : [
-                        _statBox(
-                          "Available Credits",
-                          availableCredits.toString(),
-                          "",
-                          bodyFs,
-                          smallFs,
-                          colorScheme,
-                          spacing,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.1),
                         ),
-                        _statBox(
-                          "Processed (30 days)",
-                          processed30DaysLabel,
-                          "",
-                          bodyFs,
-                          smallFs,
-                          colorScheme,
-                          spacing,
-                        ),
-                      ],
-              ),
-            ),
-            SizedBox(height: hp),
-            SizedBox(
-              height: hp * 3,
-              child: Scrollbar(
-                controller: _tabScrollController,
-                thumbVisibility: true,
-                trackVisibility: true,
-                thickness: 1,
-                radius: const Radius.circular(8),
-                child: SingleChildScrollView(
-                  controller: _tabScrollController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: spacing),
-                  child: Row(
-                    children: List.generate(_tabs.length, (index) {
-                      final tab = _tabs[index];
-                      return Padding(
-                        padding: EdgeInsets.only(right: spacing),
-                        child: KeyedSubtree(
-                          key: _tabKeys[index],
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 5.0),
-                            child: SmallTab(
-                              label: tab,
-                              selected: selectedTab == tab,
-                              onTap: () {
-                                setState(() => selectedTab = tab);
-                                _loadTransactions();
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  final ctx = _tabKeys[index].currentContext;
-                                  if (ctx != null) {
-                                    Scrollable.ensureVisible(
-                                      ctx,
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      alignment: 0.5,
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
-                                });
-                              },
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Transactions',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
                             ),
                           ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: hp),
-            Text(
-              "Showing ${items.length} of $totalTransactions transactions",
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                color: colorScheme.onSurface.withOpacity(0.87),
-              ),
-            ),
-            SizedBox(height: spacing * 1.5),
-            if (_loading)
-              ...List.generate(
-                4,
-                (_) => _buildShimmerCard(
-                  colorScheme,
-                  width,
-                  hp,
-                  spacing,
-                  iconSize,
-                  cardPadding,
-                ),
-              )
-            else if (items.isEmpty)
-              _buildEmptyCard(colorScheme, hp, bodyFs)
-            else
-              ...items.asMap().entries.map((entry) {
-                final index = entry.key;
-                final tran = entry.value;
-
-                return AnimatedContainer(
-                  duration: Duration(milliseconds: 300 + index * 50),
-                  curve: Curves.easeOut,
-                  margin: EdgeInsets.only(bottom: hp),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        onTap: () => context.push(
-                          "/user/transactions/details/${tran.id}",
-                          extra: tran,
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: AdaptiveUtils.getAvatarSize(width),
-                                    height: AdaptiveUtils.getAvatarSize(width),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: colorScheme.primary.withOpacity(
-                                          0.6,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.money_dollar_circle,
-                                      size: AdaptiveUtils.getFsAvatarFontSize(
-                                        width,
-                                      ),
-                                      color: colorScheme.primary,
-                                    ),
+                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
+                          Text('Date Range', style: labelStyle),
+                          const SizedBox(height: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              final chosen =
+                                  await showModalBottomSheet<String>(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: cs.surface,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16),
                                   ),
-                                  SizedBox(width: spacing * 1.5),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                _formatDate(tran.createdAt),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: smallFs,
-                                                  color: colorScheme.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                              ),
+                                ),
+                                builder: (ctx) {
+                                  final items = [
+                                    'Today',
+                                    'Last 7 days',
+                                    'Last 30 days',
+                                    'This month',
+                                  ];
+                                  return SafeArea(
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 42,
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: cs.onSurface
+                                                  .withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
                                             ),
-                                            const SizedBox(width: 12),
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: spacing + 4,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: _statusColor(
-                                                  tran.normalizedStatus,
-                                                ).withOpacity(0.15),
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              child: Text(
-                                                tran.statusLabel,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: smallFs,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _statusColor(
-                                                    tran.normalizedStatus,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: spacing / 2),
-                                        Text(
-                                          tran.invoiceNumber.isEmpty
-                                              ? 'Invoice ${tran.id}'
-                                              : tran.invoiceNumber,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(
-                                            fontSize: bodyFs + 2,
-                                            fontWeight: FontWeight.bold,
-                                            color: colorScheme.onSurface,
                                           ),
-                                        ),
-                                        SizedBox(height: spacing / 2),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                tran.reference.isEmpty
-                                                    ? tran.id
-                                                    : tran.reference,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: bodyFs,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme.onSurface,
-                                                ),
-                                              ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Select Date Range',
+                                            style: GoogleFonts.roboto(
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.onSurface,
                                             ),
-                                            IconButton(
-                                              icon: Icon(
-                                                CupertinoIcons.doc_on_clipboard,
-                                                size: iconSize - 4,
-                                                color: colorScheme.primary,
-                                              ),
-                                              onPressed: () {
-                                                final text =
-                                                    tran.reference.isEmpty
-                                                    ? tran.id
-                                                    : tran.reference;
-                                                Clipboard.setData(
-                                                  ClipboardData(text: text),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            height: MediaQuery.of(ctx)
+                                                    .size
+                                                    .height *
+                                                0.7,
+                                            child: ListView.separated(
+                                              itemCount: items.length,
+                                              separatorBuilder: (_, __) =>
+                                                  const SizedBox(height: 8),
+                                              itemBuilder: (_, index) {
+                                                final item = items[index];
+                                                return ListTile(
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                  ),
+                                                  title: Text(
+                                                    item,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: 14 * scale,
+                                                      height: 20 / 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  onTap: () =>
+                                                      Navigator.pop(ctx, item),
                                                 );
                                               },
                                             ),
-                                          ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                              if (chosen != null) {
+                                setState(() => _selectedRange = chosen);
+                                _applyDateRange(chosen);
+                                _loadTransactions();
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: cs.onSurface.withOpacity(0.12),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _selectedRange ?? 'Select range',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 14 * scale,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: cs.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.expand_more,
+                                    color: cs.onSurface.withOpacity(0.6),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(
+                        AdaptiveUtils.getHorizontalPadding(width),
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.08),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Overview',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          SizedBox(
+                            height:
+                                AdaptiveUtils.getLeftSectionSpacing(width) + 8,
+                          ),
+                          if (_loading)
+                            const AppShimmer(
+                              width: double.infinity,
+                              height: 120,
+                              radius: 16,
+                            )
+                          else
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final spacing = AdaptiveUtils
+                                        .getLeftSectionSpacing(width) +
+                                    6;
+                                final maxWidth = constraints.maxWidth;
+                                final columns = 2;
+                                final totalSpacing = spacing * (columns - 1);
+                                final itemWidth =
+                                    (maxWidth - totalSpacing) / columns;
+                                final titleFontSize =
+                                    AdaptiveUtils.getTitleFontSize(width) + 1;
+                                final valueFontSize =
+                                    AdaptiveUtils.getSubtitleFontSize(width) + 4;
+                                return Wrap(
+                                  spacing: spacing,
+                                  runSpacing: spacing,
+                                  children: [
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'REVENUE',
+                                      value: _formatInrCompact(revenue),
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.payments,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'SUCCESSFUL',
+                                      value: '${success.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.check_circle,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'PENDING',
+                                      value: '${pending.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.schedule,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'FAILED',
+                                      value: '${failed.length}',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.cancel,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'SUCCESS RATE',
+                                      value: '$successRate%',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.percent,
+                                      padding: spacing,
+                                    ),
+                                    _summaryCard(
+                                      context,
+                                      width: itemWidth,
+                                      title: 'TOTAL TXNS',
+                                      value: '$totalTxns',
+                                      titleSize: titleFontSize,
+                                      valueSize: valueFontSize,
+                                      icon: Symbols.receipt_long,
+                                      padding: spacing,
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Transaction Status',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _statusPill(
+                                context,
+                                label: 'Success',
+                                value: '$successRate%',
+                                color: cs.primary,
+                                scale: scale,
+                              ),
+                              const SizedBox(width: 10),
+                              _statusPill(
+                                context,
+                                label: 'Pending',
+                                value:
+                                    '${totalTxns == 0 ? 0 : ((pending.length / totalTxns) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.7),
+                                scale: scale,
+                              ),
+                              const SizedBox(width: 10),
+                              _statusPill(
+                                context,
+                                label: 'Failed',
+                                value:
+                                    '${totalTxns == 0 ? 0 : ((failed.length / totalTxns) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.5),
+                                scale: scale,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              value: totalTxns == 0
+                                  ? 0
+                                  : (success.length / totalTxns).clamp(0, 1),
+                              minHeight: 8,
+                              backgroundColor: cs.onSurface.withOpacity(0.08),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(cs.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: cs.surfaceVariant),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Transactions',
+                            style: AppUtils.headlineSmallBase.copyWith(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            height:
+                                AdaptiveUtils.getHorizontalPadding(width) * 3.5,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: cs.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              style: GoogleFonts.roboto(
+                                fontSize: 14 * scale,
+                                height: 20 / 14,
+                                color: cs.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Search name, email, or reference',
+                                hintStyle: GoogleFonts.roboto(
+                                  color: cs.onSurface.withOpacity(0.5),
+                                  fontSize: 12 * scale,
+                                  height: 16 / 12,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  size: AdaptiveUtils.getIconSize(width),
+                                  color: cs.onSurface,
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      AdaptiveUtils.getHorizontalPadding(width),
+                                  vertical:
+                                      AdaptiveUtils.getHorizontalPadding(width),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final chosen =
+                                        await showModalBottomSheet<String>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: cs.surface,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(16),
                                         ),
-                                        SizedBox(height: spacing / 2),
+                                      ),
+                                      builder: (ctx) {
+                                        final items = [
+                                          'All',
+                                          'Success',
+                                          'Pending',
+                                          'Failed',
+                                        ];
+                                        return SafeArea(
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              16,
+                                              16,
+                                              16,
+                                              8,
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 42,
+                                                  height: 4,
+                                                  decoration: BoxDecoration(
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(2),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Text(
+                                                  'Filter Status',
+                                                  style: GoogleFonts.roboto(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                SizedBox(
+                                                  height: MediaQuery.of(ctx)
+                                                          .size
+                                                          .height *
+                                                      0.7,
+                                                  child: ListView.separated(
+                                                    itemCount: items.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        const SizedBox(
+                                                      height: 8,
+                                                    ),
+                                                    itemBuilder: (_, index) {
+                                                      final item = items[index];
+                                                      return ListTile(
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                        ),
+                                                        title: Text(
+                                                          item,
+                                                          style:
+                                                              GoogleFonts.roboto(
+                                                            fontSize: 14 * scale,
+                                                            height: 20 / 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        onTap: () =>
+                                                            Navigator.pop(
+                                                          ctx,
+                                                          item,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                    if (chosen != null) {
+                                      setState(() => _statusFilter = chosen);
+                                      _loadTransactions();
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.tune,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
                                         Text(
-                                          tran.description.isEmpty
-                                              ? '—'
-                                              : tran.description,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(
-                                            fontSize: bodyFs,
-                                            fontWeight: FontWeight.w500,
-                                            color: colorScheme.onSurface,
+                                          'Filter',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
                                           ),
                                         ),
-                                        SizedBox(height: spacing / 2),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: _loadTransactions,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.refresh,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
                                         Text(
-                                          tran.method.isEmpty
-                                              ? '—'
-                                              : tran.method,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(
-                                            fontSize: bodyFs,
-                                            fontWeight: FontWeight.w500,
-                                            color: colorScheme.onSurface,
+                                          'Refresh',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
                                           ),
                                         ),
-                                        SizedBox(height: spacing / 2),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                "Credits: ${_formatCredits(tran)}",
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () => _exportCsv(filteredTransactions),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.upload,
+                                          size: 16 * scale,
+                                          color: cs.onSurface.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Export',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...filteredTransactions.map((t) {
+                            final name = _transactionName(t);
+                            final dateText = _formatDateTime(t.createdAt);
+                            final amount = _formatAmount(t.amount, t.currency);
+                            final (statusText, statusIcon, statusColor) =
+                                _statusMeta(t.statusLabel, cs);
+                            final mode = _titleCase(
+                              t.raw['paymentMode']?.toString() ?? '—',
+                            );
+                            final type = _titleCase(
+                              t.raw['paymentType']?.toString() ?? '—',
+                            );
+                            final reference = t.raw['reference']?.toString() ??
+                                t.reference;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: cs.surface,
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 40 * scale,
+                                          height: 40 * scale,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: Theme.of(context)
+                                                        .brightness ==
+                                                    Brightness.dark
+                                                ? cs.surfaceVariant
+                                                : Colors.grey.shade50,
+                                            border: Border.all(
+                                              color:
+                                                  cs.outline.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.person_outline,
+                                            size: 18 * scale,
+                                            color: cs.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                name,
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 14 * scale,
+                                                  height: 20 / 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: cs.onSurface,
+                                                ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: bodyFs - 1,
-                                                  color: colorScheme.onSurface,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                dateText,
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 12 * scale,
+                                                  height: 16 / 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: cs.onSurface
+                                                      .withOpacity(0.6),
                                                 ),
                                               ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              amount,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: 14 * scale,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: cs.onSurface,
+                                              ),
                                             ),
-                                            SizedBox(width: spacing),
-                                            Expanded(
-                                              child: Text(
-                                                "Amount: ${_formatAmount(tran)}",
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: bodyFs - 1,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: colorScheme.onSurface,
-                                                ),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                            .brightness ==
+                                                        Brightness.dark
+                                                    ? cs.surfaceVariant
+                                                    : Colors.grey.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    statusIcon,
+                                                    size: 14 * scale,
+                                                    color: statusColor,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    statusText,
+                                                    style: GoogleFonts.roboto(
+                                                      fontSize: 11 * scale,
+                                                      height: 14 / 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: statusColor,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    icon: Icon(
-                                      CupertinoIcons.ellipsis_vertical,
-                                      color: colorScheme.primary.withOpacity(
-                                        0.6,
-                                      ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: cs.onSurface
+                                                    .withOpacity(0.12),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Mode',
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 11 * scale,
+                                                    height: 14 / 11,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  mode,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 13 * scale,
+                                                    height: 18 / 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: cs.onSurface
+                                                    .withOpacity(0.12),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Type',
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 11 * scale,
+                                                    height: 14 / 11,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: cs.onSurface
+                                                        .withOpacity(0.6),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  type,
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 13 * scale,
+                                                    height: 18 / 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: cs.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    onSelected: (String value) {
-                                      if (value == 'details') {
-                                        context.push(
-                                          "/user/transactions/details/${tran.id}",
-                                          extra: tran,
-                                        );
-                                      } else if (value == 'receipt') {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Receipt API not available yet',
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: cs.onSurface.withOpacity(0.12),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '# Reference',
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 11 * scale,
+                                              height: 14 / 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: cs.onSurface
+                                                  .withOpacity(0.6),
                                             ),
                                           ),
-                                        );
-                                      } else if (value == 'copy') {
-                                        final text = tran.reference.isEmpty
-                                            ? tran.id
-                                            : tran.reference;
-                                        Clipboard.setData(
-                                          ClipboardData(text: text),
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (BuildContext context) =>
-                                        <PopupMenuEntry<String>>[
-                                          PopupMenuItem<String>(
-                                            value: 'details',
-                                            child: ListTile(
-                                              leading: Icon(
-                                                Icons.visibility,
-                                                color: colorScheme.primary,
-                                              ),
-                                              title: const Text('View details'),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            reference.isEmpty ? '—' : reference,
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 13 * scale,
+                                              height: 18 / 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.onSurface,
                                             ),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'receipt',
-                                            child: ListTile(
-                                              leading: Icon(
-                                                Icons.receipt,
-                                                color: colorScheme.primary,
-                                              ),
-                                              title: const Text('Receipt'),
-                                            ),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'copy',
-                                            child: ListTile(
-                                              leading: Icon(
-                                                Icons.content_copy,
-                                                color: colorScheme.primary,
-                                              ),
-                                              title: const Text(
-                                                'Copy reference',
-                                              ),
-                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ],
-                                  ),
-                                ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
+                            );
+                          }),
+                        ],
                       ),
                     ),
-                  ),
-                );
-              }),
-            SizedBox(height: hp * 3),
-          ],
-        ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: Container(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF0A0A0A)
+                  : const Color(0xFFF5F5F7),
+              child: const UserHomeAppBar(
+                title: 'Transactions',
+                leadingIcon: Icons.receipt_long,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _statBox(
-    String title,
-    String value,
-    String subtitle,
-    double bodyFs,
-    double smallFs,
-    ColorScheme colorScheme,
-    double spacing,
-  ) {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: spacing / 2),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: smallFs,
-                color: colorScheme.onSurface.withOpacity(0.6),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: bodyFs,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary.withOpacity(0.5),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-            if (subtitle.isNotEmpty)
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: smallFs - 1,
-                  color: colorScheme.onSurface.withOpacity(0.6),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

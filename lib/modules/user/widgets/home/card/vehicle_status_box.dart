@@ -1,85 +1,116 @@
+// components/charts/vehicle_status_box.dart
 import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 
 class VehicleStatusBox extends StatelessWidget {
-  final bool loading;
   final UserFleetStatusSummary? summary;
+  final bool loading;
 
-  const VehicleStatusBox({
-    super.key,
-    required this.loading,
-    required this.summary,
-  });
+  const VehicleStatusBox({super.key, this.summary, this.loading = false});
+
+  String _formatCount(int value) {
+    final text = value.toString();
+    return text.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => ',',
+    );
+  }
 
   Map<String, dynamic> getStatusMeta(String label) {
     final key = label.toLowerCase();
+    if (key.startsWith('connected')) {
+      return {'icon': Icons.wifi_outlined};
+    }
     if (key.startsWith('running')) {
-      return {'color': Colors.green, 'icon': Icons.check};
+      return {'icon': Icons.show_chart_outlined};
     }
-    if (key.startsWith('idle')) {
-      return {'color': Colors.orangeAccent, 'icon': Icons.pause_rounded};
+    if (key.startsWith('stop')) {
+      return {'icon': Icons.stop_outlined};
     }
-    if (key.startsWith('stopped')) {
-      return {
-        'color': Colors.yellow[700]!,
-        'icon': Icons.warning_amber_rounded,
-      };
+    if (key.contains('no data')) {
+      return {'icon': Icons.storage_outlined};
     }
-    if (key.startsWith('inactive')) {
-      return {'color': Colors.redAccent, 'icon': Icons.error_outline};
+    if (key.contains('inactive')) {
+      return {'icon': Icons.warning_amber_outlined};
     }
-    return {'color': Colors.grey[400]!, 'icon': null};
+    return {'icon': null};
   }
 
-  List<_StatusRow> _rows() {
+  List<Map<String, dynamic>> _buildStatusData() {
+    final running = summary?.running ?? 0;
+    final idle = summary?.idle ?? 0;
+    final stopped = summary?.stopped ?? 0;
+    final inactive = summary?.inactive ?? 0;
+    final noData = summary?.noData ?? 0;
+    final total = running + idle + stopped + inactive + noData;
+    final connected = running + idle + stopped;
+
+    double percent(int count) {
+      if (total <= 0) return 0;
+      return ((count * 10000) / total).roundToDouble() / 100;
+    }
+
     return [
-      _StatusRow(
-        label: 'Running',
-        count: summary?.running,
-        percent: summary?.percentFor('running'),
-      ),
-      _StatusRow(
-        label: 'Idle',
-        count: summary?.idle,
-        percent: summary?.percentFor('idle'),
-      ),
-      _StatusRow(
-        label: 'Stopped',
-        count: summary?.stopped,
-        percent: summary?.percentFor('stopped'),
-      ),
-      _StatusRow(
-        label: 'Inactive',
-        count: summary?.inactive,
-        percent: summary?.percentFor('inactive'),
-      ),
-      _StatusRow(
-        label: 'No Data',
-        count: summary?.noData,
-        percent: summary?.percentFor('noData'),
-      ),
+      {
+        'label': 'CONNECTED',
+        'count': connected,
+        'percent': percent(connected),
+      },
+      {
+        'label': 'RUNNING',
+        'count': running,
+        'percent': percent(running),
+      },
+      {'label': 'STOP', 'count': stopped, 'percent': percent(stopped)},
+      {
+        'label': 'INACTIVE (48H)',
+        'count': inactive,
+        'percent': percent(inactive),
+      },
+      {
+        'label': 'NO DATA',
+        'count': noData,
+        'percent': percent(noData),
+      },
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
-    final descriptionFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final legendFontSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-    final rows = _rows();
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double descriptionFontSize = AdaptiveUtils.getTitleFontSize(
+      screenWidth,
+    );
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double sectionTitleFs = 18 * scale;
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
+
+    final statusData = _buildStatusData();
+    final totalDevices = statusData.fold<int>(
+      0,
+      (acc, row) => acc + (row['count'] as int),
+    );
 
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.onSurface.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -94,30 +125,67 @@ class VehicleStatusBox extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.2,
-                backgroundColor: colorScheme.surfaceVariant,
-                child: Icon(Icons.directions_car, color: colorScheme.primary),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    loading
+                        ? AppShimmer(
+                            width: screenWidth * 0.34,
+                            height: titleFontSize + 6,
+                            radius: 8,
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Vehicle Status',
+                                style: AppUtils.headlineSmallBase.copyWith(
+                                  fontSize: sectionTitleFs,
+                                  height: 24 / 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                    SizedBox(height: spacing / 2),
+                    loading
+                        ? AppShimmer(
+                            width: screenWidth * 0.30,
+                            height: descriptionFontSize + 4,
+                            radius: 8,
+                          )
+                        : const SizedBox.shrink(),
+                  ],
+                ),
               ),
-              SizedBox(width: padding),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    'Vehicle Status',
-                    style: GoogleFonts.inter(
-                      fontSize: titleFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
+                  loading
+                      ? AppShimmer(
+                          width: screenWidth * 0.12,
+                          height: titleFontSize + 6,
+                          radius: 8,
+                        )
+                      : Text(
+                          _formatCount(totalDevices),
+                          style: AppUtils.headlineSmallBase.copyWith(
+                            fontSize: mainRowFs,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
                   SizedBox(height: spacing / 2),
                   Text(
-                    'Live distribution',
-                    style: GoogleFonts.inter(
-                      fontSize: descriptionFontSize,
-                      fontWeight: FontWeight.w400,
-                      color: colorScheme.onSurface.withOpacity(0.8),
+                    'DEVICES',
+                    style: AppUtils.bodySmallBase.copyWith(
+                      fontSize: metaFs,
+                      height: 14 / 11,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -125,110 +193,206 @@ class VehicleStatusBox extends StatelessWidget {
             ],
           ),
           SizedBox(height: spacing + 6),
-          Column(
-            children: rows.map((data) {
-              final meta = getStatusMeta(data.label);
-              final dotColor = meta['color'] as Color;
-              final innerIcon = meta['icon'] as IconData?;
-              const bulletSize = 18.0;
-              const innerIconSize = 12.0;
-              final percent = data.percent;
-              final percentText = percent == null
-                  ? null
-                  : '(${percent.toStringAsFixed(1)}%)';
-
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: spacing / 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: bulletSize,
-                      height: bulletSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: dotColor,
-                      ),
-                      child: innerIcon != null
-                          ? Center(
-                              child: Icon(
-                                innerIcon,
-                                size: innerIconSize,
-                                color: Colors.white,
-                              ),
-                            )
-                          : null,
+          if (loading)
+            Column(
+              children: List.generate(
+                5,
+                (index) => Padding(
+                  padding: EdgeInsets.only(bottom: spacing),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing + 4,
+                      vertical: spacing + 6,
                     ),
-                    SizedBox(width: spacing),
-                    Expanded(
-                      child: Text(
-                        data.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: legendFontSize,
-                          color: colorScheme.onSurface.withOpacity(0.87),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (loading)
-                          AppShimmer(
-                            width: 42,
-                            height: legendFontSize + 6,
-                            radius: 10,
-                          )
-                        else
-                          Text(
-                            data.count?.toString() ?? '—',
-                            style: GoogleFonts.inter(
-                              fontSize: legendFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        if (loading) ...[
-                          const SizedBox(height: 4),
-                          AppShimmer(
-                            width: 54,
-                            height: legendFontSize + 2,
-                            radius: 10,
-                          ),
-                        ] else if (percentText != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            percentText,
-                            style: GoogleFonts.inter(
-                              fontSize: legendFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: dotColor,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppShimmer(
+                              width: 40,
+                              height: 40,
+                              radius: 12,
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppShimmer(
+                                    width: screenWidth * 0.28,
+                                    height: mainRowFs + 6,
+                                    radius: 6,
+                                  ),
+                                  SizedBox(height: spacing / 2),
+                                  AppShimmer(
+                                    width: screenWidth * 0.22,
+                                    height: secondaryFs + 4,
+                                    radius: 6,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            AppShimmer(
+                              width: screenWidth * 0.12,
+                              height: mainRowFs + 6,
+                              radius: 6,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: double.infinity,
+                          height: 6,
+                          radius: 999,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            )
+          else
+            Column(
+              children: statusData.map((data) {
+                final label = data['label'] as String;
+                final count = data['count'] as int;
+                final percent = data['percent'] as double;
+                final meta = getStatusMeta(label);
+                final icon = meta['icon'] as IconData?;
+
+                final title = label == 'INACTIVE (48H)'
+                    ? 'Inactive \u00b7 48H'
+                    : label[0] + label.substring(1).toLowerCase();
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: spacing),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing + 4,
+                      vertical: spacing + 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.08),
+                                  width: 1,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                icon,
+                                size: 18,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppUtils.bodySmallBase.copyWith(
+                                      fontSize: mainRowFs,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: spacing / 2),
+                                  Text(
+                                    '${percent.toStringAsFixed(0)}% of devices',
+                                    style: AppUtils.bodySmallBase.copyWith(
+                                      fontSize: secondaryFs,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            Text(
+                              _formatCount(count),
+                              style: AppUtils.bodySmallBase.copyWith(
+                                fontSize: mainRowFs,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            minHeight: 6,
+                            value: (percent / 100).clamp(0.0, 1.0),
+                            backgroundColor:
+                                colorScheme.onSurface.withOpacity(0.08),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           SizedBox(height: padding),
         ],
       ),
     );
   }
-}
-
-class _StatusRow {
-  final String label;
-  final int? count;
-  final double? percent;
-
-  const _StatusRow({
-    required this.label,
-    required this.count,
-    required this.percent,
-  });
 }

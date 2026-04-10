@@ -486,75 +486,119 @@ class CustomMultiDropdownField<T> extends StatelessWidget {
       onTap: items.isEmpty
           ? null
           : () {
-              showDialog(
+              showModalBottomSheet<void>(
                 context: context,
+                isScrollControlled: true,
+                backgroundColor: colorScheme.surface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
                 builder: (ctx) {
                   List<T> tempSelected = List.from(value);
-                  return AlertDialog(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12.0,
-                      vertical: 20.0,
-                    ),
-                    titlePadding: const EdgeInsets.fromLTRB(
-                      24.0,
-                      24.0,
-                      24.0,
-                      0.0,
-                    ),
-                    actionsPadding: const EdgeInsets.symmetric(
-                      horizontal: 12.0,
-                      vertical: 8.0,
-                    ),
-                    title: Text(hintText),
-                    content: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(ctx).size.height * 0.5,
-                        maxWidth: MediaQuery.of(ctx).size.width * 0.9,
-                      ),
-                      child: SingleChildScrollView(
-                        child: StatefulBuilder(
-                          builder: (context, dialogSetState) => Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: items.map((item) {
-                              return CheckboxListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 4.0,
+                  return SafeArea(
+                    child: SizedBox(
+                      height: MediaQuery.of(ctx).size.height * 0.7,
+                      child: StatefulBuilder(
+                        builder: (context, dialogSetState) {
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        hintText,
+                                        style: GoogleFonts.roboto(
+                                          fontSize: fontSize,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: () => Navigator.pop(ctx),
+                                      child: Container(
+                                        height: 32,
+                                        width: 32,
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primary
+                                              .withOpacity(0.08),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 18,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                title: Text(
-                                  itemLabelBuilder != null
-                                      ? itemLabelBuilder!(item)
-                                      : item.toString(),
-                                  style: GoogleFonts.inter(fontSize: fontSize),
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: ListView.separated(
+                                    itemCount: items.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 4),
+                                    itemBuilder: (context, index) {
+                                      final item = items[index];
+                                      return CheckboxListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 4.0,
+                                        ),
+                                        title: Text(
+                                          itemLabelBuilder != null
+                                              ? itemLabelBuilder!(item)
+                                              : item.toString(),
+                                          style: GoogleFonts.roboto(
+                                            fontSize: fontSize,
+                                          ),
+                                        ),
+                                        value: tempSelected.contains(item),
+                                        onChanged: (bool? checked) {
+                                          dialogSetState(() {
+                                            if (checked == true) {
+                                              tempSelected.add(item);
+                                            } else {
+                                              tempSelected.remove(item);
+                                            }
+                                          });
+                                        },
+                                      );
+                                    },
+                                  ),
                                 ),
-                                value: tempSelected.contains(item),
-                                onChanged: (bool? checked) {
-                                  dialogSetState(() {
-                                    if (checked == true) {
-                                      tempSelected.add(item);
-                                    } else {
-                                      tempSelected.remove(item);
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          onChanged(tempSelected);
-                          Navigator.pop(ctx);
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          onChanged(tempSelected);
+                                          Navigator.pop(ctx);
+                                        },
+                                        child: const Text('Done'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
                         },
-                        child: const Text('Done'),
                       ),
-                    ],
+                    ),
                   );
                 },
               );

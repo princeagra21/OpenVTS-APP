@@ -90,6 +90,26 @@ class UserSupportRepository {
     );
   }
 
+  Future<Result<void>> createTicket({
+    required String subject,
+    required String message,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/user/tickets',
+      data: <String, dynamic>{
+        'subject': subject,
+        'message': message,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   bool _messageLike(Map<String, dynamic> map) {
     final keys = map.keys.map((e) => e.toString().toLowerCase()).toSet();
     return keys.contains('message') ||

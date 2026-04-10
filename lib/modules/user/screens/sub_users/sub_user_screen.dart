@@ -6,9 +6,9 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_subusers_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +16,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SubUserScreen extends StatefulWidget {
-  const SubUserScreen({super.key});
+  final bool embedded;
+
+  const SubUserScreen({super.key, this.embedded = false});
 
   @override
   State<SubUserScreen> createState() => _SubUserScreenState();
@@ -32,6 +34,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
   //
   // This slice wires the existing list screen to GET /user/subusers only.
   String selectedTab = "All";
+  int _pageSize = 10;
   final TextEditingController _searchController = TextEditingController();
 
   ApiClient? _apiClient;
@@ -208,7 +211,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
           children: [
             Text(
               'No sub-users found',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: bodyFs + 1,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -217,7 +220,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             const SizedBox(height: 8),
             Text(
               'Create a sub-user from the web console to manage delegated access.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -234,16 +237,17 @@ class _SubUserScreenState extends State<SubUserScreen> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(width);
-    final double titleFs = AdaptiveUtils.getTitleFontSize(width);
-    final double bodyFs = titleFs - 1;
-    final double smallFs = titleFs - 3;
-    final double iconSize = titleFs + 2;
+    final scale = (width / 390).clamp(0.9, 1.05);
+    final fsSection = 18 * scale;
+    final fsMain = 14 * scale;
+    final fsSecondary = 12 * scale;
+    final fsMeta = 11 * scale;
+    final double iconSize = 18.0;
     final double cardPadding = hp + 4;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final searchQuery = _searchController.text.toLowerCase().trim();
 
-    final filteredSubUsers = _subUsers.where((u) {
+    var filteredSubUsers = _subUsers.where((u) {
       final matchesSearch =
           searchQuery.isEmpty ||
           u.name.toLowerCase().contains(searchQuery) ||
@@ -260,328 +264,625 @@ class _SubUserScreenState extends State<SubUserScreen> {
       return matchesSearch && matchesTab;
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
 
+    if (filteredSubUsers.length > _pageSize) {
+      filteredSubUsers = filteredSubUsers.take(_pageSize).toList();
+    }
+
     Color getStatusColor(String status) {
       return status == "Active" ? Colors.green : Colors.red;
     }
 
-    return AppLayout(
-      title: "USER",
-      subtitle: "Sub-users",
-      actionIcons: const [CupertinoIcons.add],
-      onActionTaps: [
-        () async {
-          final result = await context.push('/user/sub-users/add');
-          if (result == true) {
-            _loadSubUsers();
-          }
-        },
-      ],
-      showLeftAvatar: false,
-      leftAvatarText: 'SU',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: hp * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Search name, username, mobile, email...",
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.primary,
-                  ),
-                  border: InputBorder.none,
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: hp,
-                    vertical: hp,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: hp),
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ["All", "Active", "Disabled"].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () => setState(() => selectedTab = tab),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: hp),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Showing ${filteredSubUsers.length} of ${_subUsers.length} sub-users",
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: spacing * 1.5),
-            if (_loading)
-              ...List.generate(
-                3,
-                (_) => _buildShimmerCard(
-                  colorScheme,
-                  width,
-                  hp,
-                  spacing,
-                  cardPadding,
-                ),
-              )
-            else if (filteredSubUsers.isEmpty)
-              _buildEmptyCard(colorScheme, hp, bodyFs)
-            else
-              ...filteredSubUsers.asMap().entries.map((entry) {
-                final index = entry.key;
-                final subUser = entry.value;
-                final statusColor = getStatusColor(subUser.statusLabel);
-                final initials = _getInitials(subUser.name);
+    final showNoData = !_loading && filteredSubUsers.isEmpty;
+    final topPadding = MediaQuery.of(context).padding.top;
 
-                return AnimatedContainer(
-                  duration: Duration(milliseconds: 300 + index * 50),
-                  curve: Curves.easeOut,
-                  margin: EdgeInsets.only(bottom: hp),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+    Widget body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(cardPadding),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.surfaceVariant),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Sub-users',
+                    style: GoogleFonts.roboto(
+                      fontSize: fsSection,
+                      height: 24 / 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        onTap: () {},
-                        child: Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: AdaptiveUtils.getAvatarSize(width) / 2,
-                                backgroundColor: colorScheme.primary,
-                                child: Text(
-                                  initials,
-                                  style: GoogleFonts.inter(
-                                    fontSize: AdaptiveUtils.getFsAvatarFontSize(
-                                      width,
-                                    ),
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: spacing * 1.5),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            subUser.name.isEmpty
-                                                ? '—'
-                                                : subUser.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs + 2,
-                                              fontWeight: FontWeight.bold,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: spacing + 4,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            subUser.statusLabel,
-                                            style: GoogleFonts.inter(
-                                              fontSize: smallFs + 1,
-                                              fontWeight: FontWeight.w600,
-                                              color: statusColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: spacing),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          CupertinoIcons.person_crop_circle,
-                                          size: iconSize,
-                                          color: colorScheme.primary
-                                              .withOpacity(0.87),
-                                        ),
-                                        SizedBox(width: spacing),
-                                        Expanded(
-                                          child: Text(
-                                            subUser.username.isEmpty
-                                                ? '—'
-                                                : subUser.username,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: spacing / 2),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          CupertinoIcons.phone,
-                                          size: iconSize,
-                                          color: colorScheme.primary
-                                              .withOpacity(0.87),
-                                        ),
-                                        SizedBox(width: spacing),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => _makePhoneCall(
-                                              subUser.fullPhone,
-                                            ),
-                                            child: Text(
-                                              subUser.fullPhone.isEmpty
-                                                  ? '—'
-                                                  : subUser.fullPhone,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
-                                                fontSize: bodyFs,
-                                                color: colorScheme.primary,
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.call,
-                                            size: iconSize,
-                                            color: isDark
-                                                ? colorScheme.primary
-                                                : Colors.green,
-                                          ),
-                                          onPressed: () =>
-                                              _makePhoneCall(subUser.fullPhone),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: spacing / 2),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          CupertinoIcons.mail,
-                                          size: iconSize,
-                                          color: colorScheme.primary
-                                              .withOpacity(0.87),
-                                        ),
-                                        SizedBox(width: spacing),
-                                        Expanded(
-                                          child: Text(
-                                            subUser.email.isEmpty
-                                                ? '—'
-                                                : subUser.email,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: spacing / 2),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          CupertinoIcons.shield,
-                                          size: iconSize,
-                                          color: colorScheme.primary
-                                              .withOpacity(0.87),
-                                        ),
-                                        SizedBox(width: spacing),
-                                        Expanded(
-                                          child: Text(
-                                            subUser.permissionsLabel,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(
-                                              fontSize: bodyFs,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      final result = await context.push('/user/sub-users/add');
+                      if (result == true) {
+                        _loadSubUsers();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: hp * 1.2,
+                        vertical: spacing,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.onSurface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.add,
+                            size: iconSize,
+                            color: colorScheme.surface,
                           ),
-                        ),
+                          SizedBox(width: spacing / 2),
+                          Text(
+                            'New',
+                            style: GoogleFonts.roboto(
+                              fontSize: fsMain,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.surface,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
-              }),
-            SizedBox(height: hp * 3),
+                ],
+              ),
+              SizedBox(height: hp),
+              Container(
+                height: hp * 3.5,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.1),
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: GoogleFonts.roboto(
+                    fontSize: fsMain,
+                    height: 20 / 14,
+                    color: colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search name, username, mobile, email...',
+                    hintStyle: GoogleFonts.roboto(
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: fsSecondary,
+                      height: 16 / 12,
+                    ),
+                    prefixIcon: Icon(
+                      CupertinoIcons.search,
+                      size: iconSize + 2,
+                      color: colorScheme.onSurface,
+                    ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: hp,
+                      vertical: hp,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: hp),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final double gap = spacing;
+                  final double cellWidth = (constraints.maxWidth - gap * 2) / 3;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      SizedBox(
+                        width: cellWidth,
+                        child: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (selectedTab == value) return;
+                            setState(() => selectedTab = value);
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'All', child: Text('All')),
+                            PopupMenuItem(value: 'Active', child: Text('Active')),
+                            PopupMenuItem(
+                              value: 'Disabled',
+                              child: Text('Disabled'),
+                            ),
+                          ],
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: hp,
+                              vertical: spacing,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.tune,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface,
+                                ),
+                                SizedBox(width: spacing / 2),
+                                Text(
+                                  'Filter',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsMain - 3,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cellWidth,
+                        child: PopupMenuButton<int>(
+                          onSelected: (value) {
+                            if (_pageSize == value) return;
+                            setState(() => _pageSize = value);
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 10, child: Text('10')),
+                            PopupMenuItem(value: 25, child: Text('25')),
+                            PopupMenuItem(value: 50, child: Text('50')),
+                          ],
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: hp,
+                              vertical: spacing,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Records',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsMain - 3,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                SizedBox(width: spacing / 2),
+                                Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cellWidth,
+                        child: InkWell(
+                          onTap: _loadSubUsers,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: hp,
+                              vertical: spacing,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.onSurface.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.refresh,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface,
+                                ),
+                                SizedBox(width: spacing / 2),
+                                Text(
+                                  'Refresh',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsMain - 3,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              SizedBox(height: hp),
+              if (showNoData)
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colorScheme.surfaceVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'No sub-users found',
+                        style: GoogleFonts.roboto(
+                          fontSize: fsMain + 2,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: spacing / 2),
+                      Text(
+                        'Create a sub-user to get started.',
+                        style: GoogleFonts.roboto(
+                          fontSize: fsSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_loading)
+                ...List<Widget>.generate(
+                  3,
+                  (index) => _buildShimmerCard(
+                    colorScheme,
+                    width,
+                    hp,
+                    spacing,
+                    cardPadding,
+                  ),
+                ),
+              if (!showNoData && !_loading)
+                ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredSubUsers.length,
+                  itemBuilder: (context, index) {
+                    final subUser = filteredSubUsers[index];
+                    return _buildSubUserCard(
+                      subUser: subUser,
+                      colorScheme: colorScheme,
+                      padding: hp,
+                      spacing: spacing,
+                      fsMain: fsMain,
+                      fsSecondary: fsSecondary,
+                      fsMeta: fsMeta,
+                      iconSize: iconSize,
+                      cardPadding: cardPadding,
+                      screenWidth: width,
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+        SizedBox(height: hp * 2),
+      ],
+    );
+
+    if (widget.embedded) return body;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              hp,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              hp,
+              84,
+            ),
+            child: body,
+          ),
+          Positioned(
+            left: hp,
+            right: hp,
+            top: 0,
+            child: UserHomeAppBar(
+              title: 'Sub-users',
+              leadingIcon: Icons.person_outline,
+              onClose: () => context.go('/user/home'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubUserCard({
+    required UserSubUserItem subUser,
+    required ColorScheme colorScheme,
+    required double padding,
+    required double spacing,
+    required double fsMain,
+    required double fsSecondary,
+    required double fsMeta,
+    required double iconSize,
+    required double cardPadding,
+    required double screenWidth,
+  }) {
+    final statusColor = subUser.statusLabel.toLowerCase() == 'active'
+        ? Colors.green
+        : Colors.red;
+    final initials = _getInitials(subUser.name);
+    final phone = subUser.fullPhone.trim().isEmpty ? '-' : subUser.fullPhone;
+    final username =
+        subUser.username.trim().isEmpty ? '-' : subUser.username;
+    final email = subUser.email.trim().isEmpty ? '-' : subUser.email;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      margin: EdgeInsets.only(bottom: padding),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
+        ),
+        child: Material(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(25),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(25),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            onTap: () => context.push(
+              '/user/sub-users/details/${subUser.id}',
+              extra: subUser,
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(cardPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: colorScheme.surface,
+                        radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                        foregroundColor: colorScheme.onSurface,
+                        child: Container(
+                          width: AdaptiveUtils.getAvatarSize(screenWidth),
+                          height: AdaptiveUtils.getAvatarSize(screenWidth),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            initials,
+                            style: GoogleFonts.roboto(
+                              color: colorScheme.onSurface,
+                              fontSize:
+                                  AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: spacing * 2),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    subUser.name.isEmpty ? '-' : subUser.name,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: spacing + 4,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    subUser.statusLabel,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMeta,
+                                      fontWeight: FontWeight.w600,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.phone,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    phone,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.person,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    username,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing / 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.mail,
+                                  size: iconSize,
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: Text(
+                                    email,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: spacing),
+                  InkWell(
+                    onTap: () => context.push(
+                      '/user/sub-users/details/${subUser.id}',
+                      extra: subUser,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: padding,
+                        vertical: spacing * 1.6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chevron_right,
+                            size: iconSize,
+                            color: colorScheme.onPrimary,
+                          ),
+                          SizedBox(width: spacing),
+                          Text(
+                            'View',
+                            style: GoogleFonts.roboto(
+                              fontSize: fsMain,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
