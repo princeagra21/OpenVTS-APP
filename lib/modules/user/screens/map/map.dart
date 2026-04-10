@@ -10,8 +10,11 @@ import 'package:fleet_stack/core/repositories/user_map_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -464,6 +467,8 @@ class _MapScreenState extends State<MapScreen> {
     final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
     final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
     final iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final topOffset =
+        MediaQuery.of(context).padding.top + AppUtils.appBarHeightCustom + 16;
     final bottomMargin =
         MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
 
@@ -525,6 +530,12 @@ class _MapScreenState extends State<MapScreen> {
     return AppLayout(
       title: 'MAP',
       subtitle: 'Vehicle Locations',
+      customTopBar: UserHomeAppBar(
+        title: 'Vehicle Locations',
+        leadingIcon: Icons.map_outlined,
+        onClose: () => context.go('/user/home'),
+      ),
+      customTopBarPadding: EdgeInsets.zero,
       actionIcons: const [],
       leftAvatarText: 'MP',
       showAppBar: false,
@@ -602,7 +613,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             Positioned(
               right: 16,
-              top: 40,
+              top: topOffset,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -623,7 +634,7 @@ class _MapScreenState extends State<MapScreen> {
             AnimatedPositioned(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
-              top: _showSearch ? 10 : -120,
+              top: _showSearch ? topOffset : -120,
               left: 0,
               right: 0,
               child: Padding(

@@ -26,9 +26,23 @@ class UserNotificationPreferencesRepository {
     UserNotificationPreferenceItem item, {
     CancelToken? cancelToken,
   }) async {
-    final res = await updatePreferencesPayload(<String, dynamic>{
+    final payload = <String, dynamic>{
       'settings': [item.toPayload()],
-    }, cancelToken: cancelToken);
+      'channels': <String, dynamic>{
+        item.eventType: <String, dynamic>{
+          'notifyEmail': item.notifyEmail,
+          'notifyWhatsapp': item.notifyWhatsapp,
+          'notifyWebPush': item.notifyWebPush,
+          'notifyMobilePush': item.notifyMobilePush,
+          'notifyTelegram': item.notifyTelegram,
+          'notifySms': item.notifySms,
+        },
+      },
+    };
+    final res = await updatePreferencesPayload(
+      payload,
+      cancelToken: cancelToken,
+    );
 
     return res;
   }
@@ -37,6 +51,12 @@ class UserNotificationPreferencesRepository {
     Map<String, dynamic> payload, {
     CancelToken? cancelToken,
   }) async {
+    // Debug logging for mismatch issues.
+    assert(() {
+      // ignore: avoid_print
+      print('PUT /user/notifications/preferences payload: $payload');
+      return true;
+    }());
     final res = await api.put(
       '/user/notifications/preferences',
       data: payload,
@@ -44,7 +64,14 @@ class UserNotificationPreferencesRepository {
     );
 
     return res.when(
-      success: (_) => Result.ok(null),
+      success: (data) {
+        assert(() {
+          // ignore: avoid_print
+          print('PUT /user/notifications/preferences response: $data');
+          return true;
+        }());
+        return Result.ok(null);
+      },
       failure: (err) => Result.fail(err),
     );
   }

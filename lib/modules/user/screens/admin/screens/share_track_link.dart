@@ -6,9 +6,9 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_share_track_links_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,6 +37,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
   // The repository prefers MD and falls back to Postman shape when needed.
   String selectedTab = 'All';
   final TextEditingController _searchController = TextEditingController();
+  int _pageSize = 10;
   final Map<String, CancelToken> _toggleTokens = <String, CancelToken>{};
   final Map<String, CancelToken> _deleteTokens = <String, CancelToken>{};
 
@@ -446,434 +447,828 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-    final titleFs = AdaptiveUtils.getTitleFontSize(screenWidth);
-    final bodyFs = titleFs - 1;
-    final smallFs = titleFs - 3;
-    final iconSize = titleFs + 2;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final scale = (screenWidth / 390).clamp(0.9, 1.05);
+    final fsSection = 18 * scale;
+    final fsMain = 14 * scale;
+    final fsSecondary = 12 * scale;
+    final fsMeta = 11 * scale;
+    final iconSize = 18.0;
     final cardPadding = padding + 4;
-    final searchQuery = _searchController.text.toLowerCase().trim();
 
-    final filteredTracks =
-        _tracks.where((track) {
-          final matchesSearch =
-              searchQuery.isEmpty ||
-              track.displayName.toLowerCase().contains(searchQuery) ||
-              track.statusLabel.toLowerCase().contains(searchQuery) ||
-              track.finalUrl.toLowerCase().contains(searchQuery) ||
-              _vehiclesDisplay(track).toLowerCase().contains(searchQuery);
+    var filteredTracks = _tracks.where((track) {
+      final query = _searchController.text.trim().toLowerCase();
+      final matchesSearch =
+          query.isEmpty ||
+          track.displayName.toLowerCase().contains(query) ||
+          track.finalUrl.toLowerCase().contains(query) ||
+          track.statusLabel.toLowerCase().contains(query);
 
-          final matchesTab =
-              selectedTab == 'All' ||
-              (selectedTab == 'Active' && track.statusLabel == 'Active') ||
-              (selectedTab == 'Expires Today' && _isExpiringToday(track));
+      final matchesTab =
+          selectedTab == 'All' ||
+          (selectedTab == 'Active' && track.statusLabel == 'Active') ||
+          (selectedTab == 'Expires Today' && _isExpiringToday(track));
 
-          return matchesSearch && matchesTab;
-        }).toList()..sort((a, b) {
-          final ad = a.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final bd = b.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bd.compareTo(ad);
-        });
+      return matchesSearch && matchesTab;
+    }).toList()
+      ..sort((a, b) {
+        final ad = a.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = b.expiryDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bd.compareTo(ad);
+      });
 
-    return AppLayout(
-      title: 'USER',
-      subtitle: 'Share Track',
-      showLeftAvatar: false,
-      actionIcons: const [],
-      onActionTaps: const [],
-      leftAvatarText: 'ST',
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: padding * 3.5,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(
-                  fontSize: bodyFs,
-                  color: colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search name, link, status...',
-                  hintStyle: GoogleFonts.inter(
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: bodyFs,
-                  ),
-                  prefixIcon: Icon(
-                    CupertinoIcons.search,
-                    size: iconSize,
-                    color: colorScheme.primary,
-                  ),
-                  border: InputBorder.none,
-                  focusColor: colorScheme.primary,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Colors.transparent,
-                      width: 0,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: padding,
-                  ),
-                ),
-              ),
+    if (filteredTracks.length > _pageSize) {
+      filteredTracks = filteredTracks.take(_pageSize).toList();
+    }
+
+    final showNoData = !_loading && filteredTracks.isEmpty;
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              padding,
+              topPadding + AppUtils.appBarHeightCustom + 28,
+              padding,
+              84,
             ),
-            SizedBox(height: padding),
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: ['All', 'Active', 'Expires Today'].map((tab) {
-                return SmallTab(
-                  label: tab,
-                  selected: selectedTab == tab,
-                  onTap: () => setState(() => selectedTab = tab),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: padding),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Showing ${filteredTracks.length} of ${_tracks.length} tracks',
-                  style: GoogleFonts.inter(
-                    fontSize: bodyFs,
-                    color: colorScheme.onSurface.withOpacity(0.87),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colorScheme.surfaceVariant),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Share Track",
+                            style: GoogleFonts.roboto(
+                              fontSize: fsSection,
+                              height: 24 / 18,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              final result =
+                                  await context.push('/user/share-track/add');
+                              if (result == true) {
+                                _loadLinks();
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: padding * 1.2,
+                                vertical: spacing,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    size: iconSize,
+                                    color: colorScheme.surface,
+                                  ),
+                                  SizedBox(width: spacing / 2),
+                                  Text(
+                                    "New",
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.surface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: padding),
+                      Container(
+                        height: padding * 3.5,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.1),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMain,
+                            height: 20 / 14,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Search name, link, status...",
+                            hintStyle: GoogleFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: fsSecondary,
+                              height: 16 / 12,
+                            ),
+                            prefixIcon: Icon(
+                              CupertinoIcons.search,
+                              size: iconSize + 2,
+                              color: colorScheme.onSurface,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: padding,
+                              vertical: padding,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: padding),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double gap = spacing;
+                          final double cellWidth =
+                              (constraints.maxWidth - gap * 2) / 3;
+                          return Wrap(
+                            spacing: gap,
+                            runSpacing: gap,
+                            children: [
+                              SizedBox(
+                                width: cellWidth,
+                                child: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (selectedTab == value) return;
+                                    setState(() => selectedTab = value);
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(
+                                      value: "All",
+                                      child: Text('All'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Active",
+                                      child: Text('Active'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Expires Today",
+                                      child: Text('Expires Today'),
+                                    ),
+                                  ],
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.tune,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Text(
+                                          "Filter",
+                                          style: GoogleFonts.roboto(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: cellWidth,
+                                child: PopupMenuButton<int>(
+                                  onSelected: (value) {
+                                    if (_pageSize == value) return;
+                                    setState(() => _pageSize = value);
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(
+                                      value: 10,
+                                      child: Text('10'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 25,
+                                      child: Text('25'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 50,
+                                      child: Text('50'),
+                                    ),
+                                  ],
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              "Records",
+                                              style: GoogleFonts.roboto(
+                                                fontSize: fsMain - 3,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing / 2),
+                                            Icon(
+                                              Icons.keyboard_arrow_down,
+                                              size: iconSize,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: cellWidth,
+                                child: InkWell(
+                                  onTap: _loadLinks,
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  hoverColor: Colors.transparent,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.refresh,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Text(
+                                          "Refresh",
+                                          style: GoogleFonts.roboto(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      SizedBox(height: padding),
+                      if (showNoData)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: padding),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(cardPadding),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _errorShown
+                                        ? "Couldn't load share links."
+                                        : "No share links found",
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.8),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (_errorShown)
+                                  TextButton(
+                                    onPressed: _loadLinks,
+                                    child: const Text('Retry'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (_loading)
+                        ...List<Widget>.generate(
+                          3,
+                          (index) => _buildTrackSkeletonCard(
+                            padding: padding,
+                            spacing: spacing,
+                            cardPadding: cardPadding,
+                            screenWidth: screenWidth,
+                            bodyFs: fsMain,
+                            smallFs: fsMeta,
+                          ),
+                        ),
+                      if (!showNoData && !_loading)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredTracks.length,
+                          itemBuilder: (context, index) {
+                            final track = filteredTracks[index];
+                            return _buildTrackCard(
+                              track,
+                              colorScheme,
+                              padding,
+                              spacing,
+                              fsMain,
+                              fsSecondary,
+                              fsMeta,
+                              iconSize,
+                              cardPadding,
+                              screenWidth,
+                            );
+                          },
+                        ),
+                    ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () async {
-                    final result = await context.push('/user/share-track/add');
-                    if (result == true) {
-                      _loadLinks();
-                    }
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: padding * 1.5,
-                      vertical: spacing,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Text(
-                      'Add Track',
-                      style: GoogleFonts.inter(
-                        fontSize: bodyFs,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
+                SizedBox(height: padding * 2),
               ],
             ),
-            SizedBox(height: spacing),
-            if (_loading)
-              ...List.generate(
-                3,
-                (_) => _buildShimmerCard(
-                  context,
-                  colorScheme,
-                  padding,
-                  spacing,
-                  bodyFs,
-                ),
-              )
-            else if (filteredTracks.isEmpty)
-              _buildEmptyCard(
-                context,
-                colorScheme,
-                padding,
-                bodyFs,
-                'No track links found',
-                'Create a link to share live tracking.',
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredTracks.length,
-                itemBuilder: (context, index) {
-                  final track = filteredTracks[index];
-                  final vehiclesDisplay = _vehiclesDisplay(track);
-                  final statusColor = _statusColor(colorScheme, track);
-                  final isBusy =
-                      _togglingIds.contains(track.id) ||
-                      _deletingIds.contains(track.id);
+          ),
+          Positioned(
+            left: padding,
+            right: padding,
+            top: 0,
+            child: UserHomeAppBar(
+              title: 'Share Track',
+              leadingIcon: Icons.share_outlined,
+              onClose: () => context.go('/user/home'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  return Container(
-                    margin: EdgeInsets.only(bottom: padding),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+  Widget _buildTrackSkeletonCard({
+    required double padding,
+    required double spacing,
+    required double cardPadding,
+    required double screenWidth,
+    required double bodyFs,
+    required double smallFs,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: padding),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppShimmer(
+                    width: AdaptiveUtils.getAvatarSize(screenWidth),
+                    height: AdaptiveUtils.getAvatarSize(screenWidth),
+                    radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                  ),
+                  SizedBox(width: spacing * 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppShimmer(
+                                width: double.infinity,
+                                height: bodyFs + 8,
+                                radius: 8,
+                              ),
+                            ),
+                            SizedBox(width: spacing),
+                            AppShimmer(
+                              width: 70,
+                              height: smallFs + 10,
+                              radius: 999,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: screenWidth * 0.35,
+                          height: bodyFs + 8,
+                          radius: 8,
+                        ),
+                        SizedBox(height: spacing),
+                        AppShimmer(
+                          width: screenWidth * 0.45,
+                          height: bodyFs + 6,
+                          radius: 8,
                         ),
                       ],
                     ),
-                    child: Material(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        onTap: track.finalUrl.trim().isEmpty
-                            ? null
-                            : () => _openLink(track.finalUrl),
-                        borderRadius: BorderRadius.circular(25),
-                        child: Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      track.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: bodyFs,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: spacing + 2,
-                                      vertical: spacing - 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Text(
-                                      track.statusLabel,
-                                      style: GoogleFonts.inter(
-                                        fontSize: smallFs,
-                                        fontWeight: FontWeight.w600,
-                                        color: statusColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: spacing),
-                              GestureDetector(
-                                onTap: track.finalUrl.trim().isEmpty
-                                    ? null
-                                    : () => _openLink(track.finalUrl),
-                                child: Text(
-                                  '${track.vehiclesCount} vehicles • ${track.finalUrl}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: bodyFs,
-                                    color: colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: spacing / 2),
-                              Row(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        CupertinoIcons.calendar,
-                                        size: iconSize * 0.8,
-                                        color: colorScheme.primary.withOpacity(
-                                          0.87,
-                                        ),
-                                      ),
-                                      SizedBox(width: spacing / 2),
-                                      Text(
-                                        'Expires: ${_formatDate(track.expiryDate)}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: bodyFs,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(width: spacing + 5),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.visibility,
-                                        size: iconSize * 0.8,
-                                        color: colorScheme.primary.withOpacity(
-                                          0.87,
-                                        ),
-                                      ),
-                                      SizedBox(width: spacing / 2),
-                                      Text(
-                                        'Views: ${track.views}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: bodyFs,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              if (track.lastOpenedDate != null) ...[
-                                SizedBox(height: spacing / 2),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time,
-                                      size: iconSize * 0.8,
-                                      color: colorScheme.primary.withOpacity(
-                                        0.87,
-                                      ),
-                                    ),
-                                    SizedBox(width: spacing / 2),
-                                    Expanded(
-                                      child: Text(
-                                        'Last opened: ${_formatDate(track.lastOpenedDate)}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(
-                                          fontSize: bodyFs,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              SizedBox(height: spacing),
-                              if (vehiclesDisplay.isNotEmpty)
-                                Text(
-                                  vehiclesDisplay,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: bodyFs,
-                                    color: colorScheme.onSurface.withOpacity(
-                                      0.7,
-                                    ),
-                                  ),
-                                ),
-                              SizedBox(height: spacing * 2),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  IconButton(
-                                    tooltip: 'Copy Link',
-                                    icon: Icon(
-                                      Icons.content_copy,
-                                      size: iconSize,
-                                      color: colorScheme.primary,
-                                    ),
-                                    onPressed: isBusy
-                                        ? null
-                                        : () => _copyLink(track),
-                                  ),
-                                  IconButton(
-                                    tooltip: 'QR Code',
-                                    icon: Icon(
-                                      Icons.qr_code,
-                                      size: iconSize,
-                                      color: colorScheme.primary,
-                                    ),
-                                    onPressed: isBusy
-                                        ? null
-                                        : _showUnavailableQr,
-                                  ),
-                                  _togglingIds.contains(track.id)
-                                      ? AppShimmer(
-                                          width: iconSize,
-                                          height: iconSize,
-                                          radius: iconSize / 2,
-                                        )
-                                      : IconButton(
-                                          tooltip: track.isActive
-                                              ? 'Pause'
-                                              : 'Resume',
-                                          icon: Icon(
-                                            track.isActive
-                                                ? Icons.pause
-                                                : Icons.play_arrow,
-                                            size: iconSize,
-                                            color: colorScheme.primary,
-                                          ),
-                                          onPressed: isBusy
-                                              ? null
-                                              : () => _toggleLink(track),
-                                        ),
-                                  IconButton(
-                                    tooltip: 'Edit',
-                                    icon: Icon(
-                                      Icons.edit,
-                                      size: iconSize,
-                                      color: colorScheme.primary,
-                                    ),
-                                    onPressed: isBusy
-                                        ? null
-                                        : _showUnavailableEdit,
-                                  ),
-                                  _deletingIds.contains(track.id)
-                                      ? AppShimmer(
-                                          width: iconSize,
-                                          height: iconSize,
-                                          radius: iconSize / 2,
-                                        )
-                                      : IconButton(
-                                          tooltip: 'Delete',
-                                          icon: Icon(
-                                            Icons.delete,
-                                            size: iconSize,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: isBusy
-                                              ? null
-                                              : () => _deleteLink(track),
-                                        ),
-                                ],
-                              ),
-                            ],
+                  ),
+                ],
+              ),
+              SizedBox(height: spacing * 1.5),
+              AppShimmer(
+                width: double.infinity,
+                height: bodyFs + 20,
+                radius: 12,
+              ),
+              SizedBox(height: spacing),
+              AppShimmer(
+                width: double.infinity,
+                height: bodyFs + 20,
+                radius: 12,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrackCard(
+    UserShareTrackLinkItem track,
+    ColorScheme colorScheme,
+    double padding,
+    double spacing,
+    double fsMain,
+    double fsSecondary,
+    double fsMeta,
+    double iconSize,
+    double cardPadding,
+    double screenWidth,
+  ) {
+    final name = _safe(track.displayName);
+    final url = _safe(track.finalUrl);
+    final vehicles = _safe(_vehiclesDisplay(track));
+    final expiry = _safe(_formatDate(track.expiryDate));
+    final initials = _initials(name);
+    final isUpdating = _togglingIds.contains(track.id);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: padding),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(25),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          onTap: url == '—' ? null : () => _openLink(track.finalUrl),
+          child: Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: colorScheme.surface,
+                      radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2,
+                      foregroundColor: colorScheme.onSurface,
+                      child: Container(
+                        width: AdaptiveUtils.getAvatarSize(screenWidth),
+                        height: AdaptiveUtils.getAvatarSize(screenWidth),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.12),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          initials,
+                          style: GoogleFonts.roboto(
+                            color: colorScheme.onSurface,
+                            fontSize:
+                                AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-            SizedBox(height: padding * 2),
-          ],
+                    SizedBox(width: spacing * 2),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsMain,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Transform.scale(
+                                scale: 0.75,
+                                child: Switch(
+                                  value: track.isActive,
+                                  onChanged: isUpdating
+                                      ? null
+                                      : (_) => _toggleLink(track),
+                                  activeColor: colorScheme.onPrimary,
+                                  activeTrackColor: colorScheme.primary,
+                                  inactiveThumbColor: colorScheme.onPrimary,
+                                  inactiveTrackColor:
+                                      colorScheme.primary.withOpacity(0.3),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.link,
+                                size: iconSize,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  url,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsSecondary,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SizedBox(width: spacing),
+                              InkWell(
+                                onTap: url == '—'
+                                    ? null
+                                    : () => _copyLink(track),
+                                borderRadius: BorderRadius.circular(999),
+                                child: Icon(
+                                  Icons.copy,
+                                  size: iconSize,
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: spacing / 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.directions_car,
+                                size: iconSize,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: Text(
+                                  vehicles,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsSecondary,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: spacing * 1.5),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padding,
+                    vertical: spacing - 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.onSurface.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: iconSize,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          SizedBox(width: spacing),
+                          Expanded(
+                            child: Text(
+                              "Expires",
+                              style: GoogleFonts.roboto(
+                                fontSize: fsMeta,
+                                height: 14 / 11,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: spacing),
+                      Text(
+                        expiry,
+                        style: GoogleFonts.roboto(
+                          fontSize: fsMain,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: spacing),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padding,
+                    vertical: spacing * 1.6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chevron_right,
+                        size: iconSize,
+                        color: colorScheme.onPrimary,
+                      ),
+                      SizedBox(width: spacing),
+                      Text(
+                        "View",
+                        style: GoogleFonts.roboto(
+                          fontSize: fsMain,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  String _safe(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '—';
+    return trimmed;
+  }
+
+  String _initials(String name) {
+    final clean = name.replaceAll('@', ' ').trim();
+    if (clean.isEmpty) return '--';
+    final parts =
+        clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return '--';
+    return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
 }

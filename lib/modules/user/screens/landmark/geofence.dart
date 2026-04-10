@@ -7,9 +7,12 @@ import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/repositories/user_landmarks_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/screens/landmark/add_buffer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import '../../layout/app_layout.dart';
 
@@ -839,12 +842,19 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
     final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
     final iconSize = AdaptiveUtils.getIconSize(screenWidth);
+    final topOffset = AppUtils.appBarHeightCustom;
     final bottomMargin =
         MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
 
     return AppLayout(
       title: "MAP",
       subtitle: "Geofence Management",
+      customTopBar: UserHomeAppBar(
+        title: 'Geofence Management',
+        leadingIcon: Icons.location_on_outlined,
+        onClose: () => context.go('/user/home'),
+      ),
+      customTopBarPadding: EdgeInsets.zero,
       actionIcons: [],
       onActionTaps: [],
       showAppBar: false,
@@ -1066,7 +1076,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
               ),
               // ================= TOP ADD BUTTONS =================
               Positioned(
-                top: 0,
+                top: topOffset,
                 left: 0,
                 right: 0,
                 child: Container(
