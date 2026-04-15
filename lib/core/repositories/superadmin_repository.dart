@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:fleet_stack/core/models/calendar_event_item.dart';
 import 'package:fleet_stack/core/models/admin_list_item.dart';
 import 'package:fleet_stack/core/models/admin_document_item.dart';
@@ -23,6 +25,7 @@ import 'package:fleet_stack/core/models/superadmin_recent_user.dart';
 import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
 import 'package:fleet_stack/core/models/ticket_list_item.dart';
 import 'package:fleet_stack/core/models/ticket_message_item.dart';
+import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 import 'package:fleet_stack/core/models/vehicle_config.dart';
 import 'package:fleet_stack/core/models/vehicle_details.dart';
 import 'package:fleet_stack/core/models/vehicle_log_item.dart';
@@ -147,8 +150,67 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/superadmin/activateadmin/$adminId',
-      data: <String, dynamic>{'isActive': isActive},
+      '/superadmin/adminstatusupdate',
+      data: {'adminid': adminId, 'status': isActive},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> uploadSuperadminFile({
+    required String adminId,
+    required String type,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final MediaType? mediaType =
+        (contentType == null || contentType.trim().isEmpty)
+            ? null
+            : MediaType.parse(contentType);
+
+    final form = FormData.fromMap({
+      'type': type,
+      'file': MultipartFile.fromBytes(
+        bytes,
+        filename: filename,
+        contentType: mediaType,
+      ),
+    });
+
+    final res = await api.post(
+      '/superadmin/upload/$adminId',
+      data: form,
+      cancelToken: cancelToken,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: const {
+          'Accept': 'application/json',
+        },
+      ),
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        final url = (map['url'] ?? map['path'] ?? '').toString();
+        return Result.ok(url);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> deleteSuperadminFile(
+    String fileId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.delete(
+      '/superadmin/uploaddoc/$fileId',
       cancelToken: cancelToken,
     );
 
@@ -164,6 +226,7 @@ class SuperadminRepository {
   }) async {
     final res = await api.delete(
       '/superadmin/deleteadmin/$adminId',
+      data: <String, dynamic>{'adminId': adminId},
       cancelToken: cancelToken,
     );
 
@@ -179,6 +242,22 @@ class SuperadminRepository {
   }) async {
     final res = await api.delete(
       '/superadmin/vehicles/$vehicleId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> createAdmin(
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/superadmin/createadmin',
+      data: payload,
       cancelToken: cancelToken,
     );
 
@@ -1046,15 +1125,24 @@ class SuperadminRepository {
     required String message,
     required String priority,
     required String category,
+    String? subject,
+    String? adminId,
     CancelToken? cancelToken,
   }) async {
+    final payload = <String, dynamic>{
+      'message': message,
+      'priority': priority,
+      'category': category,
+    };
+    if (subject != null && subject.trim().isNotEmpty) {
+      payload['subject'] = subject.trim();
+    }
+    if (adminId != null && adminId.trim().isNotEmpty) {
+      payload['adminId'] = adminId.trim();
+    }
     final res = await api.post(
       '/superadmin/support/tickets',
-      data: <String, dynamic>{
-        'message': message,
-        'priority': priority,
-        'category': category,
-      },
+      data: payload,
       cancelToken: cancelToken,
     );
 
@@ -1140,17 +1228,38 @@ class SuperadminRepository {
     String ticketId,
     String message, {
     bool internal = false,
+    PickedFilePayload? attachment,
     CancelToken? cancelToken,
   }) async {
-    final payload = <String, dynamic>{'message': message};
-    if (internal) {
-      payload['type'] = 'INTERNAL';
+    final endpoint = '/superadmin/support/tickets/$ticketId/messages';
+    Result<dynamic> res;
+
+    if (attachment != null) {
+      final form = FormData.fromMap({
+        'message': message,
+        if (internal) 'type': 'INTERNAL',
+        'file': MultipartFile.fromBytes(
+          attachment.bytes,
+          filename: attachment.filename,
+        ),
+      });
+      res = await api.post(
+        endpoint,
+        data: form,
+        cancelToken: cancelToken,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+    } else {
+      final payload = <String, dynamic>{'message': message};
+      if (internal) {
+        payload['type'] = 'INTERNAL';
+      }
+      res = await api.post(
+        endpoint,
+        data: payload,
+        cancelToken: cancelToken,
+      );
     }
-    final res = await api.post(
-      '/superadmin/support/tickets/$ticketId/messages',
-      data: payload,
-      cancelToken: cancelToken,
-    );
 
     return res.when(
       success: (data) {
@@ -1169,16 +1278,35 @@ class SuperadminRepository {
     String status, {
     CancelToken? cancelToken,
   }) async {
-    final res = await api.post(
-      '/superadmin/support/tickets/$ticketId/status',
-      data: <String, dynamic>{'status': status},
+    final endpoint = '/superadmin/support/tickets/$ticketId/status';
+    final payload = <String, dynamic>{'status': status};
+
+    // Prefer PATCH (matches admin endpoints). Fallback to POST for legacy.
+    final patchRes = await api.patch(
+      endpoint,
+      data: payload,
       cancelToken: cancelToken,
     );
 
-    return res.when(
-      success: (_) => Result.ok(null),
-      failure: (err) => Result.fail(err),
-    );
+    if (patchRes.isSuccess) {
+      return Result.ok(null);
+    }
+
+    final err = patchRes.error;
+    if (err is ApiException &&
+        (err.statusCode == 404 || err.statusCode == 405)) {
+      final postRes = await api.post(
+        endpoint,
+        data: payload,
+        cancelToken: cancelToken,
+      );
+      return postRes.when(
+        success: (_) => Result.ok(null),
+        failure: (e) => Result.fail(e),
+      );
+    }
+
+    return Result.fail(err ?? Exception('Update status failed'));
   }
 
   Future<Result<SuperadminAdoptionGraph>> getAdoptionGraph({
@@ -1271,11 +1399,21 @@ class SuperadminRepository {
   Future<Result<List<SuperadminRecentTransaction>>> getRecentTransactions({
     int? page,
     int? limit,
+    String? adminId,
+    String? from,
+    String? to,
+    String? status,
+    String? q,
     CancelToken? cancelToken,
   }) async {
     final qp = <String, dynamic>{};
     if (page != null) qp['page'] = page;
     if (limit != null) qp['limit'] = limit;
+    if (adminId != null && adminId.isNotEmpty) qp['adminId'] = adminId;
+    if (from != null && from.isNotEmpty) qp['from'] = from;
+    if (to != null && to.isNotEmpty) qp['to'] = to;
+    if (status != null && status.isNotEmpty) qp['status'] = status;
+    if (q != null && q.isNotEmpty) qp['q'] = q;
 
     final res = await api.get(
       '/superadmin/transactions',

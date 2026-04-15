@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
-      context.push('/admin/profile');
+      context.push('/admin/settings');
     } else if (selected == 'password') {
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -450,7 +450,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     badgeText: _badgeText,
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
-                    onTap: () => context.push('/admin/notifications'),
+                    onTap: () async {
+                      await context.push('/admin/notifications');
+                      if (!mounted) return;
+                      _loadUnreadCount();
+                    },
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
                   Builder(

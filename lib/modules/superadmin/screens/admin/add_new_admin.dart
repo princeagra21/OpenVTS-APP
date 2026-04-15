@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/common_repository.dart';
+import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import '../../utils/adaptive_utils.dart';
 
@@ -41,11 +43,16 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   bool _loadingCountries = false;
   bool _loadingStates = false;
   bool _loadingCities = false;
+  bool _showPassword = false;
   CancelToken? _countriesToken;
   CancelToken? _statesToken;
   CancelToken? _citiesToken;
   ApiClient? _api;
   CommonRepository? _commonRepo;
+  SuperadminRepository? _superadminRepo;
+  CancelToken? _submitToken;
+  bool _submitting = false;
+  bool _submitErrorShown = false;
 
   double _scaleForWidth(double width) =>
       (width / 420).clamp(0.9, 1.0); // keep spec size on larger screens
@@ -339,7 +346,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: !_showPassword,
                         style: GoogleFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
@@ -352,6 +359,19 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontSize: inputSize,
                         ).copyWith(
                           prefixIcon: Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.primary, size: 22),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _showPassword = !_showPassword),
+                            icon: Icon(
+                              _showPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                            ),
+                          ),
                         ),
                       ),
 
@@ -407,80 +427,76 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Country & State
-                      Row(
+                      // Country & State - Now on separate rows
+                      // Country
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Country",
-                                  style: _labelStyle(context, fontSize: labelSize),
+                          Text(
+                            "Country",
+                            style: _labelStyle(context, fontSize: labelSize),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _countryController,
+                            readOnly: true,
+                            style: GoogleFonts.roboto(
+                              fontSize: inputSize,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            decoration: _minimalDecoration(
+                              context,
+                              hint: "Enter country code",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(Icons.public, color: Theme.of(context).colorScheme.primary, size: 22),
+                              suffixIcon: IconButton(
+                                onPressed: _pickCountry,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: _countryController,
-                                  readOnly: true,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: inputSize,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  decoration: _minimalDecoration(
-                                    context,
-                                    hint: "Enter country code",
-                                    fontSize: inputSize,
-                                  ).copyWith(
-                                    prefixIcon: Icon(Icons.public, color: Theme.of(context).colorScheme.primary, size: 22),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickCountry,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "State",
-                                  style: _labelStyle(context, fontSize: labelSize),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // State
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "State",
+                            style: _labelStyle(context, fontSize: labelSize),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _stateController,
+                            readOnly: true,
+                            style: GoogleFonts.roboto(
+                              fontSize: inputSize,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            decoration: _minimalDecoration(
+                              context,
+                              hint: "Enter state",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(Icons.flag_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
+                              suffixIcon: IconButton(
+                                onPressed: _pickState,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: _stateController,
-                                  readOnly: true,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: inputSize,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  decoration: _minimalDecoration(
-                                    context,
-                                    hint: "Enter state",
-                                    fontSize: inputSize,
-                                  ).copyWith(
-                                    prefixIcon: Icon(Icons.flag_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickState,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ],
@@ -502,6 +518,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: _cityController,
+                                  readOnly: true,
                                   style: GoogleFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
@@ -514,6 +531,13 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                     fontSize: inputSize,
                                   ).copyWith(
                                     prefixIcon: Icon(Icons.location_city_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
+                                    suffixIcon: IconButton(
+                                      onPressed: _pickCity,
+                                      icon: Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -623,10 +647,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                 child: SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Validate inputs and add new admin (e.g., API call)
-                      Navigator.pop(context);
-                    },
+                    onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       elevation: 0,
@@ -636,7 +657,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       ),
                     ),
                     child: Text(
-                      "Create Admin",
+                      _submitting ? "Creating..." : "Create Admin",
                       style: GoogleFonts.roboto(
                         fontSize: inputSize,
                         height: 20 / 14,
@@ -665,6 +686,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _countriesToken?.cancel('AddNewAdminScreen disposed');
     _statesToken?.cancel('AddNewAdminScreen disposed');
     _citiesToken?.cancel('AddNewAdminScreen disposed');
+    _submitToken?.cancel('AddNewAdminScreen disposed');
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -678,6 +700,117 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _pincodeController.dispose();
     _creditsController.dispose();
     super.dispose();
+  }
+
+  void _ensureRepo() {
+    _api ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _commonRepo ??= CommonRepository(api: _api!);
+    _superadminRepo ??= SuperadminRepository(api: _api!);
+  }
+
+  void _snackOnce(String msg) {
+    if (!mounted || _submitErrorShown) return;
+    _submitErrorShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  String _countryValue() {
+    final code = _selectedCountryOption?.isoCode;
+    if (code != null && code.isNotEmpty) return code;
+    return _countryController.text.trim();
+  }
+
+  String _stateValue() {
+    final value = _selectedStateOption?.value;
+    if (value != null && value.isNotEmpty) return value;
+    return _stateController.text.trim();
+  }
+
+  String _cityValue() {
+    final text = _cityController.text.trim();
+    if (text.isNotEmpty) return text;
+    return _selectedCityOption?.label ?? '';
+  }
+
+  String _mobilePrefix() {
+    if (_selectedCountry != null) return '+${_selectedCountry!.phoneCode}';
+    return '+91';
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    _submitErrorShown = false;
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+    final company = _companyController.text.trim();
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        username.isEmpty ||
+        password.isEmpty ||
+        company.isEmpty) {
+      _snackOnce('Please fill all required fields.');
+      return;
+    }
+
+    _ensureRepo();
+    _submitToken?.cancel('resubmit');
+    _submitToken = CancelToken();
+    setState(() => _submitting = true);
+
+    final payload = <String, dynamic>{
+      'name': name,
+      'email': email,
+      'mobilePrefix': _mobilePrefix(),
+      'mobileNumber': phone,
+      'username': username,
+      'password': password,
+      'companyName': company,
+      'address': _addressController.text.trim(),
+      'country': _countryValue(),
+      'state': _stateValue(),
+      'city': _cityValue(),
+      'pincode': _pincodeController.text.trim(),
+      'credits': _creditsController.text.trim(),
+    };
+
+    payload.removeWhere((key, value) {
+      if (value == null) return true;
+      if (value is String && value.trim().isEmpty) return true;
+      return false;
+    });
+
+    final res = await _superadminRepo!.createAdmin(
+      payload,
+      cancelToken: _submitToken,
+    );
+    if (!mounted) return;
+
+    res.when(
+      success: (_) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin created')),
+        );
+        Navigator.pop(context, true);
+      },
+      failure: (err) {
+        setState(() => _submitting = false);
+        if (err is ApiException && err.message.trim().isNotEmpty) {
+          _snackOnce(err.message);
+        } else {
+          _snackOnce("Couldn't create admin.");
+        }
+      },
+    );
   }
 
   Future<void> _loadCountries() async {
@@ -696,10 +829,27 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     if (!mounted) return;
     res.when(
       success: (items) {
+        final CountryOption? india = items.isNotEmpty
+            ? items.firstWhere(
+                (c) => c.isoCode.toUpperCase() == 'IN',
+                orElse: () => items.first,
+              )
+            : null;
+        final shouldSelectDefault = _selectedCountryOption == null && india != null;
+
         setState(() {
           _countries = items;
           _loadingCountries = false;
+          if (shouldSelectDefault) {
+            _selectedCountryOption = india;
+            _countryController.text = india.name;
+            _selectedCountry = Country.tryParse(india.isoCode);
+          }
         });
+
+        if (shouldSelectDefault) {
+          _loadStates(india.isoCode);
+        }
       },
       failure: (_) {
         setState(() => _loadingCountries = false);
@@ -734,7 +884,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     );
   }
 
-  Future<void> _loadCities(String stateCode) async {
+  Future<void> _loadCities(String countryCode, String stateCode) async {
     _citiesToken?.cancel('Reload cities');
     final token = CancelToken();
     _citiesToken = token;
@@ -746,7 +896,11 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     );
     _commonRepo ??= CommonRepository(api: _api!);
 
-    final res = await _commonRepo!.getCities(stateCode, cancelToken: token);
+    final res = await _commonRepo!.getCities(
+      countryCode,
+      stateCode,
+      cancelToken: token,
+    );
     if (!mounted) return;
     res.when(
       success: (items) {
@@ -761,6 +915,143 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     );
   }
 
+  Future<T?> _showSearchableSheet<T>({
+    required String title,
+    required List<T> items,
+    required String Function(T) labelFor,
+    String Function(T)? trailingFor,
+  }) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final searchController = TextEditingController();
+    String query = '';
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
+
+    final picked = await showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.7,
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                final filtered = items.where((item) {
+                  final text = labelFor(item).toLowerCase();
+                  return text.contains(query.toLowerCase());
+                }).toList();
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: GoogleFonts.roboto(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              height: 32,
+                              width: 32,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: searchController,
+                        onChanged: (value) =>
+                            setSheetState(() => query = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          filled: true,
+                          fillColor:
+                              colorScheme.surfaceVariant.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
+                          itemBuilder: (_, index) {
+                            final item = filtered[index];
+                            final trailing =
+                                trailingFor != null ? trailingFor(item) : null;
+                            return ListTile(
+                              title: Text(
+                                labelFor(item),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fontSize - 1,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              trailing: trailing == null || trailing.isEmpty
+                                  ? null
+                                  : Text(
+                                      trailing,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: fontSize - 2,
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                              onTap: () => Navigator.pop(ctx, item),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    return picked;
+  }
+
   Future<void> _pickCountry() async {
     if (_loadingCountries) return;
     if (_countries.isEmpty) {
@@ -770,92 +1061,25 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
       return;
     }
 
-    final searchController = TextEditingController();
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
-        final height = MediaQuery.of(context).size.height * 0.7;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurface.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  onChanged: (_) => (context as Element).markNeedsBuild(),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: height,
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _countries.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = _countries[index];
-                      final q = searchController.text.trim().toLowerCase();
-                      if (q.isNotEmpty &&
-                          !item.name.toLowerCase().contains(q) &&
-                          !item.isoCode.toLowerCase().contains(q)) {
-                        return const SizedBox.shrink();
-                      }
-                      return ListTile(
-                        title: Text(item.name),
-                        trailing: Text(item.isoCode),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          setState(() {
-                            _selectedCountryOption = item;
-                            _countryController.text = item.name;
-                            _stateController.clear();
-                            _cityController.clear();
-                            _states = const [];
-                            _cities = const [];
-                            _selectedStateOption = null;
-                            _selectedCityOption = null;
-                          });
-                          await _loadStates(item.isoCode);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    final picked = await _showSearchableSheet<CountryOption>(
+      title: 'Select Country',
+      items: _countries,
+      labelFor: (item) => item.name,
+      trailingFor: (item) => item.isoCode,
     );
-    searchController.dispose();
+
+    if (picked == null) return;
+    setState(() {
+      _selectedCountryOption = picked;
+      _countryController.text = picked.name;
+      _stateController.clear();
+      _cityController.clear();
+      _states = const [];
+      _cities = const [];
+      _selectedStateOption = null;
+      _selectedCityOption = null;
+    });
+    await _loadStates(picked.isoCode);
   }
 
   Future<void> _pickState() async {
@@ -873,88 +1097,49 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
       return;
     }
 
-    final searchController = TextEditingController();
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
-        final height = MediaQuery.of(context).size.height * 0.7;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurface.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  onChanged: (_) => (context as Element).markNeedsBuild(),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: height,
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _states.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = _states[index];
-                      final q = searchController.text.trim().toLowerCase();
-                      if (q.isNotEmpty &&
-                          !item.label.toLowerCase().contains(q) &&
-                          !item.value.toLowerCase().contains(q)) {
-                        return const SizedBox.shrink();
-                      }
-                      return ListTile(
-                        title: Text(item.label),
-                        trailing: Text(item.value),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          setState(() {
-                            _selectedStateOption = item;
-                            _stateController.text = item.label;
-                            _cityController.clear();
-                            _cities = const [];
-                            _selectedCityOption = null;
-                          });
-                          await _loadCities(item.value);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    final picked = await _showSearchableSheet<ReferenceOption>(
+      title: 'Select State',
+      items: _states,
+      labelFor: (item) => item.label,
+      trailingFor: (item) => item.value,
     );
-    searchController.dispose();
+
+    if (picked == null) return;
+    setState(() {
+      _selectedStateOption = picked;
+      _stateController.text = picked.label;
+      _cityController.clear();
+      _cities = const [];
+      _selectedCityOption = null;
+    });
+    await _loadCities(_countryValue(), picked.value);
+  }
+
+  Future<void> _pickCity() async {
+    if (_selectedStateOption == null || _selectedCountryOption == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a country and state first.')),
+      );
+      return;
+    }
+    if (_loadingCities) return;
+    if (_cities.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No cities available.')),
+      );
+      return;
+    }
+
+    final picked = await _showSearchableSheet<ReferenceOption>(
+      title: 'Select City',
+      items: _cities,
+      labelFor: (item) => item.label,
+    );
+
+    if (picked == null) return;
+    setState(() {
+      _selectedCityOption = picked;
+      _cityController.text = picked.label;
+    });
   }
 }

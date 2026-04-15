@@ -157,17 +157,36 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                             return ListTile(
                               contentPadding:
                                   const EdgeInsets.symmetric(horizontal: 6),
-                              title: Text(
-                                name,
-                                style: GoogleFonts.roboto(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      maxLines: 2,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
+                                      style: GoogleFonts.roboto(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              subtitle: Text(
-                                a.email.isNotEmpty ? a.email : '—',
-                                style: GoogleFonts.roboto(
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                              subtitle: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      a.email.isNotEmpty ? a.email : '—',
+                                      maxLines: 2,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
+                                      style: GoogleFonts.roboto(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               onTap: () {
                                 setState(() {
@@ -439,14 +458,16 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                 ),
                               ),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       _adminController.text.isNotEmpty
                                           ? _adminController.text
                                           : 'Select admin',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                       style: GoogleFonts.roboto(
                                         fontSize: labelSize,
                                         height: 20 / 14,

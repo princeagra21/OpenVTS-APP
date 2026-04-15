@@ -79,6 +79,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   bool _loading = false;
   bool _errorShown = false;
   bool _saveErrorShown = false;
+  bool _saving = false;
 
   // Cancel on dispose.
   CancelToken? _loadToken;
@@ -127,31 +128,47 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     _selectedUnit ??= prefs.getString(_prefsKey('units')) ?? _selectedUnit;
   }
 
-  Future<void> _persistLocalSettings() async {
+  Future<void> _persistLocalSettings({bool clearIfNull = false}) async {
     final prefs = await SharedPreferences.getInstance();
     if (_selectedLanguage != null) {
       await prefs.setString(_prefsKey('language'), _selectedLanguage!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('language'));
     }
     if (_selectedDateFormat != null) {
       await prefs.setString(_prefsKey('date_format'), _selectedDateFormat!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('date_format'));
     }
     if (_selectedTimeFormat != null) {
       await prefs.setString(_prefsKey('time_format'), _selectedTimeFormat!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('time_format'));
     }
     if (_selectedTimezone != null) {
       await prefs.setString(_prefsKey('timezone'), _selectedTimezone!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('timezone'));
     }
     if (_selectedFirstDay != null) {
       await prefs.setString(_prefsKey('first_day'), _selectedFirstDay!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('first_day'));
     }
     if (_selectedDirection != null) {
       await prefs.setString(_prefsKey('direction'), _selectedDirection!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('direction'));
     }
     if (_selectedTheme != null) {
       await prefs.setString(_prefsKey('theme'), _selectedTheme!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('theme'));
     }
     if (_selectedUnit != null) {
       await prefs.setString(_prefsKey('units'), _selectedUnit!);
+    } else if (clearIfNull) {
+      await prefs.remove(_prefsKey('units'));
     }
   }
 
@@ -160,18 +177,60 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  void _applyServerSettings(AdminSettings s) {
-    if (s.language.isNotEmpty) _selectedLanguage = s.language;
-    if (s.dateFormat.isNotEmpty) _selectedDateFormat = s.dateFormat;
-    if (s.use24Hour != null) _selectedTimeFormat = s.use24Hour! ? '24h' : '12h';
-    if (s.timezoneOffset.isNotEmpty) _selectedTimezone = s.timezoneOffset;
-    if (s.units.isNotEmpty) _selectedUnit = s.units;
+  void _applyServerSettings(AdminSettings s, {bool clearIfEmpty = false}) {
+    if (s.language.isNotEmpty) {
+      _selectedLanguage = s.language;
+    } else if (clearIfEmpty) {
+      _selectedLanguage = null;
+    }
+
+    if (s.dateFormat.isNotEmpty) {
+      _selectedDateFormat = s.dateFormat;
+    } else if (clearIfEmpty) {
+      _selectedDateFormat = null;
+    }
+
+    if (s.use24Hour != null) {
+      _selectedTimeFormat = s.use24Hour! ? '24h' : '12h';
+    } else if (clearIfEmpty) {
+      _selectedTimeFormat = null;
+    }
+
+    if (s.timezoneOffset.isNotEmpty) {
+      _selectedTimezone = s.timezoneOffset;
+    } else if (clearIfEmpty) {
+      _selectedTimezone = null;
+    }
+
+    if (s.units.isNotEmpty) {
+      _selectedUnit = s.units;
+    } else if (clearIfEmpty) {
+      _selectedUnit = null;
+    }
+
+    final firstDayRaw =
+        s.raw['firstDay'] ?? s.raw['first_day'] ?? s.raw['weekStart'];
+    if (firstDayRaw != null && firstDayRaw.toString().trim().isNotEmpty) {
+      _selectedFirstDay = firstDayRaw.toString();
+    } else if (clearIfEmpty) {
+      _selectedFirstDay = null;
+    }
+
+    final directionRaw =
+        s.raw['direction'] ?? s.raw['textDirection'] ?? s.raw['dir'];
+    if (directionRaw != null && directionRaw.toString().trim().isNotEmpty) {
+      _selectedDirection = directionRaw.toString();
+    } else if (clearIfEmpty) {
+      _selectedDirection = null;
+    }
 
     final t = s.themeRaw.trim().toLowerCase();
     if (t.isNotEmpty) {
       if (t.contains('dark')) _selectedTheme = 'dark';
       if (t.contains('light')) _selectedTheme = 'light';
       if (t.contains('system')) _selectedTheme = 'system';
+    } else if (clearIfEmpty) {
+      _selectedTheme = null;
     }
   }
 
@@ -231,6 +290,40 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     }
   }
 
+  Future<void> _resetToServer() async {
+    await _ensureRepos();
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    _loadToken?.cancel('reset');
+    _loadToken = CancelToken();
+
+    try {
+      final adminSettingsRes = await _superadminRepo!.getAdminSettings(
+        widget.adminId,
+        cancelToken: _loadToken,
+      );
+
+      if (adminSettingsRes.isSuccess) {
+        _applyServerSettings(adminSettingsRes.data!, clearIfEmpty: true);
+        await _persistLocalSettings(clearIfNull: true);
+        if (mounted) {
+          _showSnackBarOnce('Settings reset to saved values.');
+        }
+      } else if (!_errorShown) {
+        _errorShown = true;
+        _showSnackBarOnce("Couldn't reset settings.");
+      }
+    } catch (_) {
+      if (!_errorShown) {
+        _errorShown = true;
+        _showSnackBarOnce("Couldn't reset settings.");
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   String? _safeValue(String? selected, List<String> allowed) {
     if (selected == null) return null;
     return allowed.contains(selected) ? selected : null;
@@ -260,8 +353,12 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   }
 
   Future<void> _saveSettings() async {
+    if (_saving) return;
     await _ensureRepos();
     await _persistLocalSettings();
+
+    if (!mounted) return;
+    setState(() => _saving = true);
 
     _saveToken?.cancel('resave');
     _saveToken = CancelToken();
@@ -287,7 +384,13 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
     if (_selectedTheme == 'dark') payload['theme'] = 'DARK';
     if (_selectedTheme == 'light') payload['theme'] = 'LIGHT';
 
-    if (payload.isEmpty) return;
+    if (payload.isEmpty) {
+      if (mounted) {
+        _showSnackBarOnce('Settings saved.');
+        setState(() => _saving = false);
+      }
+      return;
+    }
 
     try {
       final res = await _superadminRepo!.updateAdminSettings(
@@ -296,7 +399,11 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
         cancelToken: _saveToken,
       );
 
-      if (!res.isSuccess && !_saveErrorShown) {
+      if (res.isSuccess) {
+        _applyServerSettings(res.data!);
+        await _persistLocalSettings();
+        if (mounted) _showSnackBarOnce('Settings saved.');
+      } else if (!_saveErrorShown) {
         _saveErrorShown = true;
         final err = res.error;
         if (err is ApiException &&
@@ -311,6 +418,8 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
         _saveErrorShown = true;
         _showSnackBarOnce("Couldn't save settings.");
       }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -661,7 +770,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                           child: AppShimmer(width: 12, height: 12, radius: 6),
                         ),
                       OutlinedButton(
-                        onPressed: _loading ? null : _loadAll,
+                        onPressed: _loading ? null : _resetToServer,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -685,7 +794,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: _loading ? null : _saveSettings,
+                        onPressed: _saving ? null : _saveSettings,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,

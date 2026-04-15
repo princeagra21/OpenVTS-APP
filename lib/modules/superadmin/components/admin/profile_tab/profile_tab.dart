@@ -18,8 +18,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 class ProfileTab extends StatefulWidget {
   final String adminId;
+  final VoidCallback? onStatusChanged;
+  final bool? initialActive;
 
-  const ProfileTab({super.key, required this.adminId});
+  const ProfileTab({
+    super.key,
+    required this.adminId,
+    this.onStatusChanged,
+    this.initialActive,
+  });
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -29,6 +36,7 @@ class _ProfileTabState extends State<ProfileTab> {
   AdminProfile? _profile;
   bool _loading = false;
   bool _statusSubmitting = false;
+  bool? _activeOverride;
   bool _errorShown = false;
   bool _loadFailed = false;
   CancelToken? _token;
@@ -38,9 +46,28 @@ class _ProfileTabState extends State<ProfileTab> {
   ApiClient? _api;
   SuperadminRepository? _repo;
 
+  bool get _isActive => _activeOverride ?? _profile?.isActive == true;
+
+  bool? _readActive(AdminProfile profile) {
+    final d = profile.data;
+    dynamic v = d['isActive'] ?? d['active'] ?? d['is_active'] ?? d['status'];
+    if (v == null) return null;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    final t = v.toString().trim().toLowerCase();
+    if (t == 'true' || t == '1' || t == 'active' || t == 'enabled') {
+      return true;
+    }
+    if (t == 'false' || t == '0' || t == 'inactive' || t == 'disabled') {
+      return false;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
+    _activeOverride = widget.initialActive;
     _loadProfile();
     _loadPushState();
   }
@@ -221,11 +248,15 @@ class _ProfileTabState extends State<ProfileTab> {
       res.when(
         success: (profile) {
           if (!mounted) return;
+          final active = _readActive(profile);
           setState(() {
             _profile = profile;
             _loading = false;
             _errorShown = false;
             _loadFailed = false;
+            if (active != null) {
+              _activeOverride = active;
+            }
           });
         },
         failure: (err) {
@@ -272,6 +303,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final profile = _profile;
     if (profile == null) return;
     setState(() => _statusSubmitting = true);
+    final currentActive = _activeOverride ?? profile.isActive;
     try {
       _api ??= ApiClient(
         config: AppConfig.fromDartDefine(),
@@ -280,11 +312,13 @@ class _ProfileTabState extends State<ProfileTab> {
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.updateAdminStatus(
         widget.adminId,
-        !profile.isActive,
+        !currentActive,
       );
       if (!mounted) return;
       res.when(
         success: (_) async {
+          setState(() => _activeOverride = !currentActive);
+          widget.onStatusChanged?.call();
           await _loadProfile();
           if (!mounted) return;
           setState(() => _statusSubmitting = false);
@@ -491,14 +525,14 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     ),
                     icon: Icon(
-                      _profile?.isActive == true
+                      _isActive
                           ? Icons.toggle_on
                           : Icons.toggle_off,
                       size: fsActionIcon,
                       color: colorScheme.primary,
                     ),
                     label: Text(
-                      _profile?.isActive == true
+                      _isActive
                           ? "Set Inactive"
                           : "Set Active",
                       style: GoogleFonts.roboto(
@@ -687,8 +721,6 @@ class _ProfileTabState extends State<ProfileTab> {
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                         ),
                         const SizedBox(width: 8),
@@ -711,7 +743,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  _profile?.isActive == true
+                                  _isActive
                                       ? "Active"
                                       : "Inactive",
                                   style: GoogleFonts.roboto(
@@ -736,8 +768,6 @@ class _ProfileTabState extends State<ProfileTab> {
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                     const SizedBox(height: 6),
                     loading
@@ -750,8 +780,6 @@ class _ProfileTabState extends State<ProfileTab> {
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface.withOpacity(0.7),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                     const SizedBox(height: 6),
                     loading
@@ -764,8 +792,6 @@ class _ProfileTabState extends State<ProfileTab> {
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface.withOpacity(0.7),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                   ],
                 ),
@@ -882,8 +908,6 @@ class _ProfileTabState extends State<ProfileTab> {
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(
@@ -1039,8 +1063,6 @@ class _ProfileTabState extends State<ProfileTab> {
                         ? const AppShimmer(width: 180, height: 18, radius: 8)
                         : Text(
                             companyName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
@@ -1176,8 +1198,6 @@ class _ProfileTabState extends State<ProfileTab> {
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                   ],
                 ),
@@ -1344,8 +1364,6 @@ class _ProfileTabState extends State<ProfileTab> {
                   Expanded(
                     child: Text(
                       "Notifications are blocked. Open your device settings and allow notifications, then click 'Re-register push'.",
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: alertFs,
                         height: 17 / 12,
@@ -1499,8 +1517,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 )
               : Text(
                   value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.roboto(
                     fontSize: valueFs,
                     height: 16 / 12,

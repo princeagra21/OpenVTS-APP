@@ -172,6 +172,8 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
       if (err is ApiException &&
           (err.statusCode == 401 || err.statusCode == 403)) {
         _snackOnce('Not authorized.');
+      } else if (err is ApiException && err.message.trim().isNotEmpty) {
+        _snackOnce(err.message);
       } else {
         _snackOnce("Couldn't delete admin.");
       }

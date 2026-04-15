@@ -12,6 +12,8 @@ import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/a
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class AdminCreditHistoryTab extends StatefulWidget {
   final String adminId;
@@ -83,13 +85,15 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     }
   }
 
-  Future<void> _loadLogs() async {
+  Future<void> _loadLogs({bool showShimmer = true}) async {
     _token?.cancel('Reload credit logs');
     final token = CancelToken();
     _token = token;
 
     if (!mounted) return;
-    setState(() => _loading = true);
+    if (showShimmer) {
+      setState(() => _loading = true);
+    }
 
     try {
       _api ??= ApiClient(
@@ -305,15 +309,20 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final updated = await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
-                        builder: (_) => AddDeductCreditScreen(
-                          adminId: widget.adminId,
-                        ),
+                            builder: (_) => AddDeductCreditScreen(
+                              adminId: widget.adminId,
+                              initialAction: 'add',
+                              lockAction: true,
+                            ),
                           ),
                         );
+                        if (updated == true) {
+                          _loadLogs(showShimmer: false);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -340,15 +349,20 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final updated = await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
-                        builder: (_) => AddDeductCreditScreen(
-                          adminId: widget.adminId,
-                        ),
+                            builder: (_) => AddDeductCreditScreen(
+                              adminId: widget.adminId,
+                              initialAction: 'deduct',
+                              lockAction: true,
+                            ),
                           ),
                         );
+                        if (updated == true) {
+                          _loadLogs(showShimmer: false);
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -544,8 +558,6 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 4),
                     Text(
                       billToName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
@@ -555,8 +567,6 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 4),
                     Text(
                       billToUser,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
@@ -566,8 +576,6 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 2),
                     Text(
                       billToEmail,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
@@ -751,11 +759,15 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     }
 
     final filename = _exportFilename('csv');
-    final file = File('${Directory.systemTemp.path}/$filename');
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
     await file.writeAsString(buffer.toString());
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
     );
   }
 
@@ -766,90 +778,301 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
       );
       return;
     }
-    final lines = <String>[
-      'Statement ${_statementId(widget.adminId, _lastActivity)}',
-      'Bill To: ${_billToName()}',
-      'User: ${_billToUserName()}',
-      'Email: ${_billToEmail()}',
-      '',
-      'Generated: ${_formatDate(_statementGeneratedAt())}, ${_formatTime(_statementGeneratedAt())}',
-      'Current Balance: $_currentCredits',
-      'Entries: $_entryCount',
-      '',
-      'Logs:',
-    ];
-    for (final log in _logs) {
-      final dt = DateTime.tryParse(log.createdAt)?.toLocal();
-      final dateText = dt == null
-          ? '—'
-          : '${_formatDate(dt)}, ${_formatTime(dt)}';
-      final desc = _logDescription(log);
-      final amount = log.isCredit ? '+${log.amount}' : '-${log.amount.abs()}';
-      lines.add('$dateText | $desc | $amount | Log #${log.id}');
-    }
 
-    final pdf = _simplePdf(lines);
+    final statementId = _statementId(widget.adminId, _lastActivity);
+    final generatedAt = _statementGeneratedAt();
+    final generatedAtText = '${_formatDate(generatedAt)} ${_formatTime(generatedAt)}';
+
+    final sorted = [..._logs];
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
+
+    final doc = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      fontSize: 16,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final labelStyle = pw.TextStyle(
+      fontSize: 9,
+      color: PdfColors.grey700,
+    );
+    final valueStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final tableHeaderStyle = pw.TextStyle(
+      fontSize: 10,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final tableCellStyle = pw.TextStyle(fontSize: 9, color: PdfColors.black);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 16),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Generated from Fleet Stack Admin',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (context) {
+          return [
+            _buildPdfHeader(
+              statementId: statementId,
+              generatedAtText: generatedAtText,
+              headerStyle: headerStyle,
+              labelStyle: labelStyle,
+            ),
+            pw.SizedBox(height: 16),
+            _buildPdfSummarySection(
+              currentCredits: _currentCredits,
+              totalAssigned: _totalAssigned,
+              totalDeducted: _totalDeducted,
+              entryCount: _entryCount,
+              labelStyle: labelStyle,
+              valueStyle: valueStyle,
+            ),
+            pw.SizedBox(height: 16),
+            _buildPdfAccountSection(
+              company: _billToName(),
+              admin: _billToUserName(),
+              email: _billToEmail(),
+              labelStyle: labelStyle,
+              valueStyle: valueStyle,
+            ),
+            pw.SizedBox(height: 16),
+            _buildPdfTransactionTable(
+              logs: sorted,
+              tableHeaderStyle: tableHeaderStyle,
+              tableCellStyle: tableCellStyle,
+            ),
+          ];
+        },
+      ),
+    );
+
     final filename = _exportFilename('pdf');
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsBytes(pdf);
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsBytes(await doc.save());
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported PDF: ${file.path}')),
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
     );
   }
 
-  List<int> _simplePdf(List<String> lines) {
-    String esc(String s) =>
-        s.replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
-
-    final text = StringBuffer();
-    text.writeln('BT');
-    text.writeln('/F1 12 Tf');
-    text.writeln('50 780 Td');
-    for (int i = 0; i < lines.length; i++) {
-      final line = esc(lines[i]);
-      if (i == 0) {
-        text.writeln('($line) Tj');
-      } else {
-        text.writeln('0 -16 Td');
-        text.writeln('($line) Tj');
-      }
-    }
-    text.writeln('ET');
-    final content = text.toString();
-
-    final objects = <String>[];
-    objects.add('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
-    objects.add('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
-    objects.add(
-      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
+  pw.Widget _buildPdfHeader({
+    required String statementId,
+    required String generatedAtText,
+    required pw.TextStyle headerStyle,
+    required pw.TextStyle labelStyle,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Credit History Statement', style: headerStyle),
+              pw.SizedBox(height: 6),
+              pw.Text('Statement ID', style: labelStyle),
+              pw.Text(statementId, style: pw.TextStyle(fontSize: 10)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Generated', style: labelStyle),
+              pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
     );
-    objects.add('4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
-    objects.add(
-      '5 0 obj << /Length ${content.length} >> stream\n$content\nendstream endobj',
-    );
+  }
 
-    final xref = <int>[];
-    final buffer = StringBuffer();
-    buffer.writeln('%PDF-1.4');
-    int offset = buffer.length;
-    for (final obj in objects) {
-      xref.add(offset);
-      buffer.writeln(obj);
-      offset = buffer.length;
+  pw.Widget _buildPdfSummarySection({
+    required int currentCredits,
+    required int totalAssigned,
+    required int totalDeducted,
+    required int entryCount,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget card(String label, String value, PdfColor color) {
+      return pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(label, style: labelStyle),
+              pw.SizedBox(height: 6),
+              pw.Text(value, style: valueStyle.copyWith(color: color)),
+            ],
+          ),
+        ),
+      );
     }
-    final xrefStart = offset;
-    buffer.writeln('xref');
-    buffer.writeln('0 ${objects.length + 1}');
-    buffer.writeln('0000000000 65535 f ');
-    for (final off in xref) {
-      buffer.writeln(off.toString().padLeft(10, '0') + ' 00000 n ');
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Summary', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Current Credits', currentCredits.toString(), PdfColors.blue900),
+            pw.SizedBox(width: 8),
+            card('Total Assigned', totalAssigned.toString(), PdfColors.green800),
+          ],
+        ),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Total Deducted', totalDeducted.toString(), PdfColors.red800),
+            pw.SizedBox(width: 8),
+            card('Total Entries', entryCount.toString(), PdfColors.grey800),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPdfAccountSection({
+    required String company,
+    required String admin,
+    required String email,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget row(String label, String value) {
+      return pw.Row(
+        children: [
+          pw.SizedBox(width: 120, child: pw.Text(label, style: labelStyle)),
+          pw.Expanded(child: pw.Text(value, style: valueStyle.copyWith(fontSize: 10))),
+        ],
+      );
     }
-    buffer.writeln('trailer << /Size ${objects.length + 1} /Root 1 0 R >>');
-    buffer.writeln('startxref');
-    buffer.writeln(xrefStart);
-    buffer.writeln('%%EOF');
-    return buffer.toString().codeUnits;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('Account Information', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          row('Company', company.isEmpty ? '—' : company),
+          pw.SizedBox(height: 4),
+          row('Admin', admin.isEmpty ? '—' : admin),
+          pw.SizedBox(height: 4),
+          row('Email', email.isEmpty ? '—' : email),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfTransactionTable({
+    required List<CreditLogItem> logs,
+    required pw.TextStyle tableHeaderStyle,
+    required pw.TextStyle tableCellStyle,
+  }) {
+    final headers = ['Date', 'Description', 'Amount', 'Balance', 'Action'];
+    final asc = [...logs]
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    int running = 0;
+    final rows = <Map<String, dynamic>>[];
+    for (final log in asc) {
+      final delta = log.isCredit ? log.amount.abs() : -log.amount.abs();
+      running += delta;
+      final balance = log.balanceAfter != 0 ? log.balanceAfter : running;
+      rows.add({
+        'log': log,
+        'balance': balance,
+      });
+    }
+
+    final desc = rows.reversed.toList();
+    final data = desc.map((row) {
+      final log = row['log'] as CreditLogItem;
+      final balance = row['balance'] as int;
+      final dt = DateTime.tryParse(log.createdAt)?.toLocal();
+      final dateText =
+          dt == null ? '—' : '${_formatDate(dt)} ${_formatTime(dt)}';
+      final amount = log.isCredit ? '+${log.amount.abs()}' : '-${log.amount.abs()}';
+      return [
+        dateText,
+        _logDescription(log),
+        amount,
+        balance.toString(),
+        _exportActionLabel(log),
+      ];
+    }).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Transactions', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: data,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          headerStyle: tableHeaderStyle,
+          cellStyle: tableCellStyle,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerAlignment: pw.Alignment.centerLeft,
+          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(2),
+            1: const pw.FlexColumnWidth(3.5),
+            2: const pw.FlexColumnWidth(1.2),
+            3: const pw.FlexColumnWidth(1.2),
+            4: const pw.FlexColumnWidth(1.2),
+          },
+          cellAlignments: {
+            2: pw.Alignment.centerRight,
+            3: pw.Alignment.centerRight,
+          },
+        ),
+      ],
+    );
   }
 
   String _exportFilename(String ext) {
@@ -857,7 +1080,28 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
-    return 'credit-history-admin-${widget.adminId}-$y-$m-$d.$ext';
+    final hh = date.hour.toString().padLeft(2, '0');
+    final mm = date.minute.toString().padLeft(2, '0');
+    final ss = date.second.toString().padLeft(2, '0');
+    return 'credit-history-admin-${widget.adminId}-$y-$m-$d-$hh$mm$ss.$ext';
+  }
+
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory(
+          '$home${Platform.pathSeparator}Downloads',
+        );
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
   }
 
   _Totals _computeTotals(List<CreditLogItem> items) {
@@ -918,9 +1162,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           ?.toString()
           .toLowerCase();
       final amount = log.amount.toString();
-      final desc = (vehicleId != null && vehicleId.isNotEmpty)
-          ? 'Credits used for Vehicle #$vehicleId'.toLowerCase()
-          : 'Credit Added By Super Admin'.toLowerCase();
+      final desc = _logDescription(log).toLowerCase();
       return id.contains(query) ||
           type.contains(query) ||
           created.contains(query) ||
@@ -1063,11 +1305,8 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           ),
           const SizedBox(height: 4),
           SizedBox(
-            height: lineHeight,
             child: Text(
               subValue ?? '',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.roboto(
                 fontSize: subSize,
                 fontWeight: FontWeight.w500,
@@ -1161,20 +1400,17 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
   }
 
   String _actionLabel(CreditLogItem log) {
-    final t = log.type.trim().toUpperCase();
-    if (t == 'ASSIGN' || t == 'CREDIT' || t == 'ADD') return 'Assign';
-    if (t == 'DEDUCT' || t == 'DEBIT' || t == 'REMOVE') return 'Use';
     return log.isCredit ? 'Assign' : 'Use';
   }
 
   String _exportActionLabel(CreditLogItem log) {
-    final t = log.type.trim().toUpperCase();
-    if (t == 'ASSIGN' || t == 'CREDIT' || t == 'ADD') return 'Add';
-    if (t == 'DEDUCT' || t == 'DEBIT' || t == 'REMOVE') return 'Use';
     return log.isCredit ? 'Add' : 'Use';
   }
 
   String _logDescription(CreditLogItem log) {
+    if (log.description.isNotEmpty) {
+      return log.description;
+    }
     final vehicleId = log.raw['vehicleId'] ?? log.raw['vehicle_id'];
     if (vehicleId != null) {
       return 'Credits used for Vehicle #$vehicleId';

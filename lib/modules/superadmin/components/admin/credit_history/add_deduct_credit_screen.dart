@@ -10,8 +10,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AddDeductCreditScreen extends StatefulWidget {
   final String adminId;
+  final String? initialAction; // 'add' or 'deduct'
+  final bool lockAction;
 
-  const AddDeductCreditScreen({super.key, required this.adminId});
+  const AddDeductCreditScreen({
+    super.key,
+    required this.adminId,
+    this.initialAction,
+    this.lockAction = false,
+  });
 
   @override
   State<AddDeductCreditScreen> createState() => _AddDeductCreditScreenState();
@@ -24,6 +31,12 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
   bool _submitting = false;
   ApiClient? _api;
   CancelToken? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAction = widget.initialAction;
+  }
 
   @override
   void dispose() {
@@ -149,7 +162,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                     children: [
                       // Action Dropdown
                       DropdownButtonFormField<String>(
-                        isExpanded: true, // Added this to expand the dropdown to full width
+                        isExpanded: true,
                         decoration: _dropdownDecoration(context),
                         value: _selectedAction,
                         hint: Text(
@@ -159,16 +172,38 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                             fontSize: labelSize,
                           ),
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'add', child: Text('Add Credit')),
-                          DropdownMenuItem(value: 'deduct', child: Text('Deduct Credit')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedAction = value;
-                          });
-                        },
-                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
+                        items: (widget.lockAction && _selectedAction != null)
+                            ? [
+                                DropdownMenuItem(
+                                  value: _selectedAction,
+                                  child: Text(
+                                    _selectedAction == 'add'
+                                        ? 'Add Credit'
+                                        : 'Deduct Credit',
+                                  ),
+                                ),
+                              ]
+                            : const [
+                                DropdownMenuItem(
+                                  value: 'add',
+                                  child: Text('Add Credit'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'deduct',
+                                  child: Text('Deduct Credit'),
+                                ),
+                              ],
+                        onChanged: widget.lockAction
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _selectedAction = value;
+                                });
+                              },
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
+                        ),
                         icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
                       ),
 
@@ -287,11 +322,13 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
         config: AppConfig.fromDartDefine(),
         tokenStorage: TokenStorage.defaultInstance(),
       );
+      final creditsValue = action == 'deduct' ? -amount : amount;
       final res = await _api!.post(
         '/superadmin/assigncredits/${widget.adminId}',
         data: {
-          'credits': amount.toString(),
+          'credits': creditsValue.toString(),
           'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',
+          'description': _noteController.text.trim(),
         },
         cancelToken: token,
       );
@@ -307,7 +344,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
               ),
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         },
         failure: (err) {
           final msg = err is ApiException

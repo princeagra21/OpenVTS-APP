@@ -83,6 +83,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     'Dec',
   ];
 
+  late final TextEditingController _latController;
+  late final TextEditingController _lngController;
+  late final TextEditingController _zoomController;
+
   List<String> _languages = const [];
   List<String> _dateFormats = const [];
   List<String> _timezones = const [];
@@ -121,9 +125,31 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return _superadminRepo!;
   }
 
+  bool get _isDirty {
+    if (_loadedSnapshot == null) return false;
+    final current = _captureCurrentSnapshot();
+    return current.selectedLanguage != _loadedSnapshot!.selectedLanguage ||
+        current.textDirection != _loadedSnapshot!.textDirection ||
+        current.dateFormat != _loadedSnapshot!.dateFormat ||
+        current.timeFormat != _loadedSnapshot!.timeFormat ||
+        current.timezone != _loadedSnapshot!.timezone ||
+        current.units != _loadedSnapshot!.units ||
+        current.lat != _loadedSnapshot!.lat ||
+        current.lng != _loadedSnapshot!.lng ||
+        current.zoom != _loadedSnapshot!.zoom;
+  }
+
   @override
   void initState() {
     super.initState();
+    _latController = TextEditingController(text: lat.toString());
+    _lngController = TextEditingController(text: lng.toString());
+    _zoomController = TextEditingController(text: zoom.toString());
+
+    _latController.addListener(() => setState(() {}));
+    _lngController.addListener(() => setState(() {}));
+    _zoomController.addListener(() => setState(() {}));
+
     _loadedSnapshot = _defaultsSnapshot();
     _loadLocalizationData();
   }
@@ -132,6 +158,9 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   void dispose() {
     _loadToken?.cancel('Localization disposed');
     _saveToken?.cancel('Localization disposed');
+    _latController.dispose();
+    _lngController.dispose();
+    _zoomController.dispose();
     super.dispose();
   }
 
@@ -477,6 +506,11 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       lat = nextLat;
       lng = nextLng;
       zoom = nextZoom;
+
+      _latController.text = lat.toStringAsFixed(6);
+      _lngController.text = lng.toStringAsFixed(6);
+      _zoomController.text = zoom.toString();
+
       _loadedSnapshot ??= _defaultsSnapshot();
       if (nextSnapshot != null) {
         _loadedSnapshot = nextSnapshot;
@@ -510,22 +544,22 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     if (!mounted) return false;
     setState(() => _saving = true);
 
+    final currentLat = double.tryParse(_latController.text) ?? lat;
+    final currentLng = double.tryParse(_lngController.text) ?? lng;
+    final currentZoom = int.tryParse(_zoomController.text) ?? zoom;
+
+    // Use exact keys and string types as expected by the backend
     final payload = <String, dynamic>{
       'language': selectedLanguage,
-      'languageCode': selectedLanguage,
       'dateFormat': dateFormat,
       'use24Hour': timeFormat == '24-hour',
-      'timeFormat': timeFormat == '24-hour' ? '24H' : '12H',
+      'theme': (themeController.themeMode.value == ThemeMode.dark) ? 'DARK' : 'LIGHT',
       'layoutDirection': textDirection,
-      'direction': textDirection,
+      'mapZoom': currentZoom.toString(),
       'timezoneOffset': timezone,
-      'timezone': timezone,
       'units': units,
-      'distanceUnit': units,
-      'defaultLat': lat.toStringAsFixed(6),
-      'defaultLon': lng.toStringAsFixed(6),
-      'defaultLng': lng.toStringAsFixed(6),
-      'mapZoom': zoom.toString(),
+      'defaultLat': currentLat.toStringAsFixed(6),
+      'defaultLon': currentLng.toStringAsFixed(6),
     };
 
     try {
@@ -540,12 +574,15 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           setState(() {
             _saving = false;
             _saveErrorShown = false;
+            lat = currentLat;
+            lng = currentLng;
+            zoom = currentZoom;
             _loadedSnapshot = _captureCurrentSnapshot();
           });
           if (showSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('Saved')));
+            ).showSnackBar(const SnackBar(content: Text('Localization settings saved successfully.')));
           }
           return true;
         },
@@ -557,10 +594,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 (err is ApiException &&
                     (err.statusCode == 401 || err.statusCode == 403))
                 ? 'Not authorized to save localization settings.'
-                : "Couldn't save localization settings.";
+                : (err is ApiException ? err.message : "Couldn't save localization settings.");
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(SnackBar(content: Text(message)));
+            ).showSnackBar(SnackBar(content: Text(message ?? "Couldn't save localization settings.")));
           }
           return false;
         },
@@ -670,11 +707,12 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: (_saving || _loading)
+                onPressed: (_saving || _loading || !_isDirty)
                     ? null
                     : () => _saveLocalization(showSuccess: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
+                  disabledBackgroundColor: colorScheme.primary.withOpacity(0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1747,8 +1785,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               _buildInputField(
                 context,
                 "Latitude (N/S)",
-                lat.toStringAsFixed(4),
-                (v) => lat = double.tryParse(v) ?? lat,
+                _latController,
                 labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
@@ -1768,8 +1805,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               _buildInputField(
                 context,
                 "Longitude (E/W)",
-                lng.toStringAsFixed(4),
-                (v) => lng = double.tryParse(v) ?? lng,
+                _lngController,
                 labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
@@ -1789,8 +1825,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               _buildInputField(
                 context,
                 "Zoom Level",
-                zoom.toString(),
-                (v) => zoom = double.tryParse(v)?.toInt() ?? zoom,
+                _zoomController,
                 labelStyle: GoogleFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
@@ -2071,8 +2106,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   Widget _buildInputField(
     BuildContext context,
     String label,
-    String initial,
-    void Function(String) onChanged, {
+    TextEditingController controller, {
     TextStyle? labelStyle,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -2092,11 +2126,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: TextEditingController(text: initial)
-            ..selection = TextSelection.fromPosition(
-              TextPosition(offset: initial.length),
-            ),
-          onChanged: onChanged,
+          controller: controller,
           style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
             fontWeight: FontWeight.w600,

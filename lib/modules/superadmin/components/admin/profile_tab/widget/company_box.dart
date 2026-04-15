@@ -118,8 +118,6 @@ class CompanyBox extends StatelessWidget {
                       ? const AppShimmer(width: 160, height: 18, radius: 8)
                       : Text(
                           companyName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.roboto(
                             fontSize: titleFontSize,
                             fontWeight: FontWeight.bold,
@@ -200,8 +198,6 @@ class CompanyBox extends StatelessWidget {
         Flexible(
           child: Text(
             value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.roboto(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),

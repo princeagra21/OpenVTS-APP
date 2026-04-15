@@ -17,7 +17,7 @@ class AdminRepository {
   /// and keep this compatible with mobile + web builds.
   ///
   /// See `lib/core/utils/file_picker_helper.dart` for a small helper you can use.
-  Future<Result<Object?>> uploadAdminFile({
+  Future<Result<String>> uploadAdminFile({
     required String type,
     required Uint8List bytes,
     required String filename,
@@ -52,8 +52,28 @@ class AdminRepository {
     );
 
     return res.when(
-      success: (data) => Result.ok(data),
+      success: (data) {
+        final map = _extractMap(data);
+        final url = (map['url'] ?? map['path'] ?? '').toString();
+        return Result.ok(url);
+      },
       failure: (err) => Result.fail(err),
     );
+  }
+
+  Map<String, dynamic> _coerceMap(Object? data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _extractMap(Object? data) {
+    final m = _coerceMap(data);
+    final candidates = [m['data'], m['item'], m['result']];
+    for (final c in candidates) {
+      if (c is Map<String, dynamic>) return c;
+      if (c is Map) return Map<String, dynamic>.from(c.cast());
+    }
+    return m;
   }
 }

@@ -53,7 +53,11 @@ final List<GoRoute> superAdminRoutes = [
     name: 'superadminAdminDetails',
     builder: (context, state) {
       final id = state.pathParameters['id']!;
-      return AdministratorDetailsScreen(id: id);
+      final initialActive = state.extra is bool ? state.extra as bool : null;
+      return AdministratorDetailsScreen(
+        id: id,
+        initialActive: initialActive,
+      );
     },
   ),
 

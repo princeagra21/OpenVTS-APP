@@ -288,7 +288,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push('/superadmin/vehicle'),
+                onTap: () => context.push('/superadmin/vehicles'),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -373,8 +373,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                           children: [
                             Text(
                               name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                               style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
@@ -754,8 +753,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                           children: [
                             Text(
                               name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                               style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
@@ -766,8 +764,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                             const SizedBox(height: 4),
                             Text(
                               date,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                               style: GoogleFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
@@ -1072,8 +1069,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                           children: [
                             Text(
                               name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                               style: GoogleFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,

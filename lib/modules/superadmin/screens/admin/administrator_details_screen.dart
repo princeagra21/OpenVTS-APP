@@ -21,8 +21,13 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 class AdministratorDetailsScreen extends StatefulWidget {
   // Made stateful to manage tab state
   final String id;
+  final bool? initialActive;
 
-  const AdministratorDetailsScreen({super.key, required this.id});
+  const AdministratorDetailsScreen({
+    super.key,
+    required this.id,
+    this.initialActive,
+  });
 
   @override
   State<AdministratorDetailsScreen> createState() =>
@@ -36,6 +41,7 @@ class _AdministratorDetailsScreenState
   bool _headerLoading = false;
   String _headerName = 'Admin Details';
   String _headerInitials = 'AD';
+  bool _statusChanged = false;
   CancelToken? _headerToken;
   ApiClient? _api;
   SuperadminRepository? _repo;
@@ -168,7 +174,7 @@ class _AdministratorDetailsScreenState
               leadingIcon: Symbols.verified_user,
               onClose: () {
                 if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(_statusChanged);
                 }
               },
             ),
@@ -187,6 +193,8 @@ class _AdministratorDetailsScreenState
             ProfileTab(
               key: ValueKey('profile_${widget.id}_$_profileReloadNonce'),
               adminId: widget.id,
+              onStatusChanged: () => _statusChanged = true,
+              initialActive: widget.initialActive,
             ),
           ],
         );

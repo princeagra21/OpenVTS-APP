@@ -14,6 +14,51 @@ class AdminUsersRepository {
 
   const AdminUsersRepository({required this.api});
 
+  Future<Result<AdminUserListItem>> createUser({
+    required String name,
+    required String email,
+    required String mobilePrefix,
+    required String mobileNumber,
+    required String username,
+    required String password,
+    required String companyName,
+    required String address,
+    required String countryCode,
+    required String stateCode,
+    required String city,
+    required String pincode,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{
+      'name': name.trim(),
+      'email': email.trim(),
+      'mobilePrefix': mobilePrefix.trim(),
+      'mobileNumber': mobileNumber.trim(),
+      'username': username.trim(),
+      'password': password,
+      'companyName': companyName.trim(),
+      'address': address.trim(),
+      'countryCode': countryCode.trim(),
+      'stateCode': stateCode.trim(),
+      'city': city.trim(),
+      'pincode': pincode.trim(),
+    };
+
+    final res = await api.post(
+      '/admin/users',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        return Result.ok(AdminUserListItem.fromRaw(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<List<AdminUserListItem>>> getUsers({
     String? search,
     String? status,

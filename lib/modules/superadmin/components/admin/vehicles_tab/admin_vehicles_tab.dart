@@ -10,6 +10,8 @@ import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class AdminVehiclesTab extends StatefulWidget {
   final String adminId;
@@ -256,8 +258,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                                     fontWeight: FontWeight.w600,
                                     color: cs.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -303,8 +303,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                                     fontWeight: FontWeight.w600,
                                     color: cs.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -350,8 +348,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                                     fontWeight: FontWeight.w600,
                                     color: cs.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -456,11 +452,15 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
 
     final filename =
         'admin_vehicles_${widget.adminId}_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final file = File('${Directory.systemTemp.path}/$filename');
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
     await file.writeAsString(buffer.toString());
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
     );
   }
 
@@ -524,80 +524,273 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
       );
       return;
     }
-    final lines = <String>[
-      'Admin Vehicles (${items.length})',
-      'Admin ID: ${widget.adminId}',
-      '',
-      'ID | Name | Type | IMEI | SIM | Status | Created At',
-    ];
-    for (final v in items) {
-      lines.add(
-        '${v.id} | ${v.name} | ${v.type} | ${v.imei} | ${v.simNumber} | ${v.status} | ${v.updatedAt}',
-      );
-    }
-    final pdf = _simplePdf(lines);
+
+    final total = items.length;
+    final active = items.where((v) => v.isActive == true).length;
+    final inactive = total - active;
+    final filterLabel = _selectedFilter?.isNotEmpty == true
+        ? _selectedFilter!
+        : 'All';
+    final generatedAt = DateTime.now();
+    final generatedAtText =
+        _formatDateTime(generatedAt.toIso8601String()).replaceAll('\n', ' ');
+
+    final doc = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      fontSize: 16,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final labelStyle = pw.TextStyle(fontSize: 9, color: PdfColors.grey700);
+    final valueStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final tableHeaderStyle = pw.TextStyle(
+      fontSize: 9,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final tableCellStyle = pw.TextStyle(fontSize: 8, color: PdfColors.black);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 16),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Generated from Fleet Stack Super Admin',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (_) => [
+          _buildVehiclesPdfHeader(
+            headerStyle: headerStyle,
+            labelStyle: labelStyle,
+            generatedAtText: generatedAtText,
+            adminId: widget.adminId,
+            total: total,
+            filterLabel: filterLabel,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfSummary(
+            total: total,
+            active: active,
+            inactive: inactive,
+            filterLabel: filterLabel,
+            labelStyle: labelStyle,
+            valueStyle: valueStyle,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfTable(
+            items: items,
+            tableHeaderStyle: tableHeaderStyle,
+            tableCellStyle: tableCellStyle,
+          ),
+        ],
+      ),
+    );
+
     final filename =
         'admin_vehicles_${widget.adminId}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsBytes(pdf);
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsBytes(await doc.save());
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported PDF: ${file.path}')),
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
     );
   }
 
-  List<int> _simplePdf(List<String> lines) {
-    String esc(String s) =>
-        s.replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
-
-    final text = StringBuffer();
-    text.writeln('BT');
-    text.writeln('/F1 12 Tf');
-    text.writeln('50 780 Td');
-    for (int i = 0; i < lines.length; i++) {
-      final line = esc(lines[i]);
-      if (i == 0) {
-        text.writeln('($line) Tj');
-      } else {
-        text.writeln('0 -16 Td');
-        text.writeln('($line) Tj');
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
       }
     }
-    text.writeln('ET');
-    final content = text.toString();
+    return Directory.systemTemp;
+  }
 
-    final objects = <String>[];
-    objects.add('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
-    objects.add('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
-    objects.add(
-      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
-    );
-    objects.add('4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
-    objects.add(
-      '5 0 obj << /Length ${content.length} >> stream\n$content\nendstream endobj',
-    );
 
-    final xref = <int>[];
-    final buffer = StringBuffer();
-    buffer.writeln('%PDF-1.4');
-    int offset = buffer.length;
-    for (final obj in objects) {
-      xref.add(offset);
-      buffer.writeln(obj);
-      offset = buffer.length;
+  pw.Widget _buildVehiclesPdfHeader({
+    required pw.TextStyle headerStyle,
+    required pw.TextStyle labelStyle,
+    required String generatedAtText,
+    required String adminId,
+    required int total,
+    required String filterLabel,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Admin Vehicles Report', style: headerStyle),
+              pw.SizedBox(height: 6),
+              pw.Text('Admin ID', style: labelStyle),
+              pw.Text(adminId, style: pw.TextStyle(fontSize: 10)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Generated', style: labelStyle),
+              pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 6),
+              pw.Text('Total Vehicles', style: labelStyle),
+              pw.Text('$total', style: pw.TextStyle(fontSize: 10)),
+              pw.Text('Filter: $filterLabel', style: pw.TextStyle(fontSize: 9)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfSummary({
+    required int total,
+    required int active,
+    required int inactive,
+    required String filterLabel,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget card(String label, String value, PdfColor color) {
+      return pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(label, style: labelStyle),
+              pw.SizedBox(height: 6),
+              pw.Text(value, style: valueStyle.copyWith(color: color)),
+            ],
+          ),
+        ),
+      );
     }
-    final xrefStart = offset;
-    buffer.writeln('xref');
-    buffer.writeln('0 ${objects.length + 1}');
-    buffer.writeln('0000000000 65535 f ');
-    for (final off in xref) {
-      buffer.writeln(off.toString().padLeft(10, '0') + ' 00000 n ');
-    }
-    buffer.writeln('trailer << /Size ${objects.length + 1} /Root 1 0 R >>');
-    buffer.writeln('startxref');
-    buffer.writeln(xrefStart);
-    buffer.writeln('%%EOF');
-    return buffer.toString().codeUnits;
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Summary', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Total Vehicles', total.toString(), PdfColors.blue900),
+            pw.SizedBox(width: 8),
+            card('Active Vehicles', active.toString(), PdfColors.green800),
+            pw.SizedBox(width: 8),
+            card('Inactive Vehicles', inactive.toString(), PdfColors.red800),
+            pw.SizedBox(width: 8),
+            card('Filter Applied', filterLabel, PdfColors.grey800),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfTable({
+    required List<AdminVehicleItem> items,
+    required pw.TextStyle tableHeaderStyle,
+    required pw.TextStyle tableCellStyle,
+  }) {
+    final headers = [
+      'Name',
+      'Type',
+      'IMEI',
+      'SIM',
+      'Status',
+      'Timezone',
+      'Expiry',
+      'Created',
+    ];
+
+    final data = items.map((v) {
+      final timezone =
+          (v.raw['gmtOffset'] ?? v.raw['gmt_offset'] ?? '').toString();
+      final expiry = _expiryText(v.raw['primaryExpiry']?.toString() ?? '');
+      final created = _formatDateTime(
+        v.raw['createdAt']?.toString() ?? '',
+      ).replaceAll('\n', ' ');
+      return [
+        v.name,
+        v.type,
+        v.imei,
+        v.simNumber,
+        v.isActive == true ? 'Active' : 'Inactive',
+        timezone.isEmpty ? '—' : timezone,
+        expiry,
+        created,
+      ];
+    }).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Vehicles', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: data,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          headerStyle: tableHeaderStyle,
+          cellStyle: tableCellStyle,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerAlignment: pw.Alignment.centerLeft,
+          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(2.2),
+            1: const pw.FlexColumnWidth(1.1),
+            2: const pw.FlexColumnWidth(2.0),
+            3: const pw.FlexColumnWidth(1.6),
+            4: const pw.FlexColumnWidth(1.0),
+            5: const pw.FlexColumnWidth(1.1),
+            6: const pw.FlexColumnWidth(1.2),
+            7: const pw.FlexColumnWidth(1.4),
+          },
+        ),
+      ],
+    );
   }
 
   Widget _vehicleRow(BuildContext context, AdminVehicleItem v) {
@@ -652,8 +845,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                   children: [
                     Text(
                       name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w700,
@@ -663,8 +854,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                     const SizedBox(height: 4),
                     Text(
                       type,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         fontWeight: FontWeight.w500,
@@ -757,8 +946,6 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
                 line,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.roboto(
                   fontSize: valueSize,
                   fontWeight: FontWeight.w600,

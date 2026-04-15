@@ -50,6 +50,7 @@ class AdminNotificationsRepository {
   Future<Result<void>> markAllRead({CancelToken? cancelToken}) async {
     final res = await api.patch(
       '/admin/notifications/read-all',
+      data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
     return res.when(

@@ -277,19 +277,20 @@ class _SupportScreenState extends State<SupportScreen> {
                           height: 16 / 12,
                           color: colorScheme.onSurface.withOpacity(0.54),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
                       ),
                   ],
                 ),
                 InkWell(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final created = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const NewTicketScreen(),
                       ),
                     );
+                    if (created == true) {
+                      _loadTickets();
+                    }
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -582,8 +583,6 @@ class _TicketCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -672,8 +671,6 @@ class _TicketCard extends StatelessWidget {
                       color: colorScheme.onSurface.withOpacity(0.8),
                       fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 8),
