@@ -158,13 +158,15 @@ class CommonRepository {
   }
 
   Future<Result<List<ReferenceOption>>> getCities(
+    String countryCode,
     String stateCode, {
     CancelToken? cancelToken,
   }) async {
-    final code = stateCode.trim();
-    if (code.isEmpty) return Result.ok(const []);
+    final c = countryCode.trim();
+    final s = stateCode.trim();
+    if (c.isEmpty || s.isEmpty) return Result.ok(const []);
 
-    final res = await api.get('/cities/$code', cancelToken: cancelToken);
+    final res = await api.get('/cities/$c/$s', cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(

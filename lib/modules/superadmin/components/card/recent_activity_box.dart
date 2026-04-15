@@ -588,8 +588,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           children: [
             Text(
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
               style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
@@ -764,8 +763,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           children: [
             Text(
               name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
               style: GoogleFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,

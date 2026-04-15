@@ -16,6 +16,8 @@ import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -106,6 +108,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
   }
 
+  void _onFilterChanged() {
+    _loadTransactions();
+  }
+
   Future<void> _loadTransactions() async {
     if (!mounted) return;
     debugPrint('[Payments] Loading transactions');
@@ -117,9 +123,38 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         tokenStorage: TokenStorage.defaultInstance(),
       );
       _repo ??= SuperadminRepository(api: _api!);
+
+      String? adminId;
+      if (!_allAdminsSelected && _selectedAdmin != null) {
+        adminId = _selectedAdmin!.id;
+      }
+
+      String? from, to;
+      if (_selectedRange != null) {
+        final now = DateTime.now();
+        final todayStart = DateTime(now.year, now.month, now.day);
+        if (_selectedRange == 'Today') {
+          from = todayStart.toIso8601String();
+          to = now.toIso8601String();
+        } else if (_selectedRange == 'Last 7 days') {
+          from = todayStart.subtract(const Duration(days: 7)).toIso8601String();
+          to = now.toIso8601String();
+        } else if (_selectedRange == 'Last 30 days') {
+          from = todayStart.subtract(const Duration(days: 30)).toIso8601String();
+          to = now.toIso8601String();
+        } else if (_selectedRange == 'This month') {
+          from = DateTime(now.year, now.month, 1).toIso8601String();
+          to = now.toIso8601String();
+        }
+      }
+
       final res = await _repo!.getRecentTransactions(
         page: 1,
         limit: 200,
+        adminId: adminId,
+        from: from,
+        to: to,
+        status: _statusFilter == 'All' ? null : _statusFilter.toUpperCase(),
         cancelToken: _loadToken,
       );
       if (!mounted) return;
@@ -136,9 +171,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           _transactionsErrorShown = true;
           final msg =
               (err is ApiException &&
-                  (err.statusCode == 401 || err.statusCode == 403))
-              ? 'Not authorized to load transactions.'
-              : "Couldn't load transactions.";
+                      (err.statusCode == 401 || err.statusCode == 403))
+                  ? 'Not authorized to load transactions.'
+                  : "Couldn't load transactions.";
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(msg)));
         },
@@ -238,6 +273,339 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     return needsQuote ? '"$cleaned"' : cleaned;
   }
 
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
+  }
+
+  void _showExportOptions(List<SuperadminRecentTransaction> items) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Export Transactions',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(
+                          MediaQuery.of(context).size.width,
+                        ) +
+                        1,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.table_view_outlined),
+                  title: const Text('CSV'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportCsv(items);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.picture_as_pdf_outlined),
+                  title: const Text('PDF'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportPdf(items);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportPdf(List<SuperadminRecentTransaction> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No transactions to export.')),
+      );
+      return;
+    }
+
+    final total = items.length;
+    final success = items.where((t) => t.status.toLowerCase().contains('success')).toList();
+    final revenue = success.fold<double>(0, (sum, t) => sum + _parseAmount(t.amount));
+    final successCount = success.length;
+    final pendingCount = items.where((t) => t.status.toLowerCase().contains('pending') || t.status.toLowerCase().contains('processing')).length;
+    final failedCount = items.where((t) => t.status.toLowerCase().contains('fail') || t.status.toLowerCase().contains('decline')).length;
+
+    final filterLabel = _selectedRange ?? 'All Time';
+    final adminLabel = _allAdminsSelected ? 'All Admins' : (_selectedAdmin?.name ?? _selectedAdmin?.id ?? 'Selected Admin');
+    final generatedAt = DateTime.now();
+    final generatedAtText = _formatDateTime(generatedAt.toIso8601String());
+
+    final doc = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      fontSize: 16,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final labelStyle = pw.TextStyle(fontSize: 9, color: PdfColors.grey700);
+    final valueStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final tableHeaderStyle = pw.TextStyle(
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final tableCellStyle = pw.TextStyle(fontSize: 7, color: PdfColors.black);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 16),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Generated from Fleet Stack Super Admin',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (_) => [
+          _buildPaymentsPdfHeader(
+            headerStyle: headerStyle,
+            labelStyle: labelStyle,
+            generatedAtText: generatedAtText,
+            adminLabel: adminLabel,
+            total: total,
+            filterLabel: filterLabel,
+          ),
+          pw.SizedBox(height: 12),
+          _buildPaymentsPdfSummary(
+            total: total,
+            revenue: _formatInrCompact(revenue),
+            success: successCount,
+            pending: pendingCount,
+            failed: failedCount,
+            labelStyle: labelStyle,
+            valueStyle: valueStyle,
+          ),
+          pw.SizedBox(height: 12),
+          _buildPaymentsPdfTable(
+            items: items,
+            tableHeaderStyle: tableHeaderStyle,
+            tableCellStyle: tableCellStyle,
+          ),
+        ],
+      ),
+    );
+
+    final filename = 'payments_export_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsBytes(await doc.save());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  pw.Widget _buildPaymentsPdfHeader({
+    required pw.TextStyle headerStyle,
+    required pw.TextStyle labelStyle,
+    required String generatedAtText,
+    required String adminLabel,
+    required int total,
+    required String filterLabel,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Payments Transaction Report', style: headerStyle),
+              pw.SizedBox(height: 6),
+              pw.Text('Admin Filter', style: labelStyle),
+              pw.Text(adminLabel, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Generated On', style: labelStyle),
+              pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 6),
+              pw.Text('Date Range', style: labelStyle),
+              pw.Text(filterLabel, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPaymentsPdfSummary({
+    required int total,
+    required String revenue,
+    required int success,
+    required int pending,
+    required int failed,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget card(String label, String value, PdfColor color) {
+      return pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(10),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(label, style: labelStyle),
+              pw.SizedBox(height: 4),
+              pw.Text(value, style: valueStyle.copyWith(color: color, fontSize: 11)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Financial Overview', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Total Revenue', revenue, PdfColors.green800),
+            pw.SizedBox(width: 8),
+            card('Successful', success.toString(), PdfColors.blue900),
+            pw.SizedBox(width: 8),
+            card('Pending', pending.toString(), PdfColors.orange900),
+            pw.SizedBox(width: 8),
+            card('Failed', failed.toString(), PdfColors.red900),
+            pw.SizedBox(width: 8),
+            card('Total Txns', total.toString(), PdfColors.grey800),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPaymentsPdfTable({
+    required List<SuperadminRecentTransaction> items,
+    required pw.TextStyle tableHeaderStyle,
+    required pw.TextStyle tableCellStyle,
+  }) {
+    final headers = [
+      'ID',
+      'Name',
+      'Amount',
+      'Status',
+      'Mode',
+      'Type',
+      'Reference',
+      'Date',
+    ];
+
+    final data = items.map((t) {
+      final name = t.fromUserName.isNotEmpty ? t.fromUserName : t.actorName;
+      final amount = '${t.currency} ${t.amount}';
+      final mode = _titleCase(t.raw['paymentMode']?.toString() ?? '—');
+      final type = _titleCase(t.raw['paymentType']?.toString() ?? '—');
+      final reference = t.raw['reference']?.toString() ?? '—';
+      final date = _formatDateTime(t.time).replaceAll('\n', ' ');
+      
+      return [
+        t.id,
+        name.length > 20 ? '${name.substring(0, 17)}...' : name,
+        amount,
+        t.status.toUpperCase(),
+        mode,
+        type,
+        reference.length > 15 ? '${reference.substring(0, 12)}...' : reference,
+        date,
+      ];
+    }).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Transaction Details', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: data,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          headerStyle: tableHeaderStyle,
+          cellStyle: tableCellStyle,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerAlignment: pw.Alignment.centerLeft,
+          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(1.2),
+            1: const pw.FlexColumnWidth(2.5),
+            2: const pw.FlexColumnWidth(1.5),
+            3: const pw.FlexColumnWidth(1.2),
+            4: const pw.FlexColumnWidth(1.2),
+            5: const pw.FlexColumnWidth(1.2),
+            6: const pw.FlexColumnWidth(2.0),
+            7: const pw.FlexColumnWidth(2.5),
+          },
+        ),
+      ],
+    );
+  }
+
   Future<void> _exportCsv(List<SuperadminRecentTransaction> items) async {
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -280,12 +648,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
 
     final filename =
-        'payments_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final file = File('${Directory.systemTemp.path}/$filename');
+        'payments_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
     await file.writeAsString(buffer.toString());
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
     );
   }
 
@@ -600,32 +972,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                     .size
                                                     .height *
                                                 0.7,
-                                            child: ListView.separated(
-                                              itemCount: _admins.length,
-                                              separatorBuilder: (_, __) =>
-                                                  const SizedBox(height: 8),
-                                              itemBuilder: (_, index) {
-                                                final admin = _admins[index];
-                                                final title = admin
-                                                        .name.isNotEmpty
-                                                    ? admin.name
-                                                    : admin.email.isNotEmpty
-                                                        ? admin.email
-                                                        : admin.id;
-                                                final subtitle =
-                                                    admin.email.isNotEmpty
-                                                        ? admin.email
-                                                        : admin.id;
-                                                return ListTile(
+                                            child: Column(
+                                              children: [
+                                                ListTile(
                                                   contentPadding:
                                                       const EdgeInsets.symmetric(
                                                     horizontal: 6,
                                                   ),
                                                   title: Text(
-                                                    title,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    'All Admins',
                                                     style: GoogleFonts.roboto(
                                                       fontSize: 14 * scale,
                                                       height: 20 / 14,
@@ -633,24 +988,91 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                           FontWeight.w600,
                                                     ),
                                                   ),
-                                                  subtitle: Text(
-                                                    subtitle,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: GoogleFonts.roboto(
-                                                      fontSize: 12 * scale,
-                                                      height: 16 / 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: cs.onSurface
-                                                          .withOpacity(0.6),
-                                                    ),
+                                                  onTap: () => Navigator.pop(
+                                                      ctx,
+                                                      const AdminListItem({})),
+                                                ),
+                                                const Divider(),
+                                                Expanded(
+                                                  child: ListView.separated(
+                                                    itemCount: _admins.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        const SizedBox(height: 8),
+                                                    itemBuilder: (_, index) {
+                                                      final admin = _admins[index];
+                                                      final title = admin
+                                                              .name.isNotEmpty
+                                                          ? admin.name
+                                                          : admin.email.isNotEmpty
+                                                              ? admin.email
+                                                              : admin.id;
+                                                      final subtitle =
+                                                          admin.email.isNotEmpty
+                                                              ? admin.email
+                                                              : admin.id;
+                                                      return ListTile(
+                                                        contentPadding:
+                                                            const EdgeInsets.symmetric(
+                                                          horizontal: 6,
+                                                        ),
+                                                        title: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                title,
+                                                                maxLines: 2,
+                                                                softWrap: true,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .visible,
+                                                                style:
+                                                                    GoogleFonts.roboto(
+                                                                  fontSize:
+                                                                      14 * scale,
+                                                                  height: 20 / 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        subtitle: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                subtitle,
+                                                                maxLines: 2,
+                                                                softWrap: true,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .visible,
+                                                                style:
+                                                                    GoogleFonts.roboto(
+                                                                  fontSize:
+                                                                      12 * scale,
+                                                                  height: 16 / 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: cs
+                                                                      .onSurface
+                                                                      .withOpacity(
+                                                                    0.6,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        onTap: () =>
+                                                            Navigator.pop(ctx, admin),
+                                                      );
+                                                    },
                                                   ),
-                                                  onTap: () =>
-                                                      Navigator.pop(ctx, admin),
-                                                );
-                                              },
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
@@ -661,9 +1083,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                               );
                               if (chosen != null) {
                                 setState(() {
-                                  _selectedAdmin = chosen;
-                                  _allAdminsSelected = false;
+                                  if (chosen.id.isEmpty) {
+                                    _allAdminsSelected = true;
+                                    _selectedAdmin = null;
+                                  } else {
+                                    _selectedAdmin = chosen;
+                                    _allAdminsSelected = false;
+                                  }
                                 });
+                                _onFilterChanged();
                               }
                             },
                             child: Container(
@@ -679,6 +1107,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                 ),
                               ),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Text(
@@ -690,10 +1119,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                   : _selectedAdmin!
                                                           .email.isNotEmpty
                                                       ? _selectedAdmin!.email
-                                                      : _selectedAdmin!.id)
+                                                  : _selectedAdmin!.id)
                                               : 'All Admins'),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                       style: GoogleFonts.roboto(
                                         fontSize: 14 * scale,
                                         height: 20 / 14,
@@ -727,6 +1157,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                               ),
                               builder: (ctx) {
                                 final items = [
+                                  'All Time',
                                   'Today',
                                   'Last 7 days',
                                   'Last 30 days',
@@ -762,7 +1193,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                           height: MediaQuery.of(ctx)
                                                   .size
                                                   .height *
-                                              0.7,
+                                              0.4,
                                           child: ListView.separated(
                                             itemCount: items.length,
                                             separatorBuilder: (_, __) =>
@@ -792,11 +1223,18 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                       ],
                                     ),
                                   ),
-                                );
+                                  );
                               },
                             );
                             if (chosen != null) {
-                              setState(() => _selectedRange = chosen);
+                              setState(() {
+                                if (chosen == 'All Time') {
+                                  _selectedRange = null;
+                                } else {
+                                  _selectedRange = chosen;
+                                }
+                              });
+                              _onFilterChanged();
                             }
                           },
                           child: Container(
@@ -1205,6 +1643,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                   );
                                   if (chosen != null) {
                                     setState(() => _statusFilter = chosen);
+                                    _onFilterChanged();
                                   }
                                 },
                                 child: Container(
@@ -1282,7 +1721,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                             Expanded(
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () => _exportCsv(filteredTransactions),
+                                onTap: () => _showExportOptions(filteredTransactions),
                                 child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -1393,8 +1832,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                                 fontWeight: FontWeight.w600,
                                                 color: cs.onSurface,
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
@@ -1582,16 +2020,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                         const SizedBox(height: 6),
                                   Text(
                                     reference,
-                                          style: GoogleFonts.roboto(
-                                            fontSize: 13 * scale,
-                                            height: 18 / 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: cs.onSurface,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 13 * scale,
+                                      height: 18 / 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: cs.onSurface,
+                                    ),
+                                    maxLines: 2,
+                                  ),                                      ],
                                     ),
                                   ),
                                 ],

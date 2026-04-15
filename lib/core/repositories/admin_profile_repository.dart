@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
 class AdminProfileRepository {
@@ -32,23 +33,26 @@ class AdminProfileRepository {
   }
 
   Future<Result<void>> updatePassword({
-    String? currentPassword,
+    required String currentPassword,
     required String newPassword,
-    String? confirmPassword,
     CancelToken? cancelToken,
   }) async {
+    // Backend expects PATCH /admin/updatepassword
+    // Body: { currentPassword: "...", newPassword: "..." }
+    final current = currentPassword.trim();
+    final next = newPassword.trim();
+    if (current.isEmpty || next.isEmpty) {
+      return Result.fail(
+        const ApiException(message: 'currentPassword and newPassword required'),
+      );
+    }
+
     final body = <String, dynamic>{
-      // Postman-confirmed keys:
-      // currentPassword, newPassword
-      // Keep confirmPassword optional for tolerant backend variants.
-      if (currentPassword != null && currentPassword.trim().isNotEmpty)
-        'currentPassword': currentPassword.trim(),
-      'newPassword': newPassword.trim(),
-      if (confirmPassword != null && confirmPassword.trim().isNotEmpty)
-        'confirmPassword': confirmPassword.trim(),
+      'currentPassword': current,
+      'newPassword': next,
     };
 
-    final res = await api.post(
+    final res = await api.patch(
       '/admin/updatepassword',
       data: body,
       cancelToken: cancelToken,
@@ -67,6 +71,8 @@ class AdminProfileRepository {
   Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
       '/admin/profile/verify/email/request',
+      // Some backend deployments reject POST with a null JSON body.
+      data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
     return res.when(
@@ -93,6 +99,8 @@ class AdminProfileRepository {
   Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
       '/admin/profile/verify/whatsapp/request',
+      // Some backend deployments reject POST with a null JSON body.
+      data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
     return res.when(

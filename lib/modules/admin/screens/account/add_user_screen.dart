@@ -1,4 +1,11 @@
 // screens/account/add_user_screen.dart
+import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
+import 'package:fleet_stack/core/repositories/common_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,21 +25,478 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _mobilePrefixController = TextEditingController();
 
-  String? selectedRole;
-  String selectedCountryCode = "+91 (India)";
+  final TextEditingController _companyNameController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _countryCodeController = TextEditingController();
+  final TextEditingController _stateCodeController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _pincodeController = TextEditingController();
 
-  final roles = ["Admin", "User", "Sub-User", "Driver", "Manager", "Team"];
-  final countryCodes = ["+91 (India)", "+1 (US/Canada)", "+44 (UK)", "+971 (UAE)"];
+  static const String _fixedRoleLabel = "User";
+
+  bool _submitting = false;
+  bool _passwordObscured = true;
+
+  ApiClient? _apiClient;
+  AdminUsersRepository? _repo;
+  CommonRepository? _commonRepo;
+
+  // API-driven reference data (same pattern as profile edit screens)
+  List<CountryOption> _countries = const [];
+  List<ReferenceOption> _states = const [];
+  List<ReferenceOption> _cities = const [];
+  List<MobilePrefixOption> _prefixes = const [];
+
+  CountryOption? _selectedCountry;
+  ReferenceOption? _selectedStateOption;
+  ReferenceOption? _selectedCityOption;
+  MobilePrefixOption? _selectedPrefix;
+
+  bool _loadingCountries = false;
+  bool _loadingStates = false;
+  bool _loadingCities = false;
+  bool _loadingPrefixes = false;
+
+  CancelToken? _countriesToken;
+  CancelToken? _statesToken;
+  CancelToken? _citiesToken;
+  CancelToken? _prefixesToken;
+
+  ApiClient _apiOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    return _apiClient!;
+  }
+
+  AdminUsersRepository _repoOrCreate() {
+    _repo ??= AdminUsersRepository(api: _apiOrCreate());
+    return _repo!;
+  }
+
+  CommonRepository _commonRepoOrCreate() {
+    _commonRepo ??= CommonRepository(api: _apiOrCreate());
+    return _commonRepo!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Defaults for better UX: India prefix if present once loaded.
+    _mobilePrefixController.text = '+91';
+    _loadPrefixes();
+    _loadCountries();
+  }
 
   @override
   void dispose() {
+    _countriesToken?.cancel('Add user disposed');
+    _statesToken?.cancel('Add user disposed');
+    _citiesToken?.cancel('Add user disposed');
+    _prefixesToken?.cancel('Add user disposed');
     _nameController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _mobilePrefixController.dispose();
+    _companyNameController.dispose();
+    _addressController.dispose();
+    _countryCodeController.dispose();
+    _stateCodeController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
     super.dispose();
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadCountries() async {
+    _countriesToken?.cancel('Reload countries');
+    final token = CancelToken();
+    _countriesToken = token;
+    setState(() => _loadingCountries = true);
+
+    final res = await _commonRepoOrCreate().getCountries(cancelToken: token);
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _countries = items;
+          _loadingCountries = false;
+        });
+      },
+      failure: (err) {
+        setState(() => _loadingCountries = false);
+        final msg = (err is ApiException) ? err.message : err.toString();
+        _showSnack(msg);
+      },
+    );
+  }
+
+  Future<void> _loadPrefixes() async {
+    _prefixesToken?.cancel('Reload prefixes');
+    final token = CancelToken();
+    _prefixesToken = token;
+    setState(() => _loadingPrefixes = true);
+
+    final res = await _commonRepoOrCreate().getMobilePrefixes(cancelToken: token);
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _prefixes = items;
+          _loadingPrefixes = false;
+        });
+        // Select first matching default.
+        final match = items.firstWhere(
+          (p) => p.countryCode.toUpperCase() == 'IN',
+          orElse: () => items.isNotEmpty ? items.first : const MobilePrefixOption(countryCode: 'IN', code: '+91'),
+        );
+        _selectedPrefix = items.isNotEmpty ? match : null;
+        _mobilePrefixController.text = _selectedPrefix?.code ?? _mobilePrefixController.text;
+      },
+      failure: (err) {
+        setState(() => _loadingPrefixes = false);
+        final msg = (err is ApiException) ? err.message : err.toString();
+        _showSnack(msg);
+      },
+    );
+  }
+
+  Future<void> _loadStates(String countryCode) async {
+    _statesToken?.cancel('Reload states');
+    final token = CancelToken();
+    _statesToken = token;
+    setState(() => _loadingStates = true);
+
+    final res = await _commonRepoOrCreate().getStates(countryCode, cancelToken: token);
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _states = items;
+          _loadingStates = false;
+        });
+      },
+      failure: (err) {
+        setState(() => _loadingStates = false);
+        final msg = (err is ApiException) ? err.message : err.toString();
+        _showSnack(msg);
+      },
+    );
+  }
+
+  Future<void> _loadCities(String countryCode, String stateCode) async {
+    _citiesToken?.cancel('Reload cities');
+    final token = CancelToken();
+    _citiesToken = token;
+    setState(() => _loadingCities = true);
+
+    final res = await _commonRepoOrCreate().getCities(
+      countryCode,
+      stateCode,
+      cancelToken: token,
+    );
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _cities = items;
+          _loadingCities = false;
+        });
+      },
+      failure: (err) {
+        setState(() => _loadingCities = false);
+        final msg = (err is ApiException) ? err.message : err.toString();
+        _showSnack(msg);
+      },
+    );
+  }
+
+  Future<T?> _showSearchableSheet<T>({
+    required String title,
+    required List<T> items,
+    required String Function(T) labelFor,
+    String Function(T)? trailingFor,
+  }) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final searchController = TextEditingController();
+    String query = '';
+    final double fontSize = AdaptiveUtils.getSubtitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
+
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.7,
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                final filtered = items.where((item) {
+                  final text = labelFor(item).toLowerCase();
+                  return text.contains(query.toLowerCase());
+                }).toList();
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: GoogleFonts.inter(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              height: 32,
+                              width: 32,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: searchController,
+                        onChanged: (value) =>
+                            setSheetState(() => query = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor:
+                              colorScheme.surfaceVariant.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (_, index) {
+                            final item = filtered[index];
+                            final trailing = trailingFor?.call(item);
+                            return ListTile(
+                              title: Text(
+                                labelFor(item),
+                                style: GoogleFonts.inter(
+                                  fontSize: fontSize - 1,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              trailing: trailing == null
+                                  ? null
+                                  : Text(
+                                      trailing,
+                                      style: GoogleFonts.inter(
+                                        fontSize: fontSize - 3,
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                              onTap: () => Navigator.pop(ctx, item),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickMobilePrefix() async {
+    if (_loadingPrefixes) return;
+    if (_prefixes.isEmpty) {
+      _showSnack('No mobile prefixes loaded');
+      return;
+    }
+    final picked = await _showSearchableSheet<MobilePrefixOption>(
+      title: 'Select Mobile Prefix',
+      items: _prefixes,
+      labelFor: (p) => p.code,
+      trailingFor: (p) => p.countryCode,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedPrefix = picked;
+      _mobilePrefixController.text = picked.code;
+    });
+  }
+
+  Future<void> _pickCountry() async {
+    if (_loadingCountries) return;
+    if (_countries.isEmpty) {
+      _showSnack('No countries loaded');
+      return;
+    }
+    final picked = await _showSearchableSheet<CountryOption>(
+      title: 'Select Country',
+      items: _countries,
+      labelFor: (c) => c.name,
+      trailingFor: (c) => c.isoCode,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedCountry = picked;
+      _countryCodeController.text = picked.name;
+      _selectedStateOption = null;
+      _selectedCityOption = null;
+      _stateCodeController.text = '';
+      _cityController.text = '';
+      _states = const [];
+      _cities = const [];
+    });
+    _loadStates(picked.isoCode);
+  }
+
+  Future<void> _pickState() async {
+    final country = _selectedCountry;
+    if (country == null) {
+      _showSnack('Select country first');
+      return;
+    }
+    if (_loadingStates) return;
+    if (_states.isEmpty) {
+      await _loadStates(country.isoCode);
+    }
+    if (!mounted) return;
+    if (_states.isEmpty) {
+      _showSnack('No states found');
+      return;
+    }
+    final picked = await _showSearchableSheet<ReferenceOption>(
+      title: 'Select State',
+      items: _states,
+      labelFor: (s) => s.label,
+      trailingFor: (s) => s.value,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedStateOption = picked;
+      _stateCodeController.text = picked.label;
+      _selectedCityOption = null;
+      _cityController.text = '';
+      _cities = const [];
+    });
+    _loadCities(country.isoCode, picked.value);
+  }
+
+  Future<void> _pickCity() async {
+    final country = _selectedCountry;
+    final state = _selectedStateOption;
+    if (country == null) {
+      _showSnack('Select country first');
+      return;
+    }
+    if (state == null) {
+      _showSnack('Select state first');
+      return;
+    }
+    if (_loadingCities) return;
+    if (_cities.isEmpty) {
+      await _loadCities(country.isoCode, state.value);
+    }
+    if (!mounted) return;
+    if (_cities.isEmpty) {
+      _showSnack('No cities found');
+      return;
+    }
+    final picked = await _showSearchableSheet<ReferenceOption>(
+      title: 'Select City',
+      items: _cities,
+      labelFor: (c) => c.label,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedCityOption = picked;
+      _cityController.text = picked.label;
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final mobilePrefix = _selectedPrefix?.code ?? _mobilePrefixController.text;
+    final countryCode = _selectedCountry?.isoCode ?? '';
+    final stateCode = _selectedStateOption?.value ?? '';
+    final cityName = _selectedCityOption?.label ?? _cityController.text;
+
+    setState(() => _submitting = true);
+    try {
+      final res = await _repoOrCreate().createUser(
+        name: _nameController.text,
+        email: _emailController.text,
+        mobilePrefix: mobilePrefix,
+        mobileNumber: _phoneController.text,
+        username: _usernameController.text,
+        password: _passwordController.text.trim(),
+        companyName: _companyNameController.text,
+        address: _addressController.text,
+        countryCode: countryCode,
+        stateCode: stateCode,
+        city: cityName,
+        pincode: _pincodeController.text,
+      );
+
+      if (!mounted) return;
+      res.when(
+        success: (_) {
+          _showSnack("User created");
+          Navigator.pop(context, true);
+        },
+        failure: (err) {
+          final msg = (err is ApiException) ? err.message : err.toString();
+          _showSnack(msg);
+        },
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -40,6 +504,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final cs = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(w);
+    final double bottomBarScrollPad = AdaptiveUtils.getBottomBarHeight(w) + 24;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -74,6 +540,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    padding: EdgeInsets.only(bottom: bottomBarScrollPad),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -118,12 +585,12 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
                         StylishDropdown(
                           label: "Role",
-                          hint: "Select role",
-                          value: selectedRole,
-                          items: roles,
-                          onChanged: (v) =>
-                              setState(() => selectedRole = v),
+                          hint: _fixedRoleLabel,
+                          value: _fixedRoleLabel,
+                          items: const [_fixedRoleLabel],
+                          onChanged: (_) {},
                           width: w,
+                          enabled: false,
                         ),
 
                         const SizedBox(height: 16),
@@ -133,10 +600,50 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           hint: "Enter password",
                           controller: _passwordController,
                           prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: true,
+                          obscureText: _passwordObscured,
+                          suffixIcon: IconButton(
+                            onPressed: () => setState(
+                              () => _passwordObscured = !_passwordObscured,
+                            ),
+                            icon: Icon(
+                              _passwordObscured
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: cs.primary,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                            tooltip: _passwordObscured
+                                ? "Show password"
+                                : "Hide password",
+                          ),
                           validator: (v) =>
                               v == null || v.isEmpty ? "Required" : null,
                           width: w,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: "Company Name",
+                          hint: "Enter company name",
+                          controller: _companyNameController,
+                          prefixIcon: Icons.business_outlined,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? "Required" : null,
+                          width: w,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: "Address",
+                          hint: "Enter address",
+                          controller: _addressController,
+                          prefixIcon: Icons.location_on_outlined,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? "Required" : null,
+                          width: w,
+                          maxLines: 2,
                         ),
 
                         const SizedBox(height: 32),
@@ -164,6 +671,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             return null;
                           },
                           width: w,
+                          keyboardType: TextInputType.emailAddress,
                         ),
 
                         const SizedBox(height: 16),
@@ -172,13 +680,18 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           children: [
                             SizedBox(
                               width: w * 0.4,
-                              child: StylishDropdown(
-                                label: "Country Code",
-                                hint: "Select code",
-                                value: selectedCountryCode,
-                                items: countryCodes,
-                                onChanged: (v) =>
-                                    setState(() => selectedCountryCode = v!),
+                              child: StylishTextField(
+                                label: "Mobile Prefix",
+                                hint: _loadingPrefixes ? "Loading..." : "Select",
+                                controller: _mobilePrefixController,
+                                prefixIcon: Icons.flag_outlined,
+                                readOnly: true,
+                                onTap: _pickMobilePrefix,
+                                validator: (_) =>
+                                    _selectedPrefix == null ? "Required" : null,
+                                suffixIcon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                ),
                                 width: w,
                               ),
                             ),
@@ -192,6 +705,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 validator: (v) =>
                                     v == null || v.isEmpty ? "Required" : null,
                                 width: w,
+                                keyboardType: TextInputType.phone,
                               ),
                             ),
                           ],
@@ -199,54 +713,157 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
                         const SizedBox(height: 32),
 
-                       // ─── ACTION BUTTONS ─────────────────
-Row(
-  children: [
-    Expanded(
-      child: OutlinedButton(
-        onPressed: () => Navigator.pop(context),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(36), // reduced by 30%
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(color: cs.primary.withOpacity(0.2)),
-          ),
-        ),
-        child: Text(
-          "Cancel",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-      ),
-    ),
-    const SizedBox(width: 12),
-    Expanded(
-      child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            // SUBMIT LOGIC
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(36), // reduced by 30%
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          "Add User",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-      ),
-    ),
-  ],
-),
+                        Text(
+                          "Location",
+                          style: GoogleFonts.inter(
+                            fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
+                        Row(
+                          children: [
+                            Expanded(
+                              child: StylishTextField(
+                                label: "Country",
+                                hint: _loadingCountries
+                                    ? "Loading..."
+                                    : "Select country",
+                                controller: _countryCodeController,
+                                prefixIcon: Icons.public_outlined,
+                                readOnly: true,
+                                onTap: _pickCountry,
+                                suffixIcon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                ),
+                                validator: (_) =>
+                                    _selectedCountry == null ? "Required" : null,
+                                width: w,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: StylishTextField(
+                                label: "State",
+                                hint: _selectedCountry == null
+                                    ? "Select country first"
+                                    : (_loadingStates ? "Loading..." : "Select state"),
+                                controller: _stateCodeController,
+                                prefixIcon: Icons.map_outlined,
+                                readOnly: true,
+                                onTap: _pickState,
+                                suffixIcon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                ),
+                                validator: (_) => _selectedStateOption == null
+                                    ? "Required"
+                                    : null,
+                                width: w,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: "City",
+                          hint: _selectedStateOption == null
+                              ? "Select state first"
+                              : (_loadingCities ? "Loading..." : "Select city"),
+                          controller: _cityController,
+                          prefixIcon: Icons.location_city_outlined,
+                          readOnly: true,
+                          onTap: _pickCity,
+                          suffixIcon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                          ),
+                          validator: (_) =>
+                              _selectedCityOption == null ? "Required" : null,
+                          width: w,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: "Pincode",
+                          hint: "Enter pincode",
+                          controller: _pincodeController,
+                          prefixIcon: Icons.pin_outlined,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? "Required" : null,
+                          width: w,
+                          keyboardType: TextInputType.number,
+                        ),
+
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 20,)
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(padding * 1.3, 10, padding * 1.3, 10),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border(top: BorderSide(color: cs.outline.withOpacity(0.10))),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      side: BorderSide(color: cs.primary.withOpacity(0.25)),
+                    ),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: spacing + 2),
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _submitting
+                        ? SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(cs.surface),
+                            ),
+                          )
+                        : Text(
+                            "Add User",
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                          ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -266,6 +883,11 @@ class StylishTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final double width;
   final bool obscureText;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final Widget? suffixIcon;
+  final bool readOnly;
+  final VoidCallback? onTap;
 
   const StylishTextField({
     super.key,
@@ -276,12 +898,18 @@ class StylishTextField extends StatelessWidget {
     this.validator,
     required this.width,
     this.obscureText = false,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.suffixIcon,
+    this.readOnly = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final fs = AdaptiveUtils.getTitleFontSize(width);
+    final fieldHeight = maxLines <= 1 ? 55.0 : (55.0 + (maxLines - 1) * 22.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,11 +921,15 @@ class StylishTextField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 55,
+          height: fieldHeight,
           child: TextFormField(
             controller: controller,
             validator: validator,
             obscureText: obscureText,
+            maxLines: obscureText ? 1 : maxLines,
+            keyboardType: keyboardType,
+            readOnly: readOnly,
+            onTap: onTap,
             decoration: InputDecoration(
               fillColor: cs.surface,
               filled: true,
@@ -307,6 +939,7 @@ class StylishTextField extends StatelessWidget {
                 fontSize: fs,
               ),
               prefixIcon: Icon(prefixIcon, color: cs.primary),
+              suffixIcon: suffixIcon,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -337,6 +970,7 @@ class StylishDropdown extends StatelessWidget {
   final List<String> items;
   final ValueChanged<String?> onChanged;
   final double width;
+  final bool enabled;
 
   const StylishDropdown({
     super.key,
@@ -346,6 +980,7 @@ class StylishDropdown extends StatelessWidget {
     required this.items,
     required this.onChanged,
     required this.width,
+    this.enabled = true,
   });
 
   @override
@@ -389,7 +1024,7 @@ class StylishDropdown extends StatelessWidget {
                       child: Text(e),
                     ))
                 .toList(),
-            onChanged: onChanged,
+            onChanged: enabled ? onChanged : null,
           ),
         ),
       ],

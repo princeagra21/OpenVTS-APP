@@ -356,9 +356,13 @@ class _MyAppState extends State<MyApp> {
               locale: widget.enableDevicePreview
                   ? DevicePreview.locale(context)
                   : null,
-              builder: widget.enableDevicePreview
-                  ? DevicePreview.appBuilder
-                  : null,
+              builder: (context, child) {
+                Widget result = SafeArea(child: child!);
+                if (widget.enableDevicePreview) {
+                  result = DevicePreview.appBuilder(context, result);
+                }
+                return result;
+              },
               routerConfig: widget.router,
               theme: AppTheme.light(brand),
               darkTheme: AppTheme.dark(brand),

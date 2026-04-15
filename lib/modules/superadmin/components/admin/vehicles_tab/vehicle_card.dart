@@ -217,7 +217,7 @@ class VehicleCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
             ),
           ),
         ],

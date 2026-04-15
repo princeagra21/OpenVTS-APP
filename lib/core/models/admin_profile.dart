@@ -147,15 +147,25 @@ class AdminProfile {
         data['updated_at'],
   );
 
-  String get addressLine => _string(
-    data['addressLine'] ??
-        data['address'] ??
-        data['address1'] ??
-        data['address_line'] ??
-        (data['address'] is Map
-            ? (data['address'] as Map)['addressLine']
-            : null),
-  );
+  String get addressLine {
+    // Prefer an explicit address line value. Some APIs also return `address`
+    // as an object, which would stringify to "Instance of ..." if read
+    // directly, so handle that carefully.
+    final direct =
+        data['addressLine'] ?? data['address1'] ?? data['address_line'];
+    if (direct is String) return direct;
+
+    final addr = data['address'];
+    if (addr is String) return addr;
+    if (addr is Map) {
+      final map = addr is Map<String, dynamic>
+          ? addr
+          : Map<String, dynamic>.from(addr.cast());
+      final nested = map['addressLine'];
+      if (nested is String) return nested;
+    }
+    return '';
+  }
 
   String get city => _string(
     data['cityName'] ??

@@ -268,7 +268,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                       children: [
                         Expanded(
                           child: _loading && _profile == null
-                              ? const AppShimmer(
+                              ? AppShimmer(
                                   width: double.infinity,
                                   height: 18,
                                   radius: 8,
@@ -280,8 +280,6 @@ class _ProfileBoxState extends State<ProfileBox> {
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                         ),
                         SizedBox(width: spacing),

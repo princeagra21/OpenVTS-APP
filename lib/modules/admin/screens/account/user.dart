@@ -385,7 +385,13 @@ class _UserScreenState extends State<UserScreen> {
                             ),
                           ),
                           InkWell(
-                            onTap: () => context.push('/admin/users/add'),
+                            onTap: () async {
+                              final created =
+                                  await context.push<bool>('/admin/users/add');
+                              if (created == true) {
+                                _loadUsers();
+                              }
+                            },
                             borderRadius: BorderRadius.circular(12),
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,

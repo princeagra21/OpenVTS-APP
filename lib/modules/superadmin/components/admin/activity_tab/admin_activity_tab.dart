@@ -243,8 +243,6 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
@@ -498,8 +496,6 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                             Expanded(
                               child: Text(
                                 rangeLabel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.roboto(
                                   fontSize: labelSize,
                                   fontWeight: FontWeight.w600,
@@ -598,9 +594,6 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                                                 log.action.isNotEmpty
                                                     ? log.action
                                                     : 'Activity',
-                                                maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
                                                 style: GoogleFonts.roboto(
                                                   fontSize: headerSize - 1,
                                                   fontWeight: FontWeight.w700,
@@ -723,8 +716,6 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
       ),
       child: Text(
         label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: GoogleFonts.roboto(
           fontSize: 11,
           fontWeight: FontWeight.w600,

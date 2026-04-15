@@ -240,8 +240,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onDelete() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Delete profile API not available yet')),
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Delete Profile?'),
+          content: const Text(
+            'This action is permanent and cannot be undone. All your data will be removed.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Delete profile API not available yet'),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: cs.error,
+                foregroundColor: cs.onError,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete Permanently'),
+            ),
+          ],
+        );
+      },
     );
   }
 

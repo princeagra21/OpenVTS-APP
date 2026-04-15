@@ -46,5 +46,7 @@ app.*.map.json
 
 # Local env and personal local media artifacts
 .fleetstack.env
+.codex
+.codex/
 juwai.mp4
 WhatsApp Ptt*.ogg

@@ -18,10 +18,13 @@ class UpdatePasswordScreen extends StatefulWidget {
 }
 
 class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _saving = false;
@@ -34,6 +37,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   @override
   void dispose() {
     _submitToken?.cancel('Update password disposed');
+    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -48,13 +52,16 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     }
     _lastSubmitAt = now;
 
+    final currentPassword = _currentPasswordController.text;
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (newPassword.trim().isEmpty || confirmPassword.trim().isEmpty) {
+    if (currentPassword.trim().isEmpty ||
+        newPassword.trim().isEmpty ||
+        confirmPassword.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill both password fields.')),
+        const SnackBar(content: Text('Please fill all password fields.')),
       );
       return;
     }
@@ -84,8 +91,8 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       _repo ??= AdminProfileRepository(api: _api!);
 
       final result = await _repo!.updatePassword(
+        currentPassword: currentPassword,
         newPassword: newPassword,
-        confirmPassword: confirmPassword,
         cancelToken: token,
       );
       if (!mounted) return;
@@ -202,6 +209,41 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 ),
               ),
               const SizedBox(height: 32),
+              TextField(
+                controller: _currentPasswordController,
+                obscureText: _obscureCurrent,
+                style: GoogleFonts.inter(
+                  color: colorScheme.onSurface,
+                  fontSize: AdaptiveUtils.getTitleFontSize(w),
+                ),
+                decoration: _minimalInputDecoration(context).copyWith(
+                  hintText: 'Current Password',
+                  hintStyle: GoogleFonts.inter(
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: AdaptiveUtils.getTitleFontSize(w),
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 12),
+                    child: Icon(
+                      Icons.lock_outline,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(
+                      () => _obscureCurrent = !_obscureCurrent,
+                    ),
+                    icon: Icon(
+                      _obscureCurrent
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _newPasswordController,
                 obscureText: _obscureNew,

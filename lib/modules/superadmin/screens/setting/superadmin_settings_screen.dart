@@ -12,6 +12,8 @@ import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/edit_admin_profile_screen.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/update_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -393,6 +395,7 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
                     if (selectedTab == 'Profile') ...[
                       const SizedBox(height: 16),
                       _ProfileOverviewHeader(
+                        profileId: _profile?.id ?? '',
                         name: _display(_profile?.fullName),
                         username: _usernameLabel(_profile?.username),
                         verified: _profile?.isVerified ?? false,
@@ -630,6 +633,7 @@ class SmallTab extends StatelessWidget {
 }
 
 class _ProfileOverviewHeader extends StatelessWidget {
+  final String profileId;
   final String name;
   final String username;
   final bool verified;
@@ -649,6 +653,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
   final List<String> updatedParts;
 
   const _ProfileOverviewHeader({
+    required this.profileId,
     required this.name,
     required this.username,
     required this.verified,
@@ -788,13 +793,31 @@ class _ProfileOverviewHeader extends StatelessWidget {
                   icon: Icons.edit_outlined,
                   label: 'Edit',
                   primary: true,
-                  onTap: () {},
+                  onTap: () {
+                    if (profileId.isEmpty) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            EditAdminProfileScreen(adminId: profileId),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 8),
                 actionButton(
                   icon: Icons.lock_outline,
                   label: 'Password',
-                  onTap: () {},
+                  onTap: () {
+                    if (profileId.isEmpty) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            UpdatePasswordScreen(adminId: profileId),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -1022,8 +1045,9 @@ class _ProfileEmailCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
                   style: AppUtils.bodySmallBase.copyWith(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,

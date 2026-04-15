@@ -151,8 +151,6 @@ class AdminInfoBoxes extends StatelessWidget {
                       color: colorScheme.onSurface.withOpacity(0.6),
                       height: 1.3,
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
           ),
         ],

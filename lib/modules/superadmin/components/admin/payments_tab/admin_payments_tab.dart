@@ -293,8 +293,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
               Expanded(
                 child: Text(
                   label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.roboto(
                     fontSize: labelSize - 1,
                     fontWeight: FontWeight.w600,
@@ -359,8 +357,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
         children: [
           Text(
             date,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
@@ -377,8 +373,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                   children: [
                     Text(
                       '${t.currency} ${t.amount}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: valueSize + 2,
                         fontWeight: FontWeight.w700,
@@ -419,8 +413,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                   children: [
                     Text(
                       mode.isEmpty ? '—' : mode,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: valueSize + 1,
                         fontWeight: FontWeight.w600,
@@ -430,8 +422,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                     const SizedBox(height: 4),
                     Text(
                       reference,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),
@@ -440,8 +430,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                     const SizedBox(height: 4),
                     Text(
                       name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),

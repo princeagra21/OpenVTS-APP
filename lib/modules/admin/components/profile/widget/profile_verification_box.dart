@@ -90,9 +90,14 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
             }
           });
 
-          final verified = await showDialog<bool>(
+          final verified = await showModalBottomSheet<bool>(
             context: context,
-            builder: (_) => _OtpVerifyDialog(
+            isScrollControlled: true,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            builder: (_) => _OtpVerifySheet(
               title: channel == _VerificationChannel.email
                   ? 'Verify Email'
                   : 'Verify WhatsApp',
@@ -271,39 +276,48 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Not verified',
-                  style: GoogleFonts.inter(
-                    fontSize: labelSize - 1,
-                    color: Colors.orange[700],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 86,
-            height: 32,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: sending
-                  ? const AppShimmer(width: 52, height: 12, radius: 6)
-                  : Text(
-                      'Send OTP',
-                      style: GoogleFonts.inter(
-                        fontSize: labelSize - 1,
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'Not verified',
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize - 2,
+                          color: Colors.orange[800],
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 2),
+                    InkWell(
+                      onTap: sending ? null : onTap,
+                      child: sending
+                          ? const AppShimmer(width: 52, height: 10, radius: 5)
+                          : Text(
+                              'Send OTP',
+                              style: GoogleFonts.inter(
+                                fontSize: labelSize - 2,
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -312,17 +326,17 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
   }
 }
 
-class _OtpVerifyDialog extends StatefulWidget {
-  const _OtpVerifyDialog({required this.title, required this.onVerify});
+class _OtpVerifySheet extends StatefulWidget {
+  const _OtpVerifySheet({required this.title, required this.onVerify});
 
   final String title;
   final Future<Result<void>> Function(String code, CancelToken token) onVerify;
 
   @override
-  State<_OtpVerifyDialog> createState() => _OtpVerifyDialogState();
+  State<_OtpVerifySheet> createState() => _OtpVerifySheetState();
 }
 
-class _OtpVerifyDialogState extends State<_OtpVerifyDialog> {
+class _OtpVerifySheetState extends State<_OtpVerifySheet> {
   final TextEditingController _otpController = TextEditingController();
   CancelToken? _token;
   bool _verifying = false;
@@ -401,55 +415,119 @@ class _OtpVerifyDialogState extends State<_OtpVerifyDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleSize = AdaptiveUtils.getSubtitleFontSize(width);
+    final labelSize = AdaptiveUtils.getTitleFontSize(width);
 
-    return AlertDialog(
-      backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(
-        widget.title,
-        style: GoogleFonts.inter(
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onSurface,
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
         ),
-      ),
-      content: TextField(
-        controller: _otpController,
-        keyboardType: TextInputType.number,
-        maxLength: 8,
-        decoration: InputDecoration(
-          labelText: 'Enter OTP',
-          counterText: '',
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _verifying ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        GestureDetector(
-          onTap: _verify,
-          child: Container(
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: _verifying
-                  ? const AppShimmer(width: 42, height: 12, radius: 6)
-                  : Text(
-                      'Verify',
-                      style: GoogleFonts.inter(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: GoogleFonts.inter(
+                      fontSize: titleSize + 1,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
                     ),
+                  ),
+                ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: _verifying
+                      ? null
+                      : () => Navigator.of(context).pop(false),
+                  child: Container(
+                    height: 34,
+                    width: 34,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.close,
+                      size: 18 * scale,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              decoration: InputDecoration(
+                hintText: 'Enter OTP',
+                counterText: '',
+                filled: true,
+                fillColor: Colors.transparent,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _verifying ? null : _verify,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: _verifying
+                    ? const AppShimmer(width: 42, height: 12, radius: 6)
+                    : Text(
+                        'Verify OTP',
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

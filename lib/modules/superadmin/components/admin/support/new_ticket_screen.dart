@@ -193,53 +193,134 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 ),
                                 builder: (ctx) {
                                   return SafeArea(
-                                    child: SizedBox(
-                                      height:
-                                          MediaQuery.of(ctx).size.height * 0.7,
-                                      child: ListView.separated(
-                                        padding: const EdgeInsets.all(16),
-                                        itemCount: _admins.length,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox(height: 8),
-                                        itemBuilder: (_, index) {
-                                          final admin = _admins[index];
-                                          final title = admin.name.isNotEmpty
-                                              ? admin.name
-                                              : admin.email.isNotEmpty
-                                                  ? admin.email
-                                                  : admin.id;
-                                          final subtitle = admin.email.isNotEmpty
-                                              ? admin.email
-                                              : admin.id;
-                                          return ListTile(
-                                            title: Text(
-                                              title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: 14 * scale,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        16,
+                                        16,
+                                        8,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 42,
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: cs.onSurface
+                                                  .withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
                                             ),
-                                            subtitle: Text(
-                                              subtitle,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: 12 * scale,
-                                                height: 16 / 12,
-                                                fontWeight: FontWeight.w500,
-                                                color: cs.onSurface
-                                                    .withOpacity(0.6),
-                                              ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Select Admin',
+                                            style: GoogleFonts.roboto(
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.onSurface,
                                             ),
-                                            onTap: () => Navigator.pop(
-                                              ctx,
-                                              admin,
+                                          ),
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            height:
+                                                MediaQuery.of(ctx).size.height *
+                                                    0.7,
+                                            child: Column(
+                                              children: [
+                                                Expanded(
+                                                  child: ListView.separated(
+                                                    itemCount: _admins.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        const SizedBox(
+                                                      height: 8,
+                                                    ),
+                                                    itemBuilder: (_, index) {
+                                                      final admin =
+                                                          _admins[index];
+                                                      final title =
+                                                          admin.name.isNotEmpty
+                                                              ? admin.name
+                                                              : admin.email
+                                                                      .isNotEmpty
+                                                                  ? admin.email
+                                                                  : admin.id;
+                                                      final subtitle =
+                                                          admin.email.isNotEmpty
+                                                              ? admin.email
+                                                              : admin.id;
+                                                      return ListTile(
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                        ),
+                                                        title: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                title,
+                                                                maxLines: 2,
+                                                                softWrap: true,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .visible,
+                                                                style:
+                                                                    GoogleFonts
+                                                                        .roboto(
+                                                                  fontSize:
+                                                                      14 * scale,
+                                                                  height: 20 / 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        subtitle: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                subtitle,
+                                                                maxLines: 2,
+                                                                softWrap: true,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .visible,
+                                                                style:
+                                                                    GoogleFonts
+                                                                        .roboto(
+                                                                  fontSize:
+                                                                      12 * scale,
+                                                                  height: 16 / 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: cs
+                                                                      .onSurface
+                                                                      .withOpacity(
+                                                                    0.6,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        onTap: () =>
+                                                            Navigator.pop(
+                                                          ctx,
+                                                          admin,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          );
-                                        },
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   );
@@ -262,6 +343,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 ),
                               ),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Text(
@@ -272,8 +354,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                   ? _selectedAdmin!.email
                                                   : _selectedAdmin!.id)
                                           : 'Select admin',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                       style: GoogleFonts.roboto(
                                         fontSize: 14 * scale,
                                         height: 20 / 14,
@@ -808,14 +891,25 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                           );
                                           return;
                                         }
-                                        if (_messageController.text
-                                            .trim()
-                                            .isEmpty) {
+                                        final msgText =
+                                            _messageController.text.trim();
+                                        if (msgText.isEmpty) {
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             const SnackBar(
                                               content:
                                                   Text('Message required.'),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (msgText.length < 10) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Message must be at least 10 characters.',
+                                              ),
                                             ),
                                           );
                                           return;
@@ -833,11 +927,14 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                           final res =
                                               await _repo!.createTicket(
                                             message:
-                                                _messageController.text.trim(),
+                                                msgText,
                                             category: _selectedCategory!
                                                 .toUpperCase(),
                                             priority: _selectedPriority!
                                                 .toUpperCase(),
+                                            subject: _titleController.text
+                                                .trim(),
+                                            adminId: _selectedAdmin?.id,
                                             cancelToken: _loadToken,
                                           );
                                           if (!mounted) return;

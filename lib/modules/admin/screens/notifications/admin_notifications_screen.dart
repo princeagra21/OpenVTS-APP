@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/core/widgets/push_notification_banner.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -334,6 +335,12 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     return AppLayout(
       title: 'FLEET STACK',
       subtitle: 'Notifications',
+      showAppBar: false,
+      customTopBar: const AdminHomeAppBar(
+        title: 'Notifications',
+        leadingIcon: Icons.notifications_outlined,
+      ),
+      customTopBarPadding: EdgeInsets.zero,
       actionIcons: const [Icons.done_all],
       onActionTaps: [_markAllRead],
       leftAvatarText: 'FS',
@@ -344,13 +351,27 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Inbox',
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Inbox',
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _markAllRead,
+                  tooltip: 'Mark all as read',
+                  icon: Icon(
+                    Icons.done_all,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

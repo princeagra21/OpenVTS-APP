@@ -120,13 +120,19 @@ class SuperadminProfile {
     return const <String, dynamic>{};
   }
 
-  String get addressLine => _string(
-    data['addressLine'] ??
-        data['address'] ??
-        data['address1'] ??
-        data['address_line'] ??
-        address['addressLine'],
-  );
+  String get addressLine {
+    // Avoid stringifying `address` when it is a Map (shows "Instance of ...").
+    final direct =
+        data['addressLine'] ?? data['address1'] ?? data['address_line'];
+    if (direct is String) return direct;
+
+    final addr = data['address'];
+    if (addr is String) return addr;
+
+    final nested = address['addressLine'];
+    if (nested is String) return nested;
+    return '';
+  }
 
   String get city => _string(
     data['cityName'] ??

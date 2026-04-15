@@ -141,13 +141,15 @@ class _AdminScreenState extends State<AdminScreen> {
     };
   }
 
-  Future<void> _loadAdmins() async {
+  Future<void> _loadAdmins({bool showShimmer = true}) async {
     _adminsCancelToken?.cancel('Reload admins');
     final token = CancelToken();
     _adminsCancelToken = token;
 
     if (!mounted) return;
-    setState(() => _loadingAdmins = true);
+    if (showShimmer) {
+      setState(() => _loadingAdmins = true);
+    }
 
     try {
       _api ??= ApiClient(
@@ -181,7 +183,9 @@ class _AdminScreenState extends State<AdminScreen> {
           setState(() {
             _loadingAdmins = false;
             _adminsLoadFailed = true;
-            _admins.clear();
+            if (showShimmer) {
+              _admins.clear();
+            }
           });
           if (_adminsErrorShown) return;
           _adminsErrorShown = true;
@@ -210,7 +214,9 @@ class _AdminScreenState extends State<AdminScreen> {
       setState(() {
         _loadingAdmins = false;
         _adminsLoadFailed = true;
-        _admins.clear();
+        if (showShimmer) {
+          _admins.clear();
+        }
       });
       if (_adminsErrorShown) return;
       _adminsErrorShown = true;
@@ -443,8 +449,13 @@ class _AdminScreenState extends State<AdminScreen> {
                         ),
                       ),
                       InkWell(
-                        onTap: () {
-                          context.push('/superadmin/admins/add');
+                        onTap: () async {
+                          final created = await context.push(
+                            '/superadmin/admins/add',
+                          );
+                          if (created == true) {
+                            _loadAdmins();
+                          }
                         },
                         borderRadius: BorderRadius.circular(12),
                         splashColor: Colors.transparent,
@@ -646,9 +657,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                          maxLines: 2,                                        ),
                                         SizedBox(width: spacing / 2),
                                         Icon(
                                           Icons.keyboard_arrow_down,
@@ -864,33 +873,47 @@ class _AdminScreenState extends State<AdminScreen> {
                                             children: [
                                               Row(
                                                 children: [
+                                                  Icon(
+                                                    CupertinoIcons.person,
+                                                    size: iconSize,
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                  SizedBox(width: spacing),
                                                   Expanded(
                                                     child: InkWell(
-                                                      onTap: () {
+                                                      onTap: () async {
                                                         final id = admin['id']
                                                                 ?.toString() ??
                                                             '';
                                                         if (id.isEmpty) return;
-                                                        context.push(
+                                                        final changed =
+                                                            await context.push<bool>(
                                                           '/superadmin/admins/details/$id',
+                                                          extra: admin['active'] == true ||
+                                                                  admin['status'] == true,
                                                         );
+                                                        if (changed == true) {
+                                                          _loadAdmins(
+                                                            showShimmer: false,
+                                                          );
+                                                        }
                                                       },
                                                       child: Text(
-                                                        admin["name"],
-                                                        style:
-                                                            GoogleFonts.roboto(
-                                                          fontSize: fsMain,
-                                                          height: 20 / 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: colorScheme
-                                                              .onSurface,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
+                                                                 _safeText(
+                                                                   admin["name"]?.toString(),
+                                                                   fallback: '—',
+                                                                 ),
+                                                                 style:
+                                                                     GoogleFonts.roboto(
+                                                                   fontSize: fsMain,
+                                                                   height: 20 / 14,
+                                                                   fontWeight:
+                                                                       FontWeight.w600,
+                                                                   color: colorScheme
+                                                                       .onSurface,
+                                                                 ),
+                                                               ),                                                    ),
                                                   ),
                                                   Transform.scale(
                                                     scale: 0.75,
@@ -934,14 +957,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                                 style: GoogleFonts.roboto(
                                                   fontSize: fsSecondary,
                                                   height: 16 / 12,
-                                                  fontWeight:
-                                                      FontWeight.w500,
+                                                  fontWeight: FontWeight.w500,
                                                   color: colorScheme.onSurface
                                                       .withOpacity(0.7),
                                                 ),
-                                                maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                maxLines: 2,
                                               ),
                                               SizedBox(height: spacing / 2),
                                               Row(
@@ -969,9 +989,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -1002,9 +1019,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -1035,9 +1049,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -1082,8 +1093,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                               admin["location"]?.toString(),
                                               fallback: '—',
                                             ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
@@ -1151,10 +1160,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                                     0.7,
                                                                   ),
                                                             ),
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
                                                           ),
                                                         ),
                                                       ],
@@ -1176,9 +1181,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                         color: colorScheme
                                                             .onSurface,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
                                                     ),
                                                   ],
                                                 ),
@@ -1232,10 +1234,6 @@ class _AdminScreenState extends State<AdminScreen> {
                                                                     0.7,
                                                                   ),
                                                             ),
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
                                                           ),
                                                         ),
                                                       ],
@@ -1257,9 +1255,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                         color: colorScheme
                                                             .onSurface,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                      maxLines: 2,
                                                     ),
                                                   ],
                                                 ),
@@ -1312,9 +1308,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                       color:
                                                           colorScheme.onPrimary,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
                                                   ),
                                           ],
                                         ),
