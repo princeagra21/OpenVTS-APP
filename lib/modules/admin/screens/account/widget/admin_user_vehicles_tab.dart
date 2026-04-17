@@ -5,6 +5,9 @@ import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class AdminUserVehiclesTab extends StatefulWidget {
   final List<AdminVehicleListItem> items;
@@ -49,6 +52,392 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showExportOptions(List<AdminVehicleListItem> items) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Export Vehicles',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(
+                          MediaQuery.of(context).size.width,
+                        ) +
+                        1,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.table_view_outlined),
+                  title: const Text('CSV'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportCsv(items);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.picture_as_pdf_outlined),
+                  title: const Text('PDF'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportPdf(items);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportPdf(List<AdminVehicleListItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No vehicles to export.')),
+      );
+      return;
+    }
+
+    final total = items.length;
+    final active = items.where((v) => v.isActive == true).length;
+    final inactive = total - active;
+    final filterLabel = _selectedFilter;
+    final generatedAt = DateTime.now();
+    final generatedAtText =
+        _formatDateTimeExport(generatedAt.toIso8601String());
+
+    final doc = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      fontSize: 16,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final labelStyle = pw.TextStyle(fontSize: 9, color: PdfColors.grey700);
+    final valueStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final tableHeaderStyle = pw.TextStyle(
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final tableCellStyle = pw.TextStyle(fontSize: 7, color: PdfColors.black);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 16),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Generated from Fleet Stack Admin',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (_) => [
+          _buildVehiclesPdfHeader(
+            headerStyle: headerStyle,
+            labelStyle: labelStyle,
+            generatedAtText: generatedAtText,
+            total: total,
+            filterLabel: filterLabel,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfSummary(
+            total: total,
+            active: active,
+            inactive: inactive,
+            labelStyle: labelStyle,
+            valueStyle: valueStyle,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfTable(
+            items: items,
+            tableHeaderStyle: tableHeaderStyle,
+            tableCellStyle: tableCellStyle,
+          ),
+        ],
+      ),
+    );
+
+    final filename =
+        'admin_user_vehicles_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsBytes(await doc.save());
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfHeader({
+    required pw.TextStyle headerStyle,
+    required pw.TextStyle labelStyle,
+    required String generatedAtText,
+    required int total,
+    required String filterLabel,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('User Vehicles Report', style: headerStyle),
+              pw.SizedBox(height: 6),
+              pw.Text('Report Type', style: labelStyle),
+              pw.Text('Admin User Linked Vehicles',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Generated On', style: labelStyle),
+              pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 6),
+              pw.Text('Filter', style: labelStyle),
+              pw.Text(filterLabel,
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfSummary({
+    required int total,
+    required int active,
+    required int inactive,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget card(String label, String value, PdfColor color) {
+      return pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(10),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(label, style: labelStyle),
+              pw.SizedBox(height: 4),
+              pw.Text(value, style: valueStyle.copyWith(color: color, fontSize: 11)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Overview', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Total Vehicles', total.toString(), PdfColors.blue900),
+            pw.SizedBox(width: 8),
+            card('Active', active.toString(), PdfColors.green800),
+            pw.SizedBox(width: 8),
+            card('Inactive', inactive.toString(), PdfColors.red900),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfTable({
+    required List<AdminVehicleListItem> items,
+    required pw.TextStyle tableHeaderStyle,
+    required pw.TextStyle tableCellStyle,
+  }) {
+    final headers = [
+      'ID',
+      'Name',
+      'Plate',
+      'Type',
+      'IMEI',
+      'SIM',
+      'Status',
+      'Created At',
+    ];
+
+    final data = items.map((v) {
+      final type = _vehicleType(v);
+      final sim = (v.raw['simNumber'] ?? '').toString();
+      final status = v.isActive == true ? 'ACTIVE' : 'INACTIVE';
+      final created = (v.raw['createdAt'] ?? '').toString();
+
+      return [
+        v.id,
+        v.nameModel.length > 15 ? '${v.nameModel.substring(0, 12)}...' : v.nameModel,
+        v.plateNumber,
+        type,
+        v.imei,
+        sim,
+        status,
+        created,
+      ];
+    }).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Vehicle Details', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: data,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          headerStyle: tableHeaderStyle,
+          cellStyle: tableCellStyle,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerAlignment: pw.Alignment.centerLeft,
+          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(0.8),
+            1: const pw.FlexColumnWidth(2.0),
+            2: const pw.FlexColumnWidth(1.5),
+            3: const pw.FlexColumnWidth(1.2),
+            4: const pw.FlexColumnWidth(1.8),
+            5: const pw.FlexColumnWidth(1.5),
+            6: const pw.FlexColumnWidth(1.0),
+            7: const pw.FlexColumnWidth(1.5),
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _exportCsv(List<AdminVehicleListItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No vehicles to export.')),
+      );
+      return;
+    }
+    final headers = [
+      'ID',
+      'Name',
+      'Plate',
+      'Type',
+      'IMEI',
+      'SIM Number',
+      'Status',
+      'Created At',
+    ];
+    final rows = <List<String>>[];
+    for (final v in items) {
+      rows.add([
+        v.id,
+        v.nameModel,
+        v.plateNumber,
+        _vehicleType(v),
+        v.imei,
+        (v.raw['simNumber'] ?? '').toString(),
+        v.isActive == true ? 'Active' : 'Inactive',
+        (v.raw['createdAt'] ?? '').toString(),
+      ]);
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(headers.map(_csvEscape).join(','));
+    for (final row in rows) {
+      buffer.writeln(row.map(_csvEscape).join(','));
+    }
+
+    final filename =
+        'admin_user_vehicles_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsString(buffer.toString());
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
+  }
+
+  String _csvEscape(String value) {
+    final needsQuote =
+        value.contains(',') || value.contains('"') || value.contains('\n');
+    final cleaned = value.replaceAll('"', '""');
+    return needsQuote ? '"$cleaned"' : cleaned;
+  }
+
+  String _formatDateTimeExport(String raw) {
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    return DateFormat('dd MMM yyyy, hh:mm a').format(dt.toLocal());
   }
 
   @override
@@ -536,194 +925,5 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
         ],
       ),
     );
-  }
-
-
-  void _showExportOptions(List<AdminVehicleListItem> items) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        final cs = Theme.of(context).colorScheme;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Export Vehicles',
-                  style: GoogleFonts.roboto(
-                    fontSize: AdaptiveUtils.getTitleFontSize(
-                          MediaQuery.of(context).size.width,
-                        ) +
-                        1,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.table_view_outlined),
-                  title: const Text('CSV'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _exportCsv(items);
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.picture_as_pdf_outlined),
-                  title: const Text('PDF'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _exportPdf(items);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _exportCsv(List<AdminVehicleListItem> items) async {
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No vehicles to export.')),
-      );
-      return;
-    }
-    final headers = [
-      'ID',
-      'Name',
-      'Type',
-      'IMEI',
-      'SIM',
-      'Status',
-      'Created At',
-    ];
-    final rows = <List<String>>[];
-    for (final v in items) {
-      rows.add([
-        v.id,
-        v.nameModel,
-        _vehicleType(v),
-        v.imei,
-        v.raw['simNumber']?.toString() ?? '',
-        v.statusLabel,
-        v.raw['createdAt']?.toString() ?? '',
-      ]);
-    }
-
-    final buffer = StringBuffer();
-    buffer.writeln(headers.map(_csvEscape).join(','));
-    for (final row in rows) {
-      buffer.writeln(row.map(_csvEscape).join(','));
-    }
-
-    final filename =
-        'admin_user_vehicles_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsString(buffer.toString());
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
-    );
-  }
-
-  Future<void> _exportPdf(List<AdminVehicleListItem> items) async {
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No vehicles to export.')),
-      );
-      return;
-    }
-    final lines = <String>[
-      'Admin Vehicles (${items.length})',
-      '',
-      'ID | Name | Type | IMEI | SIM | Status | Created At',
-    ];
-    for (final v in items) {
-      lines.add(
-        '${v.id} | ${v.nameModel} | ${_vehicleType(v)} | ${v.imei} | ${v.raw['simNumber']?.toString() ?? ''} | ${v.statusLabel} | ${v.raw['createdAt']?.toString() ?? ''}',
-      );
-    }
-    final pdf = _simplePdf(lines);
-    final filename =
-        'admin_user_vehicles_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsBytes(pdf);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported PDF: ${file.path}')),
-    );
-  }
-
-  List<int> _simplePdf(List<String> lines) {
-    String esc(String s) =>
-        s.replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
-
-    final text = StringBuffer();
-    text.writeln('BT');
-    text.writeln('/F1 12 Tf');
-    text.writeln('50 780 Td');
-    for (int i = 0; i < lines.length; i++) {
-      final line = esc(lines[i]);
-      if (i == 0) {
-        text.writeln('($line) Tj');
-      } else {
-        text.writeln('0 -16 Td');
-        text.writeln('($line) Tj');
-      }
-    }
-    text.writeln('ET');
-    final content = text.toString();
-
-    final objects = <String>[];
-    objects.add('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
-    objects.add('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
-    objects.add(
-      '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj',
-    );
-    objects
-        .add('4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
-    objects.add(
-      '5 0 obj << /Length ${content.length} >> stream\n$content\nendstream endobj',
-    );
-
-    final xref = <int>[];
-    final buffer = StringBuffer();
-    buffer.writeln('%PDF-1.4');
-    int offset = buffer.length;
-    for (final obj in objects) {
-      xref.add(offset);
-      buffer.writeln(obj);
-      offset = buffer.length;
-    }
-    final xrefStart = offset;
-    buffer.writeln('xref');
-    buffer.writeln('0 ${objects.length + 1}');
-    buffer.writeln('0000000000 65535 f ');
-    for (final off in xref) {
-      buffer.writeln(off.toString().padLeft(10, '0') + ' 00000 n ');
-    }
-    buffer.writeln('trailer << /Size ${objects.length + 1} /Root 1 0 R >>');
-    buffer.writeln('startxref');
-    buffer.writeln(xrefStart);
-    buffer.writeln('%%EOF');
-    return buffer.toString().codeUnits;
-  }
-
-  String _csvEscape(String value) {
-    final needsQuote =
-        value.contains(',') || value.contains('"') || value.contains('\n');
-    final cleaned = value.replaceAll('"', '""');
-    return needsQuote ? '"$cleaned"' : cleaned;
   }
 }
