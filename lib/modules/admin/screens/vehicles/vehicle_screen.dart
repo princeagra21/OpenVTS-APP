@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
@@ -19,6 +20,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
@@ -374,6 +377,421 @@ class _VehicleScreenState extends State<VehicleScreen> {
     return trimmed;
   }
 
+  void _showExportOptions(List<AdminVehicleListItem> items) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Export Vehicles',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(
+                          MediaQuery.of(context).size.width,
+                        ) +
+                        1,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.table_view_outlined),
+                  title: const Text('CSV'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportCsv(items);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.picture_as_pdf_outlined),
+                  title: const Text('PDF'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _exportPdf(items);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportPdf(List<AdminVehicleListItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No vehicles to export.')),
+      );
+      return;
+    }
+
+    final total = items.length;
+    final active = items.where((v) => v.isActive == true).length;
+    final inactive = total - active;
+    final filterLabel = selectedTab;
+    final generatedAt = DateTime.now();
+    final generatedAtText =
+        _formatDateTimeExport(generatedAt.toIso8601String());
+
+    final doc = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      fontSize: 16,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final labelStyle = pw.TextStyle(fontSize: 9, color: PdfColors.grey700);
+    final valueStyle = pw.TextStyle(
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.black,
+    );
+    final tableHeaderStyle = pw.TextStyle(
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final tableCellStyle = pw.TextStyle(fontSize: 7, color: PdfColors.black);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 16),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Generated from Fleet Stack Admin',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+              pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              ),
+            ],
+          ),
+        ),
+        build: (_) => [
+          _buildVehiclesPdfHeader(
+            headerStyle: headerStyle,
+            labelStyle: labelStyle,
+            generatedAtText: generatedAtText,
+            total: total,
+            filterLabel: filterLabel,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfSummary(
+            total: total,
+            active: active,
+            inactive: inactive,
+            labelStyle: labelStyle,
+            valueStyle: valueStyle,
+          ),
+          pw.SizedBox(height: 12),
+          _buildVehiclesPdfTable(
+            items: items,
+            tableHeaderStyle: tableHeaderStyle,
+            tableCellStyle: tableCellStyle,
+          ),
+        ],
+      ),
+    );
+
+    final filename =
+        'admin_vehicles_export_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsBytes(await doc.save());
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfHeader({
+    required pw.TextStyle headerStyle,
+    required pw.TextStyle labelStyle,
+    required String generatedAtText,
+    required int total,
+    required String filterLabel,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Vehicles Report', style: headerStyle),
+              pw.SizedBox(height: 6),
+              pw.Text('Report Type', style: labelStyle),
+              pw.Text('Admin Vehicles Export',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('Generated On', style: labelStyle),
+              pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 6),
+              pw.Text('Tab Filter', style: labelStyle),
+              pw.Text(filterLabel,
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfSummary({
+    required int total,
+    required int active,
+    required int inactive,
+    required pw.TextStyle labelStyle,
+    required pw.TextStyle valueStyle,
+  }) {
+    pw.Widget card(String label, String value, PdfColor color) {
+      return pw.Expanded(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(10),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(label, style: labelStyle),
+              pw.SizedBox(height: 4),
+              pw.Text(value, style: valueStyle.copyWith(color: color, fontSize: 11)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Overview', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Row(
+          children: [
+            card('Total Vehicles', total.toString(), PdfColors.blue900),
+            pw.SizedBox(width: 8),
+            card('Active', active.toString(), PdfColors.green800),
+            pw.SizedBox(width: 8),
+            card('Inactive', inactive.toString(), PdfColors.red900),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildVehiclesPdfTable({
+    required List<AdminVehicleListItem> items,
+    required pw.TextStyle tableHeaderStyle,
+    required pw.TextStyle tableCellStyle,
+  }) {
+    final headers = [
+      'ID',
+      'Name',
+      'Plate',
+      'Type',
+      'IMEI',
+      'SIM',
+      'Status',
+      'User',
+      'Created',
+    ];
+
+    final data = items.map((v) {
+      final raw = v.raw;
+      final type = _safe(
+        raw['vehicleType'] is Map
+            ? (raw['vehicleType']['name'] ?? raw['vehicleType']['title'])
+            : raw['vehicleType'] ??
+                raw['type'] ??
+                raw['vehicle_type'] ??
+                raw['category'],
+      );
+      final sim = _simNumber(v);
+      final status = _statusFor(v);
+      final user = _safe(v.userDisplayName);
+      final createdRaw = _firstNonEmpty([
+        _safe(raw['createdAt']?.toString()),
+        _safe(raw['created_at']?.toString()),
+        _safe(raw['createdDate']?.toString()),
+        _safe(raw['created']?.toString()),
+      ]);
+      final created = _formatDateLabel(createdRaw);
+
+      return [
+        v.id,
+        v.nameModel.length > 15 ? '${v.nameModel.substring(0, 12)}...' : v.nameModel,
+        v.plateNumber,
+        type,
+        v.imei,
+        sim,
+        status,
+        user.length > 15 ? '${user.substring(0, 12)}...' : user,
+        created,
+      ];
+    }).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Vehicle Details', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: data,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          headerStyle: tableHeaderStyle,
+          cellStyle: tableCellStyle,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerAlignment: pw.Alignment.centerLeft,
+          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(0.8),
+            1: const pw.FlexColumnWidth(2.0),
+            2: const pw.FlexColumnWidth(1.5),
+            3: const pw.FlexColumnWidth(1.2),
+            4: const pw.FlexColumnWidth(1.8),
+            5: const pw.FlexColumnWidth(1.5),
+            6: const pw.FlexColumnWidth(1.0),
+            7: const pw.FlexColumnWidth(2.0),
+            8: const pw.FlexColumnWidth(1.5),
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _exportCsv(List<AdminVehicleListItem> items) async {
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No vehicles to export.')),
+      );
+      return;
+    }
+    final headers = [
+      'ID',
+      'Name',
+      'Plate',
+      'Type',
+      'IMEI',
+      'SIM Number',
+      'Status',
+      'Primary User',
+      'Created At',
+    ];
+    final rows = <List<String>>[];
+    for (final v in items) {
+      final raw = v.raw;
+      final type = _safe(
+        raw['vehicleType'] is Map
+            ? (raw['vehicleType']['name'] ?? raw['vehicleType']['title'])
+            : raw['vehicleType'] ??
+                raw['type'] ??
+                raw['vehicle_type'] ??
+                raw['category'],
+      );
+      rows.add([
+        v.id,
+        v.nameModel,
+        v.plateNumber,
+        type,
+        v.imei,
+        _simNumber(v),
+        _statusFor(v),
+        _safe(v.userDisplayName),
+        _safe(raw['createdAt']?.toString()),
+      ]);
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(headers.map(_csvEscape).join(','));
+    for (final row in rows) {
+      buffer.writeln(row.map(_csvEscape).join(','));
+    }
+
+    final filename =
+        'admin_vehicles_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final dir = await _resolveDownloadDir();
+    final file = File('${dir.path}${Platform.pathSeparator}$filename');
+    await file.writeAsString(buffer.toString());
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Saved: ${file.path}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
+  }
+
+  String _csvEscape(String value) {
+    final needsQuote =
+        value.contains(',') || value.contains('"') || value.contains('\n');
+    final cleaned = value.replaceAll('"', '""');
+    return needsQuote ? '"$cleaned"' : cleaned;
+  }
+
+  String _formatDateTimeExport(String raw) {
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    return DateFormat('dd MMM yyyy, hh:mm a').format(dt.toLocal());
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -390,6 +808,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
     final allItems = _items ?? const <AdminVehicleListItem>[];
     var filteredVehicles = _applyLocalFilters(allItems);
+    final fullFilteredVehicles = filteredVehicles; // For export
     if (filteredVehicles.length > _pageSize) {
       filteredVehicles = filteredVehicles.take(_pageSize).toList();
     }
@@ -670,7 +1089,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               SizedBox(
                                 width: cellWidth,
                                 child: InkWell(
-                                  onTap: () {},
+                                  onTap: () => _showExportOptions(fullFilteredVehicles),
                                   borderRadius: BorderRadius.circular(12),
                                   splashColor: Colors.transparent,
                                   highlightColor: Colors.transparent,
@@ -986,8 +1405,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               color: colorScheme.onSurface.withOpacity(0.7),
                             ),
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
+                            overflow: TextOverflow.ellipsis, softWrap: false,
                           ),
                         ],
                       ),
@@ -1082,7 +1500,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: spacing),
+                            const SizedBox(height: 4),
                             Text(
                               imei,
                               style: GoogleFonts.roboto(
@@ -1095,24 +1513,11 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               overflow: TextOverflow.ellipsis,
                               softWrap: false,
                             ),
-                            SizedBox(height: spacing / 2),
-                            Text(
-                              ' ',
-                              style: GoogleFonts.roboto(
-                                fontSize: fsSecondary,
-                                height: 16 / 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.transparent,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
                           ],
                         ),
                       ),
                     ),
-                    SizedBox(width: spacing),
+                    SizedBox(width: hp * 0.5),
                     Expanded(
                       child: Container(
                         padding: EdgeInsets.symmetric(
@@ -1149,7 +1554,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: spacing + 2),
+                            const SizedBox(height: 4),
                             Text(
                               simNumber,
                               style: GoogleFonts.roboto(
@@ -1162,26 +1567,13 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               overflow: TextOverflow.ellipsis,
                               softWrap: false,
                             ),
-                            SizedBox(height: spacing / 2),
-                            Text(
-                              ' ',
-                              style: GoogleFonts.roboto(
-                                fontSize: fsSecondary,
-                                height: 16 / 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.transparent,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
                           ],
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: spacing),
+                SizedBox(height: spacing * 0.8),
                 Row(
                   children: [
                     Expanded(
@@ -1209,7 +1601,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "Primary",
+                                  "Primary User",
                                   style: GoogleFonts.roboto(
                                     fontSize: fsMeta,
                                     height: 14 / 11,
@@ -1220,7 +1612,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: spacing + 2),
+                            const SizedBox(height: 4),
                             Text(
                               primaryName,
                               style: GoogleFonts.roboto(
@@ -1233,24 +1625,15 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               overflow: TextOverflow.ellipsis,
                               softWrap: false,
                             ),
-                            SizedBox(height: spacing / 2),
-                            Text(
-                              ' ',
-                              style: GoogleFonts.roboto(
-                                fontSize: fsSecondary,
-                                height: 16 / 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.transparent,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
                           ],
                         ),
                       ),
                     ),
-                    SizedBox(width: spacing),
+                  ],
+                ),
+                SizedBox(height: spacing * 0.8),
+                Row(
+                  children: [
                     Expanded(
                       child: Container(
                         padding: EdgeInsets.symmetric(
@@ -1276,7 +1659,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "Created",
+                                  "Created On",
                                   style: GoogleFonts.roboto(
                                     fontSize: fsMeta,
                                     height: 14 / 11,
@@ -1287,31 +1670,30 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: spacing + 2),
-                            Text(
-                              createdDate,
-                              style: GoogleFonts.roboto(
-                                fontSize: fsMain,
-                                height: 20 / 14,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
-                            ),
-                            SizedBox(height: spacing / 2),
-                            Text(
-                              createdTime,
-                              style: GoogleFonts.roboto(
-                                fontSize: fsSecondary,
-                                height: 16 / 12,
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.onSurface.withOpacity(0.8),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: false,
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  createdDate,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsMain,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  createdTime,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: fsSecondary,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        colorScheme.onSurface.withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1338,104 +1720,76 @@ class _VehicleScreenState extends State<VehicleScreen> {
     required double smallFs,
     required ColorScheme colorScheme,
   }) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300 + index * 50),
-      curve: Curves.easeOut,
+    return Container(
       margin: EdgeInsets.only(bottom: hp),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(cardPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppShimmer(
-                    width: AdaptiveUtils.getAvatarSize(width),
-                    height: AdaptiveUtils.getAvatarSize(width),
-                    radius: AdaptiveUtils.getAvatarSize(width),
-                  ),
-                  SizedBox(width: spacing * 1.5),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: AppShimmer(
-                                width: double.infinity,
-                                height: bodyFs + 8,
-                                radius: 8,
-                              ),
-                            ),
-                            SizedBox(width: spacing),
-                            AppShimmer(
-                              width: 70,
-                              height: smallFs + 10,
-                              radius: 999,
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: spacing),
-                        AppShimmer(
-                          width: width * 0.35,
-                          height: bodyFs + 8,
-                          radius: 8,
-                        ),
-                        SizedBox(height: spacing),
-                        AppShimmer(
-                          width: width * 0.45,
-                          height: bodyFs + 6,
-                          radius: 8,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: spacing * 2),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppShimmer(
-                      width: double.infinity,
-                      height: iconSize + bodyFs + 8,
-                      radius: 12,
-                    ),
-                  ),
-                  SizedBox(width: spacing),
-                  Expanded(
-                    child: AppShimmer(
-                      width: double.infinity,
-                      height: iconSize + bodyFs + 8,
-                      radius: 12,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: spacing * 2),
-              AppShimmer(width: width * 0.5, height: smallFs + 10, radius: 8),
-              SizedBox(height: spacing),
-              AppShimmer(
-                width: double.infinity,
-                height: smallFs + 10,
-                radius: 8,
-              ),
-            ],
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(
+                  width: AdaptiveUtils.getAvatarSize(width),
+                  height: AdaptiveUtils.getAvatarSize(width),
+                  radius: AdaptiveUtils.getAvatarSize(width),
+                ),
+                SizedBox(width: spacing * 1.5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppShimmer(
+                              width: double.infinity,
+                              height: bodyFs + 4,
+                              radius: 4,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          AppShimmer(width: 60, height: smallFs + 6, radius: 12),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      AppShimmer(width: 100, height: smallFs + 6, radius: 12),
+                      const SizedBox(height: 6),
+                      AppShimmer(width: 80, height: smallFs, radius: 4),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: AppShimmer(width: double.infinity, height: 48, radius: 12),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppShimmer(width: double.infinity, height: 48, radius: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            AppShimmer(width: double.infinity, height: 48, radius: 12),
+            const SizedBox(height: 12),
+            AppShimmer(width: double.infinity, height: 48, radius: 12),
+          ],
         ),
       ),
     );
