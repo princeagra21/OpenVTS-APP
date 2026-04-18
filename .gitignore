@@ -50,3 +50,13 @@ app.*.map.json
 .codex/
 juwai.mp4
 WhatsApp Ptt*.ogg
+
+# Project specific ignores for non-important files
+*.md
+!README.md
+X-Fleet.postman_collection.json
+/*.png
+/*.webp
+/*.jpeg
+/*.jpg
+*.yml
