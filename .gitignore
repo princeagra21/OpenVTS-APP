@@ -54,6 +54,7 @@ WhatsApp Ptt*.ogg
 # Project specific ignores for non-important files
 *.md
 !README.md
+*postman*
 X-Fleet.postman_collection.json
 /*.png
 /*.webp
