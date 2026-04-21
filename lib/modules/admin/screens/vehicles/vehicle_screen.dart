@@ -309,7 +309,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
   DateTime? _tryParseAnyDate(String input) {
     final value = input.trim();
-    if (value.isEmpty || value == '—') return null;
+    if (value.isEmpty || value == '-') return null;
     final parsedIso = DateTime.tryParse(value);
     if (parsedIso != null) return parsedIso;
     try {
@@ -334,7 +334,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   String _firstNonEmpty(List<String> candidates) {
     for (final value in candidates) {
       final trimmed = value.trim();
-      if (trimmed.isNotEmpty && trimmed != '—') return trimmed;
+      if (trimmed.isNotEmpty && trimmed != '-') return trimmed;
     }
     return '';
   }
@@ -367,13 +367,13 @@ class _VehicleScreenState extends State<VehicleScreen> {
       _safe(item.statusLabel),
     ];
     final picked = _firstNonEmpty(candidates);
-    return picked.isEmpty ? '—' : picked;
+    return picked.isEmpty ? '-' : picked;
   }
 
   String _safe(String? value) {
     final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty) return '—';
-    if (trimmed.toLowerCase() == 'null') return '—';
+    if (trimmed.isEmpty) return '-';
+    if (trimmed.toLowerCase() == 'null') return '-';
     return trimmed;
   }
 
@@ -502,7 +502,10 @@ class _VehicleScreenState extends State<VehicleScreen> {
             labelStyle: labelStyle,
             valueStyle: valueStyle,
           ),
-          pw.SizedBox(height: 12),
+          pw.SizedBox(height: 16),
+          pw.Text('Vehicle Details',
+              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
           _buildVehiclesPdfTable(
             items: items,
             tableHeaderStyle: tableHeaderStyle,
@@ -668,35 +671,28 @@ class _VehicleScreenState extends State<VehicleScreen> {
       ];
     }).toList();
 
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('Vehicle Details', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: data,
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
-          headerStyle: tableHeaderStyle,
-          cellStyle: tableCellStyle,
-          cellAlignment: pw.Alignment.centerLeft,
-          headerAlignment: pw.Alignment.centerLeft,
-          rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
-          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
-          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(0.8),
-            1: const pw.FlexColumnWidth(2.0),
-            2: const pw.FlexColumnWidth(1.5),
-            3: const pw.FlexColumnWidth(1.2),
-            4: const pw.FlexColumnWidth(1.8),
-            5: const pw.FlexColumnWidth(1.5),
-            6: const pw.FlexColumnWidth(1.0),
-            7: const pw.FlexColumnWidth(2.0),
-            8: const pw.FlexColumnWidth(1.5),
-          },
-        ),
-      ],
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: data,
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+      headerStyle: tableHeaderStyle,
+      cellStyle: tableCellStyle,
+      cellAlignment: pw.Alignment.centerLeft,
+      headerAlignment: pw.Alignment.centerLeft,
+      rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+      oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(0.8),
+        1: const pw.FlexColumnWidth(2.0),
+        2: const pw.FlexColumnWidth(1.5),
+        3: const pw.FlexColumnWidth(1.2),
+        4: const pw.FlexColumnWidth(1.8),
+        5: const pw.FlexColumnWidth(1.5),
+        6: const pw.FlexColumnWidth(1.0),
+        7: const pw.FlexColumnWidth(2.0),
+        8: const pw.FlexColumnWidth(1.5),
+      },
     );
   }
 
@@ -916,6 +912,44 @@ class _VehicleScreenState extends State<VehicleScreen> {
                               color: colorScheme.onSurface,
                             ),
                           ),
+                          InkWell(
+                            onTap: () async {
+                              final created =
+                                  await context.push<bool>('/admin/vehicles/add');
+                              if (created == true) {
+                                _loadVehicles();
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: hp,
+                                vertical: spacing,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    size: iconSize,
+                                    color: colorScheme.surface,
+                                  ),
+                                  SizedBox(width: spacing / 2),
+                                  Text(
+                                    "New",
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.surface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: spacing),
@@ -1104,7 +1138,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: colorScheme.onSurface
-                                            .withOpacity(0.1),
+                                            .withOpacity(0.12),
                                       ),
                                     ),
                                     child: Row(
@@ -1112,9 +1146,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          Icons.download_outlined,
+                                          Icons.upload,
                                           size: iconSize,
-                                          color: colorScheme.onSurface,
+                                          color: colorScheme.onSurface.withOpacity(0.7),
                                         ),
                                         SizedBox(width: spacing / 2),
                                         Text(
@@ -1289,8 +1323,8 @@ class _VehicleScreenState extends State<VehicleScreen> {
     ]);
     final createdDate = _formatDateLabel(createdRaw);
     final createdTime = _formatTimeLabel(createdRaw);
-    final displayTitle = name == '—'
-        ? (type.isNotEmpty && type != '—' ? type : 'Vehicle')
+    final displayTitle = name == '-'
+        ? (type.isNotEmpty && type != '-' ? type : 'Vehicle')
         : name;
 
     final vehicleId = vehicle.id.trim();
@@ -1397,7 +1431,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           ),
                           SizedBox(height: spacing * 0.4),
                           Text(
-                            type.isEmpty ? '—' : type,
+                            type.isEmpty ? '-' : type,
                             style: GoogleFonts.roboto(
                               fontSize: fsSecondary,
                               height: 16 / 12,

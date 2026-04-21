@@ -16,7 +16,7 @@ class AdminUserProfileTab extends StatefulWidget {
   final bool loading;
   final double bodyFontSize;
   final String userId;
-  final VoidCallback onRefresh;
+  final void Function({bool silent}) onRefresh;
 
   const AdminUserProfileTab({
     super.key,
@@ -186,11 +186,20 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: Icon(
-                  isActive ? Icons.toggle_on : Icons.toggle_off,
-                  size: 18 * scale,
-                  color: colorScheme.primary,
-                ),
+                icon: _statusSubmitting
+                    ? SizedBox(
+                        width: 14 * scale,
+                        height: 14 * scale,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        isActive ? Icons.toggle_on : Icons.toggle_off,
+                        size: 18 * scale,
+                        color: colorScheme.primary,
+                      ),
                 label: Text(
                   isActive ? "Set Inactive" : "Set Active",
                   style: GoogleFonts.roboto(
@@ -1066,7 +1075,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
       res.when(
         success: (_) {
           setState(() => _statusSubmitting = false);
-          widget.onRefresh();
+          widget.onRefresh(silent: true);
         },
         failure: (err) {
           if (!mounted) return;
