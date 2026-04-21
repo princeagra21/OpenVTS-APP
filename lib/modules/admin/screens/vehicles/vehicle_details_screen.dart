@@ -373,6 +373,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         distanceMultiplier: distance,
         odometer: odometer,
         engineHours: engineHours,
+        ignitionSource: _ignitionSource,
       );
 
       final res = await _repoOrCreate().updateVehicleConfig(
