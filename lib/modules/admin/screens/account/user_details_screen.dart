@@ -146,13 +146,15 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _loadDetails() async {
+  Future<void> _loadDetails({bool silent = false}) async {
     _detailsToken?.cancel('Reload user details');
     final token = CancelToken();
     _detailsToken = token;
 
     if (!mounted) return;
-    setState(() => _loadingDetails = true);
+    if (!silent) {
+      setState(() => _loadingDetails = true);
+    }
 
     try {
       final result = await _repoOrCreate().getUserDetails(

@@ -4,6 +4,10 @@ import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
 import 'package:fleet_stack/core/models/vehicle_config.dart';
+import 'package:fleet_stack/core/models/admin_quick_device.dart';
+import 'package:fleet_stack/core/models/device_type.dart';
+import 'package:fleet_stack/core/models/vehicle_type.dart';
+import 'package:fleet_stack/core/models/pricing_plan.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
@@ -11,6 +15,134 @@ class AdminVehiclesRepository {
   final ApiClient api;
 
   const AdminVehiclesRepository({required this.api});
+
+  Future<Result<List<VehicleType>>> getVehicleTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/vehicletypes', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data, extraKeys: const ['types', 'items', 'data']);
+        final out = <VehicleType>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(VehicleType.fromRaw(item));
+            } else if (item is Map) {
+              out.add(VehicleType.fromRaw(Map<String, dynamic>.from(item.cast())));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<DeviceType>>> getDeviceTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/devicestypes', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data, extraKeys: const ['types', 'items', 'data']);
+        final out = <DeviceType>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(DeviceType.fromRaw(item));
+            } else if (item is Map) {
+              out.add(DeviceType.fromRaw(Map<String, dynamic>.from(item.cast())));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminQuickDevice>>> getQuickDevices({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/admin/quickdevice', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data, extraKeys: const ['devices', 'items', 'data']);
+        final out = <AdminQuickDevice>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(AdminQuickDevice.fromRaw(item));
+            } else if (item is Map) {
+              out.add(AdminQuickDevice.fromRaw(Map<String, dynamic>.from(item.cast())));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<PricingPlan>>> getPricingPlans({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/admin/pricingplans', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data, extraKeys: const ['plans', 'items', 'data']);
+        final out = <PricingPlan>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              out.add(PricingPlan(item));
+            } else if (item is Map) {
+              out.add(PricingPlan(Map<String, dynamic>.from(item.cast())));
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<AdminVehicleListItem>> createVehicle({
+    required String name,
+    required String vin,
+    required String plateNumber,
+    required String deviceId,
+    required String vehicleTypeId,
+    required String primaryUserId,
+    required String planId,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{
+      'name': name.trim(),
+      'vin': vin.trim(),
+      'plateNumber': plateNumber.trim(),
+      'deviceId': deviceId.trim(),
+      'vehicleTypeId': vehicleTypeId.trim(),
+      'primaryUserId': primaryUserId.trim(),
+      'planId': planId.trim(),
+    };
+
+    final res = await api.post(
+      '/admin/vehicles',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(AdminVehicleListItem.fromRaw(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
 
   Future<Result<List<AdminVehicleListItem>>> getVehicles({
     String? search,
