@@ -50,19 +50,19 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   bool _configLoaded = false;
   CancelToken? _configToken;
   final TextEditingController _speedController =
-      TextEditingController(text: '1.00');
+      TextEditingController(text: '10000');
   final TextEditingController _distanceController =
-      TextEditingController(text: '1.00');
+      TextEditingController(text: '100');
   final TextEditingController _odometerController =
-      TextEditingController(text: '0');
+      TextEditingController(text: '10000');
   final TextEditingController _engineHoursController =
-      TextEditingController(text: '0');
-  String _ignitionSource = 'Ignition Wire';
-  String _snapSpeed = '1.00';
-  String _snapDistance = '1.00';
-  String _snapOdometer = '0';
-  String _snapEngineHours = '0';
-  String _snapIgnition = 'Ignition Wire';
+      TextEditingController(text: '100000');
+  String _ignitionSource = 'Motion-Based';
+  String _snapSpeed = '10000';
+  String _snapDistance = '100';
+  String _snapOdometer = '10000';
+  String _snapEngineHours = '100000';
+  String _snapIgnition = 'Motion-Based';
 
   String _selectedTab = 'Vehicle Details';
 
@@ -331,11 +331,18 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final odo = toDouble(config['odometer'] ?? config['odometerKm']);
     final hours = toDouble(config['engineHours'] ?? config['runtimeHours']);
 
-    _speedController.text = (speed ?? 1).toStringAsFixed(2);
-    _distanceController.text = (distance ?? 1).toStringAsFixed(2);
-    _odometerController.text = (odo ?? 0).toStringAsFixed(0);
-    _engineHoursController.text = (hours ?? 0).toStringAsFixed(0);
+    _speedController.text = _formatValue(speed ?? 1);
+    _distanceController.text = _formatValue(distance ?? 1);
+    _odometerController.text = _formatValue(odo ?? 0);
+    _engineHoursController.text = _formatValue(hours ?? 0);
     _saveConfigSnapshot();
+  }
+
+  String _formatValue(double value) {
+    if (value == value.toInt()) {
+      return value.toInt().toString();
+    }
+    return value.toString();
   }
 
   Future<void> _loadConfig() async {
