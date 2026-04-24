@@ -13,6 +13,7 @@ import 'package:fleet_stack/modules/admin/router/admin_routes.dart';
 import 'package:fleet_stack/modules/superadmin/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -357,7 +358,28 @@ class _MyAppState extends State<MyApp> {
                   ? DevicePreview.locale(context)
                   : null,
               builder: (context, child) {
-                Widget result = SafeArea(child: child!);
+                final theme = Theme.of(context);
+                final isDark = theme.brightness == Brightness.dark;
+                final backgroundColor = theme.scaffoldBackgroundColor;
+                final overlayStyle = SystemUiOverlayStyle(
+                  statusBarColor: backgroundColor,
+                  statusBarIconBrightness:
+                      isDark ? Brightness.light : Brightness.dark,
+                  statusBarBrightness:
+                      isDark ? Brightness.dark : Brightness.light,
+                  systemNavigationBarColor: backgroundColor,
+                  systemNavigationBarIconBrightness:
+                      isDark ? Brightness.light : Brightness.dark,
+                  systemNavigationBarDividerColor: Colors.transparent,
+                );
+
+                Widget result = AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: overlayStyle,
+                  child: ColoredBox(
+                    color: backgroundColor,
+                    child: SafeArea(child: child ?? const SizedBox.shrink()),
+                  ),
+                );
                 if (widget.enableDevicePreview) {
                   result = DevicePreview.appBuilder(context, result);
                 }

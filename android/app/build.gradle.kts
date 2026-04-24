@@ -8,7 +8,6 @@ plugins {
 android {
     namespace = "com.example.fleek_stack_mobile"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
