@@ -49,6 +49,11 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
   bool _loading = true;
   bool _saving = false;
   String _currentSimText = '—';
+  String _initialImei = '';
+  String _initialDeviceTypeLabel = '';
+  String _initialSimLabel = 'Unassigned';
+  String _initialStatus = 'IN_STOCK';
+  bool _initialIsActive = true;
 
   ApiClient _apiOrCreate() {
     _apiClient ??= ApiClient(
@@ -318,13 +323,20 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
         _deviceTypes = types;
         _quickSims = sims;
         _imeiController.text = imei;
-        _selectedDeviceTypeLabel = typeName.isNotEmpty
+        final resolvedType = typeName.isNotEmpty
             ? typeName
             : (_deviceTypeLabels.isNotEmpty ? _deviceTypeLabels.first : null);
-        _selectedSimLabel = simNumber.isNotEmpty ? simNumber : 'Unassigned';
+        final resolvedSim = simNumber.isNotEmpty ? simNumber : 'Unassigned';
+        _selectedDeviceTypeLabel = resolvedType;
+        _selectedSimLabel = resolvedSim;
         _currentSimText = simNumber.isNotEmpty ? simNumber : '—';
         _isActive = isActive;
         _selectedStatus = _normalizeStatus(device['status']);
+        _initialImei = imei;
+        _initialDeviceTypeLabel = resolvedType ?? '';
+        _initialSimLabel = resolvedSim;
+        _initialStatus = _normalizeStatus(device['status']);
+        _initialIsActive = isActive;
         _loading = false;
       });
     } catch (_) {
@@ -362,16 +374,35 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
       return;
     }
 
-    final payload = <String, dynamic>{
-      'imei': imei,
-      'deviceTypeId': int.tryParse(typeId) ?? typeId,
-      'status': _selectedStatus,
-      'isActive': _isActive,
-    };
-    if (simId == _unassignedValue) {
-      payload['simId'] = null;
-    } else if (simId.isNotEmpty) {
-      payload['simId'] = int.tryParse(simId) ?? simId;
+    final payload = <String, dynamic>{};
+
+    if (imei != _initialImei) {
+      payload['imei'] = imei;
+    }
+
+    if (typeLabel != _initialDeviceTypeLabel) {
+      payload['deviceTypeId'] = int.tryParse(typeId) ?? typeId;
+    }
+
+    if (_selectedStatus != _initialStatus) {
+      payload['status'] = _selectedStatus;
+    }
+
+    if (_isActive != _initialIsActive) {
+      payload['isActive'] = _isActive;
+    }
+
+    if (simLabel != _initialSimLabel) {
+      if (simId == _unassignedValue) {
+        payload['simId'] = null;
+      } else if (simId.isNotEmpty) {
+        payload['simId'] = int.tryParse(simId) ?? simId;
+      }
+    }
+
+    if (payload.isEmpty) {
+      _snack('No changes to update.');
+      return;
     }
 
     _saveToken?.cancel('Replace save');
