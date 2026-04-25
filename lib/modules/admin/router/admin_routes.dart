@@ -30,6 +30,7 @@ import 'package:fleet_stack/modules/admin/screens/sims/add_sim_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/sims/sim_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/support/support_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/teams/add_team_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/teams/team_details_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/teams/team_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/transactions/transaction_details_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/transactions/transaction_screen.dart';
@@ -48,6 +49,8 @@ import 'package:fleet_stack/modules/admin/screens/plans/edit_plan_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/dashboard/dashboard_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/home/home_screen.dart';
 import 'package:fleet_stack/modules/admin/screens/inventory/inventory_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/inventory/inventory_add_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/inventory/inventory_device_edit_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> adminRoutes = [
@@ -83,7 +86,25 @@ final List<GoRoute> adminRoutes = [
     builder: (_, __) => const AddDriverScreen(),
   ),
   GoRoute(path: '/admin/teams', builder: (_, __) => const TeamScreen()),
+  GoRoute(
+    path: '/admin/teams/details/:id',
+    builder: (context, state) =>
+        TeamDetailsScreen(id: state.pathParameters['id']!),
+  ),
   GoRoute(path: '/admin/inventory', builder: (_, __) => const InventoryScreen()),
+  GoRoute(
+    path: '/admin/inventory/add',
+    builder: (_, __) => const InventoryAddScreen(),
+  ),
+  GoRoute(
+    path: '/admin/inventory/device/:id',
+    builder: (context, state) => InventoryDeviceEditScreen(
+      deviceId: state.pathParameters['id']!,
+      initialRaw: state.extra is Map<String, dynamic>
+          ? state.extra as Map<String, dynamic>
+          : null,
+    ),
+  ),
   GoRoute(path: '/admin/teams/add', builder: (_, __) => const AddTeamScreen()),
   GoRoute(path: '/admin/devices', builder: (_, __) => const DeviceScreen()),
   GoRoute(

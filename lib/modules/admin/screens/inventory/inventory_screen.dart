@@ -136,6 +136,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  Future<void> _openAddInventory() async {
+    final created = await context.push('/admin/inventory/add');
+    if (!mounted) return;
+    if (created == true) {
+      _loadDevices();
+    }
+  }
+
+  Future<void> _openEditDevice(AdminDeviceListItem item) async {
+    final id = item.id.trim();
+    if (id.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Device ID not found.')));
+      return;
+    }
+    final updated = await context.push('/admin/inventory/device/$id', extra: item.raw);
+    if (!mounted) return;
+    if (updated == true) {
+      _loadDevices();
+    }
+  }
+
   List<AdminDeviceListItem> _applyLocalFilters(List<AdminDeviceListItem> source) {
     final query = _searchController.text.trim().toLowerCase();
 
@@ -239,7 +262,39 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               color: colorScheme.onSurface,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: _openAddInventory,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: padding,
+                                vertical: spacing,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    size: iconSize,
+                                    color: colorScheme.onPrimary,
+                                  ),
+                                  SizedBox(width: spacing / 2),
+                                  Text(
+                                    'Add',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: fsMain - 2,
+                                      fontWeight: FontWeight.w700,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: padding),
@@ -715,11 +770,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
       child: Material(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(25),
-        child: Padding(
-          padding: EdgeInsets.all(cardPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: InkWell(
+          borderRadius: BorderRadius.circular(25),
+          onTap: () => _openEditDevice(device),
+          child: Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -900,7 +958,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ],
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

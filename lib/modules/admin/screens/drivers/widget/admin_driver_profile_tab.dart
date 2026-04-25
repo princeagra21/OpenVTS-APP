@@ -33,6 +33,7 @@ class AdminDriverProfileTab extends StatefulWidget {
 class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
   bool _statusSubmitting = false;
   bool _statusErrorShown = false;
+  bool? _activeOverride;
   CancelToken? _statusToken;
   ApiClient? _api;
   AdminDriversRepository? _repo;
@@ -94,7 +95,10 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
       if (!mounted) return;
       res.when(
         success: (_) {
-          setState(() => _statusSubmitting = false);
+          setState(() {
+            _statusSubmitting = false;
+            _activeOverride = !current;
+          });
           widget.onRefresh();
         },
         failure: (err) {
@@ -153,7 +157,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
         _formatDateTime(_safe(widget.details?.createdAt, fallback: ''));
 
     final address = _addressLine(widget.details);
-    final isActive = widget.details?.isActive ?? false;
+    final isActive = _activeOverride ?? widget.details?.isActive ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,

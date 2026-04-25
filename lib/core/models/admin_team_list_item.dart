@@ -38,6 +38,12 @@ class AdminTeamListItem {
   String get joinedAt =>
       _firstString(const ['createdAt', 'joinedAt', 'created_on', 'created_at']);
 
+  String get updatedAt =>
+      _firstString(const ['updatedAt', 'updated_on', 'updated_at']);
+
+  String get createdAt =>
+      _firstString(const ['createdAt', 'created_on', 'created_at', 'joinedAt']);
+
   String get initials {
     final name = fullName.trim();
     if (name.isEmpty) return '--';

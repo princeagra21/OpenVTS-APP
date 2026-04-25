@@ -79,10 +79,8 @@ class AdminDriversRepository {
     final res = await api.patch(
       '/admin/drivers/$driverId',
       data: <String, dynamic>{
-        // Postman sample uses lower-case isactive.
-        'isactive': isActive,
-        // Keep camelCase for backend variants.
-        'isActive': isActive,
+        // Match Postman exactly: lower-case key with string boolean.
+        'isactive': isActive.toString(),
       },
       cancelToken: cancelToken,
     );

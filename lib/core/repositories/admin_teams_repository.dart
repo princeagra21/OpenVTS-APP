@@ -63,6 +63,96 @@ class AdminTeamsRepository {
     );
   }
 
+  Future<Result<AdminTeamListItem>> getTeamDetails(
+    String teamId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/teams/$teamId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        return Result.ok(AdminTeamListItem.fromRaw(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateTeamPassword(
+    String teamId,
+    String password, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/admin/teams/$teamId',
+      data: <String, dynamic>{'password': password},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateTeam({
+    required String teamId,
+    required String name,
+    required String email,
+    required String mobilePrefix,
+    required String mobileNumber,
+    required String username,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/admin/teams/$teamId',
+      data: <String, dynamic>{
+        'name': name.trim(),
+        'email': email.trim(),
+        'mobilePrefix': mobilePrefix.trim(),
+        'mobileNumber': mobileNumber.trim(),
+        'username': username.trim(),
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> createTeam({
+    required String name,
+    required String email,
+    required String mobilePrefix,
+    required String mobileNumber,
+    required String username,
+    required String password,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/admin/teams',
+      data: <String, dynamic>{
+        'name': name,
+        'email': email,
+        'mobilePrefix': mobilePrefix,
+        'mobileNumber': mobileNumber,
+        'username': username,
+        'password': password,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   List _extractList(Object? data) {
     List? walk(Object? node, int depth) {
       if (depth > 6) return null;
@@ -85,5 +175,33 @@ class AdminTeamsRepository {
     }
 
     return walk(data, 0) ?? const [];
+  }
+
+  Map<String, dynamic> _extractMap(Object? data) {
+    Object? walk(Object? node, int depth) {
+      if (depth > 6) return null;
+      if (node is Map) {
+        final map = node is Map<String, dynamic>
+            ? node
+            : Map<String, dynamic>.from(node.cast());
+        final candidates = [
+          map['data'],
+          map['item'],
+          map['team'],
+          map['result'],
+        ];
+        for (final c in candidates) {
+          final result = walk(c, depth + 1);
+          if (result is Map<String, dynamic>) return result;
+        }
+        return map;
+      }
+      return null;
+    }
+
+    final result = walk(data, 0);
+    if (result is Map<String, dynamic>) return result;
+    if (result is Map) return Map<String, dynamic>.from(result.cast());
+    return const <String, dynamic>{};
   }
 }

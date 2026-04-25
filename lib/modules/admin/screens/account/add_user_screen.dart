@@ -504,42 +504,64 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final cs = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(w);
-    final double bottomBarScrollPad = AdaptiveUtils.getBottomBarHeight(w) + 24;
+    final double bottomBarScrollPad = AdaptiveUtils.getBottomBarHeight(w) + 32;
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(padding * 1.3),
+          padding: EdgeInsets.symmetric(horizontal: padding + 6, vertical: padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── HEADER ─────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Add User",
                     style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getSubtitleFontSize(w),
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16 * ((w / 420).clamp(0.9, 1.0)),
+                      height: 20 / 16,
+                      fontWeight: FontWeight.w700,
                       color: cs.onSurface,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  )
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                  ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Fill the details and click add.",
+                style: GoogleFonts.inter(
+                  fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
               ),
               const SizedBox(height: 24),
 
-              // ─── FORM ───────────────────────────────
               Expanded(
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.only(bottom: bottomBarScrollPad),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -810,56 +832,65 @@ class _AddUserScreenState extends State<AddUserScreen> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Container(
-          padding: EdgeInsets.fromLTRB(padding * 1.3, 10, padding * 1.3, 10),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border(top: BorderSide(color: cs.outline.withOpacity(0.10))),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 56,
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _submitting ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      side: BorderSide(color: cs.primary.withOpacity(0.25)),
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(w),
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: spacing + 2),
+              const SizedBox(width: 12),
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: _submitting
                         ? SizedBox(
-                            height: 18,
                             width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.surface),
+                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
                             ),
                           )
                         : Text(
                             "Add User",
-                            style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                            style: GoogleFonts.roboto(
+                              fontSize: AdaptiveUtils.getTitleFontSize(w),
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onPrimary,
+                            ),
                           ),
                   ),
                 ),

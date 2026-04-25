@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/models/admin_quick_device.dart';
@@ -125,53 +124,120 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     required List<T> items,
     required String Function(T item) labelFor,
   }) async {
+    final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final fs = AdaptiveUtils.getTitleFontSize(width);
+    final searchController = TextEditingController();
+    String query = '';
+
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
-        final searchController = TextEditingController();
-        String query = '';
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final filtered = items.where((item) {
-              return labelFor(item).toLowerCase().contains(query.toLowerCase());
-            }).toList();
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                height: MediaQuery.of(ctx).size.height * 0.75,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: searchController,
-                      onChanged: (value) => setSheetState(() => query = value),
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        prefixIcon: Icon(Icons.search),
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.72,
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                final filtered = items.where((item) {
+                  return labelFor(item)
+                      .toLowerCase()
+                      .contains(query.toLowerCase());
+                }).toList();
+
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: GoogleFonts.inter(
+                                fontSize: fs,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              height: 36,
+                              width: 36,
+                              decoration: BoxDecoration(
+                                color: cs.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: cs.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final item = filtered[index];
-                          return ListTile(
-                            title: Text(labelFor(item)),
-                            onTap: () => Navigator.pop(ctx, item),
-                          );
-                        },
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: searchController,
+                        onChanged: (value) =>
+                            setSheetState(() => query = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          filled: true,
+                          fillColor: cs.surfaceVariant.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: cs.onSurface.withOpacity(0.5),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
+                          itemBuilder: (_, index) {
+                            final item = filtered[index];
+                            return ListTile(
+                              title: Text(
+                                labelFor(item),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: fs - 1,
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              onTap: () => Navigator.pop(ctx, item),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -239,44 +305,58 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final cs = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
-    final double spacing = AdaptiveUtils.getLeftSectionSpacing(w);
+    final double scale = (w / 420).clamp(0.9, 1.0);
+    final double titleSize = 16 * scale;
+    final double helperSize = 12 * scale;
 
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(padding * 1.3),
+          padding: EdgeInsets.symmetric(horizontal: padding + 6, vertical: padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Add Vehicle",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getSubtitleFontSize(w),
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      Text(
-                        "Enter vehicle details to add to fleet.",
-                        style: GoogleFonts.inter(
-                          fontSize: AdaptiveUtils.getTitleFontSize(w),
-                          color: cs.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    "Add Vehicle",
+                    style: GoogleFonts.roboto(
+                      fontSize: titleSize,
+                      height: 20 / 16,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  )
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                  ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Register a new vehicle",
+                style: GoogleFonts.roboto(
+                  fontSize: helperSize,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -284,6 +364,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      bottom: AdaptiveUtils.getBottomBarHeight(w) + 32,
+                    ),
                     child: Column(
                       children: [
                         _buildSelectionField(
@@ -354,41 +438,45 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Container(
-          padding: EdgeInsets.fromLTRB(padding * 1.3, 10, padding * 1.3, 10),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border(top: BorderSide(color: cs.outline.withOpacity(0.10))),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 56,
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      side: BorderSide(color: cs.primary.withOpacity(0.25)),
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(w),
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: spacing + 2),
+              const SizedBox(width: 12),
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: (_isSubmitting || _isLoading) ? null : _submit,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: _isSubmitting
@@ -398,12 +486,17 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.surface),
+                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
                             ),
                           )
                         : Text(
                             "Add Vehicle",
-                            style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                            style: GoogleFonts.roboto(
+                              fontSize: AdaptiveUtils.getTitleFontSize(w),
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onPrimary,
+                            ),
                           ),
                   ),
                 ),
