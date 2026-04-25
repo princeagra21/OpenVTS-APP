@@ -328,7 +328,12 @@ class _TeamScreenState extends State<TeamScreen> {
                             ),
                           ),
                           InkWell(
-                            onTap: () => context.push("/admin/teams/add"),
+                            onTap: () async {
+                              final created = await context.push('/admin/teams/add');
+                              if (created == true && mounted) {
+                                _loadTeams();
+                              }
+                            },
                             borderRadius: BorderRadius.circular(12),
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,
@@ -842,7 +847,9 @@ class _TeamScreenState extends State<TeamScreen> {
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           hoverColor: Colors.transparent,
-          onTap: () {},
+          onTap: teamId.isEmpty
+              ? null
+              : () => context.push('/admin/teams/details/$teamId'),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(
@@ -1049,37 +1056,43 @@ class _TeamScreenState extends State<TeamScreen> {
                   ),
                 ),
                 SizedBox(height: spacing),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: spacing * 1.6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chevron_right,
-                        size: iconSize,
-                        color: colorScheme.onPrimary,
-                      ),
-                      SizedBox(width: spacing),
-                      Text(
-                        "View",
-                        style: GoogleFonts.roboto(
-                          fontSize: fsMain,
-                          height: 20 / 14,
-                          fontWeight: FontWeight.w600,
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: teamId.isEmpty
+                      ? null
+                      : () => context.push('/admin/teams/details/$teamId'),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padding,
+                      vertical: spacing * 1.6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chevron_right,
+                          size: iconSize,
                           color: colorScheme.onPrimary,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        SizedBox(width: spacing),
+                        Text(
+                          "View",
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMain,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

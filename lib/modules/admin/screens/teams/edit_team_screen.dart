@@ -1,32 +1,33 @@
-import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_team_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/repositories/admin_teams_repository.dart';
+import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AddTeamScreen extends StatefulWidget {
-  const AddTeamScreen({super.key});
+class EditTeamScreen extends StatefulWidget {
+  final AdminTeamListItem team;
+
+  const EditTeamScreen({super.key, required this.team});
 
   @override
-  State<AddTeamScreen> createState() => _AddTeamScreenState();
+  State<EditTeamScreen> createState() => _EditTeamScreenState();
 }
 
-class _AddTeamScreenState extends State<AddTeamScreen> {
+class _EditTeamScreenState extends State<EditTeamScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneNumberController;
+  late final TextEditingController _usernameController;
 
   bool _submitting = false;
-  bool _showPassword = false;
   bool _loadingPrefixes = false;
   String _selectedCode = '+91';
 
@@ -39,17 +40,24 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController(text: widget.team.fullName);
+    _emailController = TextEditingController(text: widget.team.email);
+    _phoneNumberController = TextEditingController(text: widget.team.mobileNumber);
+    _usernameController = TextEditingController(text: widget.team.username);
+    final initialCode = widget.team.mobilePrefix.trim();
+    if (initialCode.isNotEmpty) {
+      _selectedCode = initialCode;
+    }
     _loadPrefixes();
   }
 
   @override
   void dispose() {
-    _prefixesToken?.cancel('Add team disposed');
+    _prefixesToken?.cancel('Edit team disposed');
     _nameController.dispose();
     _emailController.dispose();
     _phoneNumberController.dispose();
     _usernameController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -79,25 +87,16 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
     if (!mounted) return;
     setState(() => _loadingPrefixes = true);
 
-    final res = await _commonRepoOrCreate().getMobilePrefixes(
-      cancelToken: token,
-    );
+    final res = await _commonRepoOrCreate().getMobilePrefixes(cancelToken: token);
     if (!mounted || token.isCancelled) return;
 
     res.when(
       success: (items) {
-        final india = items.isNotEmpty
-            ? items.firstWhere(
-                (item) => item.countryCode.toUpperCase() == 'IN',
-                orElse: () => items.first,
-              )
-            : null;
-
         setState(() {
           _prefixes = items;
           _loadingPrefixes = false;
-          if (india != null) {
-            _selectedCode = india.code;
+          if (_selectedCode.trim().isEmpty && items.isNotEmpty) {
+            _selectedCode = items.first.code;
           }
         });
       },
@@ -170,11 +169,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                                 color: cs.primary.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                color: cs.primary,
-                              ),
+                              child: Icon(Icons.close, size: 18, color: cs.primary),
                             ),
                           ),
                         ],
@@ -252,19 +247,19 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
 
     setState(() => _submitting = true);
     try {
-      final result = await _repoOrCreate().createTeam(
+      final result = await _repoOrCreate().updateTeam(
+        teamId: widget.team.id,
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         mobilePrefix: _selectedCode,
         mobileNumber: _phoneNumberController.text.trim(),
         username: _usernameController.text.trim(),
-        password: _passwordController.text,
       );
 
       if (!mounted) return;
       result.when(
         success: (_) {
-          _showSnack('Team member created');
+          _showSnack('Team member updated');
           Navigator.pop(context, true);
         },
         failure: (err) {
@@ -299,10 +294,11 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Add New Team Member',
-                    style: GoogleFonts.inter(
+                    'Edit Team Member',
+                    style: GoogleFonts.roboto(
                       fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
+                      height: 20 / 16,
+                      fontWeight: FontWeight.w700,
                       color: cs.onSurface,
                     ),
                   ),
@@ -316,20 +312,17 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: cs.onPrimary,
-                      ),
+                      child: Icon(Icons.close_rounded, size: 18, color: cs.onPrimary),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Fill the details and click save.',
-                style: GoogleFonts.inter(
+                'Update team member details and click save.',
+                style: GoogleFonts.roboto(
                   fontSize: helperSize,
+                  height: 16 / 12,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.7),
                 ),
@@ -340,164 +333,75 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                   key: _formKey,
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      bottom: AdaptiveUtils.getBottomBarHeight(w) + 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _fieldLabel(context, 'Full Name*', labelSize),
+                        _Label(label: 'Full Name*', size: labelSize),
                         const SizedBox(height: 8),
-                        _textField(
-                          context,
+                        _Field(
                           controller: _nameController,
                           hint: 'John Doe',
-                          icon: Icons.person_rounded,
-                          fontSize: inputSize,
+                          icon: Icons.person_outline,
+                          size: inputSize,
                           validator: (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                              (v == null || v.trim().isEmpty) ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
-                        _fieldLabel(context, 'Email*', labelSize),
+                        _Label(label: 'Email*', size: labelSize),
                         const SizedBox(height: 8),
-                        _textField(
-                          context,
+                        _Field(
                           controller: _emailController,
                           hint: 'john@example.com',
-                          icon: Icons.email_rounded,
-                          fontSize: inputSize,
-                          keyboardType: TextInputType.emailAddress,
+                          icon: Icons.email_outlined,
+                          size: inputSize,
                           validator: (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                              (v == null || v.trim().isEmpty) ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _fieldLabel(context, 'Code', labelSize),
-                                  const SizedBox(height: 8),
-                                  _loadingPrefixes
-                                      ? SizedBox(
-                                          height: 56,
-                                          child: _loadingField(context),
-                                        )
-                                      : InkWell(
-                                          onTap: _pickPrefix,
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          child: Container(
-                                            height: 56,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: cs.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              border: Border.all(
-                                                color: cs.outline.withOpacity(0.3),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.flag_outlined,
-                                                  color: cs.primary,
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    _selectedCode,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: inputSize,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: cs.onSurface,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Icon(
-                                                  Icons.keyboard_arrow_down_rounded,
-                                                  color: cs.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _fieldLabel(context, 'Mobile', labelSize),
-                                  const SizedBox(height: 8),
-                                  _textField(
-                                    context,
-                                    controller: _phoneNumberController,
-                                    hint: '9876543210',
-                                    icon: Icons.phone_rounded,
-                                    fontSize: inputSize,
-                                    keyboardType: TextInputType.phone,
-                                    validator: (v) => v == null || v.trim().isEmpty
-                                        ? 'Required'
-                                        : null,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _fieldLabel(context, 'Username*', labelSize),
+                        _Label(label: 'Code', size: labelSize),
                         const SizedBox(height: 8),
-                        _textField(
-                          context,
+                        _Select(
+                          value: _selectedCode,
+                          icon: Icons.flag_outlined,
+                          size: inputSize,
+                          loading: _loadingPrefixes,
+                          onTap: () async {
+                            if (_loadingPrefixes) return;
+                            final picked = await _showSearchableSheet<MobilePrefixOption>(
+                              title: 'Select Code',
+                              items: _prefixes,
+                              labelFor: (item) => item.countryCode,
+                              trailingFor: (item) => item.code,
+                            );
+                            if (!mounted || picked == null) return;
+                            setState(() => _selectedCode = picked.code);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _Label(label: 'Mobile', size: labelSize),
+                        const SizedBox(height: 8),
+                        _Field(
+                          controller: _phoneNumberController,
+                          hint: '9876543210',
+                          icon: Icons.phone_outlined,
+                          size: inputSize,
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty) ? 'Required' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _Label(label: 'Username*', size: labelSize),
+                        const SizedBox(height: 8),
+                        _Field(
                           controller: _usernameController,
                           hint: 'masana1',
-                          icon: Icons.alternate_email_rounded,
-                          fontSize: inputSize,
+                          icon: Icons.account_circle_outlined,
+                          size: inputSize,
                           validator: (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                              (v == null || v.trim().isEmpty) ? 'Required' : null,
                         ),
-                        const SizedBox(height: 16),
-                        _fieldLabel(context, 'Password*', labelSize),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_showPassword,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Required' : null,
-                          style: GoogleFonts.inter(
-                            fontSize: inputSize,
-                            fontWeight: FontWeight.w500,
-                            color: cs.onSurface,
-                          ),
-                          decoration: _inputDecoration(
-                            context,
-                            hint: '••••••',
-                            prefixIcon: Icon(
-                              Icons.lock_rounded,
-                              color: cs.primary,
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () =>
-                                  setState(() => _showPassword = !_showPassword),
-                              icon: Icon(
-                                _showPassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: cs.onSurface.withOpacity(0.6),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 96),
                       ],
                     ),
                   ),
@@ -526,7 +430,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -543,8 +447,6 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -555,13 +457,12 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                              valueColor: AlwaysStoppedAnimation(cs.onPrimary),
                             ),
                           )
                         : Text(
                             'Save',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               fontWeight: FontWeight.w600,
                               color: cs.onPrimary,
@@ -576,115 +477,122 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
       ),
     );
   }
+}
 
-  Future<void> _pickPrefix() async {
-    if (_loadingPrefixes) return;
-    if (_prefixes.isEmpty) {
-      _showSnack('No mobile prefixes available.');
-      return;
-    }
+class _Label extends StatelessWidget {
+  final String label;
+  final double size;
 
-    final picked = await _showSearchableSheet<MobilePrefixOption>(
-      title: 'Select Mobile Prefix',
-      items: _prefixes,
-      labelFor: (item) => '${item.code} (${item.countryCode})',
-      trailingFor: (item) => item.countryCode,
-    );
+  const _Label({required this.label, required this.size});
 
-    if (!mounted || picked == null) return;
-    setState(() {
-      _selectedCode = picked.code;
-    });
-  }
-
-  Widget _fieldLabel(BuildContext context, String label, double fontSize) {
-    final cs = Theme.of(context).colorScheme;
+  @override
+  Widget build(BuildContext context) {
     return Text(
       label,
-      style: GoogleFonts.inter(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w600,
-        color: cs.onSurface,
-      ),
+      style: GoogleFonts.inter(fontSize: size, fontWeight: FontWeight.w600),
     );
   }
+}
 
-  Widget _loadingField(BuildContext context) {
+class _Field extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final double size;
+  final String? Function(String?)? validator;
+
+  const _Field({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    required this.size,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline.withOpacity(0.3)),
-      ),
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+    return SizedBox(
+      height: 55,
+      child: TextFormField(
+        controller: controller,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(
+            color: cs.onSurface.withOpacity(0.6),
+            fontSize: size,
+          ),
+          prefixIcon: Icon(icon, color: cs.primary),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: cs.primary, width: 2),
+          ),
         ),
       ),
     );
   }
+}
 
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    String? hint,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return InputDecoration(
-      filled: true,
-      fillColor: cs.surface,
-      hintText: hint,
-      hintStyle: GoogleFonts.inter(
-        color: cs.onSurface.withOpacity(0.6),
-      ),
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: cs.primary, width: 2),
-      ),
-    );
-  }
+class _Select extends StatelessWidget {
+  final String value;
+  final IconData icon;
+  final double size;
+  final bool loading;
+  final VoidCallback onTap;
 
-  Widget _textField(
-    BuildContext context, {
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    required double fontSize,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    Widget? suffixIcon,
-  }) {
+  const _Select({
+    required this.value,
+    required this.icon,
+    required this.size,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      keyboardType: keyboardType,
-      style: GoogleFonts.inter(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w500,
-        color: cs.onSurface,
-      ),
-      decoration: _inputDecoration(
-        context,
-        hint: hint,
-        prefixIcon: Icon(icon, color: cs.primary),
-        suffixIcon: suffixIcon,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 55,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outline.withOpacity(0.3)),
+          color: cs.surface,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: cs.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(fontSize: size, color: cs.onSurface),
+              ),
+            ),
+            if (loading)
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: cs.primary,
+                ),
+              )
+            else
+              Icon(Icons.arrow_drop_down, color: cs.primary),
+          ],
+        ),
       ),
     );
   }

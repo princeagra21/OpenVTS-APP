@@ -107,6 +107,61 @@ class AdminDevicesRepository {
     );
   }
 
+  Future<Result<List<SimOption>>> getQuickSimCards({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/admin/quicksimcards', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['simcards', 'sims', 'items', 'results'],
+        );
+        final out = list
+            .whereType<Map>()
+            .map(
+              (item) => SimOption.fromRaw(
+                item is Map<String, dynamic>
+                    ? item
+                    : Map<String, dynamic>.from(item.cast()),
+              ),
+            )
+            .toList();
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getDeviceDetails(
+    String deviceId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/admin/devices/$deviceId', cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) {
+        Map<String, dynamic> toMap(Object? value) {
+          if (value is Map<String, dynamic>) return value;
+          if (value is Map) return Map<String, dynamic>.from(value.cast());
+          return const <String, dynamic>{};
+        }
+
+        final root = toMap(data);
+        final dataNode = toMap(root['data']);
+        final nested = toMap(dataNode['data']);
+        final device = toMap(dataNode['device']);
+
+        if (nested.isNotEmpty) return Result.ok(nested);
+        if (device.isNotEmpty) return Result.ok(device);
+        if (dataNode.isNotEmpty) return Result.ok(dataNode);
+        return Result.ok(root);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<void>> addDevice({
     required String imei,
     required String deviceTypeId,
@@ -140,9 +195,26 @@ class AdminDevicesRepository {
     bool isActive, {
     CancelToken? cancelToken,
   }) async {
+    final res = await updateDevice(
+      deviceId,
+      <String, dynamic>{'isActive': isActive},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateDevice(
+    String deviceId,
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
     final res = await api.patch(
       '/admin/devices/$deviceId',
-      data: <String, dynamic>{'isActive': isActive},
+      data: payload,
       cancelToken: cancelToken,
     );
 

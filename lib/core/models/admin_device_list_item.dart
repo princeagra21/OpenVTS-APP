@@ -64,12 +64,16 @@ class AdminDeviceListItem {
   }
 
   String get statusLabel {
+    final rawValue = rawStatus.trim();
+    final upper = rawValue.toUpperCase();
+    if (upper == 'IN_USE') return 'In Use';
+    if (upper == 'IN_STOCK') return 'In Stock';
+
     final normalized = normalizeStatus(rawStatus, isActive: isActive);
     if (normalized == 'active') return 'Active';
     if (normalized == 'maintenance') return 'Maintenance';
     if (normalized == 'inactive') return 'Inactive';
 
-    final rawValue = rawStatus.trim();
     if (rawValue.isNotEmpty) return rawValue;
     return 'Inactive';
   }

@@ -59,13 +59,27 @@ class VehicleConfigUpdate {
     };
     if (odometer != null) map['odometer'] = _clean(odometer!);
     if (engineHours != null) map['engineHours'] = _clean(engineHours!);
-    if (ignitionSource != null) map['ignitionSource'] = ignitionSource;
+    if (ignitionSource != null) {
+      map['ignitionSource'] = _normalizeIgnitionSource(ignitionSource!);
+    }
     return map;
   }
 
   dynamic _clean(double value) {
     if (value == value.toInt()) {
       return value.toInt();
+    }
+    return value;
+  }
+
+  String _normalizeIgnitionSource(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) return value;
+    if (normalized == 'acc' || normalized.contains('ignition')) {
+      return 'ACC';
+    }
+    if (normalized == 'motion' || normalized.contains('motion')) {
+      return 'MOTION';
     }
     return value;
   }
