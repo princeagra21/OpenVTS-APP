@@ -134,7 +134,7 @@ class UserShareTrackLinksRepository {
   }) async {
     final res = await api.patch(
       '/user/sharetracklinks/$id',
-      data: {'isActive': isActive},
+      data: {'isActive': isActive, 'active': isActive},
       cancelToken: cancelToken,
     );
     return res.when(

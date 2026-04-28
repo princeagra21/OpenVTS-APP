@@ -4,6 +4,7 @@ import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
 import 'package:fleet_stack/core/models/user_ticket_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 
 class UserSupportRepository {
   final ApiClient api;
@@ -11,16 +12,22 @@ class UserSupportRepository {
   const UserSupportRepository({required this.api});
 
   Future<Result<List<AdminTicketListItem>>> getTickets({
+    int? rk,
+    int? limit,
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/tickets', cancelToken: cancelToken);
+    final query = <String, dynamic>{};
+    if (rk != null) query['rk'] = rk;
+    if (limit != null) query['limit'] = limit;
+    final res = await api.get(
+      '/user/tickets',
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
-          data,
-          extraKeys: const ['tickets', 'items', 'rows', 'results'],
-        );
+        final list = _extractTicketsList(data);
         final out = <AdminTicketListItem>[];
         if (list != null) {
           for (final item in list) {
@@ -36,6 +43,45 @@ class UserSupportRepository {
         return Result.ok(out);
       },
       failure: (err) => Result.fail(err),
+    );
+  }
+
+  List? _extractTicketsList(Object? data) {
+    if (data is! Map) return _extractList(data);
+
+    final root = data is Map<String, dynamic>
+        ? data
+        : Map<String, dynamic>.from(data.cast());
+
+    List? asList(Object? value) {
+      if (value is List) return value;
+      return null;
+    }
+
+    Map<String, dynamic> asMap(Object? value) {
+      if (value is Map<String, dynamic>) return value;
+      if (value is Map) return Map<String, dynamic>.from(value.cast());
+      return const <String, dynamic>{};
+    }
+
+    final direct = asList(root['data']) ??
+        asList(root['tickets']) ??
+        asList(root['items']) ??
+        asList(root['rows']) ??
+        asList(root['results']);
+    if (direct != null) return direct;
+
+    final level1 = asMap(root['data']);
+    final nested = asList(level1['data']) ??
+        asList(level1['tickets']) ??
+        asList(level1['items']) ??
+        asList(level1['rows']) ??
+        asList(level1['results']);
+    if (nested != null) return nested;
+
+    return _extractList(
+      data,
+      extraKeys: const ['tickets', 'items', 'rows', 'results'],
     );
   }
 
@@ -57,13 +103,41 @@ class UserSupportRepository {
   Future<Result<AdminTicketMessageItem?>> sendTicketMessage(
     String ticketId,
     String message, {
+    PickedFilePayload? attachment,
     CancelToken? cancelToken,
   }) async {
-    final res = await api.post(
-      '/user/tickets/$ticketId',
-      data: <String, dynamic>{'message': message},
-      cancelToken: cancelToken,
-    );
+    Result<dynamic> res;
+
+    if (attachment != null) {
+      final form = FormData.fromMap({
+        'message': message,
+        'file': MultipartFile.fromBytes(
+          attachment.bytes,
+          filename: attachment.filename,
+        ),
+        'attachments': MultipartFile.fromBytes(
+          attachment.bytes,
+          filename: attachment.filename,
+        ),
+      });
+      res = await api.post(
+        '/user/tickets/$ticketId/messages',
+        data: form,
+        cancelToken: cancelToken,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: const {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+    } else {
+      res = await api.post(
+        '/user/tickets/$ticketId/messages',
+        data: <String, dynamic>{'message': message},
+        cancelToken: cancelToken,
+      );
+    }
 
     return res.when(
       success: (data) {
@@ -91,14 +165,18 @@ class UserSupportRepository {
   }
 
   Future<Result<void>> createTicket({
-    required String subject,
+    required String title,
+    required String category,
+    required String priority,
     required String message,
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
       '/user/tickets',
       data: <String, dynamic>{
-        'subject': subject,
+        'title': title,
+        'category': category,
+        'priority': priority,
         'message': message,
       },
       cancelToken: cancelToken,

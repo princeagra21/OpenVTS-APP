@@ -515,12 +515,12 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       isScrollControlled: true,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
           child: SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.7,
+            height: MediaQuery.of(ctx).size.height * 0.72,
             child: StatefulBuilder(
               builder: (context, setSheetState) {
                 final filtered = items.where((item) {
@@ -537,9 +537,10 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -547,11 +548,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.pop(ctx),
                             child: Container(
-                              height: 32,
-                              width: 32,
+                              height: 36,
+                              width: 36,
                               decoration: BoxDecoration(
                                 color: colorScheme.primary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.close,
@@ -569,17 +570,19 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             setSheetState(() => query = value),
                         decoration: InputDecoration(
                           hintText: 'Search',
-                          prefixIcon: const Icon(Icons.search),
                           filled: true,
-                          fillColor: colorScheme.surfaceVariant
-                              .withOpacity(0.3),
+                          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ),
@@ -587,23 +590,27 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       Expanded(
                         child: ListView.separated(
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
                             final trailing = trailingFor?.call(item);
                             return ListTile(
                               title: Text(
                                 labelFor(item),
-                                style: GoogleFonts.roboto(
-                                  fontSize: fontSize,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
-                              trailing: trailing == null
+                              trailing: trailing == null || trailing.isEmpty
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.roboto(
+                                      style: GoogleFonts.inter(
                                         fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
@@ -1049,68 +1056,58 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _countryController,
-                              readOnly: true,
-                              style: GoogleFonts.roboto(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                      TextField(
+                        controller: _countryController,
+                        readOnly: true,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
+                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: 'Country Code',
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.public,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: 'Country Code',
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.public,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickCountry,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _stateController,
-                              readOnly: true,
-                              style: GoogleFonts.roboto(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              suffixIcon: IconButton(
+                                onPressed: _pickCountry,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: 'State',
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.flag_outlined,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickState,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
                             ),
-                          ),
-                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _stateController,
+                        readOnly: true,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
+                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: 'State',
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.flag_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: _pickState,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ),
                       ),
                       const SizedBox(height: 16),
                       Row(

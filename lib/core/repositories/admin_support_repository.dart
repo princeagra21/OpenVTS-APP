@@ -3,6 +3,7 @@ import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
 import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 
 class AdminSupportRepository {
   final ApiClient api;
@@ -14,6 +15,7 @@ class AdminSupportRepository {
     String? search,
     int? page,
     int? limit,
+    int? rk,
     CancelToken? cancelToken,
   }) async {
     final query = <String, dynamic>{};
@@ -25,6 +27,7 @@ class AdminSupportRepository {
     }
     if (page != null) query['page'] = page;
     if (limit != null) query['limit'] = limit;
+    if (rk != null) query['rk'] = rk;
 
     final res = await api.get(
       '/admin/tickets',
@@ -105,10 +108,14 @@ class AdminSupportRepository {
 
   Future<Result<List<AdminTicketMessageItem>>> getTicketMessages(
     String ticketId, {
+    int? rk,
     CancelToken? cancelToken,
   }) async {
+    final query = <String, dynamic>{};
+    if (rk != null) query['rk'] = rk;
     final res = await api.get(
       '/admin/tickets/$ticketId',
+      queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
@@ -138,6 +145,42 @@ class AdminSupportRepository {
           out.add(AdminTicketMessageItem(single));
         }
         return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> getTicketDetail(
+    String ticketId, {
+    int? rk,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{};
+    if (rk != null) query['rk'] = rk;
+    final res = await api.get(
+      '/admin/tickets/$ticketId',
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        if (data is! Map) return Result.ok(const <String, dynamic>{});
+        final root = data is Map<String, dynamic>
+            ? data
+            : Map<String, dynamic>.from(data.cast());
+
+        Map<String, dynamic> toMap(Object? v) {
+          if (v is Map<String, dynamic>) return v;
+          if (v is Map) return Map<String, dynamic>.from(v.cast());
+          return const <String, dynamic>{};
+        }
+
+        final l1 = toMap(root['data']);
+        final l2 = toMap(l1['data']);
+        if (l2.isNotEmpty) return Result.ok(l2);
+        if (l1.isNotEmpty) return Result.ok(l1);
+        return Result.ok(root);
       },
       failure: (err) => Result.fail(err),
     );
@@ -187,15 +230,50 @@ class AdminSupportRepository {
     String ticketId,
     String message, {
     bool internal = false,
+    PickedFilePayload? attachment,
+    int? rk,
     CancelToken? cancelToken,
   }) async {
-    final payload = <String, dynamic>{'message': message};
-
-    final res = await api.post(
-      '/admin/tickets/$ticketId/messages',
-      data: payload,
-      cancelToken: cancelToken,
-    );
+    final query = <String, dynamic>{};
+    if (rk != null) query['rk'] = rk;
+    Result<dynamic> res;
+    if (attachment != null) {
+      final form = FormData.fromMap({
+        'message': message,
+        if (internal) 'type': 'INTERNAL',
+        'file': MultipartFile.fromBytes(
+          attachment.bytes,
+          filename: attachment.filename,
+        ),
+        'attachments': MultipartFile.fromBytes(
+          attachment.bytes,
+          filename: attachment.filename,
+        ),
+      });
+      res = await api.post(
+        '/admin/tickets/$ticketId/messages',
+        data: form,
+        queryParameters: query.isEmpty ? null : query,
+        cancelToken: cancelToken,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: const {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+    } else {
+      final payload = <String, dynamic>{
+        'message': message,
+        if (internal) 'type': 'INTERNAL',
+      };
+      res = await api.post(
+        '/admin/tickets/$ticketId/messages',
+        data: payload,
+        queryParameters: query.isEmpty ? null : query,
+        cancelToken: cancelToken,
+      );
+    }
 
     return res.when(
       success: (data) {
@@ -274,11 +352,15 @@ class AdminSupportRepository {
   Future<Result<void>> updateTicketStatus(
     String ticketId,
     String status, {
+    int? rk,
     CancelToken? cancelToken,
   }) async {
+    final query = <String, dynamic>{};
+    if (rk != null) query['rk'] = rk;
     final res = await api.patch(
       '/admin/tickets/$ticketId/status',
       data: <String, dynamic>{'status': status},
+      queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
@@ -309,13 +391,19 @@ class AdminSupportRepository {
     required String userId,
     required String subject,
     required String message,
+    String category = 'SERVER',
+    String priority = 'HIGH',
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
       '/admin/tickets',
       data: <String, dynamic>{
+        'fromUserId': userId,
         'userId': userId,
+        'title': subject,
         'subject': subject,
+        'category': category,
+        'priority': priority,
         'message': message,
       },
       cancelToken: cancelToken,

@@ -37,10 +37,13 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _mobilePrefixController =
+      TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -53,13 +56,19 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   bool _obscurePassword = true;
   bool _loadingRefs = false;
+  bool _loadingStates = false;
+  bool _loadingCities = false;
   bool _saving = false;
   bool _refsErrorShown = false;
   bool _saveErrorShown = false;
   List<CountryOption> _countries = const <CountryOption>[];
   List<MobilePrefixOption> _prefixes = const <MobilePrefixOption>[];
+  List<ReferenceOption> _states = const <ReferenceOption>[];
+  List<ReferenceOption> _cities = const <ReferenceOption>[];
   CountryOption? _selectedCountry;
   MobilePrefixOption? _selectedPrefix;
+  ReferenceOption? _selectedState;
+  ReferenceOption? _selectedCity;
 
   @override
   void initState() {
@@ -72,10 +81,12 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     _refsToken?.cancel('Add driver disposed');
     _saveToken?.cancel('Add driver disposed');
     _nameController.dispose();
+    _mobilePrefixController.dispose();
     _mobileController.dispose();
     _emailController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     _addressController.dispose();
@@ -112,6 +123,11 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       return '+${trimmed.substring(2)}';
     }
     return trimmed;
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadReferences() async {
@@ -158,6 +174,10 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
         _prefixes = prefixes;
         _selectedCountry = selectedCountry;
         _selectedPrefix = selectedPrefix;
+        _mobilePrefixController.text = _selectedPrefix?.code ?? '+91';
+        _countryController.text = _selectedCountry == null
+            ? ''
+            : '${_selectedCountry!.name} (${_selectedCountry!.isoCode})';
         _loadingRefs = false;
         _refsErrorShown = false;
       });
@@ -175,10 +195,51 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _loadStates(String countryCode) async {
+    _loadingStates = true;
+    if (mounted) setState(() {});
+    final res = await _commonRepoOrCreate().getStates(countryCode);
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _states = items;
+          _loadingStates = false;
+        });
+      },
+      failure: (err) {
+        setState(() => _loadingStates = false);
+        final msg = err is ApiException ? err.message : err.toString();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Future<void> _loadCities(String countryCode, String stateCode) async {
+    _loadingCities = true;
+    if (mounted) setState(() {});
+    final res = await _commonRepoOrCreate().getCities(countryCode, stateCode);
+    if (!mounted) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _cities = items;
+          _loadingCities = false;
+        });
+      },
+      failure: (err) {
+        setState(() => _loadingCities = false);
+        final msg = err is ApiException ? err.message : err.toString();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
   Future<T?> _showOptionPicker<T>({
     required String title,
     required List<T> items,
     required String Function(T item) labelFor,
+    String Function(T item)? trailingFor,
   }) async {
     return showModalBottomSheet<T>(
       context: context,
@@ -215,8 +276,10 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final item = filtered[index];
+                          final trailing = trailingFor?.call(item);
                           return ListTile(
                             title: Text(labelFor(item)),
+                            trailing: trailing == null ? null : Text(trailing),
                             onTap: () => Navigator.pop(ctx, item),
                           );
                         },
@@ -239,13 +302,16 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       items: _prefixes,
       labelFor: (item) =>
           '${_normalizePrefix(item.code)} (${item.countryCode})',
+      trailingFor: (item) => item.countryCode,
     );
     if (!mounted || picked == null) return;
     setState(() {
       _selectedPrefix = picked;
+      _mobilePrefixController.text = picked.code;
       for (final country in _countries) {
         if (country.isoCode == picked.countryCode) {
           _selectedCountry = country;
+          _countryController.text = '${country.name} (${country.isoCode})';
           break;
         }
       }
@@ -257,17 +323,88 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     final picked = await _showOptionPicker<CountryOption>(
       title: 'Select Country',
       items: _countries,
-      labelFor: (item) => '${item.name} (${item.isoCode})',
+      labelFor: (item) => item.name,
+      trailingFor: (item) => item.isoCode,
     );
     if (!mounted || picked == null) return;
     setState(() {
       _selectedCountry = picked;
+      _countryController.text = '${picked.name} (${picked.isoCode})';
+      _selectedState = null;
+      _selectedCity = null;
+      _stateController.text = '';
+      _cityController.text = '';
+      _states = const [];
+      _cities = const [];
       for (final prefix in _prefixes) {
         if (prefix.countryCode == picked.isoCode) {
           _selectedPrefix = prefix;
           break;
         }
       }
+    });
+    await _loadStates(picked.isoCode);
+  }
+
+  Future<void> _pickState() async {
+    final country = _selectedCountry;
+    if (country == null) {
+      _showSnack('Select country first');
+      return;
+    }
+    if (_loadingStates) return;
+    if (_states.isEmpty) {
+      await _loadStates(country.isoCode);
+    }
+    if (!mounted || _states.isEmpty) {
+      _showSnack('No states found');
+      return;
+    }
+    final picked = await _showOptionPicker<ReferenceOption>(
+      title: 'Select State',
+      items: _states,
+      labelFor: (item) => item.label,
+      trailingFor: (item) => item.value,
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _selectedState = picked;
+      _stateController.text = picked.label;
+      _selectedCity = null;
+      _cityController.text = '';
+      _cities = const [];
+    });
+    await _loadCities(country.isoCode, picked.value);
+  }
+
+  Future<void> _pickCity() async {
+    final country = _selectedCountry;
+    final state = _selectedState;
+    if (country == null) {
+      _showSnack('Select country first');
+      return;
+    }
+    if (state == null) {
+      _showSnack('Select state first');
+      return;
+    }
+    if (_loadingCities) return;
+    if (_cities.isEmpty) {
+      await _loadCities(country.isoCode, state.value);
+    }
+    if (!mounted || _cities.isEmpty) {
+      _showSnack('No cities found');
+      return;
+    }
+    final picked = await _showOptionPicker<ReferenceOption>(
+      title: 'Select City',
+      items: _cities,
+      labelFor: (item) => item.label,
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _selectedCity = picked;
+      _cityController.text = picked.label;
     });
   }
 
@@ -277,14 +414,16 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
     final payload = <String, dynamic>{
       'name': _nameController.text.trim(),
-      'mobilePrefix': _normalizePrefix(_selectedPrefix?.code ?? '+91'),
+      'mobilePrefix': _normalizePrefix(
+        _selectedPrefix?.code ?? _mobilePrefixController.text,
+      ),
       'mobile': _mobileController.text.replaceAll(RegExp(r'[^0-9]'), ''),
       'email': _emailController.text.trim(),
       'username': _usernameController.text.trim(),
       'password': _passwordController.text,
       'countryCode': (_selectedCountry?.isoCode ?? '').trim(),
-      'stateCode': _stateController.text.trim(),
-      'city': _cityController.text.trim(),
+      'stateCode': (_selectedState?.value ?? '').trim(),
+      'city': (_selectedCity?.label ?? _cityController.text.trim()),
       'address': _addressController.text.trim(),
     };
 
@@ -387,20 +526,32 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                _loadingRefs
+                                SizedBox(
+                                  width: w * 0.4,
+                                  child: _loadingRefs
                                     ? const AppShimmer(
-                                        width: 110,
+                                        width: double.infinity,
                                         height: 55,
                                         radius: 16,
                                       )
-                                    : _SelectionField(
-                                        value: _normalizePrefix(
-                                          _selectedPrefix?.code ?? '+91',
+                                      : StylishTextField(
+                                          label: '',
+                                          hint: 'Select',
+                                          controller: _mobilePrefixController,
+                                          prefixIcon: Icons.flag_outlined,
+                                          readOnly: true,
+                                          onTap: _pickPrefix,
+                                          validator: (_) =>
+                                              _selectedPrefix == null
+                                                  ? 'Required'
+                                                  : null,
+                                          suffixIcon: const Icon(
+                                            Icons.keyboard_arrow_down_rounded,
+                                          ),
+                                          width: w,
+                                          hideLabel: true,
                                         ),
-                                        icon: Icons.add_call,
-                                        width: 110,
-                                        onTap: _pickPrefix,
-                                      ),
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: StylishTextField(
@@ -533,9 +684,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   _SelectionField(
-                                    value: _selectedCountry == null
+                                    value: _countryController.text.isEmpty
                                         ? 'Select country'
-                                        : '${_selectedCountry!.name} (${_selectedCountry!.isoCode})',
+                                        : _countryController.text,
                                     icon: Icons.flag,
                                     width: double.infinity,
                                     onTap: _pickCountry,
@@ -543,87 +694,145 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 ],
                               ),
                         const SizedBox(height: 16),
-                        StylishTextField(
-                          label: 'Enter state',
-                          hint: 'State code',
-                          controller: _stateController,
-                          prefixIcon: Icons.location_on,
-                          width: w,
-                        ),
+                        _loadingStates
+                            ? const AppShimmer(
+                                width: double.infinity,
+                                height: 55,
+                                radius: 16,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'State',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AdaptiveUtils.getTitleFontSize(
+                                        w,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _SelectionField(
+                                    value: _stateController.text.isEmpty
+                                        ? (_selectedCountry == null
+                                            ? 'Select country first'
+                                            : 'Select state')
+                                        : _stateController.text,
+                                    icon: Icons.location_on,
+                                    width: double.infinity,
+                                    onTap: _pickState,
+                                  ),
+                                ],
+                              ),
                         const SizedBox(height: 16),
-                        StylishTextField(
-                          label: 'Enter city',
-                          hint: 'City',
-                          controller: _cityController,
-                          prefixIcon: Icons.location_city,
-                          width: w,
-                        ),
+                        _loadingCities
+                            ? const AppShimmer(
+                                width: double.infinity,
+                                height: 55,
+                                radius: 16,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'City',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AdaptiveUtils.getTitleFontSize(
+                                        w,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _SelectionField(
+                                    value: _cityController.text.isEmpty
+                                        ? (_selectedState == null
+                                            ? 'Select state first'
+                                            : 'Select city')
+                                        : _cityController.text,
+                                    icon: Icons.location_city,
+                                    width: double.infinity,
+                                    onTap: _pickCity,
+                                  ),
+                                ],
+                              ),
                         const SizedBox(height: 16),
                         StylishTextField(
                           label: 'Enter full address',
                           hint: 'Full address',
                           controller: _addressController,
                           prefixIcon: Icons.home,
-                          maxLines: 3,
+                          maxLines: 1,
                           width: w,
                         ),
-                        const SizedBox(height: 32),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _saving
-                                    ? null
-                                    : () => Navigator.pop(context),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(36),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(
-                                      color: cs.primary.withOpacity(0.2),
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Cancel',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: _saving ? null : _submit,
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(36),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: _saving
-                                    ? const AppShimmer(
-                                        width: 62,
-                                        height: 14,
-                                        radius: 7,
-                                      )
-                                    : Text(
-                                        'Add Driver',
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        const SizedBox(height: 72),
                       ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _saving ? null : () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(color: cs.primary.withOpacity(0.2)),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      fontSize: AdaptiveUtils.getTitleFontSize(w),
+                      height: 20 / 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    backgroundColor: cs.primary,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _saving
+                      ? const AppShimmer(
+                          width: 62,
+                          height: 18,
+                          radius: 7,
+                        )
+                      : Text(
+                          'Add Driver',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: AdaptiveUtils.getTitleFontSize(w),
+                            height: 20 / 14,
+                            color: cs.onPrimary,
+                          ),
+                        ),
+                ),
+              ),
             ],
           ),
         ),
@@ -642,6 +851,9 @@ class StylishTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final int maxLines;
   final bool hideLabel;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   const StylishTextField({
     super.key,
@@ -654,6 +866,9 @@ class StylishTextField extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.hideLabel = false,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   @override
@@ -678,6 +893,8 @@ class StylishTextField extends StatelessWidget {
             validator: validator,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            readOnly: readOnly,
+            onTap: onTap,
             decoration: InputDecoration(
               fillColor: cs.surface,
               filled: true,
@@ -687,6 +904,7 @@ class StylishTextField extends StatelessWidget {
                 fontSize: fs,
               ),
               prefixIcon: Icon(prefixIcon, color: cs.primary),
+              suffixIcon: suffixIcon,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),

@@ -250,10 +250,21 @@ class _LogsScreenState extends State<LogsScreen> {
           start: now.subtract(const Duration(days: 30)),
           end: now,
         );
+    final start = DateTime(range.start.year, range.start.month, range.start.day);
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+      999,
+    );
+
     return _items.where((log) {
       final createdAt = _parseLogDate(log.time);
       if (createdAt != null) {
-        if (createdAt.isBefore(range.start) || createdAt.isAfter(range.end)) {
+        if (createdAt.isBefore(start) || createdAt.isAfter(end)) {
           return false;
         }
       }
@@ -279,6 +290,94 @@ class _LogsScreenState extends State<LogsScreen> {
       ].join(' ').toLowerCase();
       return hay.contains(q);
     }).toList();
+  }
+
+  Future<void> _pickDateRange() async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    var selection = <DateTime?>[_dateRange?.start, _dateRange?.end];
+
+    final picked = await showDialog<DateTimeRange>(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: StatefulBuilder(
+              builder: (context, setDialogState) {
+                final hasFullRange =
+                    selection.length >= 2 &&
+                    selection[0] != null &&
+                    selection[1] != null;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Date Range',
+                      style: GoogleFonts.roboto(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    CalendarDatePicker2(
+                      config: CalendarDatePicker2Config(
+                        calendarType: CalendarDatePicker2Type.range,
+                        currentDate: now,
+                        selectedDayHighlightColor: colorScheme.primary,
+                        firstDate: DateTime(2020, 1, 1),
+                        lastDate: DateTime(2035, 12, 31),
+                      ),
+                      value: selection,
+                      onValueChanged: (values) {
+                        setDialogState(() => selection = values);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () {
+                            setState(() => _dateRange = null);
+                            Navigator.pop(ctx);
+                          },
+                          child: const Text('Reset'),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: hasFullRange
+                              ? () {
+                                  final start = selection[0]!;
+                                  final end = selection[1]!;
+                                  Navigator.pop(
+                                    ctx,
+                                    DateTimeRange(start: start, end: end),
+                                  );
+                                }
+                              : null,
+                          child: const Text('Show Logs'),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || picked == null) return;
+    setState(() => _dateRange = picked);
   }
 
   Widget _infoCell({
@@ -308,8 +407,7 @@ class _LogsScreenState extends State<LogsScreen> {
           const SizedBox(height: 6),
           Text(
             value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
             style: GoogleFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
@@ -500,54 +598,7 @@ class _LogsScreenState extends State<LogsScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: InkWell(
-                              onTap: () async {
-                                final now = DateTime.now();
-                                DateTime? start = _dateRange?.start;
-                                DateTime? end = _dateRange?.end;
-                                final picked =
-                                    await showDialog<DateTimeRange>(
-                                  context: context,
-                                  builder: (ctx) {
-                                    var selection = <DateTime?>[start, end];
-                                    return Dialog(
-                                      insetPadding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 24,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: StatefulBuilder(
-                                          builder: (context, setDialogState) {
-                                            return CalendarDatePicker2(
-                                              config: CalendarDatePicker2Config(
-                                                calendarType:
-                                                    CalendarDatePicker2Type
-                                                        .range,
-                                                currentDate: now,
-                                                selectedDayHighlightColor:
-                                                    colorScheme.primary,
-                                                firstDate: DateTime(2020, 1, 1),
-                                                lastDate: DateTime(2035, 12, 31),
-                                              ),
-                                              value: selection,
-                                              onValueChanged: (values) {
-                                                setDialogState(() {
-                                                  selection = values;
-                                                });
-                                              },
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-
-                                if (!mounted) return;
-                                if (picked == null) return;
-                                setState(() => _dateRange = picked);
-                              },
+                              onTap: _pickDateRange,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -579,8 +630,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: true,
                                       ),
                                     ),
                                   ],
@@ -665,9 +715,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                                   action.isNotEmpty
                                                       ? action
                                                       : 'Activity',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                  softWrap: true,
                                                   style: GoogleFonts.roboto(
                                                     fontSize: headerSize - 1,
                                                     fontWeight: FontWeight.w700,
@@ -714,53 +762,61 @@ class _LogsScreenState extends State<LogsScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 10),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _infoCell(
-                                              label: 'IP',
-                                              value:
-                                                  ip.isNotEmpty ? ip : '—',
-                                              colorScheme: colorScheme,
-                                              labelSize: labelSize,
+                                      IntrinsicHeight(
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: _infoCell(
+                                                label: 'IP',
+                                                value:
+                                                    ip.isNotEmpty ? ip : '—',
+                                                colorScheme: colorScheme,
+                                                labelSize: labelSize,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: _infoCell(
-                                              label: 'Browser',
-                                              value: browser.isNotEmpty
-                                                  ? browser
-                                                  : '—',
-                                              colorScheme: colorScheme,
-                                              labelSize: labelSize,
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: _infoCell(
+                                                label: 'Browser',
+                                                value: browser.isNotEmpty
+                                                    ? browser
+                                                    : '—',
+                                                colorScheme: colorScheme,
+                                                labelSize: labelSize,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                       const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _infoCell(
-                                              label: 'OS',
-                                              value: platform.isNotEmpty
-                                                  ? platform
-                                                  : '—',
-                                              colorScheme: colorScheme,
-                                              labelSize: labelSize,
+                                      IntrinsicHeight(
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: _infoCell(
+                                                label: 'OS',
+                                                value: platform.isNotEmpty
+                                                    ? platform
+                                                    : '—',
+                                                colorScheme: colorScheme,
+                                                labelSize: labelSize,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: _infoCell(
-                                              label: _timeAgo(createdAt),
-                                              value: _formatDateTime(createdAt),
-                                              colorScheme: colorScheme,
-                                              labelSize: labelSize,
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: _infoCell(
+                                                label: _timeAgo(createdAt),
+                                                value: _formatDateTime(createdAt),
+                                                colorScheme: colorScheme,
+                                                labelSize: labelSize,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),

@@ -321,11 +321,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
     return AppLayout(
-      title: 'USER',
+      title: 'FLEET STACK',
       subtitle: 'Notifications',
+      showAppBar: true,
       actionIcons: const [Icons.done_all],
       onActionTaps: [_markAllRead],
-      leftAvatarText: 'NO',
+      leftAvatarText: 'FS',
       showLeftAvatar: false,
       horizontalPadding: 3,
       child: SingleChildScrollView(
@@ -333,13 +334,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Inbox',
-              style: GoogleFonts.inter(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Inbox',
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _markAllRead,
+                  tooltip: 'Mark all as read',
+                  icon: Icon(
+                    Icons.done_all,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

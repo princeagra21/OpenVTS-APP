@@ -1,17 +1,15 @@
 // components/profile/profile_screen.dart
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/debug/auth_profile_smoke_test.dart';
 import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_info_boxes.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_setting_box.dart';
-import 'package:flutter/foundation.dart';
+import 'package:fleet_stack/modules/user/screens/profile/widget/profile_verification_box.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -69,22 +67,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _profileErrorShown = false;
           });
         },
-        failure: (err) {
+        failure: (error) {
           if (!mounted) return;
-          setState(() => _loadingProfile = false);
-
+          setState(() {
+            _profile = null;
+            _loadingProfile = false;
+          });
           if (_profileErrorShown) return;
-
           _profileErrorShown = true;
-          final msg = _friendlyProfileError(err);
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Couldn't load profile.")),
+          );
         },
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingProfile = false);
+      setState(() {
+        _profile = null;
+        _loadingProfile = false;
+      });
       if (_profileErrorShown) return;
       _profileErrorShown = true;
       ScaffoldMessenger.of(
@@ -93,41 +94,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _friendlyProfileError(Object err) {
-    if (err is ApiException) {
-      final sc = err.statusCode;
-      if (sc == 401 || sc == 403) return 'Please log in again';
-      return "Couldn't load profile.";
-    }
-    return "Couldn't load profile.";
-  }
-
-  String _computeInitials(String nameFallback) {
-    final name = nameFallback.trim();
-    if (name.isEmpty) return 'FS';
-    final parts = name
-        .split(RegExp(r'\\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    final take = name.length >= 2 ? 2 : name.length;
-    return name.substring(0, take).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
-    final displayName = _profile?.fullName.trim().isNotEmpty == true
-        ? _profile!.fullName
-        : '—';
-    final initials = _computeInitials(displayName == '—' ? 'FS' : displayName);
-
     return AppLayout(
-      title: "USER",
-      subtitle: "Profile",
+      title: 'FLEET STACK',
+      subtitle: 'Profile',
       actionIcons: const [],
       leftAvatarText: 'FS',
       showLeftAvatar: false,
@@ -137,24 +110,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             ProfileSettingBox(
-              initials: initials,
-              loading: _loadingProfile,
               profile: _profile,
-              onProfileChanged: _loadProfile,
+              loading: _loadingProfile,
+              onUpdated: _loadProfile,
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ProfileInfoBoxes(profile: _profile, loading: _loadingProfile),
-            SizedBox(height: 24),
-            //ProfileCompanyBox(),
-            // SizedBox(height: 24,),
-            //  ProfileRecentActivityBox(),
-            //  SizedBox(height: 24,),
-            //  ProfileDeleteBox(onDelete: () { },),
-            SizedBox(height: 24),
-            if (kDebugMode) ...[
-              const DebugAuthProfileSmokeTestButton(),
+            if (_loadingProfile ||
+                (_profile != null &&
+                    (!_profile!.emailVerified || !_profile!.phoneVerified))) ...[
               const SizedBox(height: 24),
+              ProfileVerificationBox(
+                profile: _profile,
+                loading: _loadingProfile,
+                onVerified: _loadProfile,
+              ),
             ],
+            const SizedBox(height: 24),
+            const SizedBox(height: 24),
           ],
         ),
       ),

@@ -88,6 +88,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   late final TextEditingController _zoomController;
 
   List<String> _languages = const [];
+  List<ReferenceOption> _languageOptions = const [];
   List<String> _dateFormats = const [];
   List<String> _timezones = const [];
 
@@ -301,6 +302,43 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return [...values, current];
   }
 
+  List<ReferenceOption> _optionsOrFallbackOptions(
+    List<ReferenceOption> values,
+    List<ReferenceOption> fallback,
+  ) {
+    final out = <ReferenceOption>[];
+    final seen = <String>{};
+    for (final v in values) {
+      final code = v.value.trim();
+      final label = v.label.trim();
+      if (code.isEmpty && label.isEmpty) continue;
+      final key = code.isEmpty ? label.toLowerCase() : code.toLowerCase();
+      if (seen.contains(key)) continue;
+      seen.add(key);
+      out.add(ReferenceOption(value: code, label: label.isEmpty ? code : label));
+    }
+    if (out.isEmpty) return List<ReferenceOption>.from(fallback);
+    return out;
+  }
+
+  List<ReferenceOption> _ensureLanguageOptionContains(
+    List<ReferenceOption> values,
+    String current, {
+    String? label,
+  }) {
+    final code = current.trim();
+    if (code.isEmpty) return values;
+    final has = values.any((e) => e.value.toLowerCase() == code.toLowerCase());
+    if (has) return values;
+    return [
+      ...values,
+      ReferenceOption(
+        value: code,
+        label: (label == null || label.trim().isEmpty) ? code : label.trim(),
+      ),
+    ];
+  }
+
   String _firstOrEmpty(List<String> values) {
     if (values.isEmpty) return '';
     return values.first;
@@ -312,6 +350,149 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     return has ? current : null;
   }
 
+  ReferenceOption? _languageOption(String code) {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return null;
+    for (final option in _languageOptions) {
+      if (option.value.toLowerCase() == trimmed.toLowerCase()) {
+        return option;
+      }
+    }
+    return null;
+  }
+
+  String _languageLabel(String code) {
+    final option = _languageOption(code);
+    if (option == null) return code.trim().isEmpty ? '—' : code;
+    return option.label.trim().isEmpty ? option.value : option.label;
+  }
+
+  Future<void> _pickLanguage() async {
+    if (_loading || _languageOptions.isEmpty) return;
+
+    final picked = await showModalBottomSheet<ReferenceOption>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final colorScheme = Theme.of(ctx).colorScheme;
+        final searchController = TextEditingController();
+        String query = '';
+        final double fontSize = AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(ctx).size.width,
+        );
+
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.72,
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                final filtered = _languageOptions.where((option) {
+                  final text =
+                      '${option.label} ${option.value}'.toLowerCase().trim();
+                  return text.contains(query.toLowerCase().trim());
+                }).toList();
+
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Select Language',
+                              style: GoogleFonts.roboto(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              height: 36,
+                              width: 36,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: searchController,
+                        onChanged: (value) => setSheetState(() => query = value),
+                        decoration: InputDecoration(
+                          hintText: 'Search language',
+                          filled: true,
+                          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
+                          itemBuilder: (_, index) {
+                            final option = filtered[index];
+                            return ListTile(
+                              title: Text(
+                                option.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.roboto(
+                                  fontSize: fontSize - 1,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              onTap: () => Navigator.pop(ctx, option),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      setState(() => selectedLanguage = picked.value);
+    }
+  }
+
   Future<void> _loadLocalizationData() async {
     _loadToken?.cancel('Reload localization');
     final token = CancelToken();
@@ -320,6 +501,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     if (!mounted) return;
     setState(() => _loading = true);
 
+    var nextLanguageOptions = List<ReferenceOption>.from(_languageOptions);
     var nextLanguages = List<String>.from(_languages);
     var nextDateFormats = List<String>.from(_dateFormats);
     var nextTimezones = List<String>.from(_timezones);
@@ -343,8 +525,11 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       if (!mounted) return;
       languagesRes.when(
         success: (items) {
-          final values = items.map((e) => e.value).toList();
-          nextLanguages = _optionsOrFallback(values, _languages);
+          nextLanguageOptions = _optionsOrFallbackOptions(
+            items,
+            _languageOptions,
+          );
+          nextLanguages = nextLanguageOptions.map((e) => e.value).toList();
         },
         failure: (err) {
           final message =
@@ -400,10 +585,12 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
 
         settingsRes.when(
           success: (settings) {
-            nextLanguages = _ensureContains(
-              nextLanguages,
+            nextLanguageOptions = _ensureLanguageOptionContains(
+              nextLanguageOptions,
               settings.languageCode,
+              label: settings.languageCode,
             );
+            nextLanguages = nextLanguageOptions.map((e) => e.value).toList();
             nextDateFormats = _ensureContains(
               nextDateFormats,
               settings.dateFormat,
@@ -482,6 +669,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     if (!mounted) return;
     setState(() {
       _loading = false;
+      _languageOptions = nextLanguageOptions;
       _languages = nextLanguages;
       _dateFormats = nextDateFormats;
       _timezones = nextTimezones;
@@ -914,28 +1102,51 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _dropdownValueOrNull(_languages, selectedLanguage),
-                  hint: Text(
-                    _languages.isEmpty
-                        ? 'No language options'
-                        : 'Select language',
-                    style: GoogleFonts.roboto(),
+                InkWell(
+                  onTap: _languageOptions.isEmpty ? null : _pickLanguage,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.18),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _languageOptions.isEmpty
+                                ? 'No language options'
+                                : _languageLabel(selectedLanguage),
+                            maxLines: 2,
+                            softWrap: true,
+                            overflow: TextOverflow.visible,
+                            style: GoogleFonts.roboto(
+                              fontSize:
+                                  AdaptiveUtils.getSubtitleFontSize(width) - 2,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ],
+                    ),
                   ),
-                  decoration: _dropdownDecoration(context),
-                  items: _languages
-                      .map(
-                        (lang) =>
-                            DropdownMenuItem(value: lang, child: Text(lang)),
-                      )
-                      .toList(),
-                  onChanged: _languages.isEmpty
-                      ? null
-                      : (v) {
-                          if (v != null) {
-                            setState(() => selectedLanguage = v);
-                          }
-                        },
                 ),
               ],
             ),

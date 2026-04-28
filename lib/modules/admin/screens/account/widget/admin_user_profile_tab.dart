@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_user_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
@@ -124,6 +125,12 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _statusToken?.cancel('User profile tab disposed');
+    super.dispose();
   }
 
   Widget _buildOverviewCard(
@@ -994,13 +1001,42 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
     final raw = details.raw['address'];
     if (raw is Map) {
       final map = Map<String, dynamic>.from(raw.cast());
+      final parsed = _parseStateCountryFromAddress(
+        _safe(map['fullAddress']?.toString(), fallback: '').isNotEmpty
+            ? _safe(map['fullAddress']?.toString(), fallback: '')
+            : _safe(details.location, fallback: ''),
+      );
+      final countryName = _safe(
+        map['countryName']?.toString().isNotEmpty == true
+            ? map['countryName']?.toString()
+            : details.country,
+      );
+      final stateName = _safe(
+        map['stateName']?.toString().isNotEmpty == true
+            ? map['stateName']?.toString()
+            : details.state,
+      );
       return _AddressData(
         id: _safe(map['id']?.toString()),
         line: _safe(map['addressLine']?.toString()),
-        city: _safe(map['cityId']?.toString()),
-        state: _safe(map['stateCode']?.toString()),
+        city: _safe(
+          map['cityName']?.toString().isNotEmpty == true
+              ? map['cityName']?.toString()
+              : (map['city']?.toString().isNotEmpty == true
+                  ? map['city']?.toString()
+                  : map['cityId']?.toString()),
+        ),
+        state: stateName != '—'
+            ? stateName
+            : (parsed.$1.isNotEmpty
+                ? parsed.$1
+                : _safe(map['stateCode']?.toString())),
         postal: _safe(map['pincode']?.toString()),
-        country: _safe(map['countryCode']?.toString()),
+        country: countryName != '—'
+            ? countryName
+            : (parsed.$2.isNotEmpty
+                ? parsed.$2
+                : _countryNameFromCode(_safe(map['countryCode']?.toString()))),
       );
     }
     return const _AddressData(
@@ -1026,6 +1062,37 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         .join(' ');
   }
 
+  (String, String) _parseStateCountryFromAddress(String fullAddress) {
+    final raw = fullAddress.trim();
+    if (raw.isEmpty || raw == '—') return ('', '');
+    final parts = raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 2) return ('', '');
+
+    final filtered = List<String>.from(parts);
+    final last = filtered.isNotEmpty ? filtered.last : '';
+    final numericOnly = RegExp(r'^[0-9\- ]+$');
+    if (numericOnly.hasMatch(last)) {
+      filtered.removeLast();
+    }
+    if (filtered.length < 2) return ('', '');
+
+    final country = filtered.last;
+    final state = filtered.length >= 3 ? filtered[filtered.length - 2] : '';
+    return (state, country);
+  }
+
+  String _countryNameFromCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty || normalized == '—') return '—';
+    final parsed = Country.tryParse(normalized);
+    if (parsed == null) return normalized;
+    return parsed.name;
+  }
+
   String _addressLine(AdminUserDetails? details) {
     if (details == null) return '—';
     final raw = details.raw['address'];
@@ -1034,11 +1101,33 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
       final full = _safe(map['fullAddress']?.toString());
       if (full != '—') return full;
       final line = _safe(map['addressLine']?.toString());
-      final city = _safe(map['cityId']?.toString());
-      final state = _safe(map['stateCode']?.toString());
-      final country = _safe(map['countryCode']?.toString());
+      final city = _safe(
+        map['cityName']?.toString().isNotEmpty == true
+            ? map['cityName']?.toString()
+            : (map['city']?.toString().isNotEmpty == true
+                ? map['city']?.toString()
+                : map['cityId']?.toString()),
+      );
+      final state = _safe(
+        map['stateName']?.toString().isNotEmpty == true
+            ? map['stateName']?.toString()
+            : details.state,
+      );
+      final country = _safe(
+        map['countryName']?.toString().isNotEmpty == true
+            ? map['countryName']?.toString()
+            : details.country,
+      );
       final pin = _safe(map['pincode']?.toString());
-      final parts = [line, city, state, country, pin]
+      final stateCode = _safe(map['stateCode']?.toString());
+      final countryCode = _safe(map['countryCode']?.toString());
+      final parts = [
+        line,
+        city,
+        state != '—' ? state : stateCode,
+        country != '—' ? country : countryCode,
+        pin,
+      ]
           .where((e) => e.isNotEmpty && e != '—')
           .toList();
       if (parts.isNotEmpty) return parts.join(', ');

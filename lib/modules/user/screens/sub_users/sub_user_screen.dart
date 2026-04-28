@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_subusers_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/core/widgets/status_pill.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
@@ -648,9 +649,6 @@ class _SubUserScreenState extends State<SubUserScreen> {
     required double cardPadding,
     required double screenWidth,
   }) {
-    final statusColor = subUser.statusLabel.toLowerCase() == 'active'
-        ? Colors.green
-        : Colors.red;
     final initials = _getInitials(subUser.name);
     final phone = subUser.fullPhone.trim().isEmpty ? '-' : subUser.fullPhone;
     final username =
@@ -680,10 +678,14 @@ class _SubUserScreenState extends State<SubUserScreen> {
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             hoverColor: Colors.transparent,
-            onTap: () => context.push(
-              '/user/sub-users/details/${subUser.id}',
-              extra: subUser,
-            ),
+            onTap: () async {
+              await context.push(
+                '/user/sub-users/details/${subUser.id}',
+                extra: subUser,
+              );
+              if (!mounted) return;
+              _loadSubUsers();
+            },
             child: Padding(
               padding: EdgeInsets.all(cardPadding),
               child: Column(
@@ -738,23 +740,10 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: spacing + 4,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    subUser.statusLabel,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsMeta,
-                                      fontWeight: FontWeight.w600,
-                                      color: statusColor,
-                                    ),
-                                  ),
+                                StatusPill(
+                                  isActive: subUser.isActive,
+                                  label: subUser.statusLabel,
+                                  fontSize: fsMeta,
                                 ),
                               ],
                             ),
@@ -820,6 +809,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 Expanded(
                                   child: Text(
                                     email,
+                                    softWrap: true,
                                     style: GoogleFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
@@ -827,8 +817,8 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                       color: colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.visible,
                                   ),
                                 ),
                               ],
@@ -840,10 +830,14 @@ class _SubUserScreenState extends State<SubUserScreen> {
                   ),
                   SizedBox(height: spacing),
                   InkWell(
-                    onTap: () => context.push(
-                      '/user/sub-users/details/${subUser.id}',
-                      extra: subUser,
-                    ),
+                    onTap: () async {
+                      await context.push(
+                        '/user/sub-users/details/${subUser.id}',
+                        extra: subUser,
+                      );
+                      if (!mounted) return;
+                      _loadSubUsers();
+                    },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       width: double.infinity,

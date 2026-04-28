@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
+import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/models/user_driver_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
@@ -41,7 +42,10 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
   bool _deleting = false;
 
   ApiClient? _apiClient;
+  CommonRepository? _commonRepo;
   UserDriversRepository? _repo;
+  String _countryLabel = '—';
+  String _stateLabel = '—';
 
   @override
   void initState() {
@@ -63,6 +67,15 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
     );
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
+  }
+
+  CommonRepository _commonOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _commonRepo ??= CommonRepository(api: _apiClient!);
+    return _commonRepo!;
   }
 
   bool _isCancelled(Object err) {
@@ -91,6 +104,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           _loading = false;
           _errorShown = false;
         });
+        _loadLocationLabels(details);
       },
       failure: (error) {
         setState(() => _loading = false);
@@ -110,6 +124,58 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
     final text = (value ?? '').trim();
     if (text.isEmpty || text.toLowerCase() == 'null') return '—';
     return text;
+  }
+
+  bool _isLimitedAccess(UserDriverDetails? details) {
+    final raw = details?.raw;
+    if (raw == null) return false;
+    final createdBy = _safe(raw['createdByUserId']?.toString());
+    final primaryUser = _safe(raw['primaryUserId']?.toString());
+    if (createdBy == '—' || primaryUser == '—') return false;
+    return createdBy != primaryUser;
+  }
+
+  Future<void> _loadLocationLabels(UserDriverDetails details) async {
+    final countryCode = details.countryCode.trim();
+    final stateCode = details.stateCode.trim();
+    if (countryCode.isEmpty && stateCode.isEmpty) return;
+
+    String countryLabel = _safe(countryCode);
+    String stateLabel = _safe(stateCode);
+
+    final countriesRes = await _commonOrCreate().getCountries();
+    countriesRes.when(
+      success: (countries) {
+        for (final country in countries) {
+          if (country.isoCode.toUpperCase() == countryCode.toUpperCase()) {
+            countryLabel = country.name.trim().isEmpty ? countryLabel : country.name;
+            break;
+          }
+        }
+      },
+      failure: (_) {},
+    );
+
+    if (countryCode.isNotEmpty) {
+      final statesRes = await _commonOrCreate().getStates(countryCode);
+      statesRes.when(
+        success: (states) {
+          for (final state in states) {
+            if (state.value.toUpperCase() == stateCode.toUpperCase()) {
+              stateLabel = state.label.trim().isEmpty ? stateLabel : state.label;
+              break;
+            }
+          }
+        },
+        failure: (_) {},
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _countryLabel = countryLabel;
+      _stateLabel = stateLabel;
+    });
   }
 
   String _initials(String source) {
@@ -137,7 +203,6 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final w = MediaQuery.of(context).size.width;
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(w)
         ? 12.0
@@ -159,7 +224,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 70,
+              topPadding + AppUtils.appBarHeightCustom + 28,
               horizontalPadding,
               84,
             ),
@@ -258,6 +323,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
     final created = _formatDateTime(_safe(details?.createdAtLabel));
     final vehicleRaw = _safe(details?.driverVehicleLabel);
     final vehicle = vehicleRaw == '—' ? 'Not assigned' : vehicleRaw;
+    final limitedAccess = _isLimitedAccess(details);
 
     return Container(
       width: double.infinity,
@@ -270,6 +336,40 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (limitedAccess) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 16,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Limited access\n\nYou can view this driver, but editing is restricted because it was created by admin.',
+                      style: GoogleFonts.roboto(
+                        fontSize: 12 * scale,
+                        height: 17 / 12,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: padding),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -283,15 +383,17 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await context.push(
-                    '/user/drivers/edit/${widget.driverId}',
-                    extra: _details,
-                  );
-                  if (result == true) {
-                    _loadDetails();
-                  }
-                },
+                onPressed: limitedAccess
+                    ? null
+                    : () async {
+                        final result = await context.push(
+                          '/user/drivers/edit/${widget.driverId}',
+                          extra: _details,
+                        );
+                        if (result == true) {
+                          _loadDetails();
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   foregroundColor: cs.onPrimary,
@@ -685,13 +787,13 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           _keyValueRow(
               context, 'City', _safe(details?.cityId), labelFs, detailValueFs),
           const SizedBox(height: 8),
-          _keyValueRow(context, 'State', _safe(details?.stateCode), labelFs,
+          _keyValueRow(context, 'State', _stateLabel, labelFs,
               detailValueFs),
           const SizedBox(height: 8),
           _keyValueRow(context, 'Postal', _safe(details?.pincode), labelFs,
               detailValueFs),
           const SizedBox(height: 8),
-          _keyValueRow(context, 'Country', _safe(details?.countryCode), labelFs,
+          _keyValueRow(context, 'Country', _countryLabel, labelFs,
               detailValueFs),
         ],
       ),
@@ -914,6 +1016,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
     final padding = AdaptiveUtils.getHorizontalPadding(w) + 4;
     final fsMain = 14 * ((w / 420).clamp(0.9, 1.0));
     final dangerColor = cs.error;
+    final limitedAccess = _isLimitedAccess(_details);
 
     return Container(
       width: double.infinity,
@@ -936,7 +1039,9 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'This action cannot be undone. It will permanently delete the driver and remove all associated data.',
+            limitedAccess
+                ? 'This driver was created by admin. Deletion is restricted.'
+                : 'This action cannot be undone. It will permanently delete the driver and remove all associated data.',
             style: GoogleFonts.roboto(
               fontSize: fsMain,
               color: dangerColor,
@@ -946,7 +1051,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: OutlinedButton(
-              onPressed: _deleting
+              onPressed: (_deleting || limitedAccess)
                   ? null
                   : () async {
                       final confirmed = await showDialog<bool>(
@@ -975,6 +1080,15 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
               ),
               child: _deleting
                   ? const AppShimmer(width: 18, height: 18, radius: 9)
+                  : limitedAccess
+                      ? Text(
+                          'Locked',
+                          style: GoogleFonts.roboto(
+                            fontSize: fsMain,
+                            color: dangerColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
                   : Text(
                       'Delete',
                       style: GoogleFonts.roboto(

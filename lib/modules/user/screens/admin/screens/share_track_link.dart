@@ -238,13 +238,11 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
     if (!mounted || token.isCancelled) return;
 
     result.when(
-      success: (updated) {
-        final index = _tracks.indexWhere((element) => element.id == item.id);
-        if (index < 0) return;
+      success: (_) {
         setState(() {
-          _tracks[index] = updated;
           _togglingIds.remove(item.id);
         });
+        _loadLinks();
       },
       failure: (error) {
         final index = _tracks.indexWhere((element) => element.id == item.id);

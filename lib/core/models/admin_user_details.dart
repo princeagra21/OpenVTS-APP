@@ -26,8 +26,9 @@ class AdminUserDetails {
 
   String get address => _firstString(const ['address']);
   String get city => _firstString(const ['city']);
-  String get state => _firstString(const ['state', 'stateName']);
-  String get country => _firstString(const ['country', 'countryName']);
+  // Prefer human-readable names over short codes.
+  String get state => _firstString(const ['stateName', 'state']);
+  String get country => _firstString(const ['countryName', 'country']);
   String get pincode => _firstString(const ['pincode', 'postalCode']);
   String get companyName =>
       _firstString(const ['companyName', 'company', 'tenantName']);

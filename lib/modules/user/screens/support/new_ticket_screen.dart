@@ -19,10 +19,12 @@ class NewTicketScreen extends StatefulWidget {
 
 class _NewTicketScreenState extends State<NewTicketScreen> {
   final CancelToken _loadToken = CancelToken();
-  final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
   bool _submitting = false;
+  String? _selectedCategory;
+  String? _selectedPriority;
 
   ApiClient? _api;
   UserSupportRepository? _supportRepo;
@@ -30,7 +32,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   @override
   void dispose() {
     _loadToken.cancel('NewTicketScreen disposed');
-    _subjectController.dispose();
+    _titleController.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -44,13 +46,90 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     return _supportRepo!;
   }
 
-  Future<void> _submit() async {
-    final subject = _subjectController.text.trim();
-    final message = _messageController.text.trim();
+  Future<String?> _pickOption(
+    BuildContext context,
+    String title,
+    List<String> items,
+  ) async {
+    final cs = Theme.of(context).colorScheme;
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.5,
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, index) {
+                      final item = items[index];
+                      return ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        tileColor: cs.surface,
+                        title: Text(
+                          item,
+                          style: GoogleFonts.roboto(
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        onTap: () => Navigator.pop(ctx, item),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-    if (subject.isEmpty || message.isEmpty) {
+  Future<void> _submit() async {
+    final title = _titleController.text.trim();
+    final message = _messageController.text.trim();
+    final category = _selectedCategory;
+    final priority = _selectedPriority;
+
+    if (title.isEmpty || message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Subject and message are required.')),
+        const SnackBar(content: Text('Title and message are required.')),
+      );
+      return;
+    }
+    if (category == null || priority == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select category and priority.')),
       );
       return;
     }
@@ -59,7 +138,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     setState(() => _submitting = true);
 
     final res = await _supportRepoOrCreate().createTicket(
-      subject: subject,
+      title: title,
+      category: category,
+      priority: priority,
       message: message,
       cancelToken: _loadToken,
     );
@@ -98,6 +179,53 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
       fontWeight: FontWeight.w600,
       color: cs.onSurface.withOpacity(0.7),
     );
+
+    Widget selectionField({
+      required String label,
+      required String value,
+      required VoidCallback onTap,
+    }) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: labelStyle),
+          const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: 14 * scale,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.expand_more,
+                    color: cs.onSurface.withOpacity(0.6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -140,10 +268,10 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Text('Subject', style: labelStyle),
+                          Text('Title', style: labelStyle),
                           const SizedBox(height: 8),
                           TextField(
-                            controller: _subjectController,
+                            controller: _titleController,
                             textInputAction: TextInputAction.next,
                             style: GoogleFonts.roboto(
                               fontSize: 14 * scale,
@@ -151,7 +279,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                               color: cs.onSurface,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'Subject',
+                              hintText: 'Ticket title',
                               hintStyle: GoogleFonts.roboto(
                                 fontSize: 14 * scale,
                                 height: 20 / 14,
@@ -165,6 +293,51 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: selectionField(
+                                  label: 'Category',
+                                  value: _selectedCategory ?? 'Select',
+                                  onTap: () async {
+                                    final chosen = await _pickOption(
+                                      context,
+                                      'Select Category',
+                                      const [
+                                        'SERVER',
+                                        'NOTIFICATION',
+                                        'INSTALLATION',
+                                        'MAPS',
+                                        'BILLING',
+                                        'OTHERS',
+                                      ],
+                                    );
+                                    if (chosen != null) {
+                                      setState(() => _selectedCategory = chosen);
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: selectionField(
+                                  label: 'Priority',
+                                  value: _selectedPriority ?? 'Select',
+                                  onTap: () async {
+                                    final chosen = await _pickOption(
+                                      context,
+                                      'Select Priority',
+                                      const ['LOW', 'MEDIUM', 'HIGH'],
+                                    );
+                                    if (chosen != null) {
+                                      setState(() => _selectedPriority = chosen);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Text('Message', style: labelStyle),
@@ -199,11 +372,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed:
-                                      _submitting ? null : () => Navigator.pop(
-                                    context,
-                                    false,
-                                  ),
+                                  onPressed: _submitting
+                                      ? null
+                                      : () => Navigator.pop(context, false),
                                   style: OutlinedButton.styleFrom(
                                     minimumSize: const Size.fromHeight(46),
                                     shape: RoundedRectangleBorder(

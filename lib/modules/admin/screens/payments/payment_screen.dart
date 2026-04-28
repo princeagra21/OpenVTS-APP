@@ -348,15 +348,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
   (String, IconData, Color) _statusMeta(String label, ColorScheme cs) {
     final normalized = label.toLowerCase();
     if (normalized.contains('success')) {
-      return ('Success', Icons.check_circle, Colors.green.shade600);
+      return ('SUCCESS', Icons.check_circle, cs.primary);
     }
     if (normalized.contains('pending') || normalized.contains('processing')) {
-      return ('Pending', Icons.schedule, Colors.orange.shade700);
+      return ('PENDING', Icons.schedule, cs.primary.withOpacity(0.7));
     }
     if (normalized.contains('fail') || normalized.contains('decline')) {
-      return ('Failed', Icons.cancel, Colors.red.shade600);
+      return ('FAILED', Icons.cancel, cs.primary.withOpacity(0.5));
     }
-    return ('Unknown', Icons.help, cs.onSurface.withOpacity(0.6));
+    if (normalized.contains('refund')) {
+      return ('REFUNDED', Icons.reply, cs.primary.withOpacity(0.5));
+    }
+    return ('UNKNOWN', Icons.help_outline, cs.onSurface.withOpacity(0.6));
   }
 
   String _csvEscape(String value) {
@@ -391,7 +394,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _csvEscape(_paymentName(t)),
         _csvEscape(_paymentEmail(t)),
         amount.toString(),
-        t.currency ?? '',
+        t.currency,
         t.statusLabel,
         t.raw['paymentMode']?.toString() ?? '',
         t.raw['paymentType']?.toString() ?? '',
@@ -836,20 +839,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 label: 'Success',
                                 value: '$successRate%',
                                 color: cs.primary,
+                                scale: scale,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               _statusPill(
                                 context,
                                 label: 'Pending',
-                                value: '${pending.length}',
-                                color: Colors.orange.shade700,
+                                value:
+                                    '${total == 0 ? 0 : ((pending.length / total) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.7),
+                                scale: scale,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               _statusPill(
                                 context,
                                 label: 'Failed',
-                                value: '${failed.length}',
-                                color: Colors.red.shade600,
+                                value:
+                                    '${total == 0 ? 0 : ((failed.length / total) * 100).round()}%',
+                                color: cs.primary.withOpacity(0.5),
+                                scale: scale,
                               ),
                             ],
                           ),
@@ -1054,6 +1062,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.tune,
@@ -1092,6 +1101,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.refresh,
@@ -1130,6 +1140,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.upload,
@@ -1473,9 +1484,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                           FontWeight.w600,
                                                       color: cs.onSurface,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    softWrap: true,
                                                   ),
                                                 ],
                                               ),
@@ -1518,9 +1527,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                           FontWeight.w600,
                                                       color: cs.onSurface,
                                                     ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    softWrap: true,
                                                   ),
                                                 ],
                                               ),
@@ -1565,8 +1572,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                 fontWeight: FontWeight.w600,
                                                 color: cs.onSurface,
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: true,
                                             ),
                                           ],
                                         ),
@@ -1660,49 +1666,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
     required String label,
     required String value,
     required Color color,
+    required double scale,
   }) {
     final cs = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.onSurface.withOpacity(0.1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(999),
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? cs.surfaceVariant
+            : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.roboto(
-                  fontSize: 12,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface.withOpacity(0.7),
-                ),
-              ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface.withOpacity(0.75),
             ),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: GoogleFonts.roboto(
-                fontSize: 12,
-                height: 16 / 12,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

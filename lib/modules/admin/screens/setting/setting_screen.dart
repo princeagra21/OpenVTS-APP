@@ -789,7 +789,7 @@ class _ProfileDatesGrid extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 4;
     final double timeSize = AdaptiveUtils.getSubtitleFontSize(width) - 3;
 
     Widget cell({required String label, required String date, required String time}) {
@@ -889,7 +889,7 @@ class _ProfileEmailCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 3;
 
     return Container(
       width: double.infinity,
@@ -935,8 +935,9 @@ class _ProfileEmailCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
@@ -983,7 +984,7 @@ class _ProfilePhoneCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 4;
 
     return Container(
       width: double.infinity,
@@ -1029,8 +1030,9 @@ class _ProfilePhoneCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : phone,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
@@ -1424,7 +1426,7 @@ class _ProfileWhatsappCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 4;
 
     return Container(
       width: double.infinity,
@@ -1470,8 +1472,9 @@ class _ProfileWhatsappCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : phone,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
@@ -1621,8 +1624,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       loading ? '—' : companyName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                       style: GoogleFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w700,
@@ -1632,8 +1634,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       loading ? '—' : companyWebsite,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                       style: GoogleFonts.roboto(
                         fontSize: valueSize,
                         fontWeight: FontWeight.w600,

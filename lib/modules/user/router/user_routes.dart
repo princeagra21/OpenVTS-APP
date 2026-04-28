@@ -127,6 +127,15 @@ final List<GoRoute> userRoutes = [
     ),
   ),
   GoRoute(
+    path: '/user/sub-users/edit/:id',
+    builder: (context, state) => AddSubUserScreen(
+      subUserId: state.pathParameters['id']!,
+      initialSubUser: state.extra is UserSubUserItem
+          ? state.extra as UserSubUserItem
+          : null,
+    ),
+  ),
+  GoRoute(
     path: '/user/sub-users/add',
     builder: (_, __) => const AddSubUserScreen(),
   ),

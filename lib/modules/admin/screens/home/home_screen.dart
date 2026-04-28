@@ -152,10 +152,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (shouldLogout != true) return;
     final storage = TokenStorage.defaultInstance();
-    final superToken = await storage.readImpersonatorToken();
+    final superToken = await storage.popImpersonatorToken();
     if (superToken != null && superToken.isNotEmpty) {
       await storage.writeAccessToken(superToken);
-      await storage.clearImpersonatorToken();
       if (!mounted) return;
       context.go('/superadmin/home');
       return;

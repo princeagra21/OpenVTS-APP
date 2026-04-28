@@ -51,7 +51,8 @@ class AuthInterceptor extends Interceptor {
   }
 
   bool _isRoleEndpoint(String path) {
-    return isRolePath(path);
+    final p = _normalizePathStatic(path).toLowerCase();
+    return isRolePath(p) || p.startsWith('/geocoding/reverse');
   }
 
   static bool isRolePath(String path) {

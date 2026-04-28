@@ -140,9 +140,11 @@ class _AddBufferScreenState extends State<AddBufferScreen> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(42),
+                                  backgroundColor: cs.primary,
+                                  foregroundColor: cs.onPrimary,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
-                                child: const Text("Add"),
+                                child: const Text("Save"),
                               ),
                             ),
                           ],

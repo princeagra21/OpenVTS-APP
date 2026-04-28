@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_drivers_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/core/widgets/status_pill.dart';
 import 'package:fleet_stack/modules/admin/components/small_box/small_box.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
@@ -657,7 +658,6 @@ class _DriverScreenState extends State<DriverScreen> {
     required double screenWidth,
     required bool isDark,
   }) {
-    final statusColor = _statusColor(driver.statusLabel);
     final phone = _safe(driver.fullPhone);
     final address = _safe(driver.addressLocation);
     final vehicle = _safe(driver.driverVehicleLabel);
@@ -685,10 +685,14 @@ class _DriverScreenState extends State<DriverScreen> {
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             hoverColor: Colors.transparent,
-            onTap: () => context.push(
-              '/user/drivers/details/${driver.id}',
-              extra: driver,
-            ),
+            onTap: () async {
+              await context.push(
+                '/user/drivers/details/${driver.id}',
+                extra: driver,
+              );
+              if (!mounted) return;
+              _loadDrivers();
+            },
             child: Padding(
               padding: EdgeInsets.all(cardPadding),
               child: Column(
@@ -743,23 +747,10 @@ class _DriverScreenState extends State<DriverScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: spacing + 4,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    driver.statusLabel,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsMeta,
-                                      fontWeight: FontWeight.w600,
-                                      color: statusColor,
-                                    ),
-                                  ),
+                                StatusPill(
+                                  isActive: driver.isActive,
+                                  label: driver.statusLabel,
+                                  fontSize: fsMeta,
                                 ),
                               ],
                             ),
@@ -867,8 +858,9 @@ class _DriverScreenState extends State<DriverScreen> {
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          maxLines: 3,
+                          overflow: TextOverflow.visible,
                         ),
                       ],
                     ),

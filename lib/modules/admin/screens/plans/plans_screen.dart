@@ -361,7 +361,8 @@ class _PlansScreenState extends State<PlansScreen> {
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
-                      GestureDetector(
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
                         onTap: () async {
                           final res = await context.push('/admin/plans/add');
                           if (res == true && mounted) {
@@ -370,24 +371,30 @@ class _PlansScreenState extends State<PlansScreen> {
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: hp * 1.5,
+                            horizontal: hp * 1.2,
                             vertical: spacing,
                           ),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: colorScheme.primary,
-                              width: 1.5,
-                            ),
+                            color: colorScheme.onSurface,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            'Add Plan',
-                            style: GoogleFonts.roboto(
-                              fontSize: fsMeta,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onPrimary,
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.add,
+                                size: AdaptiveUtils.getIconSize(width),
+                                color: colorScheme.surface,
+                              ),
+                              SizedBox(width: spacing / 2),
+                              Text(
+                                'New',
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsMeta,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.surface,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -568,10 +575,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                                     fontWeight: FontWeight.w600,
                                                     color: colorScheme.onSurface,
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  softWrap: false,
+                                                  softWrap: true,
                                                 ),
                                               ),
                                               const SizedBox(width: 8),

@@ -24,7 +24,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final width = MediaQuery.of(context).size.width;
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(width)
         ? 12.0
@@ -46,7 +45,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
           SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 70,
+              topPadding + AppUtils.appBarHeightCustom + 28,
               horizontalPadding,
               84,
             ),

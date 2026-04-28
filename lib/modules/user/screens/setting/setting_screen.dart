@@ -3,6 +3,7 @@ import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
@@ -334,6 +335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             await _loadProfile();
                           }
                         },
+                        onVerified: _loadProfile,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -544,6 +546,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
   final List<String> updatedParts;
   final VoidCallback onEdit;
   final VoidCallback onPassword;
+  final Future<void> Function() onVerified;
 
   const _ProfileOverviewHeader({
     required this.name,
@@ -565,6 +568,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
     required this.updatedParts,
     required this.onEdit,
     required this.onPassword,
+    required this.onVerified,
   });
 
   @override
@@ -572,8 +576,8 @@ class _ProfileOverviewHeader extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
-    final double titleSize = AdaptiveUtils.getSubtitleFontSize(width) + 2;
-    final double subtitleSize = AdaptiveUtils.getTitleFontSize(width) + 1;
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(width) + 1;
+    final double subtitleSize = AdaptiveUtils.getTitleFontSize(width);
     final double buttonFont = 12 * scale;
     final double iconSize = subtitleSize + 6;
 
@@ -716,12 +720,14 @@ class _ProfileOverviewHeader extends StatelessWidget {
             email: email,
             verified: verified,
             loading: loading,
+            onVerified: onVerified,
           ),
           const SizedBox(height: 12),
           _ProfilePhoneCard(
             phone: phone,
             verified: verified,
             loading: loading,
+            onVerified: onVerified,
           ),
           if (!loading &&
               whatsapp.trim().isNotEmpty &&
@@ -855,11 +861,13 @@ class _ProfileEmailCard extends StatelessWidget {
   final String email;
   final bool verified;
   final bool loading;
+  final Future<void> Function() onVerified;
 
   const _ProfileEmailCard({
     required this.email,
     required this.verified,
     required this.loading,
+    required this.onVerified,
   });
 
   @override
@@ -868,7 +876,7 @@ class _ProfileEmailCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 3;
 
     return Container(
       width: double.infinity,
@@ -907,15 +915,16 @@ class _ProfileEmailCard extends StatelessWidget {
                   'Email',
                   style: GoogleFonts.roboto(
                     fontSize: labelSize,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     color: cs.onSurface.withOpacity(0.65),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
@@ -926,33 +935,16 @@ class _ProfileEmailCard extends StatelessWidget {
             ),
           ),
           if (!loading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    verified ? Icons.verified : Icons.error_outline,
-                    size: 14 * scale,
-                    color: verified ? cs.primary : cs.error,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.roboto(
-                      fontSize: 12 * scale,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w600,
-                      color: verified ? cs.primary : cs.error,
-                    ),
-                  ),
-                ],
-              ),
+            _VerifyPillWithAction(
+              verified: verified,
+              label: verified ? 'Verified' : 'Unverified',
+              onSendOtp: (!verified && email.trim().isNotEmpty && email != '-')
+                  ? () => _sendAndVerifyOtp(
+                        context,
+                        channel: _VerifyChannel.email,
+                        onVerified: onVerified,
+                      )
+                  : null,
             ),
         ],
       ),
@@ -964,11 +956,13 @@ class _ProfilePhoneCard extends StatelessWidget {
   final String phone;
   final bool verified;
   final bool loading;
+  final Future<void> Function() onVerified;
 
   const _ProfilePhoneCard({
     required this.phone,
     required this.verified,
     required this.loading,
+    required this.onVerified,
   });
 
   @override
@@ -977,7 +971,7 @@ class _ProfilePhoneCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
     final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
+    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 4;
 
     return Container(
       width: double.infinity,
@@ -1023,8 +1017,9 @@ class _ProfilePhoneCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   loading ? '—' : phone,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
@@ -1035,35 +1030,385 @@ class _ProfilePhoneCard extends StatelessWidget {
             ),
           ),
           if (!loading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    verified ? Icons.verified : Icons.error_outline,
-                    size: 14 * scale,
-                    color: verified ? cs.primary : cs.error,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.roboto(
-                      fontSize: 12 * scale,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w600,
-                      color: verified ? cs.primary : cs.error,
-                    ),
-                  ),
-                ],
-              ),
+            _VerifyPillWithAction(
+              verified: verified,
+              label: verified ? 'Verified' : 'Unverified',
+              onSendOtp: (!verified && phone.trim().isNotEmpty && phone != '-')
+                  ? () => _sendAndVerifyOtp(
+                        context,
+                        channel: _VerifyChannel.whatsapp,
+                        onVerified: onVerified,
+                      )
+                  : null,
             ),
         ],
+      ),
+    );
+  }
+}
+
+enum _VerifyChannel { email, whatsapp }
+
+class _VerifyPillWithAction extends StatefulWidget {
+  final bool verified;
+  final String label;
+  final Future<void> Function()? onSendOtp;
+
+  const _VerifyPillWithAction({
+    required this.verified,
+    required this.label,
+    required this.onSendOtp,
+  });
+
+  @override
+  State<_VerifyPillWithAction> createState() => _VerifyPillWithActionState();
+}
+
+class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
+  bool _sending = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double scale = (width / 420).clamp(0.9, 1.0);
+
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? cs.surfaceVariant
+            : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            widget.verified ? Icons.verified : Icons.error_outline,
+            size: 14 * scale,
+            color: widget.verified ? cs.primary : cs.error,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            widget.label,
+            style: GoogleFonts.roboto(
+              fontSize: 12 * scale,
+              height: 16 / 12,
+              fontWeight: FontWeight.w600,
+              color: widget.verified ? cs.primary : cs.error,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (widget.verified || widget.onSendOtp == null) return pill;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        pill,
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: _sending
+              ? null
+              : () async {
+                  setState(() => _sending = true);
+                  try {
+                    await widget.onSendOtp?.call();
+                  } finally {
+                    if (mounted) setState(() => _sending = false);
+                  }
+                },
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 96),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: cs.primary,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Center(
+              child: _sending
+                  ? const AppShimmer(width: 52, height: 12, radius: 6)
+                  : Text(
+                      'Send OTP',
+                      style: GoogleFonts.roboto(
+                        fontSize: 12 * scale,
+                        height: 16 / 12,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> _sendAndVerifyOtp(
+  BuildContext context, {
+  required _VerifyChannel channel,
+  required Future<void> Function() onVerified,
+}) async {
+  if (!context.mounted) return;
+  final cs = Theme.of(context).colorScheme;
+  final api = ApiClient(
+    config: AppConfig.fromDartDefine(),
+    tokenStorage: TokenStorage.defaultInstance(),
+  );
+  final repo = UserProfileRepository(api: api);
+  final sendToken = CancelToken();
+
+  final Result<void> sendRes = channel == _VerifyChannel.email
+      ? await repo.sendEmailOtp(cancelToken: sendToken)
+      : await repo.sendPhoneOtp(cancelToken: sendToken);
+
+  if (!context.mounted) return;
+  final bool? verified = await sendRes.when(
+    success: (_) async {
+      return showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: cs.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => _OtpVerifySheet(
+          title: channel == _VerifyChannel.email
+              ? 'Verify Email'
+              : 'Verify WhatsApp',
+          onVerify: (code, verifyToken) {
+            if (channel == _VerifyChannel.email) {
+              return repo.verifyEmailOtp(code, cancelToken: verifyToken);
+            }
+            return repo.verifyPhoneOtp(code, cancelToken: verifyToken);
+          },
+        ),
+      );
+    },
+    failure: (error) async {
+      String msg = 'Could not send OTP.';
+      if (error is ApiException) {
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          msg = 'Not authorized to request verification.';
+        } else if (error.message.trim().isNotEmpty) {
+          msg = error.message;
+        }
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      return false;
+    },
+  );
+
+  if (verified == true) {
+    await onVerified();
+  }
+}
+
+class _OtpVerifySheet extends StatefulWidget {
+  const _OtpVerifySheet({required this.title, required this.onVerify});
+
+  final String title;
+  final Future<Result<void>> Function(String code, CancelToken token)
+      onVerify;
+
+  @override
+  State<_OtpVerifySheet> createState() => _OtpVerifySheetState();
+}
+
+class _OtpVerifySheetState extends State<_OtpVerifySheet> {
+  final TextEditingController _otpController = TextEditingController();
+  CancelToken? _token;
+  bool _verifying = false;
+  bool _verifyErrorShown = false;
+
+  @override
+  void dispose() {
+    _token?.cancel('OTP verify dialog disposed');
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verify() async {
+    if (_verifying) return;
+    final code = _otpController.text.trim();
+    if (code.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter OTP.')));
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _verifying = true;
+      _verifyErrorShown = false;
+    });
+
+    _token?.cancel('New OTP verify started');
+    final token = CancelToken();
+    _token = token;
+
+    try {
+      final result = await widget.onVerify(code, token);
+      if (!mounted) return;
+      result.when(
+        success: (_) {
+          if (!mounted) return;
+          setState(() => _verifying = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Verified successfully')),
+          );
+          Navigator.of(context).pop(true);
+        },
+        failure: (error) {
+          if (!mounted) return;
+          setState(() => _verifying = false);
+          if (_verifyErrorShown) return;
+          _verifyErrorShown = true;
+
+          String msg = 'Could not verify OTP.';
+          if (error is ApiException) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+              msg = 'Not authorized to verify.';
+            } else if (error.message.trim().isNotEmpty) {
+              msg = error.message;
+            }
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _verifying = false);
+      if (_verifyErrorShown) return;
+      _verifyErrorShown = true;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not verify OTP.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.of(context).size.width;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final titleSize = AdaptiveUtils.getSubtitleFontSize(width);
+    final labelSize = AdaptiveUtils.getTitleFontSize(width);
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: GoogleFonts.inter(
+                      fontSize: titleSize + 1,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: _verifying ? null : () => Navigator.of(context).pop(false),
+                  child: Container(
+                    height: 34,
+                    width: 34,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.close,
+                      size: 18 * scale,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              decoration: InputDecoration(
+                hintText: 'Enter OTP',
+                counterText: '',
+                filled: true,
+                fillColor: Colors.transparent,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _verifying ? null : _verify,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: _verifying
+                    ? const AppShimmer(width: 42, height: 12, radius: 6)
+                    : Text(
+                        'Verify OTP',
+                        style: GoogleFonts.inter(
+                          fontSize: labelSize,
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1378,8 +1723,8 @@ class _ProfileAccountCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double scale = (width / 420).clamp(0.9, 1.0);
-    final double nameSize = AdaptiveUtils.getSubtitleFontSize(width) + 2;
-    final double handleSize = AdaptiveUtils.getTitleFontSize(width) - 1;
+    final double nameSize = AdaptiveUtils.getSubtitleFontSize(width) - 1;
+    final double handleSize = AdaptiveUtils.getTitleFontSize(width);
 
     Widget initialsAvatar(String text) {
       final initials = text.trim().isEmpty || text.trim() == '-'
@@ -1440,7 +1785,7 @@ class _ProfileAccountCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.roboto(
                     fontSize: nameSize,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: cs.onSurface,
                   ),
                 ),

@@ -809,8 +809,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                   children: [
                     Text(
                       name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                       style: GoogleFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w700,

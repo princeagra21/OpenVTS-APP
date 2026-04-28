@@ -271,8 +271,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                             return ListTile(
                                               title: Text(
                                                 title,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                                softWrap: true,
                                                 style: GoogleFonts.roboto(
                                                   fontSize: 14 * scale,
                                                   height: 20 / 14,
@@ -281,8 +280,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                               ),
                                               subtitle: Text(
                                                 subtitle,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                                softWrap: true,
                                                 style: GoogleFonts.roboto(
                                                   fontSize: 12 * scale,
                                                   height: 16 / 12,
@@ -326,8 +324,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                     ? _selectedUser!.email
                                                     : _selectedUser!.id)
                                             : 'Select user',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: true,
                                         style: GoogleFonts.roboto(
                                           fontSize: 14 * scale,
                                           height: 20 / 14,

@@ -42,7 +42,9 @@ class _UserScreenState extends State<UserScreen> {
 
   CancelToken? _loadToken;
   final Map<String, bool> _updatingUser = <String, bool>{};
+  final Set<String> _loginSubmittingUserIds = <String>{};
   final Map<String, CancelToken> _toggleTokens = <String, CancelToken>{};
+  final Map<String, CancelToken> _loginTokens = <String, CancelToken>{};
 
   Timer? _searchDebounce;
 
@@ -71,7 +73,11 @@ class _UserScreenState extends State<UserScreen> {
     for (final token in _toggleTokens.values) {
       token.cancel('Users screen disposed');
     }
+    for (final token in _loginTokens.values) {
+      token.cancel('Users screen disposed');
+    }
     _toggleTokens.clear();
+    _loginTokens.clear();
     _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -285,6 +291,75 @@ class _UserScreenState extends State<UserScreen> {
         const SnackBar(content: Text("Couldn't update user status.")),
       );
     }
+  }
+
+  Future<void> _loginAsUser(AdminUserListItem user) async {
+    final userId = user.id.trim();
+    if (userId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User ID is missing.')));
+      return;
+    }
+
+    if (_loginSubmittingUserIds.contains(userId)) return;
+
+    _loginSubmittingUserIds.add(userId);
+    setState(() {});
+
+    _loginTokens[userId]?.cancel('Replace user login request');
+    final token = CancelToken();
+    _loginTokens[userId] = token;
+
+    try {
+      final result = await _repoOrCreate().loginAsUser(
+        userId,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      result.when(
+        success: (newToken) async {
+          final storage = TokenStorage.defaultInstance();
+          final currentToken = await storage.readAccessToken();
+          if (currentToken != null && currentToken.isNotEmpty) {
+            await storage.writeImpersonatorToken(currentToken);
+          }
+          await storage.writeAccessToken(newToken);
+          if (!mounted) return;
+          context.go('/user/home');
+        },
+        failure: (err) {
+          final message =
+              err is ApiException
+                  ? (err.message.isNotEmpty ? err.message : 'Login failed.')
+                  : 'Login failed.';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login failed.')));
+    } finally {
+      _loginSubmittingUserIds.remove(userId);
+      _loginTokens.remove(userId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _confirmLoginAsUser(AdminUserListItem user) async {
+    final name = _safe(user.fullName);
+    final shouldLogin = await showDialog<bool>(
+      context: context,
+      builder: (_) => _UserLoginConfirmDialog(userName: name),
+    );
+    if (shouldLogin != true) return;
+    await _loginAsUser(user);
   }
 
   void _setUserActiveOptimistic(String userId, bool isActive) {
@@ -880,16 +955,28 @@ class _UserScreenState extends State<UserScreen> {
     double cardPadding,
     double screenWidth,
   ) {
+    final raw = user.raw;
     final name = _safe(user.fullName);
     final email = _safe(user.email);
     final phone = _safe(user.fullPhone);
     final username = _safe(user.username);
-    final role = _safe(user.roleLabel);
+    final address = _safe(
+      raw['address'] is Map
+          ? ((raw['address']['addressLine'] ??
+                  raw['address']['fullAddress'] ??
+                  raw['address']['line1'])
+              ?.toString() ??
+              '')
+          : (raw['addressLine'] ?? raw['fullAddress'] ?? raw['address'])
+                  ?.toString() ??
+              '',
+    );
     final location = _safe(user.location);
     final joined = _formatDateOnly(user.joinedAt);
     final initials = _safe(user.initials);
     final userId = user.id.trim();
     final isUpdating = _updatingUser[userId] == true;
+    final isLoggingIn = _loginSubmittingUserIds.contains(userId);
 
     return Container(
       margin: EdgeInsets.only(bottom: padding),
@@ -970,8 +1057,8 @@ class _UserScreenState extends State<UserScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: colorScheme.onSurface,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 3,
+                                    softWrap: true,
                                   ),
                                 ),
                               ),
@@ -1010,8 +1097,8 @@ class _UserScreenState extends State<UserScreen> {
                                     color: colorScheme.onSurface
                                         .withOpacity(0.7),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 3,
+                                  softWrap: true,
                                 ),
                               ),
                             ],
@@ -1035,8 +1122,8 @@ class _UserScreenState extends State<UserScreen> {
                                     color: colorScheme.onSurface
                                         .withOpacity(0.7),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 3,
+                                  softWrap: true,
                                 ),
                               ),
                             ],
@@ -1070,14 +1157,14 @@ class _UserScreenState extends State<UserScreen> {
                           Row(
                             children: [
                               Icon(
-                                Icons.apartment,
+                                Icons.home_outlined,
                                 size: iconSize,
                                 color: colorScheme.onSurface.withOpacity(0.7),
                               ),
                               SizedBox(width: spacing),
                               Expanded(
                                 child: Text(
-                                  role,
+                                  address,
                                   style: GoogleFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
@@ -1085,8 +1172,8 @@ class _UserScreenState extends State<UserScreen> {
                                     color: colorScheme.onSurface
                                         .withOpacity(0.7),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 3,
+                                  softWrap: true,
                                 ),
                               ),
                             ],
@@ -1125,8 +1212,8 @@ class _UserScreenState extends State<UserScreen> {
                       SizedBox(height: spacing / 2),
                       Text(
                         location,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 6,
+                        softWrap: true,
                         style: GoogleFonts.roboto(
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -1192,42 +1279,150 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 SizedBox(height: spacing),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: padding,
-                    vertical: spacing * 1.6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chevron_right,
-                        size: iconSize,
-                        color: colorScheme.onPrimary,
-                      ),
-                      SizedBox(width: spacing),
-                      Text(
-                        "View",
-                        style: GoogleFonts.roboto(
-                          fontSize: fsMain,
-                          height: 20 / 14,
-                          fontWeight: FontWeight.w600,
+                GestureDetector(
+                  onTap: isLoggingIn ? null : () => _confirmLoginAsUser(user),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padding,
+                      vertical: spacing * 1.6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.login,
+                          size: iconSize,
                           color: colorScheme.onPrimary,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        SizedBox(width: spacing),
+                        isLoggingIn
+                            ? const AppShimmer(
+                                width: 16,
+                                height: 16,
+                                radius: 8,
+                              )
+                            : Text(
+                                "Login as User",
+                                style: GoogleFonts.roboto(
+                                  fontSize: fsMain,
+                                  height: 20 / 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserLoginConfirmDialog extends StatelessWidget {
+  final String userName;
+
+  const _UserLoginConfirmDialog({required this.userName});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Dialog(
+      backgroundColor: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.login,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Login as user?',
+                    style: GoogleFonts.roboto(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'You are about to enter the user module as $userName. You can return to admin at any time.',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Login',
+                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -104,6 +104,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
     final cs = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double padding = AdaptiveUtils.getHorizontalPadding(w);
+    final double bottomBarScrollPad = AdaptiveUtils.getBottomBarHeight(w) + 32;
 
     final currency = _currencyController.text.trim();
     final priceText = _priceController.text.trim().isEmpty
@@ -125,24 +126,48 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Add Plan',
+                    'Add New Plan',
                     style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                  GestureDetector(
+                    onTap: _submitting ? null : () => Navigator.pop(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: cs.onPrimary,
+                      ),
+                    ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Fill plan details and click save.',
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
               ),
               const SizedBox(height: 24),
               Expanded(
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: bottomBarScrollPad),
                     child: Column(
                       children: [
                         StylishTextField(
@@ -247,56 +272,79 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _submitting
-                                    ? null
-                                    : () => Navigator.pop(context),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(36),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(
-                                      color: cs.primary.withOpacity(0.2),
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Cancel',
-                                  style: GoogleFonts.roboto(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: _submitting ? null : _submit,
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(36),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: Text(
-                                  _submitting ? 'Saving...' : 'Save Plan',
-                                  style: GoogleFonts.roboto(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(w),
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _submitting
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                            ),
+                          )
+                        : Text(
+                            'Save',
+                            style: GoogleFonts.roboto(
+                              fontSize: AdaptiveUtils.getTitleFontSize(w),
+                              fontWeight: FontWeight.w600,
+                              color: cs.onPrimary,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -336,7 +384,7 @@ class StylishTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final double width;
   final TextInputType? keyboardType;
-  final int? maxLines;
+  final int maxLines;
 
   const StylishTextField({
     super.key,
@@ -354,42 +402,46 @@ class StylishTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final fs = AdaptiveUtils.getTitleFontSize(width);
+    final fieldHeight = maxLines <= 1 ? 55.0 : (55.0 + (maxLines - 1) * 22.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: fs,
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            fillColor: cs.surface,
-            filled: true,
-            hintText: hint,
-            hintStyle: GoogleFonts.roboto(
-              color: cs.onSurface.withOpacity(0.6),
-              fontSize: fs,
-            ),
-            prefixIcon: Icon(prefixIcon, color: cs.primary),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: cs.primary, width: 2),
+        SizedBox(
+          height: fieldHeight,
+          child: TextFormField(
+            controller: controller,
+            validator: validator,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              fillColor: cs.surface,
+              filled: true,
+              hintText: hint,
+              hintStyle: GoogleFonts.inter(
+                color: cs.onSurface.withOpacity(0.6),
+                fontSize: fs,
+              ),
+              prefixIcon: Icon(prefixIcon, color: cs.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.primary, width: 2),
+              ),
             ),
           ),
         ),

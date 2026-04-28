@@ -1,29 +1,42 @@
 // components/profile/profile_box.dart
 import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/edit_admin_profile_screen.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/update_password_screen.dart';
+import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileSettingBox extends StatelessWidget {
   final AdminProfile? profile;
-  final String initials;
   final bool loading;
-  final VoidCallback? onProfileChanged;
+  final Future<void> Function()? onUpdated;
 
   const ProfileSettingBox({
     super.key,
-    this.profile,
-    this.initials = 'MS',
-    this.loading = false,
-    this.onProfileChanged,
+    required this.profile,
+    required this.loading,
+    this.onUpdated,
   });
 
-  String _safe(String? value, {String fallback = '—'}) {
-    final trimmed = value?.trim() ?? '';
-    return trimmed.isEmpty ? fallback : trimmed;
+  String _safe(String? value) {
+    final v = value?.trim() ?? '';
+    return v.isEmpty ? '—' : v;
+  }
+
+  String _initials(String value) {
+    final v = value.trim();
+    if (v.isEmpty || v == '—') return '--';
+    final parts = v.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return '--';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
+  String _roleText() {
+    final v = profile?.role.trim() ?? '';
+    if (v.isEmpty) return '—';
+    return v.toUpperCase() == 'ADMIN' ? 'Admin' : v;
   }
 
   @override
@@ -44,26 +57,12 @@ class ProfileSettingBox extends StatelessWidget {
         AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final double largeSpacing = padding;
+
     final displayName = _safe(profile?.fullName);
-    final username = () {
-      final raw = _safe(profile?.username, fallback: '');
-      if (raw.isEmpty) return '—';
-      return raw.startsWith('@') ? raw : '@$raw';
-    }();
-    final roleLabel = _safe(profile?.role);
+    final displayUsername = _safe(profile?.username);
+    final role = _roleText();
     final isActive = profile?.isActive ?? false;
     final emailVerified = profile?.emailVerified ?? false;
-    final hasProfile = profile != null;
-    final statusLabel = hasProfile ? (isActive ? 'Active' : 'Inactive') : '—';
-    final statusBg = hasProfile
-        ? (isActive ? Colors.green : Colors.red).withOpacity(0.2)
-        : colorScheme.outline.withOpacity(0.2);
-    final statusFg = hasProfile
-        ? (isActive ? Colors.green[800]! : Colors.red[800]!)
-        : colorScheme.onSurface.withOpacity(0.8);
-    final verifiedLabel = hasProfile
-        ? (emailVerified ? 'Email Verified' : 'Email Not Verified')
-        : 'Verification —';
 
     return Container(
       padding: EdgeInsets.all(padding + 8),
@@ -81,20 +80,25 @@ class ProfileSettingBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Top Row: Avatar + Name + Status
           Row(
             children: [
               CircleAvatar(
                 radius: avatarRadius,
                 backgroundColor: colorScheme.primary,
-                child: Text(
-                  initials,
-                  style: GoogleFonts.inter(
-                    color: colorScheme.onPrimary,
-                    fontSize: avatarFontSize,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: loading
+                    ? AppShimmer(
+                        width: avatarFontSize + 10,
+                        height: 14,
+                        radius: 7,
+                      )
+                    : Text(
+                        _initials(displayName),
+                        style: GoogleFonts.inter(
+                          color: colorScheme.onPrimary,
+                          fontSize: avatarFontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
               SizedBox(width: largeSpacing),
               Expanded(
@@ -104,15 +108,21 @@ class ProfileSettingBox extends StatelessWidget {
                     Row(
                       children: [
                         Flexible(
-                          child: Text(
-                            displayName,
-                            style: GoogleFonts.inter(
-                              fontSize: nameFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: loading
+                              ? AppShimmer(
+                                  width: screenWidth * 0.32,
+                                  height: nameFontSize + 6,
+                                  radius: 8,
+                                )
+                              : Text(
+                                  displayName,
+                                  style: GoogleFonts.inter(
+                                    fontSize: nameFontSize,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                         ),
                         SizedBox(width: spacing),
                         Container(
@@ -124,73 +134,45 @@ class ProfileSettingBox extends StatelessWidget {
                             color: colorScheme.primary,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(
-                            roleLabel,
-                            style: GoogleFonts.inter(
-                              color: colorScheme.onPrimary,
-                              fontSize: badgeFontSize,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: loading
+                              ? const AppShimmer(
+                                  width: 42,
+                                  height: 12,
+                                  radius: 6,
+                                )
+                              : Text(
+                                  role,
+                                  style: GoogleFonts.inter(
+                                    color: colorScheme.onPrimary,
+                                    fontSize: badgeFontSize,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
-                        if (loading) ...[
-                          SizedBox(width: spacing),
-                          const AppShimmer(width: 14, height: 14, radius: 7),
-                        ],
                       ],
                     ),
                     SizedBox(height: spacing / 2),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            username,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    loading
+                        ? AppShimmer(
+                            width: screenWidth * 0.22,
+                            height: usernameFontSize + 4,
+                            radius: 7,
+                          )
+                        : Text(
+                            '@$displayUsername',
                             style: GoogleFonts.inter(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
               SizedBox(width: largeSpacing),
-
-              /*
-              Column(
-                children: [
-                  Transform.scale(
-                    scale: 0.75,
-                    child: Switch(
-                      value: true,
-                      onChanged: (value) {},
-                      activeColor: colorScheme.onPrimary,
-                      activeTrackColor: colorScheme.primary,
-                      inactiveThumbColor: colorScheme.onPrimary,
-                      inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
-                    ),
-                  ),
-                  Text(
-                    "Status",
-                    style: GoogleFonts.inter(
-                      fontSize: badgeFontSize,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-              */
             ],
           ),
-
           SizedBox(height: largeSpacing + 4),
-
-          /// Status badges
           Row(
             children: [
               Container(
@@ -199,68 +181,72 @@ class ProfileSettingBox extends StatelessWidget {
                   vertical: spacing - 2,
                 ),
                 decoration: BoxDecoration(
-                  color: statusBg,
+                  color: (isActive ? Colors.green : Colors.grey).withOpacity(
+                    0.2,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  statusLabel,
-                  style: GoogleFonts.inter(
-                    fontSize: badgeFontSize,
-                    color: statusFg,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: loading
+                    ? const AppShimmer(width: 40, height: 12, radius: 6)
+                    : Text(
+                        isActive ? 'Active' : '—',
+                        style: GoogleFonts.inter(
+                          fontSize: badgeFontSize,
+                          color: isActive
+                              ? Colors.green[800]
+                              : colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
               SizedBox(width: spacing),
-
-              // Verified badge + plain text
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
                       color: Colors.transparent,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.verified_rounded,
                       size: badgeFontSize + 4,
-                      color: Colors.blueAccent,
+                      color: emailVerified
+                          ? Colors.blueAccent
+                          : colorScheme.onSurface.withOpacity(0.4),
                     ),
                   ),
-                  SizedBox(width: 2),
-                  Text(
-                    verifiedLabel,
-                    style: GoogleFonts.inter(
-                      fontSize: badgeFontSize,
-                      color: colorScheme.onSurface.withOpacity(0.8),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  const SizedBox(width: 2),
+                  loading
+                      ? const AppShimmer(width: 88, height: 12, radius: 6)
+                      : Text(
+                          emailVerified ? 'Email Verified' : '—',
+                          style: GoogleFonts.inter(
+                            fontSize: badgeFontSize,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ],
               ),
             ],
           ),
-
           SizedBox(height: largeSpacing + 8),
-
-          /// Action Buttons
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push<bool>(
+                  onTap: () async {
+                    final changed = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
                             EditAdminProfileScreen(initialProfile: profile),
                       ),
-                    ).then((result) {
-                      if (result == true) {
-                        onProfileChanged?.call();
-                      }
-                    });
+                    );
+                    if (changed == true) {
+                      await onUpdated?.call();
+                    }
                   },
                   child: Container(
                     height: 30,
@@ -273,7 +259,7 @@ class ProfileSettingBox extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        "Edit Profile",
+                        'Edit Profile',
                         style: GoogleFonts.inter(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
@@ -287,17 +273,16 @@ class ProfileSettingBox extends StatelessWidget {
               SizedBox(width: spacing + 4),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push<bool>(
+                  onTap: () async {
+                    final changed = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const UpdatePasswordScreen(),
                       ),
-                    ).then((result) {
-                      if (result == true) {
-                        onProfileChanged?.call();
-                      }
-                    });
+                    );
+                    if (changed == true) {
+                      await onUpdated?.call();
+                    }
                   },
                   child: Container(
                     height: 30,
@@ -307,7 +292,7 @@ class ProfileSettingBox extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        "Update Password",
+                        'Update Password',
                         style: GoogleFonts.inter(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,

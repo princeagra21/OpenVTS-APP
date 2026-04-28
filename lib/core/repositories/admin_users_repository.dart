@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/models/admin_user_details.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
 class AdminUsersRepository {
@@ -114,6 +115,33 @@ class AdminUsersRepository {
       success: (data) {
         final map = _extractMap(data);
         return Result.ok(AdminUserDetails.fromRaw(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> loginAsUser(
+    String userId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/userlogin/$userId',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final token = _extractToken(data);
+        if (token == null || token.trim().isEmpty) {
+          return Result.fail(
+            ApiException(
+              statusCode: 401,
+              message: 'Token not found in user login response.',
+              details: data,
+            ),
+          );
+        }
+        return Result.ok(token);
       },
       failure: (err) => Result.fail(err),
     );
@@ -373,5 +401,35 @@ class AdminUsersRepository {
     }
 
     return walk(data, 0) ?? const [];
+  }
+
+  String? _extractToken(Object? data) {
+    if (data is Map) {
+      String? asToken(Object? v) {
+        if (v is String && v.trim().isNotEmpty) return v;
+        return null;
+      }
+
+      final direct = asToken(
+        data['token'] ?? data['accessToken'] ?? data['access_token'],
+      );
+      if (direct != null) return direct;
+
+      for (final key in const ['data', 'result', 'item', 'payload', 'response']) {
+        final nested = data[key];
+        if (nested is Map) {
+          final token = _extractToken(nested);
+          if (token != null) return token;
+        } else if (nested is List) {
+          for (final item in nested) {
+            if (item is Map) {
+              final token = _extractToken(item);
+              if (token != null) return token;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 }
