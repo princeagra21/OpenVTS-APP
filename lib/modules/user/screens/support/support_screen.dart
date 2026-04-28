@@ -5,12 +5,14 @@ import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_support_repository.dart';
+import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -507,6 +509,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   ApiClient? _apiClient;
   UserSupportRepository? _repo;
+  UserProfileRepository? _profileRepo;
+  String _currentUserId = '';
 
   UserSupportRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -517,15 +521,153 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     return _repo!;
   }
 
+  UserProfileRepository _profileRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _profileRepo ??= UserProfileRepository(api: _apiClient!);
+    return _profileRepo!;
+  }
+
   bool _isCancelled(Object err) {
     return err is ApiException &&
         err.message.toLowerCase() == 'request cancelled';
+  }
+
+  Future<void> _loadCurrentUserProfile() async {
+    final result = await _profileRepoOrCreate().getMyProfile();
+    if (!mounted) return;
+    result.when(
+      success: (profile) {
+        setState(() => _currentUserId = profile.id.trim());
+      },
+      failure: (_) {},
+    );
+  }
+
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
+  }
+
+  String _safeAttachmentName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'attachment';
+    return trimmed.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+  }
+
+  String _messageAttachmentName(AdminTicketMessageItem msg) {
+    final direct =
+        msg.raw['attachmentName']?.toString().trim() ??
+        msg.raw['fileName']?.toString().trim() ??
+        '';
+    if (direct.isNotEmpty) return direct;
+    final attachments = msg.raw['attachments'];
+    if (attachments is List && attachments.isNotEmpty) {
+      final first = attachments.first;
+      if (first is Map) {
+        final name =
+            first['originalName']?.toString().trim() ??
+            first['storedName']?.toString().trim() ??
+            first['name']?.toString().trim() ??
+            '';
+        if (name.isNotEmpty) return name;
+      }
+    }
+    return '';
+  }
+
+  String _messageAttachmentUrl(AdminTicketMessageItem msg) {
+    final direct =
+        msg.raw['attachmentUrl']?.toString().trim() ??
+        msg.raw['filePath']?.toString().trim() ??
+        '';
+    if (direct.isNotEmpty) return direct;
+    final attachments = msg.raw['attachments'];
+    if (attachments is List && attachments.isNotEmpty) {
+      final first = attachments.first;
+      if (first is Map) {
+        final path =
+            first['filePath']?.toString().trim() ??
+            first['url']?.toString().trim() ??
+            '';
+        if (path.isNotEmpty) return path;
+      }
+    }
+    return '';
+  }
+
+  String _messageSenderId(AdminTicketMessageItem msg) {
+    return (msg.raw['senderId'] ??
+            msg.raw['fromUserId'] ??
+            msg.raw['createdById'] ??
+            '')
+        .toString()
+        .trim();
+  }
+
+  bool _isOutgoingMessage(AdminTicketMessageItem msg) {
+    final senderId = _messageSenderId(msg);
+    final myId = _currentUserId.isNotEmpty
+        ? _currentUserId
+        : widget.ticket.raw['fromUserId']?.toString().trim() ?? '';
+    if (senderId.isNotEmpty && myId.isNotEmpty) {
+      return senderId == myId;
+    }
+    return msg.senderName.trim().toLowerCase() == 'you';
+  }
+
+  Future<void> _downloadAttachment(AdminTicketMessageItem msg) async {
+    final rawPath = _messageAttachmentUrl(msg);
+    if (rawPath.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Attachment URL not available.')),
+      );
+      return;
+    }
+
+    try {
+      _apiClient ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      final dir = await _resolveDownloadDir();
+      final fileName = _safeAttachmentName(_messageAttachmentName(msg));
+      final file = File('${dir.path}${Platform.pathSeparator}$fileName');
+      await _apiClient!.dio.download(rawPath, file.path);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved: ${file.path}'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't download attachment.")),
+      );
+    }
   }
 
   @override
   void initState() {
     super.initState();
     selectedDropdownStatus = _toDisplayStatus(widget.ticket.status);
+    _loadCurrentUserProfile();
     _loadMessages();
   }
 
@@ -633,6 +775,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final result = await _repoOrCreate().sendTicketMessage(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       text,
+      attachment: _attachment,
       cancelToken: token,
     );
 
@@ -640,21 +783,35 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
     result.when(
       success: (item) {
-        final msg =
-            item ??
-            AdminTicketMessageItem(<String, dynamic>{
-              'senderName': 'You',
-              'message': text,
-              'createdAt': DateTime.now().toIso8601String(),
-              'isInternal': isInternal,
-            });
+        final raw = <String, dynamic>{
+          'senderName': 'You',
+          'message': text,
+          'createdAt': DateTime.now().toIso8601String(),
+          'isInternal': isInternal,
+        };
+        if (_currentUserId.isNotEmpty) {
+          raw['senderId'] = _currentUserId;
+        }
+        if (_attachment != null) {
+          raw['attachmentName'] = _attachment!.filename;
+          raw['attachmentUrl'] = _attachment!.filename;
+          raw['attachments'] = <Map<String, dynamic>>[
+            <String, dynamic>{
+              'originalName': _attachment!.filename,
+              'filePath': _attachment!.filename,
+            },
+          ];
+        }
+        final msg = item ?? AdminTicketMessageItem(raw);
 
         setState(() {
           _messages = <AdminTicketMessageItem>[..._messages, msg];
           _sending = false;
           _hasChanges = true;
+          _attachment = null;
         });
         messageController.clear();
+        _loadMessages();
       },
       failure: (err) {
         setState(() => _sending = false);
@@ -707,22 +864,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double bodyFs = 14 + scale;
     final double secondaryFs = 12 + scale;
     final double metaFs = 11 + scale;
-    final raw = widget.ticket.raw;
-    final String fromName =
-        widget.ticket.ownerName.isNotEmpty ? widget.ticket.ownerName : '—';
-    String fromEmail = '—';
-    final rawEmail = raw['email']?.toString().trim() ?? '';
-    if (rawEmail.isNotEmpty) {
-      fromEmail = rawEmail;
-    } else if (raw['fromUser'] is Map) {
-      final email = (raw['fromUser'] as Map)['email']?.toString().trim() ?? '';
-      if (email.isNotEmpty) fromEmail = email;
-    }
-    final String fromDate = _formatDateTimeDisplay(
-      widget.ticket.updatedAt.isNotEmpty
-          ? widget.ticket.updatedAt
-          : widget.ticket.createdAt,
-    );
     final filteredMessages =
         (selectedLocalTab == 'Conversation'
                 ? _messages.where((m) => !m.isInternal)
@@ -847,57 +988,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.12),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'From',
-                                style: GoogleFonts.roboto(
-                                  fontSize: metaFs,
-                                  height: 14 / 11,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                fromName,
-                                style: GoogleFonts.roboto(
-                                  fontSize: bodyFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                fromEmail,
-                                style: GoogleFonts.roboto(
-                                  fontSize: secondaryFs,
-                                  height: 16 / 12,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
                         const SizedBox(height: 12),
                         if (showDetailsSkeleton)
                           const AppShimmer(
@@ -944,90 +1034,32 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         color: colorScheme.onSurface.withOpacity(0.08),
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor:
-                                  colorScheme.onSurface.withOpacity(0.06),
+                    child: Container(
+                      width: double.infinity,
+                      height: 160,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: filteredMessages.isEmpty
+                          ? Align(
+                              alignment: Alignment.centerRight,
                               child: Text(
-                                fromName.isNotEmpty
-                                    ? fromName[0].toUpperCase()
-                                    : '—',
+                                'No messages yet',
+                                textAlign: TextAlign.right,
                                 style: GoogleFonts.roboto(
-                                  fontSize: bodyFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w700,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                  fontSize: secondaryFs,
+                                  height: 16 / 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurface
+                                      .withOpacity(0.7),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    fromName,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: bodyFs,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    fromDate,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.6),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: double.infinity,
-                          height: 160,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: filteredMessages.isEmpty
-                              ? Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    '—',
-                                    textAlign: TextAlign.right,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.7),
-                                    ),
-                                  ),
-                                )
+                            )
                               : ListView.separated(
                                   itemCount: filteredMessages.length,
                                   padding: EdgeInsets.zero,
@@ -1035,164 +1067,248 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final msg = filteredMessages[index];
+                                    final isOutgoing = _isOutgoingMessage(msg);
+                                    final attachmentName =
+                                        _messageAttachmentName(msg);
                                     return Align(
-                                      alignment: Alignment.centerRight,
+                                      alignment: isOutgoing
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
                                       child: Container(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.of(context).size.width *
+                                              0.68,
+                                        ),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.transparent,
-                                          borderRadius:
-                                              BorderRadius.circular(16),
+                                          color: isOutgoing
+                                              ? colorScheme.primary
+                                                  .withOpacity(0.08)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(16),
                                           border: Border.all(
                                             color: colorScheme.onSurface
                                                 .withOpacity(0.12),
                                           ),
                                         ),
-                                        child: Text(
-                                          msg.message,
-                                          textAlign: TextAlign.right,
-                                          style: GoogleFonts.roboto(
-                                            fontSize: bodyFs,
-                                            height: 20 / 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.7),
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment: isOutgoing
+                                              ? CrossAxisAlignment.end
+                                              : CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              msg.message,
+                                              textAlign: isOutgoing
+                                                  ? TextAlign.right
+                                                  : TextAlign.left,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: bodyFs,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: colorScheme.onSurface
+                                                    .withOpacity(0.7),
+                                              ),
+                                            ),
+                                            if (attachmentName
+                                                .trim()
+                                                .isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                onTap: () =>
+                                                    _downloadAttachment(msg),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.04),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      10,
+                                                    ),
+                                                    border: Border.all(
+                                                      color: colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.08),
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.attach_file,
+                                                        size: 14,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.6),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: Text(
+                                                          attachmentName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              GoogleFonts.roboto(
+                                                            fontSize:
+                                                                secondaryFs - 1,
+                                                            height: 14 / 11,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       ),
                                     );
                                   },
                                 ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.08),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.onSurface.withOpacity(0.08),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.onSurface
+                                    .withOpacity(0.12),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: _pickAttachment,
+                                  child: Container(
+                                    height: 32,
+                                    width: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
                                       color: colorScheme.onSurface
-                                          .withOpacity(0.12),
+                                          .withOpacity(0.06),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.attach_file,
+                                      size: 16,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.6),
                                     ),
                                   ),
-                                  child: Row(
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      GestureDetector(
-                                        onTap: _pickAttachment,
-                                        child: Container(
-                                          height: 32,
-                                          width: 32,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.06),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.attach_file,
-                                            size: 16,
+                                      TextField(
+                                        controller: messageController,
+                                        minLines: 1,
+                                        maxLines: 3,
+                                        style: GoogleFonts.roboto(
+                                          fontSize: bodyFs,
+                                          height: 20 / 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        decoration: InputDecoration(
+                                          isDense: true,
+                                          hintText: 'Type a message…',
+                                          hintStyle: GoogleFonts.roboto(
+                                            fontSize: bodyFs,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w500,
                                             color: colorScheme.onSurface
                                                 .withOpacity(0.6),
                                           ),
+                                          filled: true,
+                                          fillColor: Colors.transparent,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            TextField(
-                                              controller: messageController,
-                                              minLines: 1,
-                                              maxLines: 3,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface,
-                                              ),
-                                              decoration: InputDecoration(
-                                                isDense: true,
-                                                hintText: 'Type a message…',
-                                                hintStyle: GoogleFonts.roboto(
-                                                  fontSize: bodyFs,
-                                                  height: 20 / 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                                filled: true,
-                                                fillColor: Colors.transparent,
-                                                border: InputBorder.none,
-                                                enabledBorder: InputBorder.none,
-                                                focusedBorder: InputBorder.none,
-                                              ),
+                                      if (_attachment != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: Text(
+                                            _attachment!.filename,
+                                            style: GoogleFonts.roboto(
+                                              fontSize: secondaryFs - 1,
+                                              height: 14 / 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.6),
                                             ),
-                                            if (_attachment != null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 4),
-                                                child: Text(
-                                                  _attachment!.filename,
-                                                  style: GoogleFonts.roboto(
-                                                    fontSize: secondaryFs - 1,
-                                                    height: 14 / 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.6),
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      GestureDetector(
-                                        onTap: _sending ? null : _sendMessage,
-                                        child: Container(
-                                          height: 38,
-                                          width: 38,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.primary,
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.send,
-                                            size: 18,
-                                            color: colorScheme.onPrimary,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 10),
+                                GestureDetector(
+                                  onTap: _sending ? null : _sendMessage,
+                                  child: Container(
+                                    height: 38,
+                                    width: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.primary,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.send,
+                                      size: 18,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

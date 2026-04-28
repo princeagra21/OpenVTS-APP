@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
@@ -156,7 +158,8 @@ class _SupportScreenState extends State<SupportScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    final result = await _repoOrCreate().getMyTickets(
+    final result = await _repoOrCreate().getTickets(
+      rk: 1,
       limit: 100,
       cancelToken: token,
     );
@@ -486,14 +489,14 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   final TextEditingController messageController = TextEditingController();
 
   final List<String> statusOptions = const [
-    'Closed',
     'Open',
     'In Process',
-    'Answered',
-    'Hold',
+    'Closed',
   ];
 
   List<AdminTicketMessageItem> _messages = const <AdminTicketMessageItem>[];
+  Map<String, dynamic> _ticketDetail = const <String, dynamic>{};
+  String _adminIdentifier = '';
 
   bool _loadingMessages = false;
   bool _sending = false;
@@ -556,6 +559,120 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     setState(() => _attachment = file);
   }
 
+  Future<Directory> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final androidDir = Directory('/storage/emulated/0/Download');
+      if (await androidDir.exists()) return androidDir;
+    }
+    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      if (home != null && home.trim().isNotEmpty) {
+        final dl = Directory('$home${Platform.pathSeparator}Downloads');
+        if (await dl.exists()) return dl;
+      }
+    }
+    return Directory.systemTemp;
+  }
+
+  String _safeAttachmentName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'attachment';
+    return trimmed.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+  }
+
+  String _messageAttachmentName(AdminTicketMessageItem msg) {
+    final direct =
+        msg.raw['attachmentName']?.toString().trim() ??
+        msg.raw['fileName']?.toString().trim() ??
+        '';
+    if (direct.isNotEmpty) return direct;
+    final attachments = msg.raw['attachments'];
+    if (attachments is List && attachments.isNotEmpty) {
+      final first = attachments.first;
+      if (first is Map) {
+        final name =
+            first['originalName']?.toString().trim() ??
+            first['storedName']?.toString().trim() ??
+            first['name']?.toString().trim() ??
+            '';
+        if (name.isNotEmpty) return name;
+      }
+    }
+    return '';
+  }
+
+  String _messageAttachmentUrl(AdminTicketMessageItem msg) {
+    final direct =
+        msg.raw['attachmentUrl']?.toString().trim() ??
+        msg.raw['filePath']?.toString().trim() ??
+        '';
+    if (direct.isNotEmpty) return direct;
+    final attachments = msg.raw['attachments'];
+    if (attachments is List && attachments.isNotEmpty) {
+      final first = attachments.first;
+      if (first is Map) {
+        final path =
+            first['filePath']?.toString().trim() ??
+            first['url']?.toString().trim() ??
+            '';
+        if (path.isNotEmpty) return path;
+      }
+    }
+    return '';
+  }
+
+  String _messageSenderId(AdminTicketMessageItem msg) {
+    return (msg.raw['senderId'] ??
+            msg.raw['fromUserId'] ??
+            msg.raw['createdById'] ??
+            '')
+        .toString()
+        .trim();
+  }
+
+  bool _isOutgoingMessage(AdminTicketMessageItem msg) {
+    final senderId = _messageSenderId(msg);
+    if (_adminIdentifier.isNotEmpty && senderId.isNotEmpty) {
+      return senderId == _adminIdentifier;
+    }
+    return msg.senderName.trim().toLowerCase() == 'you';
+  }
+
+  Future<void> _downloadAttachment(AdminTicketMessageItem msg) async {
+    final rawPath = _messageAttachmentUrl(msg);
+    if (rawPath.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Attachment URL not available.')),
+      );
+      return;
+    }
+
+    try {
+      _apiClient ??= ApiClient(
+        config: AppConfig.fromDartDefine(),
+        tokenStorage: TokenStorage.defaultInstance(),
+      );
+      final dir = await _resolveDownloadDir();
+      final fileName = _safeAttachmentName(_messageAttachmentName(msg));
+      final file = File('${dir.path}${Platform.pathSeparator}$fileName');
+      await _apiClient!.dio.download(rawPath, file.path);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved: ${file.path}'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't download attachment.")),
+      );
+    }
+  }
+
   Future<void> _loadMessages() async {
     _messagesToken?.cancel('Reload ticket messages');
     final token = CancelToken();
@@ -564,17 +681,41 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (!mounted) return;
     setState(() => _loadingMessages = true);
 
-    final result = await _repoOrCreate().getMyTicketMessages(
+    final detailResult = await _repoOrCreate().getTicketDetail(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
+      rk: 1,
       cancelToken: token,
     );
 
     if (!mounted) return;
 
-    result.when(
-      success: (items) {
+    detailResult.when(
+      success: (detail) {
+        final detailMap = _coerceDetailMap(detail);
+        final rawMessages = detailMap['messages'];
+        final items = <AdminTicketMessageItem>[];
+        if (rawMessages is List) {
+          for (final item in rawMessages) {
+            if (item is Map<String, dynamic>) {
+              items.add(AdminTicketMessageItem(item));
+            } else if (item is Map) {
+              items.add(
+                AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())),
+              );
+            }
+          }
+        }
         setState(() {
+          _ticketDetail = detailMap;
           _messages = items;
+          _adminIdentifier =
+              (detailMap['adminUserId'] ?? detailMap['adminId'] ?? '')
+                  .toString()
+                  .trim();
+          final detailStatus = detailMap['status']?.toString() ?? '';
+          if (detailStatus.trim().isNotEmpty) {
+            selectedDropdownStatus = _toDisplayStatus(detailStatus);
+          }
           _loadingMessages = false;
           _messagesErrorShown = false;
         });
@@ -596,6 +737,34 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     );
   }
 
+  Map<String, dynamic> _coerceDetailMap(Map<String, dynamic> source) {
+    Map<String, dynamic> map = source;
+
+    Map<String, dynamic> asMap(Object? value) {
+      if (value is Map<String, dynamic>) return value;
+      if (value is Map) return Map<String, dynamic>.from(value.cast());
+      return const <String, dynamic>{};
+    }
+
+    bool looksLikeTicket(Map<String, dynamic> m) {
+      return m.containsKey('id') ||
+          m.containsKey('ticketNo') ||
+          m.containsKey('title') ||
+          m.containsKey('status') ||
+          m.containsKey('fromUser') ||
+          m.containsKey('messages');
+    }
+
+    for (var i = 0; i < 4; i++) {
+      final nested = asMap(map['data']);
+      if (nested.isEmpty) break;
+      map = nested;
+      if (looksLikeTicket(map)) break;
+    }
+
+    return map;
+  }
+
   String _toDisplayStatus(String raw) {
     final normalized = AdminTicketListItem.normalizeStatus(raw);
     switch (normalized) {
@@ -605,13 +774,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         return 'Open';
       case 'in_process':
       case 'in_progress':
-        return 'In Process';
       case 'resolved':
       case 'answered':
-        return 'Answered';
       case 'hold':
       case 'on_hold':
-        return 'Hold';
+        return 'In Process';
       default:
         return 'Open';
     }
@@ -619,11 +786,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   String _toApiStatus(String display) {
     final d = display.trim().toLowerCase();
-    if (d == 'closed') return 'CLOSED';
     if (d == 'open') return 'OPEN';
     if (d == 'in process') return 'IN_PROGRESS';
-    if (d == 'answered') return 'RESOLVED';
-    if (d == 'hold') return 'HOLD';
+    if (d == 'closed') return 'CLOSED';
     return display.toUpperCase().replaceAll(' ', '_');
   }
 
@@ -641,9 +806,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final token = CancelToken();
     _statusToken = token;
 
-    final result = await _repoOrCreate().updateMyTicketStatus(
+    final result = await _repoOrCreate().updateTicketStatus(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       _toApiStatus(value),
+      rk: 1,
       cancelToken: token,
     );
 
@@ -694,10 +860,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     _sendToken = token;
     final isInternal = selectedLocalTab == 'Internal Note';
 
-    final result = await _repoOrCreate().sendMyTicketMessage(
+    final result = await _repoOrCreate().sendTicketMessage(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       text,
       internal: isInternal,
+      attachment: _attachment,
+      rk: 1,
       cancelToken: token,
     );
 
@@ -705,21 +873,41 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
     result.when(
       success: (item) {
-        final msg =
-            item ??
-            AdminTicketMessageItem(<String, dynamic>{
-              'senderName': 'You',
-              'message': text,
-              'createdAt': DateTime.now().toIso8601String(),
-              'isInternal': isInternal,
-            });
+        final raw = <String, dynamic>{
+          ...(item?.raw ?? const <String, dynamic>{}),
+        };
+        raw.putIfAbsent('senderName', () => 'You');
+        raw.putIfAbsent('message', () => text);
+        raw.putIfAbsent('createdAt', () => DateTime.now().toIso8601String());
+        raw.putIfAbsent('isInternal', () => isInternal);
+        if (_adminIdentifier.isNotEmpty) {
+          raw.putIfAbsent('senderId', () => _adminIdentifier);
+        }
+        if (_attachment != null) {
+          final hasAttachment =
+              _messageAttachmentName(AdminTicketMessageItem(raw))
+                  .trim()
+                  .isNotEmpty;
+          if (!hasAttachment) {
+            raw['attachmentName'] = _attachment!.filename;
+            raw['attachments'] = <Map<String, dynamic>>[
+              <String, dynamic>{
+                'originalName': _attachment!.filename,
+                'filePath': _attachment!.filename,
+              },
+            ];
+          }
+        }
+        final msg = AdminTicketMessageItem(raw);
 
         setState(() {
           _messages = <AdminTicketMessageItem>[..._messages, msg];
           _sending = false;
           _hasChanges = true;
+          _attachment = null;
         });
         messageController.clear();
+        _loadMessages();
       },
       failure: (err) {
         setState(() => _sending = false);
@@ -762,6 +950,112 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     );
   }
 
+  Future<String?> _showStatusSheet() async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
+
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Select Status',
+                        style: GoogleFonts.roboto(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        height: 32,
+                        width: 32,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...statusOptions.map((status) {
+                  final selected = status == selectedDropdownStatus;
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.pop(ctx, status),
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? colorScheme.primary.withOpacity(0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? colorScheme.primary.withOpacity(0.45)
+                              : colorScheme.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              status,
+                              style: GoogleFonts.roboto(
+                                fontSize: fontSize - 1,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          if (selected)
+                            Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: colorScheme.primary,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -773,10 +1067,33 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double secondaryFs = 12 + scale;
     final double metaFs = 11 + scale;
     final raw = widget.ticket.raw;
-    final String fromName =
-        widget.ticket.ownerName.isNotEmpty ? widget.ticket.ownerName : '—';
+    final fromUserMap = (_ticketDetail['fromUser'] is Map)
+        ? Map<String, dynamic>.from((_ticketDetail['fromUser'] as Map).cast())
+        : const <String, dynamic>{};
+    final String fromName = ((fromUserMap['name'] ?? '')
+                .toString()
+                .trim()
+                .isNotEmpty)
+        ? fromUserMap['name'].toString().trim()
+        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '')
+                .toString()
+                .trim()
+                .isNotEmpty
+            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'])
+                .toString()
+                .trim()
+            : widget.ticket.ownerName.isNotEmpty
+                ? widget.ticket.ownerName
+                : '—';
     String fromEmail = '—';
-    final rawEmail = raw['email']?.toString().trim() ?? '';
+    final rawEmail = (fromUserMap.isNotEmpty
+            ? fromUserMap['email']
+            : (_ticketDetail['fromUserEmail'] ??
+                  _ticketDetail['email'] ??
+                  raw['email']))
+        ?.toString()
+        .trim() ??
+        '';
     if (rawEmail.isNotEmpty) {
       fromEmail = rawEmail;
     } else if (raw['fromUser'] is Map) {
@@ -784,9 +1101,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       if (email.isNotEmpty) fromEmail = email;
     }
     final String fromDate = _formatDateTimeDisplay(
-      widget.ticket.updatedAt.isNotEmpty
-          ? widget.ticket.updatedAt
-          : widget.ticket.createdAt,
+      (_ticketDetail['updatedAt']?.toString().trim().isNotEmpty == true)
+          ? _ticketDetail['updatedAt'].toString()
+          : widget.ticket.updatedAt.isNotEmpty
+              ? widget.ticket.updatedAt
+              : widget.ticket.createdAt,
     );
     final filteredMessages =
         (selectedLocalTab == 'Conversation'
@@ -812,10 +1131,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                 padding,
                 padding,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -833,8 +1153,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                widget.ticket.subject.isNotEmpty
-                                    ? widget.ticket.subject
+                                (_ticketDetail['title']?.toString().trim().isNotEmpty == true)
+                                    ? _ticketDetail['title'].toString().trim()
+                                    : widget.ticket.subject.isNotEmpty
+                                        ? widget.ticket.subject
                                     : 'Support Ticket',
                                 style: GoogleFonts.roboto(
                                   fontSize: ticketTitleFs,
@@ -897,10 +1219,28 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             widget.ticket.ticketNumber.isNotEmpty
                                 ? widget.ticket.ticketNumber
                                 : widget.ticket.id,
-                            if (_titleCase(widget.ticket.category).isNotEmpty)
-                              _titleCase(widget.ticket.category),
-                            if (_titleCase(widget.ticket.priority).isNotEmpty)
-                              '${_titleCase(widget.ticket.priority)} Priority',
+                            if (_titleCase(
+                                  (_ticketDetail['category']?.toString().trim().isNotEmpty ==
+                                              true)
+                                      ? _ticketDetail['category'].toString()
+                                      : widget.ticket.category,
+                                ).isNotEmpty)
+                              _titleCase(
+                                (_ticketDetail['category']?.toString().trim().isNotEmpty == true)
+                                    ? _ticketDetail['category'].toString()
+                                    : widget.ticket.category,
+                              ),
+                            if (_titleCase(
+                                  (_ticketDetail['priority']?.toString().trim().isNotEmpty ==
+                                              true)
+                                      ? _ticketDetail['priority'].toString()
+                                      : widget.ticket.priority,
+                                ).isNotEmpty)
+                              '${_titleCase(
+                                (_ticketDetail['priority']?.toString().trim().isNotEmpty == true)
+                                    ? _ticketDetail['priority'].toString()
+                                    : widget.ticket.priority,
+                              )} Priority',
                           ].join(' · '),
                           style: GoogleFonts.roboto(
                             fontSize: metaFs,
@@ -944,8 +1284,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -957,8 +1296,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   color:
                                       colorScheme.onSurface.withOpacity(0.6),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
                               ),
                             ],
                           ),
@@ -971,36 +1309,54 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             radius: 16,
                           )
                         else
-                          DropdownButtonFormField<String>(
-                            decoration: _dropdownDecoration(context),
-                            value: statusOptions.contains(selectedDropdownStatus)
-                                ? selectedDropdownStatus
-                                : null,
-                            items: statusOptions
-                                .map(
-                                  (status) => DropdownMenuItem(
-                                    value: status,
-                                    child: Text(status),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: _updatingStatus
+                                ? null
+                                : () async {
+                                    final chosen = await _showStatusSheet();
+                                    if (!mounted || chosen == null) return;
+                                    if (chosen == selectedDropdownStatus) return;
+                                    _updateStatus(chosen);
+                                  },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: colorScheme.outline.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      selectedDropdownStatus,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs,
+                                        height: 16 / 12,
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                )
-                                .toList(),
-                            onChanged:
-                                _updatingStatus ? null : (v) => _updateStatus(v),
-                            style: GoogleFonts.roboto(
-                              fontSize: secondaryFs,
-                              height: 16 / 12,
-                              color: colorScheme.onSurface,
-                            ),
-                            icon: Icon(
-                              Icons.arrow_drop_down,
-                              color: colorScheme.primary,
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: colorScheme.primary,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
+                    const SizedBox(height: 12),
+                    Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -1045,8 +1401,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: colorScheme.onSurface,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -1101,15 +1456,28 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final msg = filteredMessages[index];
+                                    final isOutgoing = _isOutgoingMessage(msg);
+                                    final attachmentName =
+                                        _messageAttachmentName(msg);
                                     return Align(
-                                      alignment: Alignment.centerRight,
+                                      alignment: isOutgoing
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
                                       child: Container(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.of(context).size.width *
+                                              0.68,
+                                        ),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.transparent,
+                                          color: isOutgoing
+                                              ? colorScheme.primary
+                                                  .withOpacity(0.08)
+                                              : Colors.transparent,
                                           borderRadius:
                                               BorderRadius.circular(16),
                                           border: Border.all(
@@ -1117,16 +1485,91 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                                 .withOpacity(0.12),
                                           ),
                                         ),
-                                        child: Text(
-                                          msg.message,
-                                          textAlign: TextAlign.right,
-                                          style: GoogleFonts.roboto(
-                                            fontSize: bodyFs,
-                                            height: 20 / 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.7),
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment: isOutgoing
+                                              ? CrossAxisAlignment.end
+                                              : CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              msg.message,
+                                              textAlign: isOutgoing
+                                                  ? TextAlign.right
+                                                  : TextAlign.left,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: bodyFs,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: colorScheme.onSurface
+                                                    .withOpacity(0.7),
+                                              ),
+                                            ),
+                                            if (attachmentName
+                                                .trim()
+                                                .isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                onTap: () =>
+                                                    _downloadAttachment(msg),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.04),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      10,
+                                                    ),
+                                                    border: Border.all(
+                                                      color: colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.08),
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.attach_file,
+                                                        size: 14,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.6),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: Text(
+                                                          attachmentName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              GoogleFonts.roboto(
+                                                            fontSize:
+                                                                secondaryFs - 1,
+                                                            height: 14 / 11,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       ),
                                     );
@@ -1263,8 +1706,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1382,8 +1827,7 @@ class _MessagesContainer extends StatelessWidget {
                               ? Colors.purple
                               : colorScheme.onSurface,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ),
                     const SizedBox(width: 8),

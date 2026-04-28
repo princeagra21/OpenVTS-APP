@@ -151,7 +151,15 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => const _LogoutConfirmDialog(),
     );
     if (shouldLogout != true) return;
-    await TokenStorage.defaultInstance().clear();
+    final storage = TokenStorage.defaultInstance();
+    final superToken = await storage.popImpersonatorToken();
+    if (superToken != null && superToken.isNotEmpty) {
+      await storage.writeAccessToken(superToken);
+      if (!mounted) return;
+      context.go('/admin/home');
+      return;
+    }
+    await storage.clear();
     if (!mounted) return;
     context.go('/login');
   }
@@ -235,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
         ),
         PopupMenuItem<String>(
-          value: 'profile',
+          value: 'settings',
           height: 36,
           child: Row(
             children: [
@@ -287,8 +295,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (!mounted || selected == null) return;
-    if (selected == 'profile') {
-      context.push('/user/profile');
+    if (selected == 'settings') {
+      context.push('/user/settings');
     } else if (selected == 'password') {
       await Navigator.of(context).push(
         MaterialPageRoute(

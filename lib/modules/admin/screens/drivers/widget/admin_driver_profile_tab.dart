@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_driver_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
@@ -365,8 +366,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -402,8 +402,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -414,8 +413,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -426,8 +424,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                 ),
               ],
             ),
@@ -555,8 +552,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 const SizedBox(height: 4),
                 Text(
                   primaryUser,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: titleFs,
                     height: 20 / 14,
@@ -629,8 +625,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
           ),
           if (pair.time.isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -642,8 +637,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
             ),
           ],
         ],
@@ -696,8 +690,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
           const SizedBox(height: 6),
           Text(
             address,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
             style: GoogleFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
@@ -791,8 +784,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
               fontWeight: FontWeight.w600,
               color: cs.onSurface,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
           ),
         ),
       ],
@@ -813,13 +805,28 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
     final raw = details.raw['address'];
     if (raw is Map) {
       final map = Map<String, dynamic>.from(raw.cast());
+      final parsed = _parseStateCountryFromAddress(
+        _safe(map['fullAddress']?.toString(), fallback: '').isNotEmpty
+            ? _safe(map['fullAddress']?.toString(), fallback: '')
+            : _safe(details.addressLocation, fallback: ''),
+      );
+      final stateName = _safe(map['stateName']?.toString());
+      final countryName = _safe(map['countryName']?.toString());
       return _AddressData(
         id: _safe(map['id']?.toString()),
         line: _safe(map['addressLine']?.toString()),
         city: _safe(map['cityId']?.toString()),
-        state: _safe(map['stateCode']?.toString()),
+        state: stateName != '—'
+            ? stateName
+            : (parsed.$1.isNotEmpty
+                ? parsed.$1
+                : _safe(map['stateCode']?.toString())),
         postal: _safe(map['pincode']?.toString()),
-        country: _safe(map['countryCode']?.toString()),
+        country: countryName != '—'
+            ? countryName
+            : (parsed.$2.isNotEmpty
+                ? parsed.$2
+                : _countryNameFromCode(_safe(map['countryCode']?.toString()))),
       );
     }
     return const _AddressData(
@@ -841,8 +848,21 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
       if (full != '—') return full;
       final line = _safe(map['addressLine']?.toString());
       final city = _safe(map['cityId']?.toString());
-      final state = _safe(map['stateCode']?.toString());
-      final country = _safe(map['countryCode']?.toString());
+      final parsed = _parseStateCountryFromAddress(
+        _safe(map['fullAddress']?.toString(), fallback: '').isNotEmpty
+            ? _safe(map['fullAddress']?.toString(), fallback: '')
+            : _safe(details.addressLocation, fallback: ''),
+      );
+      final state = _safe(map['stateName']?.toString()) != '—'
+          ? _safe(map['stateName']?.toString())
+          : (parsed.$1.isNotEmpty
+              ? parsed.$1
+              : _safe(map['stateCode']?.toString()));
+      final country = _safe(map['countryName']?.toString()) != '—'
+          ? _safe(map['countryName']?.toString())
+          : (parsed.$2.isNotEmpty
+              ? parsed.$2
+              : _countryNameFromCode(_safe(map['countryCode']?.toString())));
       final pin = _safe(map['pincode']?.toString());
       final parts = [line, city, state, country, pin]
           .where((e) => e.isNotEmpty && e != '—')
@@ -850,6 +870,34 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
       if (parts.isNotEmpty) return parts.join(', ');
     }
     return _safe(details.addressLocation);
+  }
+
+  (String, String) _parseStateCountryFromAddress(String fullAddress) {
+    final raw = fullAddress.trim();
+    if (raw.isEmpty || raw == '—') return ('', '');
+    final parts = raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 2) return ('', '');
+
+    final filtered = List<String>.from(parts);
+    final numericOnly = RegExp(r'^[0-9 -]+$');
+    if (filtered.isNotEmpty && numericOnly.hasMatch(filtered.last)) {
+      filtered.removeLast();
+    }
+    if (filtered.length < 2) return ('', '');
+    final country = filtered.last;
+    final state = filtered.length >= 3 ? filtered[filtered.length - 2] : '';
+    return (state, country);
+  }
+
+  String _countryNameFromCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty || normalized == '—') return '—';
+    final parsed = Country.tryParse(normalized);
+    return parsed?.name ?? normalized;
   }
 }
 

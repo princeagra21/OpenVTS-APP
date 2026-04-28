@@ -12,6 +12,7 @@ import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SubUserDetailsScreen extends StatefulWidget {
@@ -155,6 +156,15 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
     return text;
   }
 
+  bool _isLimitedAccess(UserSubUserItem? details) {
+    final raw = details?.raw;
+    if (raw == null) return false;
+    final createdBy = _safe(raw['createdByUserId']?.toString());
+    final primaryUser = _safe(raw['primaryUserId']?.toString());
+    if (createdBy == '—' || primaryUser == '—') return false;
+    return createdBy != primaryUser;
+  }
+
   String _formatPhone(String prefix, String number) {
     final p = prefix.trim();
     final n = number.trim();
@@ -293,6 +303,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
     final fs = 14 * scale;
 
     final details = _details ?? widget.initialSubUser;
+    final limitedAccess = _isLimitedAccess(details);
     final displayName = _safe(details?.name);
     final username = _safe(details?.username);
     final email = _safe(details?.email);
@@ -318,14 +329,83 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Sub-user Overview',
-            style: GoogleFonts.roboto(
-              fontSize: 18 * (fs / 14),
-              height: 24 / 18,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
+          if (limitedAccess) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cs.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: cs.error.withOpacity(0.25)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.lock_outline, color: cs.error, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Limited access\n\nYou can view this sub-user, but editing is restricted because it was created by admin.',
+                      style: GoogleFonts.roboto(
+                        fontSize: 12 * (fs / 14),
+                        height: 17 / 12,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            SizedBox(height: padding),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Sub-user Overview',
+                style: GoogleFonts.roboto(
+                  fontSize: 18 * (fs / 14),
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: limitedAccess
+                    ? null
+                    : () async {
+                        final result = await context.push(
+                          '/user/sub-users/edit/${widget.userId}',
+                          extra: details,
+                        );
+                        if (result == true) {
+                          _loadDetails();
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.edit_outlined,
+                  size: 16 * (fs / 14),
+                  color: cs.onPrimary,
+                ),
+                label: Text(
+                  'Edit Profile',
+                  style: GoogleFonts.roboto(
+                    fontSize: 13 * (fs / 14),
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onPrimary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           _buildAccountCard(
@@ -1251,6 +1331,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
     final padding = AdaptiveUtils.getHorizontalPadding(w) + 4;
     final fsMain = 14 * ((w / 420).clamp(0.9, 1.0));
     final dangerColor = cs.error;
+    final limitedAccess = _isLimitedAccess(_details ?? widget.initialSubUser);
 
     return Container(
       width: double.infinity,
@@ -1273,7 +1354,9 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'This action cannot be undone. It will permanently delete the sub-user and remove all associated data.',
+            limitedAccess
+                ? 'This sub-user was created by admin. Deletion is restricted.'
+                : 'This action cannot be undone. It will permanently delete the sub-user and remove all associated data.',
             style: GoogleFonts.roboto(
               fontSize: fsMain,
               color: dangerColor,
@@ -1283,7 +1366,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: OutlinedButton(
-              onPressed: _deleting
+              onPressed: (_deleting || limitedAccess)
                   ? null
                   : () async {
                       final confirmed = await showDialog<bool>(
@@ -1313,7 +1396,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
               child: _deleting
                   ? const AppShimmer(width: 18, height: 18, radius: 9)
                   : Text(
-                      'Delete',
+                      limitedAccess ? 'Locked' : 'Delete',
                       style: GoogleFonts.roboto(
                         fontSize: fsMain,
                         color: dangerColor,

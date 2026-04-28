@@ -56,7 +56,10 @@ flutter:
   assets:
     - assets/image/logo.jpeg
     - assets/image/logo.png
+    - assets/image/marker_green.png
     - assets/image/
+    - assets/images/vehicle_icons_named/
+    - assets/images/
 
   # Fonts
   fonts:

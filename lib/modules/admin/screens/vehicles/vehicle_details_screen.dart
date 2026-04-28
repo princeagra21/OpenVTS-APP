@@ -623,9 +623,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
+                                softWrap: true,
                               ),
                               SizedBox(height: spacing * 0.4),
                               Container(
@@ -648,9 +646,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                     fontWeight: FontWeight.w600,
                                     color: cs.onSurface,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
+                                  softWrap: true,
                                 ),
                               ),
                               SizedBox(height: spacing * 0.4),
@@ -662,9 +658,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                   fontWeight: FontWeight.w500,
                                   color: cs.onSurface.withOpacity(0.7),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
+                                softWrap: true,
                               ),
                             ],
                           ),
@@ -1948,8 +1942,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           const SizedBox(height: 4),
           Text(
             value.isEmpty ? '—' : value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
             style: GoogleFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
@@ -2073,8 +2066,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               children: [
                 Text(
                   line,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                   style: GoogleFonts.roboto(
                     fontSize: fsMain,
                     fontWeight: FontWeight.w600,

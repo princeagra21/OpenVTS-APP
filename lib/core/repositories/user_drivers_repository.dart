@@ -83,6 +83,7 @@ class UserDriversRepository {
   }) async {
     final res = await api.delete(
       '/user/drivers/$driverId',
+      data: <String, dynamic>{'driverId': driverId},
       cancelToken: cancelToken,
     );
 

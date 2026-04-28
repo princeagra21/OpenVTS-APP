@@ -44,7 +44,15 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Future<void> _logout() async {
     await PushNotificationsService.instance.unregisterForLogout();
-    await TokenStorage.defaultInstance().clear();
+    final storage = TokenStorage.defaultInstance();
+    final superToken = await storage.popImpersonatorToken();
+    if (superToken != null && superToken.isNotEmpty) {
+      await storage.writeAccessToken(superToken);
+      if (!mounted) return;
+      context.go('/admin/home');
+      return;
+    }
+    await storage.clear();
     if (!mounted) return;
     context.go('/login');
   }

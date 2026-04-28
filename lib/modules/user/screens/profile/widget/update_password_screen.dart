@@ -76,7 +76,9 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     final newPassword = _newPasswordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+    if (currentPassword.isEmpty ||
+        newPassword.isEmpty ||
+        confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All password fields are required.')),
       );
@@ -85,7 +87,9 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
     if (newPassword != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('New password and confirm password must match.')),
+        const SnackBar(
+          content: Text('New password and confirm password must match.'),
+        ),
       );
       return;
     }
@@ -104,7 +108,6 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       final res = await _repoOrCreate().updatePassword(
         currentPassword: currentPassword,
         newPassword: newPassword,
-        confirmPassword: confirmPassword,
         cancelToken: token,
       );
       if (!mounted || token.isCancelled) return;

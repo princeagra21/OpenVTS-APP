@@ -56,6 +56,60 @@ class UserProfileRepository {
     );
   }
 
+  Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
+    final res = await api.post(
+      '/user/profile/verify/email/request',
+      data: const <String, dynamic>{},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> verifyEmailOtp(
+    String code, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/user/profile/verify/email/confirm',
+      data: {'otp': code.trim()},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
+    final res = await api.post(
+      '/user/profile/verify/whatsapp/request',
+      data: const <String, dynamic>{},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> verifyPhoneOtp(
+    String code, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/user/profile/verify/whatsapp/confirm',
+      data: {'otp': code.trim()},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Map<String, dynamic> _asMap(Object? value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value.cast());

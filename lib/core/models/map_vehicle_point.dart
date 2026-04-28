@@ -38,6 +38,28 @@ class MapVehiclePoint {
 
   String get status => _s(raw['status'] ?? raw['state'] ?? raw['motion']);
 
+  String get vehicleTypeName {
+    final candidates = <Object?>[
+      raw['vehicleTypeName'],
+      raw['vehicle_type_name'],
+      raw['vehicle_type'],
+      raw['type'],
+      raw['vehicleType'],
+      raw['vehicletype'],
+      raw['vehicle_class'],
+      raw['vehicleClass'],
+      raw['typeName'],
+      raw['type_name'],
+    ];
+
+    for (final candidate in candidates) {
+      final value = _extractVehicleTypeLabel(candidate);
+      if (value.isNotEmpty) return value;
+    }
+
+    return '';
+  }
+
   String get updatedAt => _s(
     raw['updatedAt'] ??
         raw['updated_at'] ??
@@ -59,6 +81,33 @@ class MapVehiclePoint {
     if (v == null) return 0;
     if (v is num) return v.toDouble();
     return double.tryParse(v.toString()) ?? 0;
+  }
+
+  static String _extractVehicleTypeLabel(Object? value) {
+    if (value == null) return '';
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value.cast());
+      final nested = map['vehicleType'] is Map
+          ? _extractVehicleTypeLabel(map['vehicleType'])
+          : '';
+      if (nested.isNotEmpty) return nested;
+      final candidate = _s(
+        map['name'] ??
+            map['title'] ??
+            map['type'] ??
+            map['slug'] ??
+            map['label'] ??
+            map['code'] ??
+            map['displayName'] ??
+            map['display_name'],
+      );
+      if (candidate.isNotEmpty) return candidate;
+      return _s(map);
+    }
+    final text = _s(value).trim();
+    if (text.isEmpty) return '';
+    if (text.startsWith('{') && text.endsWith('}')) return '';
+    return text;
   }
 
   static double? _dn(Object? v) {

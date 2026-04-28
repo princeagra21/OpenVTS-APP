@@ -965,6 +965,98 @@ class SuperadminRepository {
     );
   }
 
+  Future<Result<VehicleDetails>> getSuperadminVehicleDetailsByImei(
+    String imei, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/vehicles/by-imei/$imei/details',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final root = _coerceMap(data);
+        final payload = _extractMap(data);
+        final nested = _coerceMap(payload['data']);
+        final nestedFromRoot = _extractMapFromNested(payload);
+
+        final vehicle = _coerceMap(
+          payload['vehicle'] ??
+              nested['vehicle'] ??
+              nestedFromRoot['vehicle'] ??
+              root['vehicle'],
+        );
+        final telemetry = _coerceMap(
+          payload['telemetry'] ??
+              nested['telemetry'] ??
+              nestedFromRoot['telemetry'] ??
+              root['telemetry'],
+        );
+
+        final mergedVehicle = vehicle.isNotEmpty
+            ? vehicle
+            : (nested.isNotEmpty
+                  ? nested
+                  : (nestedFromRoot.isNotEmpty
+                      ? nestedFromRoot
+                      : (payload.isNotEmpty ? payload : root)));
+
+        return Result.ok(
+          VehicleDetails({
+            'data': {
+              'vehicle': mergedVehicle,
+              'telemetry': telemetry,
+            },
+          }),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> reverseGeocode(
+    double lat,
+    double lng, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/geocoding/reverse',
+      queryParameters: <String, dynamic>{
+        'lat': lat,
+        'lng': lng,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final root = _coerceMap(data);
+        final level1 = _extractMap(data);
+        final level2 = _extractMapFromNested(level1);
+        final level3 = _extractMapFromNested(level2);
+
+        final address = _firstNonEmpty([
+          level3['address'],
+          level2['address'],
+          level1['address'],
+          root['address'],
+          level3['formattedAddress'],
+          level2['formattedAddress'],
+          level1['formattedAddress'],
+          root['formattedAddress'],
+          level3['display_name'],
+          level2['display_name'],
+          level1['display_name'],
+          root['display_name'],
+        ]);
+
+        return Result.ok(address.isEmpty ? 'Address unavailable' : address);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<List<CommandOption>>> getCommandOptions(
     String imei, {
     CancelToken? cancelToken,
@@ -1573,6 +1665,14 @@ class SuperadminRepository {
     if (value == null) return '';
     if (value is String) return value;
     return value.toString();
+  }
+
+  String _firstNonEmpty(List<Object?> values) {
+    for (final value in values) {
+      final text = _string(value).trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   Map<String, dynamic> _deepMergeMaps(

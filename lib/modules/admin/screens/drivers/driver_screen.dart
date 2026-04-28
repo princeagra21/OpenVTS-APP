@@ -999,8 +999,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: colorScheme.onSurface,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                 ),
                                 Transform.scale(
@@ -1041,8 +1040,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                       color: colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                 ),
                               ],
@@ -1066,8 +1064,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                       color: colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                 ),
                               ],
@@ -1091,8 +1088,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                       color: colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                 ),
                               ],
@@ -1116,8 +1112,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                       color: colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                                 ),
                               ],
@@ -1156,8 +1151,7 @@ class _DriverScreenState extends State<DriverScreen> {
                         SizedBox(height: spacing / 2),
                         Text(
                           address,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
                           style: GoogleFonts.roboto(
                             fontSize: fsSecondary,
                             height: 16 / 12,
@@ -1216,8 +1210,7 @@ class _DriverScreenState extends State<DriverScreen> {
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
                         ),
                     ],
                   ),

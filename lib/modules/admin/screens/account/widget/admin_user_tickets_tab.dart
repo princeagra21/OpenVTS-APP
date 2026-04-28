@@ -55,8 +55,7 @@ class AdminUserTicketsTab extends StatelessWidget {
                     Expanded(
                       child: Text(
                         safeText(ticket.subject),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                         style: GoogleFonts.roboto(
                           fontSize: titleFs,
                           fontWeight: FontWeight.w600,

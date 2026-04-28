@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_app_preferences.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_app_preferences_repository.dart';
@@ -182,15 +181,12 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     setState(() => _saving = true);
 
     try {
-      final payload = AdminAppPreferences(const <String, dynamic>{})
-          .toPatchPayload(
-        allowDemoLogin: demoEnabled,
-        geocodingPrecision:
-            geocodingPrecision.contains('3') ? 3 : 2,
-        backupRetention: backupRetention,
-        allowSignup: signupAllowed,
-        signupCredits: signupCredits,
-      );
+      // Backend currently accepts signup config keys for this screen.
+      // Sending extra keys (demo/geocoding/backup) causes 400.
+      final payload = <String, dynamic>{
+        'allowSignup': signupAllowed,
+        'signupCredits': signupCredits,
+      };
 
       final res = await _repoOrCreate().updateAdminAppPreferences(
         payload,
@@ -240,7 +236,6 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     final colorScheme = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
-    final double labelFs = AdaptiveUtils.getTitleFontSize(width) + 1;
     final double valueFs = AdaptiveUtils.getSubtitleFontSize(width) - 2;
 
     if (_loading) {
@@ -280,9 +275,10 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Application',
+                    'APPLICATION',
                     style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
@@ -291,14 +287,8 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   ),
                   Row(
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: (_saving || _loading)
-                            ? null
-                            : () {
-                                final snapshot = _loadedSnapshot;
-                                if (snapshot == null) return;
-                                setState(() => _applySnapshot(snapshot));
-                              },
+                      OutlinedButton(
+                        onPressed: (_saving || _loading) ? null : _resetPressed,
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: colorScheme.onSurface.withOpacity(0.2),
@@ -307,11 +297,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        icon: Icon(
-                          Icons.refresh_outlined,
-                          color: colorScheme.onSurface,
-                        ),
-                        label: Text(
+                        child: Text(
                           'Reset',
                           style: GoogleFonts.roboto(
                             color: colorScheme.onSurface,
@@ -320,7 +306,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      ElevatedButton.icon(
+                      ElevatedButton(
                         onPressed: _saving ? null : _savePreferences,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.primary,
@@ -328,21 +314,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        icon: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: _saving
-                              ? const AppShimmer(
-                                  width: 18,
-                                  height: 18,
-                                  radius: 9,
-                                )
-                              : Icon(
-                                  Icons.save_outlined,
-                                  color: colorScheme.onPrimary,
-                                ),
-                        ),
-                        label: Text(
+                        child: Text(
                           'Save',
                           style: GoogleFonts.roboto(
                             color: colorScheme.onPrimary,
@@ -354,114 +326,22 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.1),
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                'Application Settings',
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Current Configuration',
-                      style: GoogleFonts.roboto(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Demo Login: ${demoEnabled ? 'ENABLED' : 'DISABLED'} · '
-                      'Reverse Geocoding: $geocodingPrecision · '
-                      'Signup: ${signupAllowed ? 'ALLOWED' : 'DISABLED'}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
-                        fontSize: labelFs,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Demo Login',
-                          style: GoogleFonts.roboto(
-                            fontSize: labelFs,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          demoEnabled ? 'Enabled' : 'Disabled',
-                          style: GoogleFonts.roboto(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 1,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Backup Retention',
-                          style: GoogleFonts.roboto(
-                            fontSize: labelFs,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          backupRetention,
-                          style: GoogleFonts.roboto(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 1,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Free Signup Credits',
-                          style: GoogleFonts.roboto(
-                            fontSize: labelFs,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          signupCredits.toString(),
-                          style: GoogleFonts.roboto(
-                            fontSize:
-                                AdaptiveUtils.getSubtitleFontSize(width) - 1,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Configure signup behavior for your company.',
+                style: GoogleFonts.roboto(
+                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 16),
@@ -474,459 +354,90 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? colorScheme.surfaceVariant
-                                : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.toggle_on_outlined,
-                            size: 18,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Demo Login',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w800,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.87),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                demoEnabled
-                                    ? 'Disable Demo Login'
-                                    : 'Enable Demo Login',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Signup Configuration',
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colorScheme.primary),
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.1),
+                        ),
                       ),
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              'Users can access demo mode',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
-                                fontSize:
-                                    AdaptiveUtils.getSubtitleFontSize(width) -
-                                        1,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.primary,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Allow New Signups',
+                                  style: GoogleFonts.roboto(
+                                    fontSize:
+                                        AdaptiveUtils.getSubtitleFontSize(width) -
+                                            3,
+                                    fontWeight: FontWeight.w800,
+                                    color: colorScheme.onSurface.withOpacity(0.87),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'New users can register',
+                                  style: GoogleFonts.roboto(
+                                    fontSize:
+                                        AdaptiveUtils.getSubtitleFontSize(width) -
+                                            3,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           Switch(
-                            value: demoEnabled,
-                            onChanged: (v) => setState(() => demoEnabled = v),
+                            value: signupAllowed,
+                            onChanged: (v) => setState(() => signupAllowed = v),
                             activeColor: colorScheme.primary,
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? colorScheme.surfaceVariant
-                                : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.location_searching_outlined,
-                            size: 18,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Reverse Geocoding',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w800,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.87),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Address Precision',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.onSurface.withOpacity(0.12),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () =>
-                                  setState(() => geocodingPrecision = '2 Digits'),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: geocodingPrecision.contains('2')
-                                      ? colorScheme.primary
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '2 Digits',
-                                    style: GoogleFonts.roboto(
-                                      color: geocodingPrecision.contains('2')
-                                          ? colorScheme.onPrimary
-                                          : colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () =>
-                                  setState(() => geocodingPrecision = '3 Digits'),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: geocodingPrecision.contains('3')
-                                      ? colorScheme.primary
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '3 Digits',
-                                    style: GoogleFonts.roboto(
-                                      color: geocodingPrecision.contains('3')
-                                          ? colorScheme.onPrimary
-                                          : colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    _numberField(
+                      context,
+                      label: 'Free Signup Credits*',
+                      value: signupCredits,
+                      onChanged: (v) => setState(() => signupCredits = v),
+                      labelFs: AdaptiveUtils.getTitleFontSize(width) + 2,
+                      valueFs: valueFs,
+                      colorScheme: colorScheme,
+                      labelWeight: FontWeight.w800,
+                      labelColor: colorScheme.onSurface.withOpacity(0.87),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? colorScheme.surfaceVariant
-                                : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.backup_outlined,
-                            size: 18,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Database Backup',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w800,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.87),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Retention Period',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: backupRetention,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
-                            color: colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      items: const ['1 Month', '3 Months', '6 Months', '12 Months']
-                          .map((opt) => DropdownMenuItem(
-                                value: opt,
-                                child: Text(opt),
-                              ))
-                          .toList(),
-                      onChanged: (v) =>
-                          setState(() => backupRetention = v ?? backupRetention),
-                      style: GoogleFonts.roboto(
-                        fontSize: valueFs,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     Text(
-                      'Backups will be retained for the selected period',
+                      'Number of free credits awarded to new users upon signup',
                       style: GoogleFonts.roboto(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
                         fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withOpacity(0.65),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(hp),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Signup Configuration',
-                style: GoogleFonts.roboto(
-                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
-                  fontWeight: FontWeight.w800,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Allow New Signups',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w800,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.87),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'New users can register',
-                                style: GoogleFonts.roboto(
-                                  fontSize:
-                                      AdaptiveUtils.getSubtitleFontSize(width) -
-                                          3,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: signupAllowed,
-                          onChanged: (v) => setState(() => signupAllowed = v),
-                          activeColor: colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              _numberField(
-                context,
-                label: 'Free Signup Credits',
-                value: signupCredits,
-                onChanged: (v) => setState(() => signupCredits = v),
-                labelFs: AdaptiveUtils.getTitleFontSize(width) + 2,
-                valueFs: valueFs,
-                colorScheme: colorScheme,
-                labelWeight: FontWeight.w800,
-                labelColor: colorScheme.onSurface.withOpacity(0.87),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Number of free credits awarded to new users upon signup',
-                style: GoogleFonts.roboto(
-                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface.withOpacity(0.65),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

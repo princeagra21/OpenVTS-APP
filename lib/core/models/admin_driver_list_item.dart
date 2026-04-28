@@ -69,6 +69,12 @@ class AdminDriverListItem {
   }
 
   String get addressLocation {
+    final fullAddress = _nestedString(
+      const ['fullAddress'],
+      nestedKeys: const ['address'],
+    );
+    if (fullAddress.isNotEmpty) return fullAddress;
+
     final city = _nestedString(
       const ['city', 'cityId'],
       nestedKeys: const ['address'],

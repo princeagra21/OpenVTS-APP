@@ -66,6 +66,22 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   ApiClient? _apiClient;
   UserVehiclesRepository? _repo;
 
+  String _vehicleAppBarTitle() {
+    final details = _details;
+    final initial = widget.initialVehicle;
+    final fromDetails = details?.displayTitle.trim();
+    if (fromDetails != null && fromDetails.isNotEmpty) return fromDetails;
+    final fromInitialName = initial?.name.trim();
+    if (fromInitialName != null && fromInitialName.isNotEmpty) {
+      return fromInitialName;
+    }
+    final fromInitialPlate = initial?.plateNumber.trim();
+    if (fromInitialPlate != null && fromInitialPlate.isNotEmpty) {
+      return fromInitialPlate;
+    }
+    return 'Vehicle Details';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -187,6 +203,62 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   }
 
   Future<void> _saveConfig() async {
+    const maxMultiplier = 10.0;
+    const maxOdometer = 1000000.0;
+    const maxEngineHours = 100000.0;
+
+    String? validateRange(
+      String label,
+      String raw, {
+      required double min,
+      required double max,
+    }) {
+      final text = raw.trim();
+      if (text.isEmpty) return null;
+      final value = double.tryParse(text);
+      if (value == null) {
+        return '$label must be a valid number.';
+      }
+      if (value < min || value > max) {
+        return '$label must be between ${min.toStringAsFixed(min == min.toInt() ? 0 : 1)} and ${max.toStringAsFixed(max == max.toInt() ? 0 : 1)}.';
+      }
+      return null;
+    }
+
+    final speedError = validateRange(
+      'Speed Multiplier',
+      _speedController.text,
+      min: 0.1,
+      max: maxMultiplier,
+    );
+    final distanceError = validateRange(
+      'Distance Multiplier',
+      _distanceController.text,
+      min: 0.1,
+      max: maxMultiplier,
+    );
+    final odometerError = validateRange(
+      'Odometer',
+      _odometerController.text,
+      min: 0,
+      max: maxOdometer,
+    );
+    final engineHoursError = validateRange(
+      'Engine Hours',
+      _engineHoursController.text,
+      min: 0,
+      max: maxEngineHours,
+    );
+
+    final validationError =
+        speedError ?? distanceError ?? odometerError ?? engineHoursError;
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(validationError)),
+      );
+      return;
+    }
+
     if (!mounted) return;
     setState(() => _savingConfig = true);
     try {
@@ -346,7 +418,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             children: [
               Icon(
                 icon,
-                size: fsMeta + 2,
+                size: fsMeta - 1,
                 color: cs.onSurface.withOpacity(0.7),
               ),
               const SizedBox(width: 6),
@@ -367,6 +439,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
                 line,
+                softWrap: false,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.roboto(
@@ -768,7 +841,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             : 12.0;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFF5F5F7),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -815,7 +890,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             right: horizontalPadding,
             top: 0,
             child: UserHomeAppBar(
-              title: 'Vehicle Details',
+              title: _vehicleAppBarTitle(),
               leadingIcon: Icons.directions_car,
               onClose: () {
                 if (Navigator.of(context).canPop()) {
@@ -1004,21 +1079,33 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                             _infoCard(
                               context,
                               width: cardWidth,
-                              title: 'Device Info',
+                              title: 'SIM',
                               icon: Icons.memory,
-                              lines: ['SIM: $sim', 'IMEI: $imei'],
+                              lines: [sim],
                               lineGap: spacing * 0.6,
-                              fsMeta: fsMeta,
-                              fsMain: fsMain,
+                              fsMeta: fsMeta - 1,
+                              fsMain: fsMain - 1,
                             ),
                             _infoCard(
                               context,
                               width: cardWidth,
-                              title: 'VIN',
-                              icon: Icons.confirmation_number_outlined,
-                              lines: [vin],
-                              fsMeta: fsMeta,
-                              fsMain: fsMain,
+                              title: 'IMEI',
+                              icon: Icons.memory,
+                              lines: [imei],
+                              fsMeta: fsMeta - 1,
+                              fsMain: fsMain - 1,
+                            ),
+                            SizedBox(
+                              width: cardWidth,
+                              child: _infoCard(
+                                context,
+                                width: cardWidth,
+                                title: 'VIN',
+                                icon: Icons.confirmation_number_outlined,
+                                lines: [vin],
+                                fsMeta: fsMeta - 1,
+                                fsMain: fsMain - 1,
+                              ),
                             ),
                           ],
                         );

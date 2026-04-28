@@ -266,6 +266,10 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   bool _saveErrorShown = false;
   GeofenceType? _pendingGeofenceType;
   final List<LatLng> _tempPoints = [];
+  Geofence? _selectedLandmark;
+  final LayerHitNotifier<Geofence> _circleHitNotifier = ValueNotifier(null);
+  final LayerHitNotifier<Geofence> _polygonHitNotifier = ValueNotifier(null);
+  final LayerHitNotifier<Geofence> _lineHitNotifier = ValueNotifier(null);
   // ---- POI Add ----
   bool _isPickingPOIFromMap = false;
   String? _pendingPOILabel;
@@ -402,8 +406,26 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     );
     if (points.isEmpty) return null;
 
+    if (typeRaw == 'LINE' || typeRaw == 'ROUTE' || geometry['type'] == 'LineString') {
+      return Geofence(
+        type: typeRaw == 'ROUTE' ? GeofenceType.route : GeofenceType.line,
+        label: name,
+        color: color,
+        points: points,
+        width: _number(
+          geodata['toleranceM'] ??
+              geodata['toleranceMeters'] ??
+              raw['toleranceMeters'] ??
+              raw['width'] ??
+              raw['buffer'],
+        ),
+      );
+    }
+
     return Geofence(
-      type: points.length == 4 ? GeofenceType.rectangle : GeofenceType.polygon,
+      type: typeRaw == 'RECTANGLE' || points.length == 4
+          ? GeofenceType.rectangle
+          : GeofenceType.polygon,
       label: name,
       color: color,
       points: points,
@@ -485,6 +507,376 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     if (hex.length == 6) hex = 'FF$hex';
     final parsed = int.tryParse(hex, radix: 16);
     return parsed == null ? Colors.blue : Color(parsed);
+  }
+
+  String _landmarkMeasureLabel(Geofence g) {
+    switch (g.type) {
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        return 'Radius';
+      case GeofenceType.line:
+      case GeofenceType.route:
+        return 'Tolerance';
+      case GeofenceType.polygon:
+      case GeofenceType.rectangle:
+        return 'Vertices';
+    }
+  }
+
+  String _landmarkMeasureValue(Geofence g) {
+    switch (g.type) {
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        return '${(g.radius ?? 25).round()} m';
+      case GeofenceType.line:
+      case GeofenceType.route:
+        return '${(g.width ?? 50).round()} m';
+      case GeofenceType.polygon:
+      case GeofenceType.rectangle:
+        return '${g.points.length}';
+    }
+  }
+
+  String _landmarkTypeLabel(Geofence g) {
+    switch (g.type) {
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        return 'Circle';
+      case GeofenceType.polygon:
+        return 'Polygon';
+      case GeofenceType.rectangle:
+        return 'Rectangle';
+      case GeofenceType.line:
+        return 'Line';
+      case GeofenceType.route:
+        return 'Route';
+    }
+  }
+
+  Future<void> _showLandmarkInfo(Geofence g) async {
+    await _showLandmarkInfoForHits([g]);
+  }
+
+  void _focusLandmarkOnMap(Geofence g) {
+    if (g.points.isEmpty) return;
+    if (g.type == GeofenceType.circle || g.type == GeofenceType.poi) {
+      _mapController.move(g.points.first, 16);
+      return;
+    }
+
+    if (g.points.length == 1) {
+      _mapController.move(g.points.first, 16);
+      return;
+    }
+
+    final bounds = LatLngBounds.fromPoints(g.points);
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(56),
+      ),
+    );
+  }
+
+  Future<void> _showLandmarkListSheet() async {
+    await _loadLandmarks();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(sheetContext).size.height * 0.78,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurface.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Landmarks',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () async {
+                          Navigator.pop(sheetContext);
+                          await _showLandmarkListSheet();
+                        },
+                        icon: const Icon(Icons.refresh),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: _geofences.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No landmarks found',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: _geofences.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (_, index) {
+                              final g = _geofences[index];
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                _focusLandmarkOnMap(g);
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: theme
+                                        .colorScheme.surfaceContainerHighest
+                                        .withOpacity(0.55),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 42,
+                                        height: 42,
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          g.type == GeofenceType.line ||
+                                                  g.type == GeofenceType.route
+                                              ? Icons.alt_route_outlined
+                                              : g.type ==
+                                                          GeofenceType.polygon ||
+                                                      g.type ==
+                                                          GeofenceType.rectangle
+                                                  ? Icons.crop_square_outlined
+                                                  : Icons
+                                                      .radio_button_checked_outlined,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              g.label,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${_landmarkTypeLabel(g)} • ${_landmarkMeasureLabel(g)} ${_landmarkMeasureValue(g)}',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showLandmarkInfoForHits(List<Geofence> hits) async {
+    if (hits.isEmpty || !mounted) return;
+    setState(() => _selectedLandmark = hits.first);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurface.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Landmark Info',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...hits.expand((g) => [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                g.label,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _landmarkInfoRow(
+                                icon: Icons.label_outline,
+                                title: 'Name',
+                                value: g.label,
+                              ),
+                              const SizedBox(height: 12),
+                              _landmarkInfoRow(
+                                icon: g.type == GeofenceType.line ||
+                                        g.type == GeofenceType.route
+                                    ? Icons.alt_route_outlined
+                                    : g.type == GeofenceType.polygon ||
+                                            g.type == GeofenceType.rectangle
+                                        ? Icons.crop_square_outlined
+                                        : Icons.radio_button_checked_outlined,
+                                title: _landmarkMeasureLabel(g),
+                                value: _landmarkMeasureValue(g),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ]),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                      ),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (mounted) setState(() => _selectedLandmark = null);
+  }
+
+  Widget _landmarkInfoRow({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: cs.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   List<LatLng> _latLngList(Object? value, {bool closePolygon = false}) {
@@ -604,6 +996,27 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       };
     }
 
+    if (g.type == GeofenceType.line || g.type == GeofenceType.route) {
+      final tolerance = (g.width ?? 50).round();
+      return <String, dynamic>{
+        'name': g.label,
+        'description': '',
+        'type': g.type == GeofenceType.route ? 'ROUTE' : 'LINE',
+        'color': '#3b82f6',
+        'isActive': true,
+        'geodata': <String, dynamic>{
+          'kind': g.type == GeofenceType.route ? 'ROUTE' : 'LINE',
+          'geometry': <String, dynamic>{
+            'type': 'LineString',
+            'coordinates': g.points
+                .map((p) => <double>[p.longitude, p.latitude])
+                .toList(),
+          },
+          'toleranceM': tolerance,
+        },
+      };
+    }
+
     final polygonPoints = List<LatLng>.from(g.points);
     if (polygonPoints.length >= 3 &&
         (polygonPoints.first.latitude != polygonPoints.last.latitude ||
@@ -626,24 +1039,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                 .toList(),
           ],
         },
-      },
-    };
-  }
-
-  Map<String, dynamic> _toRoutePayload(Geofence g) {
-    final tolerance = (g.width ?? 50).round();
-    return <String, dynamic>{
-      'name': g.label,
-      'color': '#2196F3',
-      'geodata': <String, dynamic>{
-        'kind': 'LINE',
-        'geometry': <String, dynamic>{
-          'type': 'LineString',
-          'coordinates': g.points
-              .map((p) => <double>[p.longitude, p.latitude])
-              .toList(),
-        },
-        'toleranceM': tolerance,
       },
     };
   }
@@ -688,14 +1083,12 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       case GeofenceType.circle:
       case GeofenceType.polygon:
       case GeofenceType.rectangle:
+      case GeofenceType.line:
+      case GeofenceType.route:
         result = await repo.createGeofence(
           _toGeofencePayload(g),
           cancelToken: token,
         );
-        break;
-      case GeofenceType.line:
-      case GeofenceType.route:
-        result = await repo.createRoute(_toRoutePayload(g), cancelToken: token);
         break;
       case GeofenceType.poi:
         result = await repo.createPoi(_toPoiPayload(g), cancelToken: token);
@@ -714,6 +1107,11 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Landmark saved')));
+        if (g.type == GeofenceType.circle || g.type == GeofenceType.poi) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showLandmarkInfo(g);
+          });
+        }
         _loadLandmarks();
       },
       failure: (error) {
@@ -998,63 +1396,103 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                     userAgentPackageName: 'com.example.fleek_stack_mobile',
                   ),
                   // Geofence layers (safe: only include when points/radius/width exist)
-                  CircleLayer(
-                    circles: _geofences
-                        .where(
-                          (g) =>
-                              (g.type == GeofenceType.circle ||
-                                  g.type == GeofenceType.poi) &&
-                              g.points.isNotEmpty &&
-                              g.radius != null,
-                        )
-                        .map(
-                          (g) => CircleMarker(
-                            point: g.points[0],
-                            radius: g.radius!,
-                            color: g.color.withOpacity(0.3),
-                            borderColor: g.color,
-                            borderStrokeWidth: 2,
-                          ),
-                        )
-                        .toList(),
+                  MouseRegion(
+                    hitTestBehavior: HitTestBehavior.deferToChild,
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => _showLandmarkInfoForHits(
+                        _circleHitNotifier.value?.hitValues.toList() ??
+                            const <Geofence>[],
+                      ),
+                      child: CircleLayer(
+                        hitNotifier: _circleHitNotifier,
+                        circles: _geofences
+                            .where(
+                              (g) =>
+                                  (g.type == GeofenceType.circle ||
+                                      g.type == GeofenceType.poi) &&
+                                  g.points.isNotEmpty &&
+                                  g.radius != null,
+                            )
+                            .map(
+                              (g) => CircleMarker(
+                                point: g.points[0],
+                                radius: g.radius!,
+                                color: _selectedLandmark == g
+                                    ? g.color.withOpacity(0.42)
+                                    : g.color.withOpacity(0.3),
+                                borderColor: _selectedLandmark == g
+                                    ? Colors.orange
+                                    : g.color,
+                                borderStrokeWidth: 2,
+                                hitValue: g,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
                   ),
 
-                  PolygonLayer(
-                    polygons: _geofences
-                        .where(
-                          (g) =>
-                              (g.type == GeofenceType.polygon ||
-                                  g.type == GeofenceType.rectangle) &&
-                              g.points.length >= 3,
-                        ) // polygon needs >=3 (rectangle will be 4)
-                        .map(
-                          (g) => Polygon(
-                            points: g.points,
-                            color: g.color.withOpacity(0.3),
-                            borderColor: g.color,
-                            borderStrokeWidth: 2,
-                          ),
-                        )
-                        .toList(),
+                  MouseRegion(
+                    hitTestBehavior: HitTestBehavior.deferToChild,
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => _showLandmarkInfoForHits(
+                        _polygonHitNotifier.value?.hitValues.toList() ??
+                            const <Geofence>[],
+                      ),
+                      child: PolygonLayer(
+                        hitNotifier: _polygonHitNotifier,
+                        polygons: _geofences
+                            .where(
+                              (g) =>
+                                  (g.type == GeofenceType.polygon ||
+                                      g.type == GeofenceType.rectangle) &&
+                                  g.points.length >= 3,
+                            ) // polygon needs >=3 (rectangle will be 4)
+                            .map(
+                              (g) => Polygon(
+                                points: g.points,
+                                color: g.color.withOpacity(0.3),
+                                borderColor: g.color,
+                                borderStrokeWidth: 2,
+                                hitValue: g,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
                   ),
 
-                  PolylineLayer(
-                    polylines: _geofences
-                        .where(
-                          (g) =>
-                              (g.type == GeofenceType.line ||
-                                  g.type == GeofenceType.route) &&
-                              g.points.length >= 2 &&
-                              (g.width ?? 0) > 0,
-                        )
-                        .map(
-                          (g) => Polyline(
-                            points: g.points,
-                            color: g.color,
-                            strokeWidth: g.width ?? 5.0,
-                          ),
-                        )
-                        .toList(),
+                  MouseRegion(
+                    hitTestBehavior: HitTestBehavior.deferToChild,
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => _showLandmarkInfoForHits(
+                        _lineHitNotifier.value?.hitValues.toList() ??
+                            const <Geofence>[],
+                      ),
+                      child: PolylineLayer(
+                        hitNotifier: _lineHitNotifier,
+                        polylines: _geofences
+                            .where(
+                              (g) =>
+                                  (g.type == GeofenceType.line ||
+                                      g.type == GeofenceType.route) &&
+                                  g.points.length >= 2 &&
+                                  (g.width ?? 0) > 0,
+                            )
+                            .map(
+                              (g) => Polyline(
+                                points: g.points,
+                                color: g.color,
+                                strokeWidth: g.width ?? 5.0,
+                                hitValue: g,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
                   ),
 
                   // Temp drawing layer for adding geofence (only when _tempPoints has points)
@@ -1131,6 +1569,20 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                bottom: bottomMargin + 10,
+                child: Tooltip(
+                  message: 'Landmark List',
+                  child: FloatingActionButton.small(
+                    heroTag: 'landmark_list',
+                    onPressed: (_loading || _saving)
+                        ? null
+                        : _showLandmarkListSheet,
+                    child: const Icon(Icons.list_alt_outlined, size: 20),
                   ),
                 ),
               ),

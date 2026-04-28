@@ -57,6 +57,23 @@ class UserSubUsersRepository {
     );
   }
 
+  Future<Result<UserSubUserItem>> updateSubUser(
+    String id,
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/user/subusers/$id',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(UserSubUserItem(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<UserSubUserItem>> getSubUserDetails(
     String id, {
     CancelToken? cancelToken,
