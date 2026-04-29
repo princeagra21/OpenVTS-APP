@@ -12,7 +12,7 @@ import 'package:fleet_stack/modules/user/screens/home/home_screen.dart';
 import 'package:fleet_stack/modules/user/screens/dashboard/dashboard_screen.dart';
 import 'package:fleet_stack/modules/user/screens/landmark/geofence.dart';
 import 'package:fleet_stack/modules/user/screens/localization/localization.dart';
-import 'package:fleet_stack/modules/user/screens/map/map.dart';
+import 'package:fleet_stack/modules/user/screens/map/map_screen.dart';
 import 'package:fleet_stack/modules/user/screens/more/more_screen.dart';
 import 'package:fleet_stack/modules/user/screens/notification/notification.dart';
 import 'package:fleet_stack/modules/user/screens/notification/notification_settings_screen.dart';

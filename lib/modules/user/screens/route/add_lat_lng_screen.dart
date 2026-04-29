@@ -159,7 +159,9 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: sel ? cs.primary : cs.surface,
-                                      border: Border.all(color: cs.outline.withOpacity(0.3)),
+                                      border: Border.all(
+                                        color: cs.outline.withValues(alpha: 0.3),
+                                      ),
                                     ),
                                     child: Icon(icon, color: sel ? cs.onPrimary : cs.primary),
                                   ),
@@ -179,7 +181,11 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                                 onPressed: () => Navigator.pop(context),
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(42),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  foregroundColor: cs.primary,
+                                  side: BorderSide(color: cs.primary),
                                 ),
                                 child: const Text("Back"),
                               ),
@@ -204,7 +210,11 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(42),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  backgroundColor: cs.primary,
+                                  foregroundColor: cs.onPrimary,
                                 ),
                                 child: const Text("Add Location"),
                               ),

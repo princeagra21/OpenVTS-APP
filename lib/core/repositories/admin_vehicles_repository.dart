@@ -4,6 +4,7 @@ import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
 import 'package:fleet_stack/core/models/vehicle_config.dart';
+import 'package:fleet_stack/core/models/vehicle_details.dart';
 import 'package:fleet_stack/core/models/admin_quick_device.dart';
 import 'package:fleet_stack/core/models/device_type.dart';
 import 'package:fleet_stack/core/models/vehicle_type.dart';
@@ -263,6 +264,104 @@ class AdminVehiclesRepository {
           }
         }
         return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<MapVehiclePoint>>> getMapTelemetry({
+    CancelToken? cancelToken,
+  }) {
+    return getTelemetry(cancelToken: cancelToken);
+  }
+
+  Future<Result<VehicleDetails>> getVehicleDetailsByImei(
+    String imei, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/admin/vehicles/by-imei/$imei/details',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final root = _coerceMap(data);
+        final payload = _extractMap(data);
+        final nested = _coerceMap(payload['data']);
+        final nestedFromRoot = _extractMapFromNested(payload);
+
+        final vehicle = _coerceMap(
+          payload['vehicle'] ??
+              nested['vehicle'] ??
+              nestedFromRoot['vehicle'] ??
+              root['vehicle'],
+        );
+        final telemetry = _coerceMap(
+          payload['telemetry'] ??
+              nested['telemetry'] ??
+              nestedFromRoot['telemetry'] ??
+              root['telemetry'],
+        );
+
+        final mergedVehicle = vehicle.isNotEmpty
+            ? vehicle
+            : (nested.isNotEmpty
+                  ? nested
+                  : (nestedFromRoot.isNotEmpty
+                      ? nestedFromRoot
+                      : (payload.isNotEmpty ? payload : root)));
+
+        return Result.ok(
+          VehicleDetails({
+            'data': {
+              'vehicle': mergedVehicle,
+              'telemetry': telemetry,
+            },
+          }),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> reverseGeocode(
+    double lat,
+    double lng, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/geocoding/reverse',
+      queryParameters: <String, dynamic>{
+        'lat': lat,
+        'lng': lng,
+      },
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final root = _coerceMap(data);
+        final level1 = _extractMap(data);
+        final level2 = _extractMapFromNested(level1);
+        final level3 = _extractMapFromNested(level2);
+
+        final address = _firstNonEmpty([
+          level3['address'],
+          level2['address'],
+          level1['address'],
+          root['address'],
+          level3['formattedAddress'],
+          level2['formattedAddress'],
+          level1['formattedAddress'],
+          root['formattedAddress'],
+          level3['display_name'],
+          level2['display_name'],
+          level1['display_name'],
+          root['display_name'],
+        ]);
+
+        return Result.ok(address.isEmpty ? 'Address unavailable' : address);
       },
       failure: (err) => Result.fail(err),
     );
@@ -532,5 +631,28 @@ class AdminVehiclesRepository {
       },
       failure: (err) => Result.fail(err),
     );
+  }
+
+  Map<String, dynamic> _coerceMap(Object? data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data.cast());
+    return const <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _extractMapFromNested(Map<String, dynamic> data) {
+    final candidates = [data['data'], data['item'], data['result']];
+    for (final c in candidates) {
+      if (c is Map<String, dynamic>) return c;
+      if (c is Map) return Map<String, dynamic>.from(c.cast());
+    }
+    return const <String, dynamic>{};
+  }
+
+  String _firstNonEmpty(List<Object?> values) {
+    for (final value in values) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 }

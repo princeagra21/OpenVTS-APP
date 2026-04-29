@@ -6,10 +6,12 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/repositories/user_landmarks_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/screens/landmark/add_buffer_screen.dart';
+import 'package:fleet_stack/modules/user/screens/map/widgets/glass_map_control_button.dart';
+import 'package:fleet_stack/modules/user/screens/map/widgets/map_layers_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -256,7 +258,9 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   // ---- MAP STATE ----
   final LatLng _initialCenter = LatLng(28.6139, 77.2090);
   late LatLng _currentCenter;
-  double _currentZoom = 5.0;
+  static const double _defaultMapZoom = 13.0;
+  static const double _focusMapZoom = 16.0;
+  double _currentZoom = _defaultMapZoom;
   // ---- GEOFENCE STATE ----
   final List<Geofence> _geofences = [];
   bool _isAddingGeofence = false;
@@ -273,6 +277,11 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   // ---- POI Add ----
   bool _isPickingPOIFromMap = false;
   String? _pendingPOILabel;
+  bool _isPseudo3D = false;
+  bool _isMoreMenuOpen = false;
+  String _selectedTileLayerId = 'osm';
+  bool _hasAutoFitToLandmarks = false;
+  bool _hasUserInteractedWithMap = false;
   ApiClient? _apiClient;
   UserLandmarksRepository? _repo;
   CancelToken? _loadToken;
@@ -359,10 +368,48 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       }
     });
 
+    _scheduleAutoFitToLandmarks();
+
     if (!hasFailure || _loadErrorShown || !mounted) return;
     _loadErrorShown = true;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(errorMessage ?? "Couldn't load landmarks.")),
+    );
+  }
+
+  void _scheduleAutoFitToLandmarks() {
+    if (_hasAutoFitToLandmarks || _hasUserInteractedWithMap || !mounted) return;
+    final points = _allLandmarkPoints();
+    if (points.isEmpty) return;
+    _hasAutoFitToLandmarks = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasUserInteractedWithMap) return;
+      _fitToLandmarks(points);
+    });
+  }
+
+  List<LatLng> _allLandmarkPoints() {
+    final points = <LatLng>[];
+    for (final g in _geofences) {
+      if (g.points.isNotEmpty) {
+        points.addAll(g.points);
+      }
+    }
+    return points;
+  }
+
+  void _fitToLandmarks(List<LatLng> points) {
+    if (points.isEmpty) return;
+    if (points.length == 1) {
+      _mapController.move(points.first, _focusMapZoom);
+      return;
+    }
+    final bounds = LatLngBounds.fromPoints(points);
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(48),
+      ),
     );
   }
 
@@ -560,12 +607,12 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   void _focusLandmarkOnMap(Geofence g) {
     if (g.points.isEmpty) return;
     if (g.type == GeofenceType.circle || g.type == GeofenceType.poi) {
-      _mapController.move(g.points.first, 16);
+      _mapController.move(g.points.first, _focusMapZoom);
       return;
     }
 
     if (g.points.length == 1) {
-      _mapController.move(g.points.first, 16);
+      _mapController.move(g.points.first, _focusMapZoom);
       return;
     }
 
@@ -578,6 +625,187 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     );
   }
 
+  IconData _landmarkIcon(Geofence g) {
+    switch (g.type) {
+      case GeofenceType.line:
+      case GeofenceType.route:
+        return Icons.alt_route_outlined;
+      case GeofenceType.polygon:
+      case GeofenceType.rectangle:
+        return Icons.crop_square_outlined;
+      case GeofenceType.circle:
+      case GeofenceType.poi:
+        return Icons.radio_button_checked_outlined;
+    }
+  }
+
+  String _landmarkSummary(Geofence g) {
+    return '${_landmarkTypeLabel(g)} · ${_landmarkMeasureLabel(g)} ${_landmarkMeasureValue(g)}';
+  }
+
+  String _tileUrlTemplate() {
+    final option = kMapTileOptions.firstWhere(
+      (e) => e.id == _selectedTileLayerId,
+      orElse: () => kMapTileOptions.first,
+    );
+    return option.urlTemplate;
+  }
+
+  List<String> _tileSubdomains() {
+    final option = kMapTileOptions.firstWhere(
+      (e) => e.id == _selectedTileLayerId,
+      orElse: () => kMapTileOptions.first,
+    );
+    return option.subdomains;
+  }
+
+  Future<void> _openLayersSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return MapLayersSheet(
+          selectedTileLayerId: _selectedTileLayerId,
+          onSelected: (option) {
+            setState(() => _selectedTileLayerId = option.id);
+            Navigator.pop(sheetContext);
+          },
+        );
+      },
+    );
+  }
+
+  void _togglePseudo3D() {
+    setState(() => _isPseudo3D = !_isPseudo3D);
+  }
+
+  void _toggleMoreMenu() {
+    setState(() => _isMoreMenuOpen = !_isMoreMenuOpen);
+  }
+
+  void _closeMoreMenu() {
+    if (!_isMoreMenuOpen) return;
+    setState(() => _isMoreMenuOpen = false);
+  }
+
+  Widget _buildMoreActionButton({
+    required BuildContext context,
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool active = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: glassMapControlButton(
+        context: context,
+        width: 44,
+        height: 44,
+        borderRadiusValue: 9,
+        backgroundColor:
+            active ? Theme.of(context).colorScheme.primary : null,
+        borderColorOverride:
+            active ? Theme.of(context).colorScheme.primary : null,
+        child: Icon(icon),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildMoreTextButton({
+    required BuildContext context,
+    required String tooltip,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: glassMapControlButton(
+        context: context,
+        width: 44,
+        height: 44,
+        borderRadiusValue: 9,
+        child: Text(label),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildExpandedMoreMenu(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      alignment: Alignment.bottomCenter,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Landmark List',
+            icon: Icons.list_alt_rounded,
+            onPressed: () {
+              _closeMoreMenu();
+              _showLandmarkListSheet();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Map Layers',
+            icon: Icons.layers_outlined,
+            onPressed: () async {
+              _closeMoreMenu();
+              await _openLayersSheet();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreTextButton(
+            context: context,
+            tooltip: _isPseudo3D ? 'Switch to 2D' : 'Switch to 3D',
+            label: _isPseudo3D ? '3D' : '2D',
+            onPressed: () {
+              _closeMoreMenu();
+              _togglePseudo3D();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Fit All Landmarks',
+            icon: Icons.fit_screen_outlined,
+            onPressed: () {
+              _closeMoreMenu();
+              _fitToLandmarks(_allLandmarkPoints());
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Refresh Landmarks',
+            icon: Icons.refresh,
+            onPressed: () {
+              _closeMoreMenu();
+              _loadLandmarks();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Clear Drawing',
+            icon: Icons.clear_all,
+            onPressed: () {
+              _closeMoreMenu();
+              _clearGeofences();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showLandmarkListSheet() async {
     await _loadLandmarks();
     if (!mounted) return;
@@ -585,138 +813,184 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(sheetContext).size.height * 0.78,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: FractionallySizedBox(
+              heightFactor: 0.8,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 8),
                   Center(
                     child: Container(
                       width: 44,
                       height: 5,
-                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withOpacity(0.12),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Landmarks',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Landmarks',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${_geofences.length} landmarks',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          Navigator.pop(sheetContext);
-                          await _showLandmarkListSheet();
-                        },
-                        icon: const Icon(Icons.refresh),
-                      ),
-                    ],
+                        IconButton(
+                          onPressed: () async {
+                            Navigator.pop(sheetContext);
+                            await _showLandmarkListSheet();
+                          },
+                          icon: const Icon(Icons.refresh),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Expanded(
-                    child: _geofences.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No landmarks found',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: _geofences.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (_, index) {
-                              final g = _geofences[index];
-                            return InkWell(
-                              onTap: () {
-                                Navigator.pop(sheetContext);
-                                _focusLandmarkOnMap(g);
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: theme
-                                        .colorScheme.surfaceContainerHighest
-                                        .withOpacity(0.55),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
+                    child: _loading
+                            ? ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                itemCount: 4,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (_, __) => _landmarkListShimmerCard(),
+                              )
+                        : _geofences.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Container(
-                                        width: 42,
-                                        height: 42,
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary
-                                              .withOpacity(0.12),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          g.type == GeofenceType.line ||
-                                                  g.type == GeofenceType.route
-                                              ? Icons.alt_route_outlined
-                                              : g.type ==
-                                                          GeofenceType.polygon ||
-                                                      g.type ==
-                                                          GeofenceType.rectangle
-                                                  ? Icons.crop_square_outlined
-                                                  : Icons
-                                                      .radio_button_checked_outlined,
-                                          color: theme.colorScheme.primary,
+                                      Icon(
+                                        Icons.location_off_outlined,
+                                        size: 42,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No landmarks found',
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              g.label,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${_landmarkTypeLabel(g)} • ${_landmarkMeasureLabel(g)} ${_landmarkMeasureValue(g)}',
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: theme.colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
-                                            ),
-                                          ],
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Create a geofence, route, or POI to see it here.',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                itemCount: _geofences.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (_, index) {
+                                  final g = _geofences[index];
+                                  final selected = _selectedLandmark == g;
+                                  return InkWell(
+                                    onTap: () {
+                                      Navigator.pop(sheetContext);
+                                      _focusLandmarkOnMap(g);
+                                      setState(() => _selectedLandmark = g);
+                                    },
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: selected
+                                            ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.50),
+                                        borderRadius: BorderRadius.circular(18),
+                                        border: Border.all(
+                                          color: selected
+                                              ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 42,
+                                            height: 42,
+                                            decoration: BoxDecoration(
+                                              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              _landmarkIcon(g),
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  g.label,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: theme.textTheme.titleMedium?.copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  _landmarkSummary(g),
+                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            Icons.chevron_right,
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                   ),
                 ],
               ),
@@ -734,57 +1008,120 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: SingleChildScrollView(
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: FractionallySizedBox(
+              heightFactor: 0.68,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 8),
                   Center(
                     child: Container(
                       width: 44,
                       height: 5,
-                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withOpacity(0.12),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ),
-                  Text(
-                    'Landmark Info',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Landmark Info',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  ...hits.expand((g) => [
-                        Container(
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      itemCount: hits.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, index) {
+                        if (index == hits.length) {
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(sheetContext),
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(44),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text('Close'),
+                            ),
+                          );
+                        }
+                        final g = hits[index];
+                        return Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withOpacity(0.55),
-                            borderRadius: BorderRadius.circular(16),
+                            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.52),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                g.label,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(_landmarkIcon(g), color: theme.colorScheme.primary),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          g.label,
+                                          style: theme.textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _landmarkSummary(g),
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 14),
                               _landmarkInfoRow(
                                 icon: Icons.label_outline,
                                 title: 'Name',
@@ -792,30 +1129,14 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                               ),
                               const SizedBox(height: 12),
                               _landmarkInfoRow(
-                                icon: g.type == GeofenceType.line ||
-                                        g.type == GeofenceType.route
-                                    ? Icons.alt_route_outlined
-                                    : g.type == GeofenceType.polygon ||
-                                            g.type == GeofenceType.rectangle
-                                        ? Icons.crop_square_outlined
-                                        : Icons.radio_button_checked_outlined,
+                                icon: _landmarkIcon(g),
                                 title: _landmarkMeasureLabel(g),
                                 value: _landmarkMeasureValue(g),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                      ]),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(sheetContext),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                      ),
-                      child: const Text('Close'),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -838,7 +1159,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withOpacity(0.55),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -847,7 +1168,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: cs.primary.withOpacity(0.12),
+              color: cs.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: cs.primary, size: 20),
@@ -874,6 +1195,38 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _landmarkListShimmerCard() {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const AppShimmer(width: 42, height: 42, radius: 12),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppShimmer(width: 160, height: 14, radius: 7),
+                SizedBox(height: 8),
+                AppShimmer(width: 200, height: 12, radius: 6),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          AppShimmer(width: 18, height: 18, radius: 9),
         ],
       ),
     );
@@ -1180,11 +1533,12 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     LatLng center, {
     String label = 'Geofence',
   }) async {
-    final result = await Navigator.push<Map<String, dynamic>?>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddBufferScreen(isRadius: true, initialLabel: label),
-      ),
+    final result = await showModalBottomSheet<Map<String, dynamic>?>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddBufferScreen(isRadius: true, initialLabel: label),
     );
 
     if (result != null) {
@@ -1209,11 +1563,12 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     List<LatLng> points, {
     String label = 'Geofence',
   }) async {
-    final result = await Navigator.push<Map<String, dynamic>?>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddBufferScreen(isRadius: false, initialLabel: label),
-      ),
+    final result = await showModalBottomSheet<Map<String, dynamic>?>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddBufferScreen(isRadius: false, initialLabel: label),
     );
 
     if (result != null) {
@@ -1233,26 +1588,310 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
     }
   }
 
+  Widget _buildLandmarkMap(BuildContext context) {
+    final map = FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: _initialCenter,
+        initialZoom: _currentZoom,
+        minZoom: 3,
+        maxZoom: 18,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all,
+        ),
+        onPositionChanged: (camera, hasGesture) {
+          _currentCenter = camera.center;
+          _currentZoom = camera.zoom;
+          if (hasGesture) {
+            _hasUserInteractedWithMap = true;
+          }
+          if (mounted) setState(() {});
+        },
+        onTap: (tapPos, latlng) async {
+          if (_isAddingGeofence && _pendingGeofenceType != null) {
+            _tempPoints.add(latlng);
+            switch (_pendingGeofenceType) {
+              case GeofenceType.circle:
+                await _showRadiusScreen(latlng);
+                break;
+              case GeofenceType.poi:
+                if (_isPickingPOIFromMap && _pendingPOILabel != null) {
+                  await _showRadiusScreen(
+                    latlng,
+                    label: _pendingPOILabel!,
+                  );
+                  setState(() {
+                    _isPickingPOIFromMap = false;
+                    _pendingPOILabel = null;
+                  });
+                }
+                break;
+              case GeofenceType.rectangle:
+                if (_tempPoints.length == 2) {
+                  final p1 = _tempPoints[0];
+                  final p2 = _tempPoints[1];
+                  final minLat = p1.latitude < p2.latitude
+                      ? p1.latitude
+                      : p2.latitude;
+                  final maxLat = p1.latitude > p2.latitude
+                      ? p1.latitude
+                      : p2.latitude;
+                  final minLng = p1.longitude < p2.longitude
+                      ? p1.longitude
+                      : p2.longitude;
+                  final maxLng = p1.longitude > p2.longitude
+                      ? p1.longitude
+                      : p2.longitude;
+                  final points = [
+                    LatLng(minLat, minLng),
+                    LatLng(minLat, maxLng),
+                    LatLng(maxLat, maxLng),
+                    LatLng(maxLat, minLng),
+                  ];
+                  await _persistGeofence(
+                    Geofence(
+                      type: GeofenceType.rectangle,
+                      label: 'Rectangle Geofence',
+                      points: points,
+                    ),
+                  );
+                  setState(() {
+                    _isAddingGeofence = false;
+                    _tempPoints.clear();
+                  });
+                }
+                break;
+              case GeofenceType.polygon:
+              case GeofenceType.line:
+              case GeofenceType.route:
+                setState(() {});
+                break;
+              case null:
+                throw UnimplementedError();
+            }
+          }
+        },
+        onLongPress: (tapPos, latlng) async {
+          if (_isAddingGeofence && _pendingGeofenceType != null) {
+            switch (_pendingGeofenceType) {
+              case GeofenceType.polygon:
+                if (_tempPoints.length >= 3) {
+                  final points = List<LatLng>.from(_tempPoints)..add(_tempPoints.first);
+                  await _persistGeofence(
+                    Geofence(
+                      type: GeofenceType.polygon,
+                      label: 'Polygon Geofence',
+                      points: points,
+                    ),
+                  );
+                  setState(() {
+                    _isAddingGeofence = false;
+                    _tempPoints.clear();
+                  });
+                }
+                break;
+              case GeofenceType.line:
+                if (_tempPoints.length >= 2) {
+                  _showWidthScreen(List.from(_tempPoints), label: 'Line Geofence');
+                }
+                break;
+              case GeofenceType.route:
+                if (_tempPoints.length >= 2) {
+                  _showWidthScreen(List.from(_tempPoints), label: 'Route Geofence');
+                }
+                break;
+              default:
+                break;
+            }
+          }
+        },
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: _tileUrlTemplate(),
+          subdomains: _tileSubdomains(),
+          userAgentPackageName: 'com.example.fleek_stack_mobile',
+        ),
+        MouseRegion(
+          hitTestBehavior: HitTestBehavior.deferToChild,
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => _showLandmarkInfoForHits(
+              _circleHitNotifier.value?.hitValues.toList() ??
+                  const <Geofence>[],
+            ),
+            child: CircleLayer(
+              hitNotifier: _circleHitNotifier,
+              circles: _geofences
+                  .where(
+                    (g) =>
+                        (g.type == GeofenceType.circle ||
+                            g.type == GeofenceType.poi) &&
+                        g.points.isNotEmpty &&
+                        g.radius != null,
+                  )
+                  .map(
+                    (g) => CircleMarker(
+                      point: g.points[0],
+                      radius: g.radius!,
+                      color: _selectedLandmark == g
+                          ? g.color.withValues(alpha: 0.42)
+                          : g.color.withValues(alpha: 0.3),
+                      borderColor: _selectedLandmark == g
+                          ? Colors.orange
+                          : g.color,
+                      borderStrokeWidth: 2,
+                      hitValue: g,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+        MouseRegion(
+          hitTestBehavior: HitTestBehavior.deferToChild,
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => _showLandmarkInfoForHits(
+              _polygonHitNotifier.value?.hitValues.toList() ??
+                  const <Geofence>[],
+            ),
+            child: PolygonLayer(
+              hitNotifier: _polygonHitNotifier,
+              polygons: _geofences
+                  .where(
+                    (g) =>
+                        (g.type == GeofenceType.polygon ||
+                            g.type == GeofenceType.rectangle) &&
+                        g.points.length >= 3,
+                  )
+                  .map(
+                    (g) => Polygon(
+                      points: g.points,
+                      color: g.color.withValues(alpha: 0.3),
+                      borderColor: g.color,
+                      borderStrokeWidth: 2,
+                      hitValue: g,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+        MouseRegion(
+          hitTestBehavior: HitTestBehavior.deferToChild,
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => _showLandmarkInfoForHits(
+              _lineHitNotifier.value?.hitValues.toList() ??
+                  const <Geofence>[],
+            ),
+            child: PolylineLayer(
+              hitNotifier: _lineHitNotifier,
+              polylines: _geofences
+                  .where(
+                    (g) =>
+                        (g.type == GeofenceType.line ||
+                            g.type == GeofenceType.route) &&
+                        g.points.length >= 2 &&
+                        (g.width ?? 0) > 0,
+                  )
+                  .map(
+                    (g) => Polyline(
+                      points: g.points,
+                      color: g.color,
+                      strokeWidth: g.width ?? 5.0,
+                      hitValue: g,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ),
+        if (_isAddingGeofence &&
+            (_pendingGeofenceType == GeofenceType.polygon ||
+                _pendingGeofenceType == GeofenceType.line ||
+                _pendingGeofenceType == GeofenceType.route) &&
+            _tempPoints.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: _tempPoints,
+                color: Colors.red,
+                strokeWidth: 3.0,
+              ),
+            ],
+          ),
+      ],
+    );
+
+    return _isPseudo3D ? Transform.scale(scale: 1.01, child: map) : map;
+  }
+
+  Widget _buildToolChip({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback? onPressed,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.black
+              : (isDark ? cs.surface.withValues(alpha: 0.82) : Colors.white),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? Colors.black
+                : cs.outline.withValues(alpha: 0.12),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: selected ? 0.18 : 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: selected ? Colors.white : cs.onSurface,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : cs.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
-    final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
-    final iconSize = AdaptiveUtils.getIconSize(screenWidth);
-    final topOffset = AppUtils.appBarHeightCustom;
-    final bottomMargin =
-        MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
+    final topOffset = AppUtils.appBarHeightCustom + 14;
 
     return AppLayout(
       title: "MAP",
       subtitle: "Geofence Management",
-      customTopBar: UserHomeAppBar(
-        title: 'Geofence Management',
-        leadingIcon: Icons.location_on_outlined,
-        onClose: () => context.go('/user/home'),
-      ),
-      customTopBarPadding: EdgeInsets.zero,
       actionIcons: [],
       onActionTaps: [],
       showAppBar: false,
@@ -1265,365 +1904,134 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
           height: MediaQuery.of(context).size.height,
           child: Stack(
             children: [
-              // ================= MAP =================
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _initialCenter,
-                  initialZoom: _currentZoom,
-                  minZoom: 3,
-                  maxZoom: 18,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all,
-                  ),
-                  onPositionChanged: (camera, _) {
-                    _currentCenter = camera.center;
-                    _currentZoom = camera.zoom;
-                    if (mounted) setState(() {});
-                  },
-                  onTap: (tapPos, latlng) async {
-                    if (_isAddingGeofence && _pendingGeofenceType != null) {
-                      _tempPoints.add(latlng);
-                      switch (_pendingGeofenceType) {
-                        case GeofenceType.circle:
-                          await _showRadiusScreen(latlng);
-                          break;
-                        case GeofenceType.poi:
-                          if (_isPickingPOIFromMap &&
-                              _pendingPOILabel != null) {
-                            await _showRadiusScreen(
-                              latlng,
-                              label: _pendingPOILabel!,
-                            );
-                            setState(() {
-                              _isPickingPOIFromMap = false;
-                              _pendingPOILabel = null;
-                            });
-                          }
-                          break;
-                        case GeofenceType.rectangle:
-                          if (_tempPoints.length == 2) {
-                            final p1 = _tempPoints[0];
-                            final p2 = _tempPoints[1];
-                            final minLat = p1.latitude < p2.latitude
-                                ? p1.latitude
-                                : p2.latitude;
-                            final maxLat = p1.latitude > p2.latitude
-                                ? p1.latitude
-                                : p2.latitude;
-                            final minLng = p1.longitude < p2.longitude
-                                ? p1.longitude
-                                : p2.longitude;
-                            final maxLng = p1.longitude > p2.longitude
-                                ? p1.longitude
-                                : p2.longitude;
-                            final points = [
-                              LatLng(minLat, minLng),
-                              LatLng(minLat, maxLng),
-                              LatLng(maxLat, maxLng),
-                              LatLng(maxLat, minLng),
-                            ];
-                            await _persistGeofence(
-                              Geofence(
-                                type: GeofenceType.rectangle,
-                                label: 'Rectangle Geofence',
-                                points: points,
-                              ),
-                            );
-                            setState(() {
-                              _isAddingGeofence = false;
-                              _tempPoints.clear();
-                            });
-                          }
-                          break;
-                        case GeofenceType.polygon:
-                        case GeofenceType.line:
-                        case GeofenceType.route:
-                          setState(() {}); // Update temp layer
-                          break;
-                        case null:
-                          // TODO: Handle this case.
-                          throw UnimplementedError();
-                      }
-                    }
-                  },
-                  onLongPress: (tapPos, latlng) async {
-                    if (_isAddingGeofence && _pendingGeofenceType != null) {
-                      switch (_pendingGeofenceType) {
-                        case GeofenceType.polygon:
-                          if (_tempPoints.length >= 3) {
-                            List<LatLng> points = List.from(_tempPoints);
-                            points.add(_tempPoints.first); // Close polygon
-                            await _persistGeofence(
-                              Geofence(
-                                type: GeofenceType.polygon,
-                                label: 'Polygon Geofence',
-                                points: points,
-                              ),
-                            );
-                            setState(() {
-                              _isAddingGeofence = false;
-                              _tempPoints.clear();
-                            });
-                          }
-                          break;
-                        case GeofenceType.line:
-                          if (_tempPoints.length >= 2) {
-                            _showWidthScreen(
-                              List.from(_tempPoints),
-                              label: 'Line Geofence',
-                            );
-                          }
-                          break;
-                        case GeofenceType.route:
-                          if (_tempPoints.length >= 2) {
-                            _showWidthScreen(
-                              List.from(_tempPoints),
-                              label: 'Route Geofence',
-                            );
-                          }
-                          break;
-                        default:
-                          break;
-                      }
-                    }
-                  },
+              _buildLandmarkMap(context),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: UserHomeAppBar(
+                  title: 'Geofence Management',
+                  leadingIcon: Icons.location_on_outlined,
+                  borderRadius: 0,
+                  onClose: () => context.go('/user/home'),
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    userAgentPackageName: 'com.example.fleek_stack_mobile',
-                  ),
-                  // Geofence layers (safe: only include when points/radius/width exist)
-                  MouseRegion(
-                    hitTestBehavior: HitTestBehavior.deferToChild,
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => _showLandmarkInfoForHits(
-                        _circleHitNotifier.value?.hitValues.toList() ??
-                            const <Geofence>[],
-                      ),
-                      child: CircleLayer(
-                        hitNotifier: _circleHitNotifier,
-                        circles: _geofences
-                            .where(
-                              (g) =>
-                                  (g.type == GeofenceType.circle ||
-                                      g.type == GeofenceType.poi) &&
-                                  g.points.isNotEmpty &&
-                                  g.radius != null,
-                            )
-                            .map(
-                              (g) => CircleMarker(
-                                point: g.points[0],
-                                radius: g.radius!,
-                                color: _selectedLandmark == g
-                                    ? g.color.withOpacity(0.42)
-                                    : g.color.withOpacity(0.3),
-                                borderColor: _selectedLandmark == g
-                                    ? Colors.orange
-                                    : g.color,
-                                borderStrokeWidth: 2,
-                                hitValue: g,
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ),
-
-                  MouseRegion(
-                    hitTestBehavior: HitTestBehavior.deferToChild,
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => _showLandmarkInfoForHits(
-                        _polygonHitNotifier.value?.hitValues.toList() ??
-                            const <Geofence>[],
-                      ),
-                      child: PolygonLayer(
-                        hitNotifier: _polygonHitNotifier,
-                        polygons: _geofences
-                            .where(
-                              (g) =>
-                                  (g.type == GeofenceType.polygon ||
-                                      g.type == GeofenceType.rectangle) &&
-                                  g.points.length >= 3,
-                            ) // polygon needs >=3 (rectangle will be 4)
-                            .map(
-                              (g) => Polygon(
-                                points: g.points,
-                                color: g.color.withOpacity(0.3),
-                                borderColor: g.color,
-                                borderStrokeWidth: 2,
-                                hitValue: g,
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ),
-
-                  MouseRegion(
-                    hitTestBehavior: HitTestBehavior.deferToChild,
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => _showLandmarkInfoForHits(
-                        _lineHitNotifier.value?.hitValues.toList() ??
-                            const <Geofence>[],
-                      ),
-                      child: PolylineLayer(
-                        hitNotifier: _lineHitNotifier,
-                        polylines: _geofences
-                            .where(
-                              (g) =>
-                                  (g.type == GeofenceType.line ||
-                                      g.type == GeofenceType.route) &&
-                                  g.points.length >= 2 &&
-                                  (g.width ?? 0) > 0,
-                            )
-                            .map(
-                              (g) => Polyline(
-                                points: g.points,
-                                color: g.color,
-                                strokeWidth: g.width ?? 5.0,
-                                hitValue: g,
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ),
-
-                  // Temp drawing layer for adding geofence (only when _tempPoints has points)
-                  if (_isAddingGeofence &&
-                      (_pendingGeofenceType == GeofenceType.polygon ||
-                          _pendingGeofenceType == GeofenceType.line ||
-                          _pendingGeofenceType == GeofenceType.route) &&
-                      _tempPoints.isNotEmpty)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _tempPoints,
-                          color: Colors.red,
-                          strokeWidth: 3.0,
-                        ),
-                      ],
-                    ),
-                ],
               ),
-              // ================= TOP ADD BUTTONS =================
+              // ================= TOOL CHIPS =================
               Positioned(
                 top: topOffset,
                 left: 0,
                 right: 0,
-                child: Container(
-                  color: cs.surface,
-                  padding: const EdgeInsets.all(8.0),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        TopActionButton(
+                        _buildToolChip(
+                          icon: Icons.circle_outlined,
+                          label: 'Circle',
+                          selected: _pendingGeofenceType == GeofenceType.circle,
                           onPressed: (_loading || _saving)
                               ? null
                               : () => _startAddingGeofence(GeofenceType.circle),
-                          icon: const Icon(Icons.circle_outlined),
-                          label: 'Circle',
                         ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
-                          onPressed: (_loading || _saving)
-                              ? null
-                              : () =>
-                                    _startAddingGeofence(GeofenceType.polygon),
-                          icon: const Icon(Icons.polyline_outlined),
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.polyline_outlined,
                           label: 'Polygon',
-                        ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
+                          selected: _pendingGeofenceType == GeofenceType.polygon,
                           onPressed: (_loading || _saving)
                               ? null
-                              : () => _startAddingGeofence(
-                                  GeofenceType.rectangle,
-                                ),
-                          icon: const Icon(Icons.rectangle_outlined),
-                          label: 'Rectangle',
+                              : () => _startAddingGeofence(GeofenceType.polygon),
                         ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.rectangle_outlined,
+                          label: 'Rectangle',
+                          selected:
+                              _pendingGeofenceType == GeofenceType.rectangle,
+                          onPressed: (_loading || _saving)
+                              ? null
+                              : () => _startAddingGeofence(GeofenceType.rectangle),
+                        ),
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.timeline,
+                          label: 'Line',
+                          selected: _pendingGeofenceType == GeofenceType.line,
                           onPressed: (_loading || _saving)
                               ? null
                               : () => _startAddingGeofence(GeofenceType.line),
-                          icon: const Icon(Icons.timeline),
-                          label: 'Line',
                         ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.route,
+                          label: 'Route',
+                          selected: _pendingGeofenceType == GeofenceType.route,
                           onPressed: (_loading || _saving)
                               ? null
                               : () => _startAddingGeofence(GeofenceType.route),
-                          icon: const Icon(Icons.route),
-                          label: 'Route',
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 16,
-                bottom: bottomMargin + 10,
-                child: Tooltip(
-                  message: 'Landmark List',
-                  child: FloatingActionButton.small(
-                    heroTag: 'landmark_list',
-                    onPressed: (_loading || _saving)
-                        ? null
-                        : _showLandmarkListSheet,
-                    child: const Icon(Icons.list_alt_outlined, size: 20),
                   ),
                 ),
               ),
               // ================= RIGHT CONTROLS (Zoom, Clear) =================
               Positioned(
                 right: 16,
-                bottom: bottomMargin + 10,
+                top: MediaQuery.of(context).size.height * 0.5 - 192,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Tooltip(
                       message: 'Zoom In',
-                      child: _fab(
-                        hero: "zoom_in",
-                        icon: Icons.add,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: _zoomIn,
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        child: const Icon(Icons.add),
+                        onPressed: _zoomIn,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Tooltip(
                       message: 'Zoom Out',
-                      child: _fab(
-                        hero: "zoom_out",
-                        icon: Icons.remove,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: _zoomOut,
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        child: const Icon(Icons.remove),
+                        onPressed: _zoomOut,
                       ),
                     ),
+                    if (_isMoreMenuOpen) ...[
+                      const SizedBox(height: 12),
+                      _buildExpandedMoreMenu(context),
+                    ],
                     const SizedBox(height: 12),
                     Tooltip(
-                      message: _isAddingGeofence
-                          ? 'Clear Draft'
-                          : 'Refresh Geofences',
-                      child: _fab(
-                        hero: "clear",
-                        icon: Icons.clear,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: (_loading || _saving) ? () {} : _clearGeofences,
+                      message: _isMoreMenuOpen ? 'Collapse' : 'More',
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        borderRadiusValue: _isMoreMenuOpen ? 0 : 9,
+                        backgroundColor: _isMoreMenuOpen
+                            ? Colors.transparent
+                            : null,
+                        borderColorOverride: _isMoreMenuOpen
+                            ? Colors.transparent
+                            : null,
+                        showShadow: !_isMoreMenuOpen,
+                        showBorder: !_isMoreMenuOpen,
+                        blurSigma: _isMoreMenuOpen ? 0 : 2.5,
+                        child: Icon(
+                          _isMoreMenuOpen
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.more_horiz_rounded,
+                        ),
+                        onPressed: _toggleMoreMenu,
                       ),
                     ),
                   ],
@@ -1664,26 +2072,6 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   }
 
   // ================= UI HELPERS =================
-  Widget _fab({
-    required String hero,
-    required IconData icon,
-    required double size,
-    required double iconSize,
-    required VoidCallback onTap,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: FloatingActionButton(
-        heroTag: hero,
-        backgroundColor: cs.primary,
-        foregroundColor: cs.onPrimary,
-        onPressed: onTap,
-        child: Icon(icon, size: iconSize),
-      ),
-    );
-  }
 
   @override
   void dispose() {

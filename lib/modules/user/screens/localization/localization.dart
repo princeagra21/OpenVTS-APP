@@ -201,6 +201,11 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
     zoom = snapshot.zoom;
   }
 
+  Future<void> _syncGlobalSettings() async {
+    await themeController.setTextDirection(textDirection);
+    await themeController.setUnits(units);
+  }
+
   Future<void> _setThemeMode(String mode) async {
     if (!mounted) return;
     if (mode == 'dark') {
@@ -699,6 +704,8 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         _loadedSnapshot = nextSnapshot;
       }
     });
+
+    await _syncGlobalSettings();
   }
 
   Future<bool> _saveLocalization({bool showSuccess = true}) async {
@@ -747,7 +754,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
       if (!mounted) return false;
 
       return res.when(
-        success: (_) {
+        success: (_) async {
           setState(() {
             _saving = false;
             _saveErrorShown = false;
@@ -758,6 +765,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               context,
             ).showSnackBar(const SnackBar(content: Text('Saved')));
           }
+          await _syncGlobalSettings();
           return true;
         },
         failure: (err) {
@@ -792,6 +800,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   void _resetPressed() {
     final snapshot = _loadedSnapshot ?? _defaultsSnapshot();
     setState(() => _applySnapshot(snapshot));
+    _syncGlobalSettings();
   }
 
   @override
@@ -1175,7 +1184,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () => setState(() => textDirection = "LTR"),
+                          onTap: () {
+                            setState(() => textDirection = "LTR");
+                            themeController.setTextDirection('LTR');
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -1216,7 +1228,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: InkWell(
-                          onTap: () => setState(() => textDirection = "RTL"),
+                          onTap: () {
+                            setState(() => textDirection = "RTL");
+                            themeController.setTextDirection('RTL');
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -1645,7 +1660,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () => setState(() => units = "KM"),
+                          onTap: () {
+                            setState(() => units = "KM");
+                            themeController.setUnits('KM');
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -1686,7 +1704,10 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: InkWell(
-                          onTap: () => setState(() => units = "MILES"),
+                          onTap: () {
+                            setState(() => units = "MILES");
+                            themeController.setUnits('MILES');
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             padding: const EdgeInsets.symmetric(

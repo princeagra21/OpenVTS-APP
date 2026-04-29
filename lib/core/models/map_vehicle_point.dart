@@ -29,7 +29,27 @@ class MapVehiclePoint {
         raw['location_lng'],
   );
 
-  double? get speed => _dn(raw['speed'] ?? raw['currentSpeed']);
+  Map<String, dynamic> get telemetry => _m(
+    raw['telemetry'] ??
+        raw['latestTelemetry'] ??
+        raw['latest_telemetry'] ??
+        raw['lastTelemetry'] ??
+        raw['telemetryData'] ??
+        raw['telemetry_data'],
+  );
+
+  double? get speedKph => _dn(
+    raw['speedKph'] ??
+        raw['speed_kph'] ??
+        raw['speed'] ??
+        raw['currentSpeed'] ??
+        telemetry['speedKph'] ??
+        telemetry['speed_kph'] ??
+        telemetry['speed'] ??
+        telemetry['currentSpeed'],
+  );
+
+  double? get speed => speedKph;
 
   double? get heading => _dn(raw['heading'] ?? raw['course'] ?? raw['bearing']);
 
@@ -60,14 +80,35 @@ class MapVehiclePoint {
     return '';
   }
 
-  String get updatedAt => _s(
-    raw['updatedAt'] ??
+  String get serverTime => _s(
+    raw['serverTime'] ??
+        raw['server_time'] ??
+        telemetry['serverTime'] ??
+        telemetry['server_time'],
+  );
+
+  String get deviceTime => _s(
+    raw['deviceTime'] ??
+        raw['device_time'] ??
+        telemetry['deviceTime'] ??
+        telemetry['device_time'],
+  );
+
+  String get lastUpdate => _s(
+    raw['lastUpdate'] ??
+        raw['last_update'] ??
+        raw['updatedAt'] ??
         raw['updated_at'] ??
         raw['lastSeen'] ??
         raw['lastSeenAt'] ??
+        raw['last_seen_at'] ??
         raw['timestamp'] ??
-        raw['time'],
+        raw['time'] ??
+        serverTime ??
+        deviceTime,
   );
+
+  String get updatedAt => lastUpdate;
 
   bool get hasValidPoint => lat != 0 || lng != 0;
 
@@ -114,5 +155,11 @@ class MapVehiclePoint {
     if (v == null) return null;
     if (v is num) return v.toDouble();
     return double.tryParse(v.toString());
+  }
+
+  static Map<String, dynamic> _m(Object? v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v.cast());
+    return const <String, dynamic>{};
   }
 }

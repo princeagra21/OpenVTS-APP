@@ -6,12 +6,14 @@ class UserHomeAppBar extends StatelessWidget {
   final String title;
   final IconData leadingIcon;
   final VoidCallback? onClose;
+  final double borderRadius;
 
   const UserHomeAppBar({
     super.key,
     required this.title,
     required this.leadingIcon,
     this.onClose,
+    this.borderRadius = 16,
   });
 
   @override
@@ -36,10 +38,10 @@ class UserHomeAppBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius),
             color: cs.surface,
             border: Border.all(
-              color: cs.onSurface.withOpacity(0.2),
+              color: cs.onSurface.withValues(alpha: 0.2),
               width: 1,
             ),
           ),

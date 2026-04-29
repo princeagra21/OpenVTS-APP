@@ -189,11 +189,13 @@ class _VehicleRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final meta = <String>[
-      lastSeen,
-      speed,
-      if (distance != null && distance!.trim().isNotEmpty) distance!,
-    ];
+    final safeLastSeen = lastSeen.trim().isEmpty || lastSeen.trim() == '-'
+        ? 'Unknown'
+        : lastSeen.trim();
+    final safeSpeed = speed.trim().isEmpty || speed.trim() == '-'
+        ? '0 km/h'
+        : speed.trim();
+    final meta = 'Last update: $safeLastSeen · $safeSpeed';
 
     return Material(
       color: Colors.transparent,
@@ -260,7 +262,7 @@ class _VehicleRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      meta.join('  •  '),
+                      meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -274,6 +276,18 @@ class _VehicleRow extends StatelessWidget {
                       Text(
                         address,
                         maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: cs.onSurface.withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
+                    if (distance != null && distance!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        distance!,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.5,

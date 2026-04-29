@@ -18,6 +18,7 @@ import '../../layout/app_layout.dart';
 import 'models/map_vehicle_status_filter.dart';
 import 'widgets/glass_map_control_button.dart';
 import 'widgets/map_layers_sheet.dart';
+import 'widgets/map_vehicle_search_results.dart';
 import 'widgets/map_status_filter_bar.dart';
 import 'widgets/map_settings_sheet.dart';
 import 'widgets/map_visual_effects_sheet.dart';
@@ -33,17 +34,20 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen>
     with TickerProviderStateMixin {
+  static const double _defaultMapZoom = 13.0;
+  static const double _vehicleFocusZoom = 16.0;
+  static const double _followVehicleMinZoom = 16.0;
   static const double vehicleAssetHeadingOffset = 180;
   final MapController _mapController = MapController();
 
   bool _showSearch = false;
-  final TextEditingController _searchController = TextEditingController();
-  String _query = '';
+  final TextEditingController _vehicleSearchController = TextEditingController();
+  String _vehicleSearchQuery = '';
   // Adjust based on your CustomBottomBar height
 
   final LatLng _initialCenter = LatLng(28.6139, 77.2090);
 
-  double _currentZoom = 13.0;
+  double _currentZoom = _defaultMapZoom;
   late LatLng _currentCenter;
   List<MapVehiclePoint> _points = const [];
   bool _loading = false;
@@ -61,20 +65,26 @@ class _MapScreenState extends State<MapScreen>
   bool _showPoi = false;
   bool _showRoutes = false;
   bool _isPseudo3D = false;
+  bool _showAdvancedMapControls = false;
   MapVisualEffect _visualEffect = MapVisualEffect.none;
   String _selectedTileLayerId = 'osm';
   MapVehicleStatusFilter _selectedStatusFilter = MapVehicleStatusFilter.all;
   String? _selectedVehicleId;
+  bool _followSelectedVehicle = false;
+  String? _followVehicleImei;
+  LatLng? _lastFollowedVehicleLatLng;
+  bool _hasAutoFitToMarkers = false;
+  bool _hasUserInteractedWithMap = false;
 
   @override
   void initState() {
     super.initState();
     _currentCenter = _initialCenter;
-    _searchController.addListener(() {
+    _vehicleSearchController.addListener(() {
       if (!mounted) return;
-      final next = _searchController.text;
-      if (next == _query) return;
-      setState(() => _query = next);
+      final next = _vehicleSearchController.text;
+      if (next == _vehicleSearchQuery) return;
+      setState(() => _vehicleSearchQuery = next);
     });
     _loadTelemetry();
     if (_liveRefreshEnabled) {
@@ -92,7 +102,7 @@ class _MapScreenState extends State<MapScreen>
     for (final marker in _vehicleMarkers.values) {
       marker.stopAndDisposeController();
     }
-    _searchController.dispose();
+    _vehicleSearchController.dispose();
     super.dispose();
   }
 
@@ -124,6 +134,8 @@ class _MapScreenState extends State<MapScreen>
             _errorShown = false;
           });
           _updateTelemetry(_points.where((e) => e.hasValidPoint).toList());
+          _maybeFollowSelectedVehicle();
+          _scheduleAutoFitToMarkers();
         },
         failure: (err) {
           if (!mounted) return;
@@ -225,6 +237,8 @@ class _MapScreenState extends State<MapScreen>
     if (mounted) {
       setState(() {});
     }
+    _maybeFollowSelectedVehicle();
+    _scheduleAutoFitToMarkers();
   }
 
   void _disposeVehicleMarker(String id) {
@@ -270,12 +284,125 @@ class _MapScreenState extends State<MapScreen>
 
   void _openSearch() => setState(() => _showSearch = true);
   void _closeSearch() {
-    setState(() => _showSearch = false);
-    _searchController.clear();
+    setState(() {
+      _showSearch = false;
+      _vehicleSearchQuery = '';
+    });
+    _vehicleSearchController.clear();
+  }
+
+  void _clearVehicleSearch() {
+    if (_vehicleSearchController.text.isEmpty &&
+        _vehicleSearchQuery.isEmpty) {
+      return;
+    }
+    _vehicleSearchController.clear();
+    if (!mounted) return;
+    setState(() => _vehicleSearchQuery = '');
   }
 
   void _togglePseudo3D() {
     setState(() => _isPseudo3D = !_isPseudo3D);
+  }
+
+  void _toggleAdvancedMapControls() {
+    setState(() => _showAdvancedMapControls = !_showAdvancedMapControls);
+  }
+
+  void _stopFollowingVehicle() {
+    setState(() {
+      _followSelectedVehicle = false;
+      _followVehicleImei = null;
+      _lastFollowedVehicleLatLng = null;
+    });
+  }
+
+  MapVehiclePoint? _followedVehiclePoint() {
+    final imei = _followVehicleImei?.trim();
+    if (imei == null || imei.isEmpty) return null;
+    for (final point in _points) {
+      if (point.imei.trim() == imei) return point;
+    }
+    return null;
+  }
+
+  void _maybeFollowSelectedVehicle() {
+    if (!_followSelectedVehicle) return;
+
+    final vehicle = _followedVehiclePoint();
+    final latLng = vehicle == null ? null : _getVehicleLatLng(vehicle);
+    if (latLng == null) return;
+
+    final last = _lastFollowedVehicleLatLng;
+    if (last != null && _isSameLatLngCloseEnough(last, latLng)) {
+      return;
+    }
+
+    final targetZoom = _currentZoom < _followVehicleMinZoom
+        ? _vehicleFocusZoom
+        : _currentZoom;
+    _lastFollowedVehicleLatLng = latLng;
+
+    if (_currentCenter.latitude != latLng.latitude ||
+        _currentCenter.longitude != latLng.longitude ||
+        _currentZoom != targetZoom) {
+      _mapController.move(latLng, targetZoom);
+      _currentCenter = latLng;
+      _currentZoom = targetZoom;
+    }
+  }
+
+  bool _isSameLatLngCloseEnough(LatLng a, LatLng b) {
+    const tolerance = 0.00001;
+    return (a.latitude - b.latitude).abs() <= tolerance &&
+        (a.longitude - b.longitude).abs() <= tolerance;
+  }
+
+  void _scheduleAutoFitToMarkers() {
+    if (_hasAutoFitToMarkers ||
+        _hasUserInteractedWithMap ||
+        _followSelectedVehicle ||
+        _vehicleSearchQuery.trim().isNotEmpty) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _hasAutoFitToMarkers ||
+          _hasUserInteractedWithMap ||
+          _followSelectedVehicle ||
+          _vehicleSearchQuery.trim().isNotEmpty) {
+        return;
+      }
+
+      final validPoints =
+          _points.where((point) => _isValidVehicleLocation(point)).toList();
+      if (validPoints.isEmpty) return;
+
+      if (validPoints.length == 1) {
+        final single = validPoints.first;
+        final latLng = _getVehicleLatLng(single);
+        if (latLng == null) return;
+        final targetZoom = _currentZoom < _followVehicleMinZoom
+            ? _vehicleFocusZoom
+            : _currentZoom;
+        _mapController.move(latLng, targetZoom);
+        _currentCenter = latLng;
+        _currentZoom = targetZoom;
+      } else {
+        final bounds = LatLngBounds.fromPoints(
+          validPoints.map((point) => LatLng(point.lat, point.lng)).toList(),
+        );
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.all(56),
+          ),
+        );
+      }
+
+      _hasAutoFitToMarkers = true;
+    });
   }
 
   Future<void> _onStatusChipTapped(MapVehicleStatusFilter filter) async {
@@ -374,14 +501,25 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
+  List<MapVehiclePoint> _searchedVehicles() {
+    final query = _vehicleSearchQuery.trim();
+    if (query.isEmpty) return const [];
+    return _getVehiclesForFilter(
+      _selectedStatusFilter,
+      includeInvalid: true,
+      searchQuery: query,
+    );
+  }
+
   MapVehicleStatusCounts get _statusCounts =>
       buildMapVehicleStatusCounts(_points);
 
   List<MapVehiclePoint> _getVehiclesForFilter(
     MapVehicleStatusFilter filter, {
     required bool includeInvalid,
+    String? searchQuery,
   }) {
-    final q = _query.trim().toLowerCase();
+    final q = (searchQuery ?? _vehicleSearchQuery).trim().toLowerCase();
     return _points.where((point) {
       if (!includeInvalid && !point.hasValidPoint) return false;
       if (filter != MapVehicleStatusFilter.all &&
@@ -390,15 +528,67 @@ class _MapScreenState extends State<MapScreen>
       }
       if (q.isEmpty) return true;
 
-      final plate = point.plateNumber.toLowerCase();
-      final imei = point.imei.toLowerCase();
-      final status = point.status.toLowerCase();
-      final address = _vehicleAddressText(point).toLowerCase();
-      return plate.contains(q) ||
-          imei.contains(q) ||
-          status.contains(q) ||
-          address.contains(q);
+      return _matchesVehicleSearch(point, q);
     }).toList();
+  }
+
+  bool _matchesVehicleSearch(MapVehiclePoint point, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return _vehicleSearchText(point).contains(q);
+  }
+
+  String _vehicleSearchText(MapVehiclePoint point) {
+    final raw = point.raw;
+    final values = <String>[
+      _vehicleTitle(point),
+      _vehicleDisplayName(point),
+      point.plateNumber,
+      point.imei,
+      _rawText(raw, const [
+        'deviceImei',
+        'device_imei',
+        'deviceImeiNumber',
+        'device_imei_number',
+        'imeiNumber',
+      ]),
+      point.vehicleTypeName,
+      point.status,
+      normalizeMapVehicleStatus(point).label,
+      _vehicleAddressText(point),
+    ];
+    return values.map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).join(' ');
+  }
+
+  String _vehicleDisplayName(MapVehiclePoint point) {
+    final raw = point.raw;
+    final candidates = <String>[
+      _rawText(raw, const [
+        'vehicleName',
+        'vehicle_name',
+        'name',
+        'title',
+        'displayName',
+        'display_name',
+        'vehicleTitle',
+        'vehicle_title',
+      ]),
+      point.plateNumber,
+    ];
+    for (final candidate in candidates) {
+      final value = candidate.trim();
+      if (value.isNotEmpty) return value;
+    }
+    return _vehicleTitle(point);
+  }
+
+  String _rawText(Map<String, dynamic> raw, List<String> keys) {
+    for (final key in keys) {
+      final value = raw[key];
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   bool _isValidVehicleLocation(MapVehiclePoint vehicle) {
@@ -443,23 +633,137 @@ class _MapScreenState extends State<MapScreen>
   }
 
   String _formatLastSeen(MapVehiclePoint point) {
-    final updated = DateTime.tryParse(point.updatedAt);
-    if (updated == null) return 'Last update: --';
-    final local = updated.toLocal();
-    final hh = local.hour.toString().padLeft(2, '0');
-    final mm = local.minute.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    return 'Last update: $day/$month $hh:$mm';
+    return _formatVehicleListLastUpdate(point);
   }
 
   String _formatSpeed(MapVehiclePoint point) {
-    final speed = point.speed;
-    if (speed == null) return '-- km/h';
-    final rounded = speed % 1 == 0
-        ? speed.toStringAsFixed(0)
-        : speed.toStringAsFixed(1);
-    return '$rounded km/h';
+    return _formatVehicleListSpeed(point);
+  }
+
+  double? _vehicleSpeedKph(MapVehiclePoint vehicle) {
+    final raw = vehicle.raw;
+    final candidates = <Object?>[
+      raw['speedKph'],
+      raw['speed_kph'],
+      raw['speed'],
+      raw['currentSpeed'],
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speedKph'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speed_kph'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speed'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['currentSpeed'] : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['speedKph']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['speed_kph']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['speed']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['currentSpeed']
+          : null,
+    ];
+    for (final candidate in candidates) {
+      final parsed = candidate == null
+          ? null
+          : (candidate is num
+              ? candidate.toDouble()
+              : double.tryParse(candidate.toString()));
+      if (parsed != null) return parsed;
+    }
+    return vehicle.speedKph ?? vehicle.speed;
+  }
+
+  DateTime? _vehicleLastUpdateDateTime(MapVehiclePoint vehicle) {
+    final raw = vehicle.raw;
+    final candidates = <Object?>[
+      raw['serverTime'],
+      raw['server_time'],
+      raw['deviceTime'],
+      raw['device_time'],
+      raw['lastUpdate'],
+      raw['last_update'],
+      raw['updatedAt'],
+      raw['updated_at'],
+      raw['lastSeen'],
+      raw['lastSeenAt'],
+      raw['last_seen_at'],
+      raw['timestamp'],
+      raw['time'],
+      vehicle.updatedAt,
+      vehicle.serverTime,
+      vehicle.deviceTime,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['serverTime'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['server_time'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['deviceTime'] : null,
+      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['device_time'] : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['serverTime']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['server_time']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['deviceTime']
+          : null,
+      raw['latestTelemetry'] is Map
+          ? (raw['latestTelemetry'] as Map)['device_time']
+          : null,
+    ];
+
+    for (final candidate in candidates) {
+      final dt = candidate == null
+          ? null
+          : (candidate is DateTime
+              ? candidate
+              : candidate is num
+                  ? DateTime.fromMillisecondsSinceEpoch(
+                      candidate > 1000000000000
+                          ? candidate.toInt()
+                          : candidate.toInt() * 1000,
+                    )
+                  : DateTime.tryParse(candidate.toString().trim()));
+      if (dt != null) return dt;
+    }
+    return null;
+  }
+
+  String _formatVehicleListSpeed(MapVehiclePoint vehicle) {
+    final speed = _vehicleSpeedKph(vehicle);
+    if (speed == null) return '0 km/h';
+    return '${speed.round()} km/h';
+  }
+
+  String _formatVehicleListLastUpdate(MapVehiclePoint vehicle) {
+    final dt = _vehicleLastUpdateDateTime(vehicle);
+    if (dt == null) return 'Unknown';
+
+    final local = dt.toLocal();
+    final diff = DateTime.now().difference(local);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
+    return '${local.day.toString().padLeft(2, '0')} ${months[local.month - 1]} '
+        '${hour.toString().padLeft(2, '0')}:$minute $period';
   }
 
   String? _formatDistance(MapVehiclePoint point) {
@@ -516,19 +820,61 @@ class _MapScreenState extends State<MapScreen>
   }
 
   void _focusVehicleOnMap(MapVehiclePoint vehicle) {
-    _openVehicleDetailsOnMap(vehicle);
+    final hasValidLocation = _isValidVehicleLocation(vehicle);
+    final position = _getVehicleLatLng(vehicle);
+    final id = vehicle.vehicleId.trim();
+    final imei = vehicle.imei.trim();
+
+    setState(() {
+      _selectedVehicleId = id.isEmpty ? null : id;
+      _followSelectedVehicle = true;
+      _followVehicleImei = imei.isEmpty ? null : imei;
+      _lastFollowedVehicleLatLng = hasValidLocation ? position : null;
+      _vehicleSearchQuery = '';
+      if (hasValidLocation && position != null) {
+        _currentCenter = position;
+        _currentZoom = _currentZoom < _followVehicleMinZoom
+            ? _vehicleFocusZoom
+            : _currentZoom;
+      }
+    });
+
+    _vehicleSearchController.clear();
+    FocusScope.of(context).unfocus();
+
+    if (!hasValidLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No valid location for this vehicle')),
+      );
+      return;
+    }
+
+    if (position != null) {
+      final targetZoom = _currentZoom < _followVehicleMinZoom
+          ? _vehicleFocusZoom
+          : _currentZoom;
+      _mapController.move(position, targetZoom);
+      _currentCenter = position;
+      _currentZoom = targetZoom;
+    }
   }
 
   Future<void> _openVehicleDetailsOnMap(MapVehiclePoint vehicle) async {
     final hasValidLocation = _isValidVehicleLocation(vehicle);
     final position = _getVehicleLatLng(vehicle);
     final id = vehicle.vehicleId.trim();
+    final imei = vehicle.imei.trim();
 
     setState(() {
       _selectedVehicleId = id.isEmpty ? null : id;
+      _followSelectedVehicle = true;
+      _followVehicleImei = imei.isEmpty ? null : imei;
+      _lastFollowedVehicleLatLng = hasValidLocation ? position : null;
       if (hasValidLocation && position != null) {
         _currentCenter = position;
-        _currentZoom = 16;
+        _currentZoom = _currentZoom < _followVehicleMinZoom
+            ? _vehicleFocusZoom
+            : _currentZoom;
       }
     });
 
@@ -537,7 +883,12 @@ class _MapScreenState extends State<MapScreen>
         const SnackBar(content: Text('No valid location for this vehicle')),
       );
     } else if (position != null) {
-      _mapController.move(position, 16);
+      final targetZoom = _currentZoom < _followVehicleMinZoom
+          ? _vehicleFocusZoom
+          : _currentZoom;
+      _mapController.move(position, targetZoom);
+      _currentCenter = position;
+      _currentZoom = targetZoom;
     }
 
     if (!mounted) return;
@@ -575,71 +926,84 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
-  bool _isRunningVehicle(MapVehiclePoint point) {
-    final status = point.status.toLowerCase();
-    final ignition = point.ignition.toLowerCase();
-    return (point.speed ?? 0) > 0 ||
-        status.contains('run') ||
-        status.contains('move') ||
-        status.contains('active') ||
-        ignition == 'true' ||
-        ignition == 'on' ||
-        ignition == '1';
+  void _handleSearchVehicleTap(MapVehiclePoint vehicle) {
+    _focusVehicleOnMap(vehicle);
+  }
+
+  bool _shouldAnimateRipple(MapVehicleStatusFilter status, bool isSelected) {
+    if (isSelected) return true;
+    return status == MapVehicleStatusFilter.running;
   }
 
   Color _vehicleMarkerColor(MapVehiclePoint point, {required bool isSelected}) {
-    if (isSelected) {
-      return const Color(0xFF111827);
-    }
-
+    // We use status-specific colors even if selected for the dot/ripple,
+    // but the main theme might use a dark color for selection emphasis.
     switch (normalizeMapVehicleStatus(point)) {
       case MapVehicleStatusFilter.running:
-        return const Color(0xFF6B7280);
+        return const Color(0xFF22C55E); // green
       case MapVehicleStatusFilter.stop:
-        return const Color(0xFFEF4444);
+        return const Color(0xFFEF4444); // red
       case MapVehicleStatusFilter.idle:
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFF59E0B); // amber/orange
       case MapVehicleStatusFilter.inactive:
-        return const Color(0xFF9CA3AF);
+        return const Color(0xFF6B7280); // gray
       case MapVehicleStatusFilter.noData:
-        return const Color(0xFF475569);
+        return const Color(0xFF374151); // dark gray
       case MapVehicleStatusFilter.all:
-        return const Color(0xFF6B7280);
+        return const Color(0xFF22C55E);
     }
   }
 
-  String _vehicleMarkerAssetPath(MapVehiclePoint point) {
+  String _vehicleBaseTypeSlug(MapVehiclePoint point) {
     final type = point.vehicleTypeName.toLowerCase().trim();
-    if (type.isEmpty) return 'assets/images/vehicle_icons_named/pickup_truck.png';
+    if (type.contains('sedan') || type.contains('saloon')) return 'sedan_car';
+    if (type.contains('suv') || type.contains('jeep')) return 'suv_car';
+    if (type.contains('pickup') ||
+        type.contains('fullback') ||
+        type.contains('hilux') ||
+        type.contains('double cab') ||
+        type.contains('ute')) {
+      return 'pickup_truck';
+    }
+    if (type.contains('tank')) return 'tanker_truck';
+    if (type.contains('box')) return 'box_truck';
+    if (type.contains('cargo') || type.contains('van')) return 'cargo_van';
+    if (type.contains('car')) return 'sedan_car';
+    if (type.contains('truck') || type.contains('lorry') || type.contains('lorri')) {
+      return 'pickup_truck';
+    }
+    return 'pickup_truck';
+  }
 
-    if (type.contains('sedan') || type.contains('saloon')) {
-      return 'assets/images/vehicle_icons_named/sedan_car.png';
+  String _normalizedStatusKey(MapVehicleStatusFilter status) {
+    switch (status) {
+      case MapVehicleStatusFilter.running:
+        return 'running';
+      case MapVehicleStatusFilter.stop:
+        return 'stop';
+      case MapVehicleStatusFilter.idle:
+        return 'idle';
+      case MapVehicleStatusFilter.inactive:
+        return 'inactive';
+      case MapVehicleStatusFilter.noData:
+        return 'nodata';
+      case MapVehicleStatusFilter.all:
+        return 'nodata';
     }
-    if (type.contains('suv') || type.contains('jeep')) {
-      return 'assets/images/vehicle_icons_named/suv_car.png';
-    }
-    if (type.contains('pickup')) {
-      return 'assets/images/vehicle_icons_named/pickup_truck.png';
-    }
-    if (type.contains('fullback')) {
-      return 'assets/images/vehicle_icons_named/pickup_truck.png';
-    }
-    if (type.contains('tank')) {
-      return 'assets/images/vehicle_icons_named/tanker_truck.png';
-    }
-    if (type.contains('box')) {
-      return 'assets/images/vehicle_icons_named/box_truck.png';
-    }
-    if (type.contains('cargo') || type.contains('van')) {
-      return 'assets/images/vehicle_icons_named/cargo_van.png';
-    }
-    if (type.contains('car')) {
-      return 'assets/images/vehicle_icons_named/sedan_car.png';
-    }
-    if (type.contains('truck')) {
-      return 'assets/images/vehicle_icons_named/pickup_truck.png';
-    }
-    return 'assets/images/vehicle_icons_named/pickup_truck.png';
+  }
+
+  String _vehicleMarkerAssetPath(
+    MapVehiclePoint point,
+    MapVehicleStatusFilter status,
+  ) {
+    final typeSlug = _vehicleBaseTypeSlug(point);
+    final statusKey = _normalizedStatusKey(status);
+    return 'assets/images/vehicle_icons_status/${typeSlug}_$statusKey.png';
+  }
+
+  String _vehicleBaseAssetPath(MapVehiclePoint point) {
+    final typeSlug = _vehicleBaseTypeSlug(point);
+    return 'assets/images/vehicle_icons_named/$typeSlug.png';
   }
 
   @override
@@ -657,6 +1021,7 @@ class _MapScreenState extends State<MapScreen>
             position: LatLng(p.lat, p.lng),
             bearing: _getCorrectedVehicleHeading(p.heading ?? 0),
           ));
+      final status = normalizeMapVehicleStatus(p);
       final isSelected = id == _selectedVehicleId;
 
       if (!marker.position.latitude.isFinite || !marker.position.longitude.isFinite) {
@@ -672,10 +1037,12 @@ class _MapScreenState extends State<MapScreen>
           vehicleName: p.plateNumber,
           bearing: marker.bearing ?? 0,
           markerColor: _vehicleMarkerColor(p, isSelected: isSelected),
-          markerAssetPath: _vehicleMarkerAssetPath(p),
+          markerAssetPath: _vehicleMarkerAssetPath(p, status),
+          markerBaseAssetPath: _vehicleBaseAssetPath(p),
           showLabel: _showVehicleLabels,
-          showRipple: _enableRippleEffect && (_isRunningVehicle(p) || isSelected),
+          showRipple: _enableRippleEffect && _shouldAnimateRipple(status, isSelected),
           isSelected: isSelected,
+          status: status,
           onTap: () {
             _openVehicleDetailsOnMap(p);
           },
@@ -698,11 +1065,20 @@ class _MapScreenState extends State<MapScreen>
             Positioned.fill(
               child: Builder(
                 builder: (context) {
+                  final tileLayer = TileLayer(
+                    urlTemplate: _tileUrlTemplate(),
+                    subdomains: _tileSubdomains(),
+                    userAgentPackageName: 'com.example.fleek_stack_mobile',
+                    tileProvider: NetworkTileProvider(
+                      cachingProvider: const DisabledMapCachingProvider(),
+                    ),
+                  );
+
                   Widget map = FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
                       initialCenter: _initialCenter,
-                      initialZoom: _currentZoom,
+                      initialZoom: _defaultMapZoom,
                       minZoom: 3,
                       maxZoom: 18,
                       interactionOptions: const InteractionOptions(
@@ -714,18 +1090,22 @@ class _MapScreenState extends State<MapScreen>
                       onPositionChanged: (camera, hasGesture) {
                         _currentCenter = camera.center;
                         _currentZoom = camera.zoom;
+                        if (hasGesture) {
+                          _hasUserInteractedWithMap = true;
+                        }
+                        if (hasGesture && _followSelectedVehicle) {
+                          _stopFollowingVehicle();
+                        }
                         if (mounted) setState(() {});
                       },
                     ),
                     children: [
-                      TileLayer(
-                        urlTemplate: _tileUrlTemplate(),
-                        subdomains: _tileSubdomains(),
-                        userAgentPackageName: 'com.example.fleek_stack_mobile',
-                        tileProvider: NetworkTileProvider(
-                          cachingProvider: const DisabledMapCachingProvider(),
-                        ),
-                      ),
+                      mapColorFilter != null
+                          ? ColorFiltered(
+                              colorFilter: mapColorFilter,
+                              child: tileLayer,
+                            )
+                          : tileLayer,
                       if (_showGeofence) const SizedBox.shrink(),
                       if (_showPoi) const SizedBox.shrink(),
                       if (_showRoutes) const SizedBox.shrink(),
@@ -733,9 +1113,6 @@ class _MapScreenState extends State<MapScreen>
                     ],
                   );
 
-                  if (mapColorFilter != null) {
-                    map = ColorFiltered(colorFilter: mapColorFilter, child: map);
-                  }
                   if (_isPseudo3D) {
                     map = Transform.scale(scale: 1.01, child: map);
                   }
@@ -755,22 +1132,23 @@ class _MapScreenState extends State<MapScreen>
               ),
             ),
 
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              left: 12,
-              right: 12,
-              top: _showSearch
-                  ? AppUtils.appBarHeightCustom + 78
-                  : AppUtils.appBarHeightCustom + 14,
-              child: MapStatusFilterBar(
-                selectedFilter: _selectedStatusFilter,
-                counts: statusCounts,
-                onChanged: (filter) {
-                  unawaited(_onStatusChipTapped(filter));
-                },
+            if (_vehicleSearchQuery.trim().isEmpty)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                left: 12,
+                right: 12,
+                top: _showSearch
+                    ? AppUtils.appBarHeightCustom + 78
+                    : AppUtils.appBarHeightCustom + 14,
+                child: MapStatusFilterBar(
+                  selectedFilter: _selectedStatusFilter,
+                  counts: statusCounts,
+                  onChanged: (filter) {
+                    unawaited(_onStatusChipTapped(filter));
+                  },
+                ),
               ),
-            ),
 
             // ---------------- ACTION BUTTONS ----------------
             Positioned(
@@ -797,121 +1175,246 @@ class _MapScreenState extends State<MapScreen>
                     child: const Icon(Icons.remove),
                     onPressed: _zoomOut,
                   ),
-                  const SizedBox(height: 12),
-
-                  glassMapControlButton(
-                    context: context,
-                    child: const Icon(Icons.tune),
-                    onPressed: _openMapSettingsSheet,
-                  ),
-                  const SizedBox(height: 12),
-
-                  glassMapControlButton(
-                    context: context,
-                    child: const Icon(Icons.auto_fix_high),
-                    onPressed: _openVisualEffectsSheet,
-                  ),
-                  const SizedBox(height: 12),
-
-                  glassMapControlButton(
-                    context: context,
-                    child: const Icon(Icons.layers_outlined),
-                    onPressed: _openMapLayersSheet,
-                  ),
-                  const SizedBox(height: 12),
-
-                  glassMapControlButton(
-                    context: context,
-                    width: 44,
-                    height: 44,
-                    child: Text(_isPseudo3D ? '3D' : '2D'),
-                    onPressed: _togglePseudo3D,
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      children: [
+                        if (_showAdvancedMapControls) ...[
+                          const SizedBox(height: 12),
+                          glassMapControlButton(
+                            context: context,
+                            child: const Icon(Icons.tune),
+                            onPressed: _openMapSettingsSheet,
+                          ),
+                          const SizedBox(height: 12),
+                          glassMapControlButton(
+                            context: context,
+                            child: const Icon(Icons.auto_fix_high),
+                            onPressed: _openVisualEffectsSheet,
+                          ),
+                          const SizedBox(height: 12),
+                          glassMapControlButton(
+                            context: context,
+                            child: const Icon(Icons.layers_outlined),
+                            onPressed: _openMapLayersSheet,
+                          ),
+                          const SizedBox(height: 12),
+                          glassMapControlButton(
+                            context: context,
+                            width: 44,
+                            height: 44,
+                            child: Text(_isPseudo3D ? '3D' : '2D'),
+                            onPressed: _togglePseudo3D,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        glassMapControlButton(
+                          context: context,
+                          child: Icon(
+                            _showAdvancedMapControls
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.more_horiz_rounded,
+                          ),
+                          borderRadiusValue:
+                              _showAdvancedMapControls ? 0 : 9,
+                          backgroundColor: _showAdvancedMapControls
+                              ? Colors.transparent
+                              : null,
+                          borderColorOverride: _showAdvancedMapControls
+                              ? Colors.transparent
+                              : null,
+                          showShadow: !_showAdvancedMapControls,
+                          showBorder: !_showAdvancedMapControls,
+                          blurSigma: _showAdvancedMapControls ? 0 : 2.5,
+                          onPressed: _toggleAdvancedMapControls,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // ---------------- SEARCH BAR ----------------
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              left: 0,
-              right: 0,
-              top: _showSearch ? AppUtils.appBarHeightCustom + 12 : -120,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      height: 55,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: cs.surface.withOpacity(0.75),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: cs.primary.withOpacity(0.3),
-                        ), // active brand border
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search,
-                            color: cs.onSurface.withOpacity(0.7),
+            // ---------------- SEARCH OVERLAY ----------------
+            if (_showSearch)
+              Positioned(
+                left: 12,
+                right: 12,
+                top: MediaQuery.of(context).padding.top +
+                    AppUtils.appBarHeightCustom +
+                    12,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          height: 55,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: cs.surface.withOpacity(0.75),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: cs.primary.withOpacity(0.3),
+                            ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              autofocus: true,
-                              decoration: InputDecoration(
-                                hintText: "Search location",
-                                border: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                errorBorder: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                focusedErrorBorder: InputBorder.none,
-                                hintStyle: TextStyle(
-                                  color: cs.onSurface.withOpacity(0.5),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: _vehicleSearchController,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: "Search vehicles...",
+                                    border: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    focusedErrorBorder: InputBorder.none,
+                                    hintStyle: TextStyle(
+                                      color: cs.onSurface.withOpacity(0.5),
+                                    ),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: TextStyle(color: cs.onSurface),
+                                  onSubmitted: (q) {
+                                    final results = _searchedVehicles();
+                                    if (results.length == 1) {
+                                      _handleSearchVehicleTap(results.first);
+                                    }
+                                  },
                                 ),
-                                isDense: true, // optional – reduces padding
-                                contentPadding:
-                                    EdgeInsets.zero, // optional – tight layout
                               ),
-                              style: TextStyle(color: cs.onSurface),
-                              onSubmitted: (q) {
-                                debugPrint("Searching: $q");
-                                _closeSearch();
-                              },
-                            ),
+                              GestureDetector(
+                                onTap: _vehicleSearchQuery.trim().isEmpty
+                                    ? _closeSearch
+                                    : _clearVehicleSearch,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: cs.onSurface.withOpacity(0.1),
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-
-                          GestureDetector(
-                            onTap: _closeSearch,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: cs.onSurface.withOpacity(0.1),
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
+                    if (_vehicleSearchQuery.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      MapVehicleSearchResultsPanel(
+                        vehicles: _searchedVehicles(),
+                        onVehicleTap: _handleSearchVehicleTap,
+                        titleBuilder: _vehicleDisplayName,
+                        statusTextBuilder: (vehicle) =>
+                            normalizeMapVehicleStatus(vehicle).label,
+                        identifierBuilder: (vehicle) {
+                          final plate = vehicle.plateNumber.trim();
+                          if (plate.isNotEmpty) return plate;
+                          final imei = vehicle.imei.trim();
+                          if (imei.isNotEmpty) return imei;
+                          return '–';
+                        },
+                        speedBuilder: _formatSpeed,
+                        statusColorBuilder: (vehicle) =>
+                            _vehicleMarkerColor(vehicle, isSelected: false),
+                        hasLocationBuilder: _isValidVehicleLocation,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+            if (_followSelectedVehicle)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 24,
+                child: _buildFollowingChip(),
+              ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFollowingChip() {
+    final cs = Theme.of(context).colorScheme;
+    final vehicle = _followedVehiclePoint();
+    final title = vehicle != null
+        ? _vehicleDisplayName(vehicle)
+        : (_followVehicleImei?.isNotEmpty == true
+            ? 'Waiting for vehicle update...'
+            : 'Following vehicle');
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.88),
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.gps_fixed_rounded,
+                size: 16,
+                color: Colors.white.withValues(alpha: 0.96),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Following $title',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-            ),
-
-          ],
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: _stopFollowingVehicle,
+                borderRadius: BorderRadius.circular(999),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: cs.onInverseSurface,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -961,10 +1464,12 @@ class VehicleMapMarker extends StatelessWidget {
   final double bearing;
   final Color markerColor;
   final String markerAssetPath;
+  final String markerBaseAssetPath;
   final bool showLabel;
   final bool showRipple;
   final bool isSelected;
   final VoidCallback onTap;
+  final MapVehicleStatusFilter status;
 
   const VehicleMapMarker({
     super.key,
@@ -972,10 +1477,12 @@ class VehicleMapMarker extends StatelessWidget {
     required this.bearing,
     required this.markerColor,
     required this.markerAssetPath,
+    required this.markerBaseAssetPath,
     required this.showLabel,
     required this.showRipple,
     required this.isSelected,
     required this.onTap,
+    required this.status,
   });
 
   @override
@@ -986,30 +1493,67 @@ class VehicleMapMarker extends StatelessWidget {
         : Colors.white.withValues(alpha: 0.88);
     final labelText = isDark ? Colors.white : Colors.black;
     final showRipple = this.showRipple;
+
     final vehicle = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Transform.rotate(
-          angle: (bearing * math.pi) / 180,
-          child: Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.rotate(
+              angle: (bearing * math.pi) / 180,
+              child: Image.asset(
+                markerAssetPath,
+                // NOTE: Asset has alpha transparency.
+                width: isSelected ? 60 : 56,
+                height: isSelected ? 60 : 56,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint('Vehicle asset failed: $markerAssetPath => $error');
+                  return Image.asset(
+                    markerBaseAssetPath,
+                    width: isSelected ? 60 : 56,
+                    height: isSelected ? 60 : 56,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, baseError, baseStackTrace) {
+                      debugPrint('Base vehicle asset failed: $markerBaseAssetPath => $baseError');
+                      return Icon(
+                        Icons.local_shipping_rounded,
+                        size: isSelected ? 32 : 28,
+                        color: markerColor,
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            // Status Dot
+            Positioned(
+              right: isSelected ? 4 : 8,
+              bottom: isSelected ? 4 : 8,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: markerColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-            child: Image.asset(
-              markerAssetPath,
-              width: isSelected ? 60 : 56,
-              height: isSelected ? 60 : 56,
-              fit: BoxFit.contain,
-              color: markerColor,
-              colorBlendMode: BlendMode.srcIn,
-            ),
-          ),
+          ],
         ),
         if (showLabel) ...[
           const SizedBox(width: 6),
@@ -1051,6 +1595,7 @@ class VehicleMapMarker extends StatelessWidget {
         child: VehicleRippleMarker(
           showRipple: showRipple,
           isSelected: isSelected,
+          rippleColor: markerColor,
           child: vehicle,
         ),
       ),
@@ -1062,12 +1607,14 @@ class VehicleRippleMarker extends StatelessWidget {
   final Widget child;
   final bool showRipple;
   final bool isSelected;
+  final Color rippleColor;
 
   const VehicleRippleMarker({
     super.key,
     required this.child,
     required this.showRipple,
     this.isSelected = false,
+    this.rippleColor = const Color(0xFF4DA3FF),
   });
 
   @override
@@ -1077,6 +1624,7 @@ class VehicleRippleMarker extends StatelessWidget {
     }
     return _AnimatedVehicleRipple(
       isSelected: isSelected,
+      rippleColor: rippleColor,
       child: child,
     );
   }
@@ -1085,10 +1633,12 @@ class VehicleRippleMarker extends StatelessWidget {
 class _AnimatedVehicleRipple extends StatefulWidget {
   final Widget child;
   final bool isSelected;
+  final Color rippleColor;
 
   const _AnimatedVehicleRipple({
     required this.child,
     required this.isSelected,
+    required this.rippleColor,
   });
 
   @override
@@ -1133,8 +1683,7 @@ class _AnimatedVehicleRippleState extends State<_AnimatedVehicleRipple>
 
   @override
   Widget build(BuildContext context) {
-    const rippleColor = Color(0xFF4DA3FF);
-    final coreSize = widget.isSelected ? 32.0 : 26.0;
+    final rippleColor = widget.rippleColor;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -1151,14 +1700,8 @@ class _AnimatedVehicleRippleState extends State<_AnimatedVehicleRipple>
             children: [
               _buildRipple(p1, rippleColor),
               _buildRipple(p2, rippleColor),
-              Container(
-                width: coreSize,
-                height: coreSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: rippleColor.withValues(alpha: 0.10),
-                ),
-              ),
+              // NOTE: Vehicle marker assets must be PNGs with alpha transparency.
+              // Any baked-in white/gray background in the asset will show as a rectangle.
               widget.child,
             ],
           ),

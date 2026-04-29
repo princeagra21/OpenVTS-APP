@@ -6,13 +6,14 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_routes_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/add_map_location_screen.dart';
 import 'package:fleet_stack/modules/user/screens/route/assign_driver_screen.dart';
+import 'package:fleet_stack/modules/user/screens/map/widgets/glass_map_control_button.dart';
+import 'package:fleet_stack/modules/user/screens/map/widgets/map_layers_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
@@ -74,12 +75,14 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   // Missing UI/backend parity:
   // - Assign Driver is local-only and not persisted
   // - Route list/history UI is not exposed; only latest saved route is auto-loaded
+  static const double _defaultMapZoom = 13.0;
+  static const double _routeFocusZoom = 16.0;
   final MapController _mapController = MapController();
   final PopupController _popupLayerController = PopupController();
 
   final LatLng _initialCenter = const LatLng(28.6139, 77.2090);
   late LatLng _currentCenter;
-  double _currentZoom = 5.0;
+  double _currentZoom = _defaultMapZoom;
 
   final List<Waypoint> _waypoints = <Waypoint>[];
   List<LatLng> _route = <LatLng>[];
@@ -91,6 +94,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   bool _deleting = false;
   bool _loadErrorShown = false;
   bool _saveErrorShown = false;
+  bool _isMoreMenuOpen = false;
+  bool _isPseudo3D = false;
+  String _selectedTileLayerId = 'osm';
 
   String? _assignedDriver;
   String? _loadedRouteId;
@@ -99,6 +105,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   bool _isPickingFromMap = false;
   String? _pendingLabel;
   IconData _pendingIcon = Icons.location_on;
+  String? _activeAddMode;
 
   ApiClient? _apiClient;
   UserRoutesRepository? _repo;
@@ -236,14 +243,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     _totalDistanceKm = _calculateTotalDistance(coords);
 
     if (coords.isNotEmpty) {
-      final avgLat =
-          coords.map((p) => p.latitude).reduce((a, b) => a + b) / coords.length;
-      final avgLng =
-          coords.map((p) => p.longitude).reduce((a, b) => a + b) /
-          coords.length;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _mapController.move(LatLng(avgLat, avgLng), _currentZoom);
+        _fitRoute();
       });
     }
   }
@@ -258,6 +260,226 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     final newZoom = (_currentZoom - 1).clamp(3.0, 18.0);
     _mapController.move(_currentCenter, newZoom);
     setState(() => _currentZoom = newZoom);
+  }
+
+  void _fitRoute() {
+    final points = _route.isNotEmpty ? _route : _waypoints.map((w) => w.point).toList();
+    if (points.isEmpty) return;
+
+    if (points.length == 1) {
+      final p = points.first;
+      _mapController.move(p, _routeFocusZoom);
+      setState(() {
+        _currentCenter = p;
+        _currentZoom = _routeFocusZoom;
+      });
+      return;
+    }
+
+    final lats = points.map((p) => p.latitude).toList();
+    final lngs = points.map((p) => p.longitude).toList();
+    final bounds = LatLngBounds(
+      LatLng(lats.reduce((a, b) => a < b ? a : b), lngs.reduce((a, b) => a < b ? a : b)),
+      LatLng(lats.reduce((a, b) => a > b ? a : b), lngs.reduce((a, b) => a > b ? a : b)),
+    );
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(48),
+      ),
+    );
+  }
+
+  Future<void> _openMapLayersSheet() async {
+    final option = await showModalBottomSheet<MapTileOption>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return MapLayersSheet(
+          selectedTileLayerId: _selectedTileLayerId,
+          onSelected: (option) => Navigator.pop(sheetContext, option),
+        );
+      },
+    );
+    if (!mounted || option == null) return;
+    setState(() => _selectedTileLayerId = option.id);
+  }
+
+  void _togglePseudo3D() {
+    setState(() => _isPseudo3D = !_isPseudo3D);
+  }
+
+  MapTileOption get _selectedTileOption {
+    return kMapTileOptions.firstWhere(
+      (option) => option.id == _selectedTileLayerId,
+      orElse: () => kMapTileOptions.first,
+    );
+  }
+
+  void _toggleMoreMenu() {
+    setState(() => _isMoreMenuOpen = !_isMoreMenuOpen);
+  }
+
+  void _closeMoreMenu() {
+    if (!_isMoreMenuOpen) return;
+    setState(() => _isMoreMenuOpen = false);
+  }
+
+  Widget _buildToolChip({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback? onPressed,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.black
+              : (isDark ? cs.surface.withValues(alpha: 0.82) : Colors.white),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? Colors.black
+                : cs.outline.withValues(alpha: 0.12),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: selected ? 0.18 : 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: selected ? Colors.white : cs.onSurface,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : cs.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreActionButton({
+    required BuildContext context,
+    required String tooltip,
+    required Widget child,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: glassMapControlButton(
+        context: context,
+        width: 44,
+        height: 44,
+        borderRadiusValue: 9,
+        child: child,
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildExpandedMoreMenu(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      alignment: Alignment.bottomCenter,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Optimize Route',
+            child: const Icon(Icons.autorenew),
+            onPressed: () {
+              _closeMoreMenu();
+              if (!_loading && !_saving && !_deleting && !_isOptimizing) {
+                _optimizeRoute();
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Clear Route',
+            child: const Icon(Icons.clear),
+            onPressed: () {
+              _closeMoreMenu();
+              if (!_loading && !_saving && !_deleting && !_isOptimizing) {
+                _clearWaypoints();
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Assign Driver',
+            child: const Icon(Icons.person_add),
+            onPressed: () {
+              _closeMoreMenu();
+              if (!_loading && !_saving && !_deleting && !_isOptimizing) {
+                _assignDriver();
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Email Route',
+            child: const Icon(Icons.email),
+            onPressed: () {
+              _closeMoreMenu();
+              _emailRoute();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: 'Map Layers',
+            child: const Icon(Icons.layers_outlined),
+            onPressed: () async {
+              _closeMoreMenu();
+              await _openMapLayersSheet();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMoreActionButton(
+            context: context,
+            tooltip: _isPseudo3D ? 'Switch to 2D' : 'Switch to 3D',
+            child: Text(_isPseudo3D ? '3D' : '2D'),
+            onPressed: () {
+              _closeMoreMenu();
+              _togglePseudo3D();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _addWaypoint(LatLng p, {required String label, IconData? icon}) {
@@ -503,12 +725,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     });
 
     if (_route.isNotEmpty) {
-      final avgLat =
-          _route.map((p) => p.latitude).reduce((a, b) => a + b) / _route.length;
-      final avgLng =
-          _route.map((p) => p.longitude).reduce((a, b) => a + b) /
-          _route.length;
-      _mapController.move(LatLng(avgLat, avgLng), _currentZoom);
+      _fitRoute();
     }
 
     await _saveRoute(_route);
@@ -561,7 +778,8 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
       final icon = result['icon'] as IconData? ?? Icons.location_on;
 
       _addWaypoint(LatLng(lat, lng), label: label, icon: icon);
-      _mapController.move(LatLng(lat, lng), _currentZoom);
+      _mapController.move(LatLng(lat, lng), _routeFocusZoom);
+      setState(() => _currentZoom = _routeFocusZoom);
 
       ScaffoldMessenger.of(
         context,
@@ -633,14 +851,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final bottomBarHeight = AdaptiveUtils.getBottomBarHeight(screenWidth);
-    final fabSize = AdaptiveUtils.getButtonSize(screenWidth);
-    final iconSize = AdaptiveUtils.getIconSize(screenWidth);
-    final topOffset = AppUtils.appBarHeightCustom;
-    final bottomMargin =
-        MediaQuery.of(context).padding.bottom + bottomBarHeight + 50;
+    final topOffset = AppUtils.appBarHeightCustom + 14;
+    final rightTop = MediaQuery.of(context).size.height * 0.5 - 132;
+    final bottomMargin = MediaQuery.of(context).padding.bottom + 24;
 
     final markers = _waypoints.map((w) {
       return Marker(
@@ -657,12 +870,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     return AppLayout(
       title: 'MAP',
       subtitle: 'Route Optimization',
-      customTopBar: UserHomeAppBar(
-        title: 'Route Optimization',
-        leadingIcon: Icons.route_outlined,
-        onClose: () => context.go('/user/home'),
-      ),
-      customTopBarPadding: EdgeInsets.zero,
       actionIcons: const [],
       onActionTaps: const [],
       showAppBar: false,
@@ -679,13 +886,13 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: _initialCenter,
-                  initialZoom: _currentZoom,
+                  initialZoom: _defaultMapZoom,
                   minZoom: 3,
                   maxZoom: 18,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all,
                   ),
-                  onPositionChanged: (camera, _) {
+                  onPositionChanged: (camera, hasGesture) {
                     _currentCenter = camera.center;
                     _currentZoom = camera.zoom;
                     if (mounted) setState(() {});
@@ -697,7 +904,8 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         label: _pendingLabel!,
                         icon: _pendingIcon,
                       );
-                      _mapController.move(latlng, _currentZoom);
+                      _mapController.move(latlng, _routeFocusZoom);
+                      setState(() => _currentZoom = _routeFocusZoom);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -708,6 +916,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                       setState(() {
                         _isPickingFromMap = false;
                         _pendingLabel = null;
+                        _activeAddMode = null;
                       });
                     }
                   },
@@ -715,7 +924,8 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        _selectedTileOption.urlTemplate,
+                    subdomains: _selectedTileOption.subdomains,
                     userAgentPackageName: 'com.example.fleek_stack_mobile',
                   ),
                   if (_route.isNotEmpty)
@@ -728,7 +938,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         ),
                       ],
                     ),
-                  PopupMarkerLayerWidget(
+                  PopupMarkerLayer(
                     options: PopupMarkerLayerOptions(
                       markers: markers,
                       popupController: _popupLayerController,
@@ -747,7 +957,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: cs.onSurface.withOpacity(0.12),
+                                  color: cs.onSurface.withValues(alpha: 0.12),
                                   blurRadius: 4,
                                 ),
                               ],
@@ -771,51 +981,68 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 ],
               ),
               Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: UserHomeAppBar(
+                  title: 'Route Optimization',
+                  leadingIcon: Icons.route_outlined,
+                  borderRadius: 0,
+                  onClose: () => context.go('/user/home'),
+                ),
+              ),
+              Positioned(
                 top: topOffset,
                 left: 0,
                 right: 0,
-                child: Container(
-                  color: cs.surface,
-                  padding: const EdgeInsets.all(8.0),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        TopActionButton(
-                          onPressed:
-                              (_loading ||
-                                  _saving ||
-                                  _deleting ||
-                                  _isOptimizing)
-                              ? null
-                              : () => _handleAdd('landmark', context),
-                          icon: const Icon(Icons.edit),
+                        _buildToolChip(
+                          icon: Icons.edit,
                           label: 'Landmark',
-                        ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
+                          selected: _activeAddMode == 'landmark',
                           onPressed:
-                              (_loading ||
-                                  _saving ||
-                                  _deleting ||
-                                  _isOptimizing)
+                              (_loading || _saving || _deleting || _isOptimizing)
                               ? null
-                              : () => _handleAdd('map_location', context),
-                          icon: const Icon(Icons.touch_app),
+                              : () async {
+                                  setState(() => _activeAddMode = 'landmark');
+                                  await _handleAdd('landmark', context);
+                                  if (mounted) setState(() => _activeAddMode = null);
+                                },
+                        ),
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.touch_app,
                           label: 'Map location',
-                        ),
-                        const SizedBox(width: 8),
-                        TopActionButton(
+                          selected: _activeAddMode == 'map_location' || _isPickingFromMap,
                           onPressed:
-                              (_loading ||
-                                  _saving ||
-                                  _deleting ||
-                                  _isOptimizing)
+                              (_loading || _saving || _deleting || _isOptimizing)
                               ? null
-                              : () => _handleAdd('lat_lng', context),
-                          icon: const Icon(Icons.map),
-                          label: 'Insert lat/long',
+                              : () async {
+                                  setState(() => _activeAddMode = 'map_location');
+                                  await _handleAdd('map_location', context);
+                                  if (mounted && !_isPickingFromMap) {
+                                    setState(() => _activeAddMode = null);
+                                  }
+                                },
+                        ),
+                        const SizedBox(width: 10),
+                        _buildToolChip(
+                          icon: Icons.map,
+                          label: 'Insert lat/lng',
+                          selected: _activeAddMode == 'lat_lng',
+                          onPressed:
+                              (_loading || _saving || _deleting || _isOptimizing)
+                              ? null
+                              : () async {
+                                  setState(() => _activeAddMode = 'lat_lng');
+                                  await _handleAdd('lat_lng', context);
+                                  if (mounted) setState(() => _activeAddMode = null);
+                                },
                         ),
                       ],
                     ),
@@ -824,83 +1051,56 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
               ),
               Positioned(
                 right: 16,
-                bottom: bottomMargin + 10,
+                top: rightTop - 84,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Tooltip(
                       message: 'Zoom In',
-                      child: _fab(
-                        hero: 'zoom_in',
-                        icon: Icons.add,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: _zoomIn,
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        child: const Icon(Icons.add),
+                        onPressed: _zoomIn,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Tooltip(
                       message: 'Zoom Out',
-                      child: _fab(
-                        hero: 'zoom_out',
-                        icon: Icons.remove,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: _zoomOut,
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        child: const Icon(Icons.remove),
+                        onPressed: _zoomOut,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    if (_isMoreMenuOpen) ...[
+                      const SizedBox(height: 12),
+                      _buildExpandedMoreMenu(context),
+                      const SizedBox(height: 12),
+                    ],
                     Tooltip(
-                      message: 'Optimize Route',
-                      child: _fab(
-                        hero: 'optimize',
-                        icon: Icons.autorenew,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap:
-                            (_loading || _saving || _deleting || _isOptimizing)
-                            ? () {}
-                            : () async => _optimizeRoute(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Tooltip(
-                      message: 'Clear Route',
-                      child: _fab(
-                        hero: 'clear',
-                        icon: Icons.clear,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap:
-                            (_loading || _saving || _deleting || _isOptimizing)
-                            ? () {}
-                            : () async => _clearWaypoints(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Tooltip(
-                      message: 'Assign Driver',
-                      child: _fab(
-                        hero: 'assign_driver',
-                        icon: Icons.person_add,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        // Backend does not expose a route-to-driver assignment API yet.
-                        // This FAB currently stores the selected driver in local UI state only.
-                        onTap:
-                            (_loading || _saving || _deleting || _isOptimizing)
-                            ? () {}
-                            : _assignDriver,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Tooltip(
-                      message: 'Email Route',
-                      child: _fab(
-                        hero: 'email_route',
-                        icon: Icons.email,
-                        size: fabSize,
-                        iconSize: iconSize,
-                        onTap: _emailRoute,
+                      message: _isMoreMenuOpen ? 'Collapse' : 'More',
+                      child: glassMapControlButton(
+                        context: context,
+                        width: 44,
+                        height: 44,
+                        borderRadiusValue: _isMoreMenuOpen ? 0 : 9,
+                        backgroundColor:
+                            _isMoreMenuOpen ? Colors.transparent : null,
+                        borderColorOverride:
+                            _isMoreMenuOpen ? Colors.transparent : null,
+                        showShadow: !_isMoreMenuOpen,
+                        showBorder: !_isMoreMenuOpen,
+                        blurSigma: _isMoreMenuOpen ? 0 : 2.5,
+                        child: Icon(
+                          _isMoreMenuOpen
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.more_horiz_rounded,
+                        ),
+                        onPressed: _toggleMoreMenu,
                       ),
                     ),
                   ],
@@ -942,27 +1142,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _fab({
-    required String hero,
-    required IconData icon,
-    required double size,
-    required double iconSize,
-    required VoidCallback onTap,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: FloatingActionButton(
-        heroTag: hero,
-        backgroundColor: cs.primary,
-        foregroundColor: cs.onPrimary,
-        onPressed: onTap,
-        child: Icon(icon, size: iconSize),
       ),
     );
   }

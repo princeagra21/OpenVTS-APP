@@ -172,9 +172,14 @@ GoRouter buildRouter(String initialLocation) => GoRouter(
 /// ==============================
 ///  THEME CONTROLLER + CACHE
 /// ==============================
-class ThemeController {
-  ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.light);
-  ValueNotifier<Color> brandColor = ValueNotifier(AppTheme.defaultBrand);
+class ThemeController extends ChangeNotifier {
+  final ValueNotifier<ThemeMode> themeMode =
+      ValueNotifier<ThemeMode>(ThemeMode.light);
+  final ValueNotifier<Color> brandColor =
+      ValueNotifier<Color>(AppTheme.defaultBrand);
+  final ValueNotifier<TextDirection> textDirection =
+      ValueNotifier<TextDirection>(TextDirection.ltr);
+  final ValueNotifier<String> units = ValueNotifier<String>('KM');
 
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
@@ -183,6 +188,9 @@ class ThemeController {
     final modeRaw = prefs.getString("themeMode");
     final colorValue =
         prefs.getInt("brandColor") ?? AppTheme.defaultBrand.value;
+    final directionRaw =
+        prefs.getString("layoutDirection") ?? prefs.getString("direction");
+    final unitsRaw = prefs.getString("units") ?? 'KM';
 
     themeMode.value = switch (modeRaw) {
       'system' => ThemeMode.system,
@@ -200,17 +208,28 @@ class ThemeController {
       await prefs.setInt("brandColor", nextBrand.value);
     }
     brandColor.value = nextBrand;
+    textDirection.value = (directionRaw ?? '').trim().toUpperCase() == 'RTL'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+    units.value = _normalizeUnits(unitsRaw);
+
+    notifyListeners();
   }
 
-  void setDarkMode(bool isDark) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool("isDark", isDark);
-    await prefs.setString("themeMode", isDark ? "dark" : "light");
-
-    themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
+  String _normalizeUnits(String value) {
+    final v = value.trim().toUpperCase();
+    if (v == 'MILES' || v == 'MILE' || v == 'MI') return 'MILES';
+    return 'KM';
   }
 
-  void setThemeMode(ThemeMode mode) async {
+  Future<void> setDarkMode(bool isDark) async {
+    await setThemeMode(isDark ? ThemeMode.dark : ThemeMode.light);
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    themeMode.value = mode;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       "themeMode",
@@ -218,17 +237,36 @@ class ThemeController {
           ? "system"
           : (mode == ThemeMode.dark ? "dark" : "light"),
     );
-    if (mode != ThemeMode.system) {
-      await prefs.setBool("isDark", mode == ThemeMode.dark);
-    }
-    themeMode.value = mode;
+    await prefs.setBool("isDark", mode == ThemeMode.dark);
   }
 
-  void setBrand(Color color) async {
+  Future<void> setBrand(Color color) async {
+    brandColor.value = color;
+    notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt("brandColor", color.value);
+  }
 
-    brandColor.value = color;
+  Future<void> setTextDirection(String direction) async {
+    final normalized =
+        direction.trim().toUpperCase() == 'RTL' ? 'RTL' : 'LTR';
+    textDirection.value =
+        normalized == 'RTL' ? TextDirection.rtl : TextDirection.ltr;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("layoutDirection", normalized);
+    await prefs.setString("direction", normalized);
+  }
+
+  Future<void> setUnits(String value) async {
+    final normalized = _normalizeUnits(value);
+    units.value = normalized;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("units", normalized);
   }
 }
 
@@ -347,10 +385,13 @@ class _MyAppState extends State<MyApp> {
       designSize: const Size(375, 812),
       minTextAdapt: true,
       builder: (_, child) {
-        return ValueListenableBuilder2<ThemeMode, Color>(
-          first: themeController.themeMode,
-          second: themeController.brandColor,
-          builder: (_, mode, brand, __) {
+        return AnimatedBuilder(
+          animation: themeController,
+          builder: (_, __) {
+            final mode = themeController.themeMode.value;
+            final brand = themeController.brandColor.value;
+            final direction = themeController.textDirection.value;
+
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               scaffoldMessengerKey: rootScaffoldMessengerKey,
@@ -377,7 +418,12 @@ class _MyAppState extends State<MyApp> {
                   value: overlayStyle,
                   child: ColoredBox(
                     color: backgroundColor,
-                    child: SafeArea(child: child ?? const SizedBox.shrink()),
+                    child: Directionality(
+                      textDirection: direction,
+                      child: SafeArea(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                    ),
                   ),
                 );
                 if (widget.enableDevicePreview) {

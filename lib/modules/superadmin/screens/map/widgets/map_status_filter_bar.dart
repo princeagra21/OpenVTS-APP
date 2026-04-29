@@ -39,19 +39,19 @@ class MapStatusFilterBar extends StatelessWidget {
           final selected = filter == selectedFilter;
           final count = counts.countFor(filter);
           return InkWell(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(14),
             onTap: () => onChanged(filter),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
                 color: selected
                     ? Colors.black
                     : (isDark
                         ? cs.surface.withValues(alpha: 0.82)
                         : Colors.white),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: selected
                       ? Colors.black
@@ -89,7 +89,7 @@ class MapStatusFilterBar extends StatelessWidget {
                       color: selected
                           ? Colors.white.withValues(alpha: 0.15)
                           : cs.primary.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       count.toString(),

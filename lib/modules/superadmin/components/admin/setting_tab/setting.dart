@@ -276,6 +276,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (adminSettingsRes.isSuccess) {
         _applyServerSettings(adminSettingsRes.data!);
         await _persistLocalSettings();
+        await _syncAppSettings();
       } else if (!_errorShown) {
         _errorShown = true;
         _showSnackBarOnce("Couldn't load admin settings. Showing saved info.");
@@ -307,6 +308,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (adminSettingsRes.isSuccess) {
         _applyServerSettings(adminSettingsRes.data!, clearIfEmpty: true);
         await _persistLocalSettings(clearIfNull: true);
+        await _syncAppSettings();
         if (mounted) {
           _showSnackBarOnce('Settings reset to saved values.');
         }
@@ -330,19 +332,26 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   }
 
   void _applyThemeToApp() {
-    // ThemeController supports only light/dark. For "system", map to current device brightness.
     if (_selectedTheme == 'dark') {
-      themeController.setDarkMode(true);
+      themeController.setThemeMode(ThemeMode.dark);
       return;
     }
     if (_selectedTheme == 'light') {
-      themeController.setDarkMode(false);
+      themeController.setThemeMode(ThemeMode.light);
       return;
     }
     if (_selectedTheme == 'system') {
-      final isDark =
-          MediaQuery.of(context).platformBrightness == Brightness.dark;
-      themeController.setDarkMode(isDark);
+      themeController.setThemeMode(ThemeMode.system);
+    }
+  }
+
+  Future<void> _syncAppSettings() async {
+    _applyThemeToApp();
+    if (_selectedDirection != null) {
+      themeController.setTextDirection(_selectedDirection!);
+    }
+    if (_selectedUnit != null) {
+      themeController.setUnits(_selectedUnit!);
     }
   }
 
@@ -402,6 +411,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (res.isSuccess) {
         _applyServerSettings(res.data!);
         await _persistLocalSettings();
+        await _syncAppSettings();
         if (mounted) _showSnackBarOnce('Settings saved.');
       } else if (!_saveErrorShown) {
         _saveErrorShown = true;
@@ -1098,6 +1108,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedDirection = 'LTR');
+                                    themeController.setTextDirection('LTR');
                                     _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
@@ -1143,6 +1154,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedDirection = 'RTL');
+                                    themeController.setTextDirection('RTL');
                                     _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
@@ -1689,6 +1701,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedUnit = 'KM');
+                                    themeController.setUnits('KM');
                                     _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
@@ -1721,6 +1734,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedUnit = 'MILES');
+                                    themeController.setUnits('MILES');
                                     _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),

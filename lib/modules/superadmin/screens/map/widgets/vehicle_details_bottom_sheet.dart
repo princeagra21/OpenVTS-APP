@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
 import 'package:fleet_stack/core/models/vehicle_details.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
+import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 
 class VehicleDetailsBottomSheet extends StatefulWidget {
@@ -25,7 +26,8 @@ class VehicleDetailsBottomSheet extends StatefulWidget {
 
 class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
   CancelToken? _cancelToken;
-  bool _loading = true;
+  bool _loadingDetails = true;
+  bool _resolvingAddress = false;
   String? _error;
   VehicleDetails? _details;
   String _address = '–';
@@ -49,7 +51,8 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
 
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      _loadingDetails = true;
+      _resolvingAddress = false;
       _error = null;
       _details = null;
       _address = '–';
@@ -59,7 +62,7 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
     if (imei.isEmpty) {
       if (!mounted) return;
       setState(() {
-        _loading = false;
+        _loadingDetails = false;
         _error = 'Unable to load vehicle details';
       });
       return;
@@ -73,7 +76,7 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
 
     if (detailsRes.isFailure || detailsRes.data == null) {
       setState(() {
-        _loading = false;
+        _loadingDetails = false;
         _error = 'Unable to load vehicle details';
       });
       return;
@@ -95,7 +98,14 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
           telemetry['location_lng'],
     );
 
-    var address = '–';
+    if (!mounted || _cancelToken != token) return;
+    setState(() {
+      _details = details;
+      _loadingDetails = false;
+      _address = '–';
+      _resolvingAddress = _isValidCoordinate(lat, lng);
+    });
+
     if (_isValidCoordinate(lat, lng)) {
       final addressRes = await widget.repository.reverseGeocode(
         lat!,
@@ -103,17 +113,19 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
         cancelToken: token,
       );
       if (!mounted || _cancelToken != token) return;
-      address = addressRes.data?.trim().isNotEmpty == true
-          ? addressRes.data!.trim()
-          : 'Address unavailable';
+      setState(() {
+        _address = addressRes.data?.trim().isNotEmpty == true
+            ? addressRes.data!.trim()
+            : 'Address unavailable';
+        _resolvingAddress = false;
+      });
+    } else {
+      if (!mounted || _cancelToken != token) return;
+      setState(() {
+        _address = '–';
+        _resolvingAddress = false;
+      });
     }
-
-    if (!mounted || _cancelToken != token) return;
-    setState(() {
-      _details = details;
-      _address = address;
-      _loading = false;
-    });
   }
 
   @override
@@ -167,17 +179,18 @@ class _VehicleDetailsBottomSheetState extends State<VehicleDetailsBottomSheet> {
                 controller: widget.scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 children: [
-                  if (_loading) _LoadingState(vehicle: widget.vehicle),
-                  if (!_loading && _error != null)
+                  if (_loadingDetails) _LoadingState(vehicle: widget.vehicle),
+                  if (!_loadingDetails && _error != null)
                     _ErrorState(
                       title: _error!,
                       onRetry: _loadDetails,
                     ),
-                  if (!_loading && _error == null && _details != null)
+                  if (!_loadingDetails && _error == null && _details != null)
                     _CompactVehicleCard(
                       vehicle: widget.vehicle,
                       details: _details!,
                       address: _address,
+                      resolvingAddress: _resolvingAddress,
                     ),
                 ],
               ),
@@ -197,45 +210,74 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? cs.surface : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.only(top: 14),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: cs.surface,
+          color: cardBg,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: cs.outline.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircularProgressIndicator(
-              strokeWidth: 2.2,
-              color: cs.primary,
+            Row(
+              children: [
+                AppShimmer(width: 10, height: 10, radius: 5),
+                const SizedBox(width: 8),
+                Expanded(child: AppShimmer(width: 140, height: 18, radius: 8)),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AppShimmer(width: 44, height: 10, radius: 5),
+                    const SizedBox(height: 6),
+                    AppShimmer(width: 62, height: 24, radius: 8),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                AppShimmer(width: 76, height: 24, radius: 12),
+                AppShimmer(width: 92, height: 14, radius: 7),
+              ],
             ),
             const SizedBox(height: 14),
-            Text(
-              'Loading vehicle details...',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: cs.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
+            AppShimmer(width: double.infinity, height: 46, radius: 14),
+            const SizedBox(height: 12),
+            AppShimmer(width: 92, height: 14, radius: 7),
+            const SizedBox(height: 12),
+            AppShimmer(width: double.infinity, height: 18, radius: 8),
+            const SizedBox(height: 14),
+            Row(
+              children: const [
+                Expanded(child: AppShimmer(width: double.infinity, height: 48, radius: 12)),
+                SizedBox(width: 10),
+                Expanded(child: AppShimmer(width: double.infinity, height: 48, radius: 12)),
+                SizedBox(width: 10),
+                Expanded(child: AppShimmer(width: double.infinity, height: 48, radius: 12)),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              vehicle.plateNumber.trim().isEmpty
-                  ? '–'
-                  : vehicle.plateNumber.trim(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: cs.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
+            const SizedBox(height: 12),
+            AppShimmer(width: 120, height: 14, radius: 7),
+            const SizedBox(height: 10),
+            AppShimmer(width: double.infinity, height: 18, radius: 8),
           ],
         ),
       ),
@@ -307,11 +349,13 @@ class _CompactVehicleCard extends StatelessWidget {
   final MapVehiclePoint vehicle;
   final VehicleDetails details;
   final String address;
+  final bool resolvingAddress;
 
   const _CompactVehicleCard({
     required this.vehicle,
     required this.details,
     required this.address,
+    required this.resolvingAddress,
   });
 
   @override
@@ -524,16 +568,25 @@ class _CompactVehicleCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      address.trim().isEmpty ? '–' : address,
-                      softWrap: true,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.35,
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: resolvingAddress
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppShimmer(width: 170, height: 12, radius: 6),
+                              const SizedBox(height: 8),
+                              AppShimmer(width: double.infinity, height: 12, radius: 6),
+                            ],
+                          )
+                        : Text(
+                            address.trim().isEmpty ? '–' : address,
+                            softWrap: true,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ],
               ),
