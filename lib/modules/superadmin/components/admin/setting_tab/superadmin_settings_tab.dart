@@ -954,7 +954,6 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
     FontWeight? labelWeight,
     Color? labelColor,
   }) {
-    final controller = TextEditingController(text: value.toString());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -967,9 +966,10 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
+        TextFormField(
+          initialValue: value.toString(),
           keyboardType: TextInputType.number,
+          onChanged: (v) => onChanged(int.tryParse(v) ?? value),
           style: GoogleFonts.roboto(
             fontSize: valueFs,
             fontWeight: FontWeight.w800,
@@ -990,7 +990,6 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
               borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
           ),
-          onChanged: (v) => onChanged(int.tryParse(v) ?? value),
         ),
       ],
     );

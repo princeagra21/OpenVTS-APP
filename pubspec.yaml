@@ -58,6 +58,7 @@ flutter:
     - assets/image/logo.png
     - assets/image/marker_green.png
     - assets/image/
+    - assets/images/logos/
     - assets/images/vehicle_icons_named/
     - assets/images/vehicle_icons_status/
     - assets/images/

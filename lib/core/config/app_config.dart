@@ -1,3 +1,5 @@
+import 'package:fleet_stack/core/config/api_base_url_config.dart';
+
 class AppConfig {
   final AppEnvironment environment;
   final String baseUrl;
@@ -5,26 +7,16 @@ class AppConfig {
   const AppConfig({required this.environment, required this.baseUrl});
 
   /// Selects an environment based on `--dart-define=APP_ENV=dev|staging|prod`.
-  /// Optionally override base URL with `--dart-define=API_BASE_URL=https://...`.
+  /// Base URL uses the runtime config service, which falls back to the
+  /// `--dart-define=API_BASE_URL=https://...` value.
   static AppConfig fromDartDefine() {
     const envRaw = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
-    const overrideBaseUrl = String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: '',
-    );
 
     final env = AppEnvironmentX.tryParse(envRaw) ?? AppEnvironment.dev;
 
-    // TODO: Set real URLs for your environments.
-    final defaultBaseUrl = switch (env) {
-      AppEnvironment.dev => '',
-      AppEnvironment.staging => '',
-      AppEnvironment.prod => '',
-    };
-
     return AppConfig(
       environment: env,
-      baseUrl: overrideBaseUrl.isNotEmpty ? overrideBaseUrl : defaultBaseUrl,
+      baseUrl: ApiBaseUrlConfig.instance.effectiveBaseUrl,
     );
   }
 }

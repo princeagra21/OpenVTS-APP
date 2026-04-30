@@ -301,19 +301,38 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
+          initialValue: initialValue ?? '',
           obscureText: obscureText,
-          controller: TextEditingController(text: initialValue),
-          style: GoogleFonts.inter(color: colorScheme.onSurface, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+          style: GoogleFonts.inter(
+            color: colorScheme.onSurface,
+            fontSize: AdaptiveUtils.getTitleFontSize(width),
+          ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: AdaptiveUtils.getTitleFontSize(width)),
+            hintStyle: GoogleFonts.inter(
+              color: colorScheme.onSurface.withOpacity(0.6),
+              fontSize: AdaptiveUtils.getTitleFontSize(width),
+            ),
             filled: true,
             fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
           ),
         ),
       ],

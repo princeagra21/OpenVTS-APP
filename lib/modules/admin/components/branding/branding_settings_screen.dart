@@ -113,8 +113,8 @@ class _BrandingSettingsBox extends StatelessWidget {
               children: [
                 Text("Base URL", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: TextEditingController(text: "app.fleetstack.com"),
+                TextFormField(
+                  initialValue: "app.fleetstack.com",
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.transparent,

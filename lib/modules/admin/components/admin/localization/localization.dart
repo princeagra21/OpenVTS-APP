@@ -2350,11 +2350,8 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: TextEditingController(text: initial)
-            ..selection = TextSelection.fromPosition(
-              TextPosition(offset: initial.length),
-            ),
+        TextFormField(
+          initialValue: initial,
           onChanged: onChanged,
           style: GoogleFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,

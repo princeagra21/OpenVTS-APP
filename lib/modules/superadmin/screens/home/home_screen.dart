@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -352,9 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final double labelHeight = labelFontSize + AppUtils.spacingSmall;
     final double gridAspectRatio = tileSize / (tileSize + labelHeight);
 
-    final String logoAsset = isDark
-        ? 'assets/image/logo-dark.png'
-        : 'assets/image/logo-light.png';
+    final String logoAsset = AppLogo.assetFor(context);
 
     final profile = _profile;
     final appTitle = _appTitle();

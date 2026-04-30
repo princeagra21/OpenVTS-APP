@@ -457,7 +457,6 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     FontWeight? labelWeight,
     Color? labelColor,
   }) {
-    final controller = TextEditingController(text: value.toString());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -470,9 +469,10 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
+        TextFormField(
+          initialValue: value.toString(),
           keyboardType: TextInputType.number,
+          onChanged: (v) => onChanged(int.tryParse(v) ?? value),
           style: GoogleFonts.roboto(
             fontSize: valueFs,
             fontWeight: FontWeight.w800,
@@ -493,7 +493,6 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
           ),
-          onChanged: (v) => onChanged(int.tryParse(v) ?? value),
         ),
       ],
     );

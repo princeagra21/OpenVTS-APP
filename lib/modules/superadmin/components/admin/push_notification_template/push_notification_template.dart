@@ -284,12 +284,12 @@ class _PushNotificationTemplateHeaderState extends State<PushNotificationTemplat
             ),
           ),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             style: GoogleFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
-            controller: TextEditingController(),
+            initialValue: '',
             maxLines: 5,
             decoration: _inputDecoration(hint: "Enter push notification message"),
           ),

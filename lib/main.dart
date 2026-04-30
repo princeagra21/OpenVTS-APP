@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/core/auth/session_expired_bus.dart';
+import 'package:fleet_stack/core/config/api_base_url_config.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
@@ -308,6 +309,7 @@ class ValueListenableBuilder2<A, B> extends StatelessWidget {
 /// ===========================
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ApiBaseUrlConfig.instance.load();
   await themeController.loadTheme();
   final initialLocation = await _resolveInitialLocation();
   const forceDevicePreview = bool.fromEnvironment(

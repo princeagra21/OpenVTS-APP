@@ -1,12 +1,14 @@
 // components/auth/login_screen.dart
 import 'package:animations/animations.dart';
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/config/api_base_url_config.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/core/config/server_configuration_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,13 +25,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isForgot = false;
+  bool _isForgotSubmitting = false;
   bool _loggingIn = false;
   bool _loginErrorShown = false;
   bool _obscurePassword = true;
+  String? _forgotPasswordMessage;
   CancelToken? _loginToken;
 
   ApiClient? _api;
   AuthRepository? _authRepo;
+
+  Future<void> _syncApiClientBaseUrl() async {
+    final effectiveBaseUrl = ApiBaseUrlConfig.instance.effectiveBaseUrl;
+    _api?.updateBaseUrl(effectiveBaseUrl);
+  }
+
+  Future<void> _openServerConfiguration() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ServerConfigurationSheet(),
+    );
+
+    if (!mounted || result == null) return;
+    await _syncApiClientBaseUrl();
+    final message = switch (result) {
+      'saved' => 'Server configuration saved',
+      'reset' => 'Server configuration reset to default',
+      _ => null,
+    };
+    if (message != null) {
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 
   @override
   void dispose() {
@@ -50,6 +81,47 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_loginErrorShown || !mounted) return;
     _loginErrorShown = true;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _submitForgotPassword() async {
+    if (_isForgotSubmitting) return;
+
+    final identifier = _emailController.text.trim();
+    if (identifier.isEmpty) {
+      _showLoginErrorOnce('Please enter your email or username.');
+      return;
+    }
+
+    _ensureRepo();
+    _loginToken?.cancel('Retry forgot password');
+    final token = CancelToken();
+    _loginToken = token;
+
+    if (!mounted) return;
+    setState(() {
+      _isForgotSubmitting = true;
+      _forgotPasswordMessage = null;
+    });
+
+    try {
+      final message = await _authRepo!.forgotPassword(
+        identifier,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isForgotSubmitting = false;
+        _forgotPasswordMessage = message;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isForgotSubmitting = false);
+      _loginErrorShown = false;
+      final msg = error is ApiException && error.message.trim().isNotEmpty
+          ? error.message
+          : 'Unable to send reset link. Please try again.';
+      _showLoginErrorOnce(msg);
+    }
   }
 
   Future<void> _submitLogin() async {
@@ -154,13 +226,33 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title
-        Text(
-          'Login',
-          style: GoogleFonts.inter(
-            fontSize: labelSize + 4,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Login',
+                style: GoogleFonts.inter(
+                  fontSize: labelSize + 4,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Material(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              shape: const CircleBorder(),
+              child: IconButton(
+                onPressed: _openServerConfiguration,
+                tooltip: 'Server configuration',
+                icon: Icon(
+                  Icons.settings_rounded,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(
@@ -263,6 +355,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildForgotForm(ColorScheme colorScheme, double labelSize) {
+    if (_forgotPasswordMessage != null) {
+      return _buildCheckEmailView(colorScheme, labelSize);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -282,6 +378,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onTap: () {
                 setState(() {
                   _isForgot = false;
+                  _forgotPasswordMessage = null;
                 });
               },
               child: Icon(
@@ -305,12 +402,15 @@ class _LoginScreenState extends State<LoginScreen> {
         // Email Field
         TextField(
           controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.text,
           style: GoogleFonts.inter(
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
-          decoration: _minimalDecoration(context, hint: "Email").copyWith(
+          decoration: _minimalDecoration(
+            context,
+            hint: "Email or username",
+          ).copyWith(
             prefixIcon: Icon(
               Icons.email_outlined,
               color: colorScheme.primary,
@@ -328,6 +428,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () {
                   setState(() {
                     _isForgot = false;
+                    _forgotPasswordMessage = null;
                   });
                 },
                 child: Container(
@@ -352,12 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: GestureDetector(
-                onTap: () {
-                  // TODO: Implement forgot password logic
-                  setState(() {
-                    _isForgot = false;
-                  });
-                },
+                onTap: _isForgotSubmitting ? null : _submitForgotPassword,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   decoration: BoxDecoration(
@@ -365,19 +461,130 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: Text(
-                      "Proceed",
-                      style: GoogleFonts.inter(
-                        fontSize: labelSize,
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: _isForgotSubmitting
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            "Proceed",
+                            style: GoogleFonts.inter(
+                              fontSize: labelSize,
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckEmailView(ColorScheme colorScheme, double labelSize) {
+    final message =
+        _forgotPasswordMessage ??
+        'If an account with that identifier exists, a password reset link has been sent.';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Check Your Email',
+              style: GoogleFonts.inter(
+                fontSize: labelSize + 4,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isForgot = false;
+                  _forgotPasswordMessage = null;
+                });
+              },
+              child: Icon(
+                Icons.close,
+                size: 28,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          style: GoogleFonts.inter(
+            fontSize: labelSize - 1,
+            color: colorScheme.onSurface.withOpacity(0.75),
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 28),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.primary.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.mark_email_read_outlined, color: colorScheme.primary),
+              const SizedBox(height: 12),
+              Text(
+                'We have sent instructions if the account exists.',
+                style: GoogleFonts.inter(
+                  fontSize: labelSize - 1,
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _isForgot = false;
+              _forgotPasswordMessage = null;
+            });
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                'Back to Sign In',
+                style: GoogleFonts.inter(
+                  fontSize: labelSize,
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -392,6 +599,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: colorScheme.background,
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
         child: Align(
           alignment: Alignment.topCenter, // push toward top
           child: Padding(

@@ -79,6 +79,29 @@ class AuthRepository {
     );
   }
 
+  Future<String> forgotPassword(
+    String identifier, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/auth/forgot-password',
+      data: {'identifier': identifier.trim()},
+      cancelToken: cancelToken,
+    );
+
+    if (res.isFailure) {
+      throw (res.error ??
+          const ApiException(
+            message: 'Unable to send reset link. Please try again.',
+          ));
+    }
+
+    final data = res.data;
+    final message = _extractForgotPasswordMessage(data);
+    return message ??
+        'If an account with that identifier exists, a password reset link has been sent.';
+  }
+
   static String? _extractLogicalLoginFailureMessage(Object? data) {
     if (data is! Map) return null;
 
@@ -144,6 +167,30 @@ class AuthRepository {
       }
     }
 
+    return null;
+  }
+
+  static String? _extractForgotPasswordMessage(Object? data) {
+    if (data is Map) {
+      final nestedData = data['data'];
+      if (nestedData is Map) {
+        final nestedMessage = nestedData['message'];
+        if (nestedMessage is String && nestedMessage.trim().isNotEmpty) {
+          return nestedMessage.trim();
+        }
+      }
+
+      final directCandidates = [
+        data['message'],
+        data['msg'],
+        data['detail'],
+      ];
+      for (final candidate in directCandidates) {
+        if (candidate is String && candidate.trim().isNotEmpty) {
+          return candidate.trim();
+        }
+      }
+    }
     return null;
   }
 

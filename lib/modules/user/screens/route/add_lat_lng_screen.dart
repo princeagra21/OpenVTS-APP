@@ -87,6 +87,8 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
                     child: Column(
                       children: [
                         // Name (required)

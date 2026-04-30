@@ -284,12 +284,12 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
             ),
           ),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             style: GoogleFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
-            controller: TextEditingController(),
+            initialValue: '',
             decoration: _inputDecoration(hint: "Enter email subject"),
           ),
           const SizedBox(height: 24),
@@ -302,12 +302,12 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
             ),
           ),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             style: GoogleFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
-            controller: TextEditingController(),
+            initialValue: '',
             maxLines: 10,
             decoration: _inputDecoration(hint: "Enter email body (supports HTML)"),
           ),

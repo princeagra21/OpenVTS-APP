@@ -469,6 +469,8 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
                     child: Column(
                       children: [
                         CustomTextField(

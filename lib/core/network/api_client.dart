@@ -8,7 +8,7 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 
 class ApiClient {
   final Dio dio;
-  final AppConfig _config;
+  AppConfig _config;
   final TokenStorageBase _tokenStorage;
 
   ApiClient._(this.dio, this._config, this._tokenStorage);
@@ -38,6 +38,15 @@ class ApiClient {
     );
 
     return ApiClient._(dio, config, tokenStorage);
+  }
+
+  void updateBaseUrl(String baseUrl) {
+    var normalized = baseUrl.trim();
+    while (normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    _config = AppConfig(environment: _config.environment, baseUrl: normalized);
+    dio.options.baseUrl = normalized;
   }
 
   Future<Result<dynamic>> get(

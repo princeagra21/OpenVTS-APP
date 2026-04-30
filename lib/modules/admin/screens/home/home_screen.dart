@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_profile_repository.dart';
 import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -335,9 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final double labelFontSize =
         AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
 
-    final String logoAsset = isDark
-        ? 'assets/image/logo-dark.png'
-        : 'assets/image/logo-light.png';
+    final String logoAsset = AppLogo.assetFor(context);
 
     const footerText = '© 2026 Fleet Stack All rights reserved.';
 

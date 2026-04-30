@@ -7,6 +7,7 @@ import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:go_router/go_router.dart';
 import '../../utils/app_utils.dart';
 import '../../utils/adaptive_utils.dart';
@@ -216,23 +217,19 @@ class _CustomAppBarState extends State<CustomAppBar>
                             SizedBox(
                               height: 45,
                               width: 230,
-                              child: Image.asset(
-                                isDark
-                                    ? 'assets/image/logo-dark.png'
-                                    : 'assets/image/logo-light.png',
-                                fit: BoxFit.contain,
-                              ),
+                                child: Image.asset(
+                                  AppLogo.assetFor(context),
+                                  fit: BoxFit.contain,
+                                ),
                             )
                           else if (widget.showLeftAvatar)
                             SizedBox(
                               height: 45,
                               width: 230,
-                              child: Image.asset(
-                                isDark
-                                    ? 'assets/image/logo-dark.png'
-                                    : 'assets/image/logo-light.png',
-                                fit: BoxFit.contain,
-                              ),
+                                child: Image.asset(
+                                  AppLogo.assetFor(context),
+                                  fit: BoxFit.contain,
+                                ),
                             )
                           else
                             GestureDetector(

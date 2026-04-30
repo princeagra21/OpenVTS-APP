@@ -544,12 +544,8 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller:
-                      TextEditingController(text: freeCredits.toString())
-                        ..selection = TextSelection.fromPosition(
-                          TextPosition(offset: freeCredits.toString().length),
-                        ),
+                TextFormField(
+                  initialValue: freeCredits.toString(),
                   keyboardType: TextInputType.number,
                   onChanged: (v) {
                     if (_saving) return;

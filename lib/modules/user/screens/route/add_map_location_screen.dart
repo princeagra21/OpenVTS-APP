@@ -70,6 +70,8 @@ class _AddMapLocationScreenState extends State<AddMapLocationScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
                     child: Column(
                       children: [
                         CustomTextField(
