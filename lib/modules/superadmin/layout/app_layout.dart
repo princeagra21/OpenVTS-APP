@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import '../components/appbars/custom_appbar.dart';
-import '../components/bottom_bar/custom_bottom_bar.dart';
 import 'dart:ui';
 
 class AppLayout extends StatefulWidget {
@@ -23,6 +22,9 @@ class AppLayout extends StatefulWidget {
   /// NEW OPTIONS
   final double horizontalPadding;
   final bool showAppBar;
+  final Widget? customTopBar;
+  final EdgeInsets customTopBarPadding;
+  final double? customTopBarHeight;
 
   const AppLayout({
     super.key,
@@ -38,6 +40,9 @@ class AppLayout extends StatefulWidget {
     required this.leftAvatarText,
     this.horizontalPadding = 20.0,
     this.showAppBar = true,
+    this.customTopBar,
+    this.customTopBarPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.customTopBarHeight,
   });
 
   @override
@@ -97,9 +102,8 @@ class _AppLayoutState extends State<AppLayout> {
           }
 
           if (widget.onActionTaps != null &&
-              i < widget.onActionTaps!.length &&
-              widget.onActionTaps![i] != null) {
-            VoidCallback original = widget.onActionTaps![i];
+              i < widget.onActionTaps!.length) {
+            final original = widget.onActionTaps![i];
             effectiveTaps[i] = () {
               searchTap();
               original();
@@ -112,13 +116,16 @@ class _AppLayoutState extends State<AppLayout> {
             widget.actionIcons!.length,
             (_) => () {},
           );
-          if (!(widget.onActionTaps != null &&
-              i < widget.onActionTaps!.length)) {
+          if (widget.onActionTaps == null || i >= widget.onActionTaps!.length) {
             effectiveTaps[i] = () => context.push('/superadmin/notifications');
           }
         }
       }
     }
+
+    final bool hasCustomTopBar = widget.customTopBar != null;
+    final double topBarHeight =
+        widget.customTopBarHeight ?? (AppUtils.appBarHeightCustom + 5);
 
     return Scaffold(
       backgroundColor: isDark
@@ -150,7 +157,7 @@ class _AppLayoutState extends State<AppLayout> {
                         topPadding +
                         (widget.showAppBar
                             ? AppUtils.appBarHeightCustom + 32
-                            : 16),
+                            : (hasCustomTopBar ? (topBarHeight + 24) : 16)),
                   ),
                   widget.child,
                   SizedBox(height: 68 + 16 + bottomPadding),
@@ -183,6 +190,17 @@ class _AppLayoutState extends State<AppLayout> {
                     scrollOffset: _scrollOffset, // Pass the dynamic offset
                   ),
                 ),
+              ),
+            ),
+
+          if (hasCustomTopBar)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: Padding(
+                padding: widget.customTopBarPadding,
+                child: widget.customTopBar!,
               ),
             ),
 

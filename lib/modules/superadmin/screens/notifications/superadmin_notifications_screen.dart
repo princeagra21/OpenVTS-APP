@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/core/widgets/push_notification_banner.dart';
+import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -325,6 +326,12 @@ class _SuperadminNotificationsScreenState
     return AppLayout(
       title: 'FLEET STACK',
       subtitle: 'Notifications',
+      showAppBar: false,
+      customTopBar: const SuperAdminHomeAppBar(
+        title: 'Notifications',
+        leadingIcon: Icons.notifications_outlined,
+      ),
+      customTopBarPadding: EdgeInsets.zero,
       actionIcons: const [Icons.done_all],
       onActionTaps: [_markAllRead],
       leftAvatarText: 'FS',
@@ -335,18 +342,32 @@ class _SuperadminNotificationsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Inbox',
-              style: GoogleFonts.roboto(
-                fontSize: AdaptiveUtils.getSubtitleFontSize(width),
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Inbox',
+                    style: GoogleFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(width),
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _markAllRead,
+                  tooltip: 'Mark all as read',
+                  icon: Icon(
+                    Icons.done_all,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
               '${_items.length} notifications',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -466,7 +487,7 @@ class _NotificationCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -486,7 +507,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
                   child: Text(
                     item.isRead ? 'Read' : 'Unread',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                       fontWeight: FontWeight.w700,
                       color: item.isRead
@@ -500,7 +521,7 @@ class _NotificationCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '$kind • $created',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -512,7 +533,7 @@ class _NotificationCard extends StatelessWidget {
               body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -605,7 +626,7 @@ class _EmptyNotificationsCard extends StatelessWidget {
       ),
       child: Text(
         'No notifications',
-        style: GoogleFonts.roboto(
+        style: GoogleFonts.inter(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
           fontWeight: FontWeight.w700,
           color: colorScheme.onSurface.withOpacity(0.7),

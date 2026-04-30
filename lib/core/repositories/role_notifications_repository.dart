@@ -54,6 +54,7 @@ class RoleNotificationsRepository {
   Future<Result<void>> markAllRead({CancelToken? cancelToken}) async {
     final res = await api.patch(
       '$pathPrefix/read-all',
+      data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
     return res.when(

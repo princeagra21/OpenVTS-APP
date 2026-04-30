@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/superadmin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
@@ -23,25 +25,47 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  CancelToken? _badgeToken;
+  Timer? _badgeRefreshTimer;
   SuperadminProfile? _profile;
   bool _loadingProfile = false;
   String _accessToken = '';
   CancelToken? _profileToken;
   ApiClient? _apiClient;
   SuperadminRepository? _repo;
+  RoleNotificationsRepository? _notificationsRepo;
+  int _unreadCount = 0;
   String _baseUrl = '';
+
+  String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   @override
   void initState() {
     super.initState();
     _loadAccessToken();
     _loadProfile();
+    _loadUnreadCount();
+    _startBadgeRefresh();
   }
 
   @override
   void dispose() {
     _profileToken?.cancel('HomeScreen disposed');
+    _badgeToken?.cancel('HomeScreen disposed');
+    _badgeRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  RoleNotificationsRepository _notificationsRepoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _notificationsRepo ??= RoleNotificationsRepository(
+      api: _apiClient!,
+      pathPrefix: '/superadmin/notifications',
+    );
+    return _notificationsRepo!;
   }
 
   void _ensureRepo() {
@@ -91,6 +115,37 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadingProfile = false;
       });
     }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    _badgeToken?.cancel('Reload home notifications badge');
+    final token = CancelToken();
+    _badgeToken = token;
+
+    _notificationsRepo = null;
+    final result = await _notificationsRepoOrCreate().getNotifications(
+      cancelToken: token,
+    );
+    if (!mounted) return;
+
+    result.when(
+      success: (items) {
+        final unread = items.where((item) => !item.isRead).length;
+        if (!mounted) return;
+        setState(() => _unreadCount = unread);
+      },
+      failure: (_) {
+        if (!mounted) return;
+        setState(() => _unreadCount = 0);
+      },
+    );
+  }
+
+  void _startBadgeRefresh() {
+    _badgeRefreshTimer?.cancel();
+    _badgeRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _loadUnreadCount();
+    });
   }
 
   String _display(String? value, {String fallback = ''}) {
@@ -345,6 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final double subtitleFontSize = AdaptiveUtils.getSubtitleFontSize(
       screenWidth,
     );
+    final double bellNotificationFontSize =
+        AdaptiveUtils.getBellNotificationFontSize(screenWidth);
 
     final double gridGap = hp * 1.3;
     final double tileSize =
@@ -456,6 +513,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: buttonSize,
                     iconSize: iconSize,
                     colorScheme: cs,
+                    badgeText: _badgeText,
+                    showBadge: _unreadCount > 0,
+                    badgeFontSize: bellNotificationFontSize,
                     onTap: () => context.push('/superadmin/notifications'),
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
@@ -578,6 +638,9 @@ class _HeaderIconButton extends StatelessWidget {
   final double size;
   final double iconSize;
   final ColorScheme colorScheme;
+  final bool showBadge;
+  final String badgeText;
+  final double badgeFontSize;
   final VoidCallback onTap;
 
   const _HeaderIconButton({
@@ -585,31 +648,66 @@ class _HeaderIconButton extends StatelessWidget {
     required this.size,
     required this.iconSize,
     required this.colorScheme,
+    required this.showBadge,
+    required this.badgeText,
+    required this.badgeFontSize,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: cs.onSurface.withOpacity(0.2),
-            width: 1,
+      borderRadius: BorderRadius.circular(size / 2),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            height: size,
+            width: size,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: cs.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: colorScheme.primary,
+            ),
           ),
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: colorScheme.primary,
-        ),
+          if (showBadge)
+            Positioned(
+              top: -size * 0.15,
+              right: -size * 0.15,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onPrimary,
+                    fontSize: badgeFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
