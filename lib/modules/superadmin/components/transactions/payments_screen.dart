@@ -189,6 +189,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
   }
 
+  Future<void> _refreshPayments() async {
+    await _loadAdmins();
+    await _loadTransactions();
+  }
+
   String _formatInrCompact(double value) {
     if (value <= 0) return '₹0';
     if (value >= 10000000) {
@@ -839,14 +844,20 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                padding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
-                padding,
-                padding,
-              ),
+            child: RefreshIndicator(
+              onRefresh: _refreshPayments,
+              color: cs.primary,
+              backgroundColor: cs.surface,
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  padding,
+                  topPadding + AppUtils.appBarHeightCustom + 40,
+                  padding,
+                  (MediaQuery.of(context).padding.bottom + padding + 16)
+                      .clamp(24.0, 96.0)
+                      .toDouble(),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

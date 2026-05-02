@@ -27,7 +27,6 @@ class AddDeductCreditScreen extends StatefulWidget {
 class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
   String? _selectedAction; // 'add' or 'deduct'
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
   bool _submitting = false;
   ApiClient? _api;
   CancelToken? _token;
@@ -35,13 +34,12 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedAction = widget.initialAction;
+    _selectedAction = widget.initialAction ?? 'add';
   }
 
   @override
   void dispose() {
     _amountController.dispose();
-    _noteController.dispose();
     _token?.cancel('AddDeductCreditScreen disposed');
     super.dispose();
   }
@@ -72,30 +70,6 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
     );
-  }
-
-  // Dropdown decoration
-  InputDecoration _dropdownDecoration(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
-    );
-  }
-
-  String get _noteHint {
-    if (_selectedAction == 'add') {
-      return 'Why we are adding credit';
-    } else if (_selectedAction == 'deduct') {
-      return 'Why we are deducting credit';
-    } else {
-      return 'Note (optional)';
-    }
   }
 
   String get _confirmButtonText {
@@ -160,55 +134,6 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Action Dropdown
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: _dropdownDecoration(context),
-                        value: _selectedAction,
-                        hint: Text(
-                          'Select Action',
-                          style: GoogleFonts.roboto(
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                            fontSize: labelSize,
-                          ),
-                        ),
-                        items: (widget.lockAction && _selectedAction != null)
-                            ? [
-                                DropdownMenuItem(
-                                  value: _selectedAction,
-                                  child: Text(
-                                    _selectedAction == 'add'
-                                        ? 'Add Credit'
-                                        : 'Deduct Credit',
-                                  ),
-                                ),
-                              ]
-                            : const [
-                                DropdownMenuItem(
-                                  value: 'add',
-                                  child: Text('Add Credit'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'deduct',
-                                  child: Text('Deduct Credit'),
-                                ),
-                              ],
-                        onChanged: widget.lockAction
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _selectedAction = value;
-                                });
-                              },
-                        style: GoogleFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
-                        ),
-                        icon: Icon(Icons.arrow_drop_down, color: colorScheme.primary),
-                      ),
-
-                      const SizedBox(height: 16),
-
                       // Credit Amount
                       TextField(
                         controller: _amountController,
@@ -218,18 +143,6 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                           prefixIcon: Icon(Icons.monetization_on_outlined, color: colorScheme.primary, size: 22),
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Note
-                      TextField(
-                        controller: _noteController,
-                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
-                        decoration: _minimalDecoration(context, hint: _noteHint).copyWith(
-                          prefixIcon: Icon(Icons.note_outlined, color: colorScheme.primary, size: 22),
-                        ),
-                      ),
-
                       const SizedBox(height: 32),
 
                       // Buttons
@@ -328,7 +241,6 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
         data: {
           'credits': creditsValue.toString(),
           'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',
-          'description': _noteController.text.trim(),
         },
         cancelToken: token,
       );

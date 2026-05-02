@@ -270,17 +270,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
         PopupMenuItem<String>(
-          value: 'password',
-          height: 36,
-          child: Row(
-            children: const [
-              Expanded(child: Text('Change Password')),
-              Icon(Icons.chevron_right, size: 18),
-            ],
-          ),
-        ),
-        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
-        PopupMenuItem<String>(
           value: 'logout',
           height: 36,
           child: Row(
@@ -301,10 +290,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
       context.push('/superadmin/settings');
-    } else if (selected == 'password') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Change password not available yet.')),
-      );
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -555,75 +540,68 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  hp,
-                  AppUtils.spacingMedium,
-                  hp * 0.5,
-                  AppUtils.spacingLarge,
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Transform.translate(
-                        offset: const Offset(0, -30),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Center(
-                              child: Transform.translate(
-                                offset: const Offset(0, -40),
-                                child: Image.asset(
-                                  logoAsset,
-                                  width: (screenWidth * 0.45).clamp(140, 200),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: AppUtils.spacingLarge * 1.5),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: gridGap,
-                              runSpacing: gridGap,
-                              children: shortcuts.map((item) {
-                                return SizedBox(
-                                  width: tileSize,
-                                  child: _HomeShortcutTile(
-                                    item: item,
-                                    tileSize: tileSize,
-                                    labelFontSize: labelFontSize,
-                                    colorScheme: cs,
-                                    onTap: () => context.go(item.route),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            hp,
+            AppUtils.spacingMedium,
+            hp * 0.5,
+            AppUtils.spacingLarge,
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Transform.translate(
+                  offset: const Offset(0, -30),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Transform.translate(
+                          offset: const Offset(0, -40),
+                          child: Image.asset(
+                            logoAsset,
+                            width: (screenWidth * 0.45).clamp(140, 200),
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Text(
-                        footerText,
-                        textAlign: TextAlign.center,
-                        style: AppUtils.bodySmallBase.copyWith(
-                          color: cs.onSurface.withOpacity(0.55),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                        ),
+                      SizedBox(height: AppUtils.spacingLarge * 1.5),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: gridGap,
+                        runSpacing: gridGap,
+                        children: shortcuts.map((item) {
+                          return SizedBox(
+                            width: tileSize,
+                            child: _HomeShortcutTile(
+                              item: item,
+                              tileSize: tileSize,
+                              labelFontSize: labelFontSize,
+                              colorScheme: cs,
+                              onTap: () => context.go(item.route),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Text(
+                  footerText,
+                  textAlign: TextAlign.center,
+                  style: AppUtils.bodySmallBase.copyWith(
+                    color: cs.onSurface.withOpacity(0.55),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
 

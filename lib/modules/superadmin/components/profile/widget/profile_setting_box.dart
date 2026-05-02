@@ -15,6 +15,7 @@ class ProfileSettingBox extends StatelessWidget {
   final bool? isActive;
   final bool? isVerified;
   final bool loading;
+  final VoidCallback? onProfileUpdated;
 
   const ProfileSettingBox({
     super.key,
@@ -27,6 +28,7 @@ class ProfileSettingBox extends StatelessWidget {
     this.isActive,
     this.isVerified,
     this.loading = false,
+    this.onProfileUpdated,
   });
 
   String _orDash(String value) {
@@ -64,7 +66,11 @@ class ProfileSettingBox extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => EditAdminProfileScreen(adminId: id)),
-      );
+      ).then((updated) {
+        if (updated == true) {
+          onProfileUpdated?.call();
+        }
+      });
     }
 
     void openUpdatePassword() {

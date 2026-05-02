@@ -12,6 +12,7 @@ import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_documents_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_drivers_tab.dart';
+import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_activity_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_payments_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_profile_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_tickets_tab.dart';
@@ -35,7 +36,7 @@ class AdminUserDetailsScreen extends StatefulWidget {
 class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   // Confirmed endpoints (FleetStack-API-Reference.md + Postman):
   // - GET /admin/users/:id
-  // - GET /admin/unlinkvehicles/:userId
+  // - GET /admin/linkvehicles/:userId
   // - GET /admin/users/unlinkeddrivers/:userId
   // - GET /admin/documents/:userId
   // - GET /admin/tickets?userId=:userId
@@ -48,9 +49,11 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     'Documents',
     'Tickets',
     'Payments',
+    'Activity Logs',
   ];
 
   String _selectedTab = 'Profile';
+  int _detailReloadNonce = 0;
 
   AdminUserDetails? _details;
   bool _loadingDetails = false;
@@ -88,6 +91,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     'Documents': false,
     'Tickets': false,
     'Payments': false,
+    'Activity Logs': false,
   };
 
   ApiClient? _apiClient;
@@ -218,7 +222,43 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
       case 'Payments':
         if (!_paymentsLoaded && !_loadingPayments) _loadPayments();
         break;
+      case 'Activity Logs':
       default:
+        break;
+    }
+  }
+
+  Future<void> _refreshDetails() async {
+    await _loadDetails(silent: true);
+    if (!mounted) return;
+
+    switch (_selectedTab) {
+      case 'Vehicles':
+        _vehiclesLoaded = false;
+        await _loadVehicles();
+        break;
+      case 'Drivers':
+        _driversLoaded = false;
+        await _loadDrivers();
+        break;
+      case 'Documents':
+        _documentsLoaded = false;
+        await _loadDocuments();
+        break;
+      case 'Tickets':
+        _ticketsLoaded = false;
+        await _loadTickets();
+        break;
+      case 'Payments':
+        _paymentsLoaded = false;
+        await _loadPayments();
+        break;
+      case 'Activity Logs':
+        setState(() => _detailReloadNonce++);
+        break;
+      case 'Profile':
+      default:
+        setState(() => _detailReloadNonce++);
         break;
     }
   }
@@ -471,7 +511,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final bodyFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
     final smallFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
     final topPadding = MediaQuery.of(context).padding.top;
@@ -492,27 +531,36 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
           : const Color(0xFFF5F5F7),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 28,
-              horizontalPadding,
-              84,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                NavigateBox(
-                  selectedTab: _selectedTab,
-                  tabs: _tabs,
-                  title: 'User mobile screens',
-                  subtitle: 'Switch between the user screens below.',
-                  onTabSelected: _selectTab,
-                ),
-                const SizedBox(height: 4),
-                _buildTabContent(bodyFs, smallFs),
-                const SizedBox(height: 24),
-              ],
+          RefreshIndicator(
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            onRefresh: _refreshDetails,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                horizontalPadding,
+                84,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NavigateBox(
+                    selectedTab: _selectedTab,
+                    tabs: _tabs,
+                    title: 'User mobile screens',
+                    subtitle: 'Switch between the user screens below.',
+                    onTabSelected: _selectTab,
+                  ),
+                  const SizedBox(height: 4),
+                  KeyedSubtree(
+                    key: ValueKey('admin_user_${_selectedTab}_$_detailReloadNonce'),
+                    child: _buildTabContent(bodyFs, smallFs),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
           Positioned(
@@ -541,8 +589,10 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
           children: [
             const SizedBox(height: 24),
             AdminUserVehiclesTab(
+              userId: widget.id,
               items: _vehicles,
               loading: _loadingVehicles,
+              onAssigned: _loadVehicles,
             ),
             const SizedBox(height: 24),
           ],
@@ -596,6 +646,14 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
               bodyFontSize: bodyFs,
               smallFontSize: smallFs,
             ),
+            const SizedBox(height: 24),
+          ],
+        );
+      case 'Activity Logs':
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserActivityTab(userId: widget.id),
             const SizedBox(height: 24),
           ],
         );

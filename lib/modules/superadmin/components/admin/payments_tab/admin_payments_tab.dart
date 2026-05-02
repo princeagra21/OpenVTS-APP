@@ -5,14 +5,20 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/payments_tab/add_admin_payment_record_screen.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AdminPaymentsTab extends StatefulWidget {
   final String adminId;
+  final String? adminName;
 
-  const AdminPaymentsTab({super.key, required this.adminId});
+  const AdminPaymentsTab({
+    super.key,
+    required this.adminId,
+    this.adminName,
+  });
 
   @override
   State<AdminPaymentsTab> createState() => _AdminPaymentsTabState();
@@ -154,7 +160,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
     }
     final cs = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth) + 4;
     final double titleSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
     final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
     final double scale = AdaptiveUtils.getTitleFontSize(screenWidth) / 14;
@@ -213,14 +218,59 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Recent Transactions',
-                  style: GoogleFonts.roboto(
-                    fontSize: headerSize,
-                    height: 24 / 18,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recent Transactions',
+                        style: GoogleFonts.roboto(
+                          fontSize: headerSize,
+                          height: 24 / 18,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final updated = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddAdminPaymentRecordScreen(
+                              adminId: widget.adminId,
+                              adminName: widget.adminName,
+                            ),
+                          ),
+                        );
+                        if (updated == true) {
+                          await _loadTransactions();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(
+                        'Record',
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (_loading)

@@ -195,6 +195,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   String? _detailStatus;
   String? _detailFromName;
   String? _detailFromEmail;
+  final ScrollController _chatScrollController = ScrollController();
+  final ScrollController _fullscreenChatScrollController = ScrollController();
 
   @override
   void initState() {
@@ -211,8 +213,426 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     _sendToken?.cancel('TicketDetailsScreen disposed');
     _statusToken?.cancel('TicketDetailsScreen disposed');
     _detailsToken?.cancel('TicketDetailsScreen disposed');
+    _chatScrollController.dispose();
+    _fullscreenChatScrollController.dispose();
     messageController.dispose();
     super.dispose();
+  }
+
+  DateTime? _parseMessageDate(String raw) {
+    final v = raw.trim();
+    if (v.isEmpty) return null;
+    final iso = DateTime.tryParse(v);
+    if (iso != null) return iso.toLocal();
+    final match = RegExp(
+      r'^(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})$',
+    ).firstMatch(v);
+    if (match == null) return null;
+    return DateTime(
+      int.parse(match.group(3)!),
+      int.parse(match.group(2)!),
+      int.parse(match.group(1)!),
+      int.parse(match.group(4)!),
+      int.parse(match.group(5)!),
+    );
+  }
+
+  String _formatMessageTime(Message msg) {
+    final dt = _parseMessageDate(msg.timestamp);
+    if (dt == null) return msg.timestamp.trim().isEmpty ? '—' : msg.timestamp;
+    final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$hour12:$minute $suffix';
+  }
+
+  String _dateLabelForMessage(Message msg) {
+    final dt = _parseMessageDate(msg.timestamp);
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${dt.day} ${months[dt.month - 1]}';
+  }
+
+  void _scrollToLatest([ScrollController? controller]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = controller ?? _chatScrollController;
+      if (!c.hasClients) return;
+      c.animateTo(
+        c.position.maxScrollExtent + 80,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  Color _chatAccentBackground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.18),
+      cs.surface,
+    );
+  }
+
+  Color _chatAccentForeground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return cs.onSurface;
+  }
+
+  Widget _buildChatSurface({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.03),
+      cs.surfaceContainerLowest,
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: CustomPaint(
+        painter: _ChatPatternPainter(
+          color: cs.onSurface.withValues(alpha: 0.035),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyComposer({
+    required BuildContext context,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    VoidCallback? onChangedForParent,
+  }) {
+    final accentBg = _chatAccentBackground(context);
+    final accentFg = _chatAccentForeground(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await _pickAttachment();
+                      onChangedForParent?.call();
+                    },
+                    child: Container(
+                      height: 32,
+                      width: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.attach_file,
+                        size: 16,
+                        color: colorScheme.onSurface.withValues(alpha: 0.72),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: messageController,
+                          minLines: 1,
+                          maxLines: 3,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: 'Type a message…',
+                            hintStyle: GoogleFonts.roboto(
+                              fontSize: bodyFs,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                        if (_attachment != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _attachment!.filename,
+                              style: GoogleFonts.roboto(
+                                fontSize: secondaryFs - 1,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _sending
+                        ? null
+                        : () async {
+                            onChangedForParent?.call();
+                            await _sendMessage();
+                            onChangedForParent?.call();
+                          },
+                    child: Container(
+                      height: 38,
+                      width: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accentBg,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(Icons.send, size: 18, color: accentFg),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatList({
+    required List<Message> messages,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    required ScrollController controller,
+  }) {
+    final baseBg = colorScheme.surface;
+    final baseText = colorScheme.onSurface;
+    final mutedText = colorScheme.onSurfaceVariant;
+
+    if (messages.isEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          '—',
+          style: GoogleFonts.roboto(
+            fontSize: secondaryFs,
+            fontWeight: FontWeight.w500,
+            color: mutedText,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: controller,
+      padding: EdgeInsets.zero,
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final bubbleMinWidth = (screenWidth * 0.24).clamp(86.0, 120.0);
+        final bubbleMaxWidth = screenWidth * 0.74;
+        final accentBg = _chatAccentBackground(context);
+        final accentFg = _chatAccentForeground(context);
+        final msg = messages[index];
+        final isOutgoing = msg.isOutgoing;
+        final prev = index > 0 ? messages[index - 1] : null;
+        final currentDate = _dateLabelForMessage(msg);
+        final prevDate = prev == null ? '' : _dateLabelForMessage(prev);
+        final showDateSeparator = currentDate.isNotEmpty && currentDate != prevDate;
+
+        return Column(
+          children: [
+            if (showDateSeparator)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      currentDate,
+                      style: GoogleFonts.roboto(
+                        fontSize: secondaryFs - 1,
+                        fontWeight: FontWeight.w600,
+                        color: mutedText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Align(
+                alignment:
+                    isOutgoing ? Alignment.centerRight : Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: bubbleMinWidth,
+                    maxWidth: bubbleMaxWidth,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isOutgoing ? accentBg : baseBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isOutgoing
+                            ? accentBg.withValues(alpha: 0.9)
+                            : colorScheme.onSurface.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isOutgoing
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          msg.content,
+                          textAlign:
+                              isOutgoing ? TextAlign.right : TextAlign.left,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs - 0.5,
+                            fontWeight: FontWeight.w500,
+                            color: isOutgoing
+                                ? accentFg
+                                : baseText,
+                          ),
+                        ),
+                        if (msg.attachmentName.trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _downloadAttachment(msg),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isOutgoing
+                                    ? accentFg.withValues(alpha: 0.12)
+                                    : colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.18,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.attach_file,
+                                    size: 14,
+                                    color: isOutgoing
+                                        ? accentFg
+                                        : mutedText,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      msg.attachmentName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs - 1,
+                                        fontWeight: FontWeight.w500,
+                                        color: isOutgoing
+                                            ? accentFg
+                                            : mutedText,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _formatMessageTime(msg),
+                            style: GoogleFonts.roboto(
+                              fontSize: secondaryFs - 2.5,
+                              fontWeight: FontWeight.w500,
+                              color: isOutgoing
+                                  ? accentFg.withValues(alpha: 0.85)
+                                  : mutedText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _pickAttachment() async {
@@ -389,6 +809,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               ..clear()
               ..addAll(nextMessages);
           });
+          _scrollToLatest();
         },
         failure: (err) {
           setState(() => _loadingDetails = false);
@@ -484,6 +905,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             _attachment = null;
             _hasChanges = true;
           });
+          _scrollToLatest();
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Message sent')));
@@ -591,13 +1013,188 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+        borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
     );
+  }
+
+  List<Message> _filteredMessagesForTab() {
+    return (selectedLocalTab == "Conversation"
+            ? _messages.where((m) => !m.isInternal)
+            : _messages.where((m) => m.isInternal))
+        .map(
+          (m) => Message(
+            sender: m.senderName.isNotEmpty ? m.senderName : 'Unknown',
+            content: m.message,
+            timestamp: m.createdAt,
+            isInternalNote: m.isInternal,
+            attachmentName: m.attachmentName,
+            attachmentUrl: m.attachmentUrl,
+            isOutgoing: _isOutgoingMessage(m),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> _openFullscreenChat() async {
+    final String fromName = (_detailFromName != null &&
+            _detailFromName!.trim().isNotEmpty)
+        ? _detailFromName!.trim()
+        : (widget.ticket.owner.isNotEmpty
+            ? widget.ticket.owner
+            : (widget.ticket.name.isNotEmpty ? widget.ticket.name : '—'));
+    final String fromDate = _formatDateTimeDisplay(
+      widget.ticket.updated.isNotEmpty
+          ? widget.ticket.updated
+          : widget.ticket.created,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              final colorScheme = Theme.of(context).colorScheme;
+              final w = MediaQuery.of(context).size.width;
+              final scale = _supportScale(w);
+              final bodyFs = 14 + scale;
+              final secondaryFs = 12 + scale;
+              final filteredMessages = _filteredMessagesForTab();
+              _scrollToLatest(_fullscreenChatScrollController);
+
+              return Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor:
+                                    colorScheme.onSurface.withValues(alpha: 0.06),
+                                child: Text(
+                                  fromName.isNotEmpty
+                                      ? fromName[0].toUpperCase()
+                                      : '—',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs - 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fromName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      fromDate,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Tooltip(
+                                message: 'Collapse content',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    height: 36,
+                                    width: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.surface,
+                                      border: Border.all(
+                                        color: colorScheme.outline.withValues(alpha: 0.22),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.close_fullscreen,
+                                      size: 18,
+                                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: _buildChatSurface(
+                              context: context,
+                              child: _buildChatList(
+                                messages: filteredMessages,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                controller: _fullscreenChatScrollController,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildReplyComposer(
+                            context: context,
+                            colorScheme: colorScheme,
+                            bodyFs: bodyFs,
+                            secondaryFs: secondaryFs,
+                            onChangedForParent: () {
+                              if (mounted) {
+                                setModalState(() {});
+                                _scrollToLatest(_fullscreenChatScrollController);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -625,33 +1222,13 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           ? widget.ticket.updated
           : widget.ticket.created,
     );
-    // Filter messages based on the selected tab
-    final filteredMessages =
-        (selectedLocalTab == "Conversation"
-                ? _messages.where((m) => !m.isInternal)
-                : _messages.where((m) => m.isInternal))
-            .map(
-              (m) => Message(
-                sender: m.senderName.isNotEmpty ? m.senderName : 'Unknown',
-                content: m.message,
-                timestamp: m.createdAt,
-                isInternalNote: m.isInternal,
-                attachmentName: m.attachmentName,
-                attachmentUrl: m.attachmentUrl,
-                isOutgoing: _isOutgoingMessage(m),
-              ),
-            )
-            .toList();
-    final Message? latestMessage =
-        filteredMessages.isNotEmpty ? filteredMessages.last : null;
+    final filteredMessages = _filteredMessagesForTab();
     final showDetailsSkeleton = _loadingDetails && _messages.isEmpty;
 
     final double topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Positioned.fill(
@@ -672,7 +1249,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
+                        color: colorScheme.onSurface.withValues(alpha: 0.08),
                       ),
                     ),
                     child: Column(
@@ -710,7 +1287,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   color: _statusColor(
                                     _detailStatus ?? selectedDropdownStatus,
                                     colorScheme,
-                                  ).withOpacity(0.4),
+                                  ).withValues(alpha: 0.4),
                                 ),
                               ),
                               child: Row(
@@ -758,7 +1335,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           style: GoogleFonts.roboto(
                             fontSize: metaFs,
                             height: 14 / 11,
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -772,7 +1349,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             color: Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.12),
+                              color: colorScheme.onSurface.withValues(alpha: 0.12),
                             ),
                           ),
                           child: Column(
@@ -785,7 +1362,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w600,
                                   color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                      colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -808,7 +1385,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
                                   color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                      colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -826,7 +1403,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         else
                           DropdownButtonFormField<String>(
                             decoration: _dropdownDecoration(context),
-                            value: statusOptions.contains(selectedDropdownStatus)
+                            initialValue: statusOptions.contains(selectedDropdownStatus)
                                 ? selectedDropdownStatus
                                 : null,
                             items: statusOptions
@@ -856,25 +1433,45 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.08),
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double normalPreviewMinHeight = 140;
+                          final double normalPreviewMaxHeight =
+                              constraints.maxHeight < 540 ? 280 : 360;
+                          final double desiredPreviewHeight =
+                              (120 + (filteredMessages.length * 64))
+                                  .toDouble()
+                                  .clamp(
+                                    normalPreviewMinHeight,
+                                    normalPreviewMaxHeight,
+                                  );
+                          // Reserve room for header + gaps + composer so column never overflows.
+                          final double availableForMessages =
+                              (constraints.maxHeight - 170).clamp(100.0, 420.0);
+                          final double normalPreviewHeight =
+                              desiredPreviewHeight > availableForMessages
+                              ? availableForMessages
+                              : desiredPreviewHeight;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                         Row(
                           children: [
                             CircleAvatar(
                               radius: 20,
                               backgroundColor:
-                                  colorScheme.onSurface.withOpacity(0.06),
+                                  colorScheme.onSurface.withValues(alpha: 0.06),
                               child: Text(
                                 fromName.isNotEmpty
                                     ? fromName[0].toUpperCase()
@@ -884,7 +1481,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w700,
                                   color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                      colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
                             ),
@@ -912,7 +1509,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface
-                                          .withOpacity(0.6),
+                                          .withValues(alpha: 0.6),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -920,290 +1517,58 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: double.infinity,
-                          height: 160,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: filteredMessages.isEmpty
-                              ? Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    '—',
-                                    textAlign: TextAlign.left,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.7),
-                                    ),
+                            IconButton(
+                              tooltip: 'Open fullscreen chat',
+                              onPressed: _openFullscreenChat,
+                              icon: Container(
+                                height: 34,
+                                width: 34,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: colorScheme.onSurface.withValues(alpha: 
+                                    0.06,
                                   ),
-                                )
-                              : ListView.separated(
-                                  itemCount: filteredMessages.length,
-                                  padding: EdgeInsets.zero,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 8),
-                                  itemBuilder: (context, index) {
-                                    final msg = filteredMessages[index];
-                                    final isOutgoing = msg.isOutgoing;
-                                    return Align(
-                                      alignment: isOutgoing
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.of(context).size.width *
-                                              0.68,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isOutgoing
-                                              ? colorScheme.primary
-                                                  .withOpacity(0.08)
-                                              : Colors.transparent,
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.12),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: isOutgoing
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              msg.content,
-                                              textAlign: isOutgoing
-                                                  ? TextAlign.right
-                                                  : TextAlign.left,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.7),
-                                              ),
-                                            ),
-                                            if (msg.attachmentName
-                                                .trim()
-                                                .isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                onTap: () =>
-                                                    _downloadAttachment(msg),
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.04),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      10,
-                                                    ),
-                                                    border: Border.all(
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withOpacity(0.08),
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.attach_file,
-                                                        size: 14,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.6),
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Flexible(
-                                                        child: Text(
-                                                          msg.attachmentName,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              GoogleFonts.roboto(
-                                                            fontSize:
-                                                                secondaryFs - 1,
-                                                            height: 14 / 11,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: colorScheme
-                                                                .onSurface
-                                                                .withOpacity(
-                                                                  0.7,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
                                 ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.08),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.12),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: _pickAttachment,
-                                        child: Container(
-                                          height: 32,
-                                          width: 32,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.06),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.attach_file,
-                                            size: 16,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.6),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            TextField(
-                                              controller: messageController,
-                                              minLines: 1,
-                                              maxLines: 3,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface,
-                                              ),
-                                              decoration: InputDecoration(
-                                                isDense: true,
-                                                hintText: 'Type a message…',
-                                                hintStyle: GoogleFonts.roboto(
-                                                  fontSize: bodyFs,
-                                                  height: 20 / 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                                filled: true,
-                                                fillColor: Colors.transparent,
-                                                border: InputBorder.none,
-                                                enabledBorder: InputBorder.none,
-                                                focusedBorder: InputBorder.none,
-                                              ),
-                                            ),
-                                            if (_attachment != null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 4),
-                                                child: Text(
-                                                  _attachment!.filename,
-                                                  style: GoogleFonts.roboto(
-                                                    fontSize: secondaryFs - 1,
-                                                    height: 14 / 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.6),
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      GestureDetector(
-                                        onTap: _sending ? null : _sendMessage,
-                                        child: Container(
-                                          height: 38,
-                                          width: 38,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.primary,
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.send,
-                                            size: 18,
-                                            color: colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.open_in_full,
+                                  size: 18,
+                                  color: colorScheme.onSurface.withValues(alpha: 
+                                    0.8,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                        const SizedBox(height: 10),
+                              SizedBox(
+                                height: normalPreviewHeight,
+                                child: _buildChatSurface(
+                                  context: context,
+                                  child: _buildChatList(
+                                    messages: filteredMessages,
+                                    colorScheme: colorScheme,
+                                    bodyFs: bodyFs,
+                                    secondaryFs: secondaryFs,
+                                    controller: _chatScrollController,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _buildReplyComposer(
+                                context: context,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                onChangedForParent: () {
+                                  if (mounted) setState(() {});
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -1215,9 +1580,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             right: padding,
             top: 0,
             child: Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: SuperAdminHomeAppBar(
                 title: widget.ticket.ticketNo.isNotEmpty
                     ? widget.ticket.ticketNo
@@ -1233,217 +1596,26 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 }
 
-// --- New Widget for Messages Display ---
-
-class _MessagesContainer extends StatelessWidget {
-  final List<Message> messages;
-  final String selectedTab;
-
-  const _MessagesContainer({required this.messages, required this.selectedTab});
+class _ChatPatternPainter extends CustomPainter {
+  final Color color;
+  const _ChatPatternPainter({required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double messageHeight = MediaQuery.of(context).size.height * 0.4;
-    final double width = MediaQuery.of(context).size.width;
-    final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
-    final double messageTitleFs = 14 + scale;
-    final double messageBodyFs = 14 + scale;
-    final double metaFs = 11 + scale;
-
-    if (messages.isEmpty) {
-      return Container(
-        width: double.infinity,
-        height: messageHeight,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: Text(
-          "No ${selectedTab.toLowerCase()} messages for this ticket.",
-          style: GoogleFonts.roboto(
-            fontSize: messageBodyFs,
-            height: 20 / 14,
-            color: colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    const step = 34.0;
+    for (double y = 10; y < size.height; y += step) {
+      for (double x = 10; x < size.width; x += step) {
+        canvas.drawCircle(Offset(x, y), 3.2, paint);
+        canvas.drawLine(Offset(x + 7, y + 7), Offset(x + 12, y + 12), paint);
+      }
     }
-
-    return Container(
-      width: double.infinity,
-      height: messageHeight,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: ListView.builder(
-        reverse: false, // default
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          final isOutgoing = message.isOutgoing;
-          final bubbleColor = isOutgoing
-              ? colorScheme.primary.withOpacity(0.1)
-              : colorScheme.surface;
-          final align = isOutgoing ? Alignment.centerRight : Alignment.centerLeft;
-          final cross =
-              isOutgoing ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
-          return Align(
-            alignment: align,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.72,
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.08),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: cross,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          message.sender,
-                          style: GoogleFonts.roboto(
-                            fontWeight: FontWeight.bold,
-                            fontSize: messageTitleFs,
-                            height: 20 / 14,
-                            color: message.isInternalNote
-                                ? Colors.purple
-                                : colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          message.timestamp,
-                          style: GoogleFonts.roboto(
-                            fontSize: metaFs,
-                            height: 14 / 11,
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      message.content,
-                      textAlign: isOutgoing ? TextAlign.right : TextAlign.left,
-                      style: GoogleFonts.roboto(
-                        fontSize: messageBodyFs,
-                        height: 20 / 14,
-                        color: colorScheme.onSurface.withOpacity(0.87),
-                      ),
-                    ),
-                    if (message.attachmentName.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurface.withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: colorScheme.onSurface.withOpacity(0.08),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.attach_file,
-                              size: 14,
-                              color: colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                message.attachmentName,
-                                style: GoogleFonts.roboto(
-                                  fontSize: metaFs,
-                                  height: 14 / 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: colorScheme.onSurface
-                                      .withOpacity(0.7),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
-}
-
-// LOCAL TAB (Unchanged)
-class _LocalTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _LocalTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width;
-    final bool small = width < 420;
-    final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
-    final double tabFs = 14 + scale;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: small ? 12 : 16,
-          vertical: small ? 6 : 8,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: small ? (tabFs - 1) : tabFs,
-            height: 20 / 14,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
+  bool shouldRepaint(covariant _ChatPatternPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

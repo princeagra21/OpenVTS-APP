@@ -190,9 +190,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     setState(() => _uploadingImage = true);
 
     try {
-      final res = await _repo!.uploadSuperadminFile(
+      final res = await _repo!.uploadSuperadminProfileImage(
         adminId: widget.adminId,
-        type: 'profile',
         bytes: bytes,
         filename: file.name,
         contentType: 'image/${file.extension ?? 'jpeg'}',

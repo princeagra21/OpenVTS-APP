@@ -313,6 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               isActive: profile?.isActive,
               isVerified: profile?.isVerified,
               loading: _loadingProfile,
+              onProfileUpdated: _loadProfile,
             ),
             const SizedBox(height: 24),
             ProfileInfoBoxes(

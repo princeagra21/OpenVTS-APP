@@ -1040,43 +1040,23 @@ class _UserScreenState extends State<UserScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: userId.isEmpty
-                                      ? null
-                                      : () => context.push(
-                                            '/admin/users/details/$userId',
-                                          ),
-                                  child: Text(
-                                    name,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsMain,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
+                          InkWell(
+                            onTap: userId.isEmpty
+                                ? null
+                                : () => context.push(
+                                      '/admin/users/details/$userId',
                                     ),
-                                    maxLines: 3,
-                                    softWrap: true,
-                                  ),
-                                ),
+                            child: Text(
+                              name,
+                              style: GoogleFonts.roboto(
+                                fontSize: fsMain,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
                               ),
-                              Transform.scale(
-                                scale: 0.75,
-                                child: Switch(
-                                  value: user.isActive,
-                                  onChanged: isUpdating
-                                      ? null
-                                      : (v) => _toggleUserActive(user, v),
-                                  activeColor: colorScheme.onPrimary,
-                                  activeTrackColor: colorScheme.primary,
-                                  inactiveThumbColor: colorScheme.onPrimary,
-                                  inactiveTrackColor:
-                                      colorScheme.primary.withOpacity(0.3),
-                                ),
-                              ),
-                            ],
+                              maxLines: 3,
+                              softWrap: true,
+                            ),
                           ),
                           SizedBox(height: spacing / 2),
                           Row(
@@ -1179,6 +1159,24 @@ class _UserScreenState extends State<UserScreen> {
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                    SizedBox(width: spacing),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Transform.scale(
+                        scale: 0.75,
+                        child: Switch(
+                          value: user.isActive,
+                          onChanged: isUpdating
+                              ? null
+                              : (v) => _toggleUserActive(user, v),
+                          activeColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor:
+                              colorScheme.primary.withOpacity(0.3),
+                        ),
                       ),
                     ),
                   ],

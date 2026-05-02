@@ -387,27 +387,16 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Free Signup Credits',
-                      style: GoogleFonts.roboto(
-                        fontSize: labelFs,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      signupCredits.toString(),
-                      style: GoogleFonts.roboto(
-                        fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
+                _numberField(
+                  context,
+                  label: 'Free Signup Credits',
+                  value: signupCredits,
+                  onChanged: (v) => setState(() => signupCredits = v),
+                  labelFs: labelFs,
+                  valueFs: AdaptiveUtils.getSubtitleFontSize(width) - 1,
+                  colorScheme: colorScheme,
+                  labelWeight: FontWeight.w600,
+                  labelColor: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ],
             ),

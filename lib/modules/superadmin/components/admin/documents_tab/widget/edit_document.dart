@@ -14,27 +14,19 @@ import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AddDocumentScreen extends StatefulWidget {
-  final String? associateId;
-  final String associateType;
-  final String? associateName;
+class EditDocumentScreen extends StatefulWidget {
+  final Map<String, dynamic> document;
 
-  const AddDocumentScreen({
-    super.key,
-    this.associateId,
-    this.associateType = 'USER',
-    this.associateName,
-  });
+  const EditDocumentScreen({super.key, required this.document});
 
   @override
-  State<AddDocumentScreen> createState() => _AddDocumentScreenState();
+  State<EditDocumentScreen> createState() => _EditDocumentScreenState();
 }
 
-class _AddDocumentScreenState extends State<AddDocumentScreen> {
+class _EditDocumentScreenState extends State<EditDocumentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _docTypeSearchController = TextEditingController();
 
   ApiClient? _api;
   SuperadminRepository? _repo;
@@ -42,7 +34,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
   CancelToken? _submitToken;
 
   bool _loadingDocTypes = false;
-  bool _uploading = false;
+  bool _saving = false;
   bool _docTypesErrorShown = false;
   List<SuperadminDocumentType> _docTypes = const [];
   SuperadminDocumentType? _selectedDocType;
@@ -57,18 +49,53 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
   @override
   void initState() {
     super.initState();
+    _prefill();
     _loadDocumentTypes();
   }
 
   @override
   void dispose() {
-    _loadToken?.cancel('AddDocumentScreen disposed');
-    _submitToken?.cancel('AddDocumentScreen disposed');
+    _loadToken?.cancel('EditDocumentScreen disposed');
+    _submitToken?.cancel('EditDocumentScreen disposed');
     _titleController.dispose();
     _tagsController.dispose();
     _descriptionController.dispose();
-    _docTypeSearchController.dispose();
     super.dispose();
+  }
+
+  String _safe(Object? value, {String fallback = ''}) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? fallback : text;
+  }
+
+  int? _intValue(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString().trim() ?? '');
+  }
+
+  void _prefill() {
+    final doc = widget.document;
+    _titleController.text = _safe(
+      doc['title'],
+      fallback: _safe(doc['fileName']),
+    );
+    final tags = doc['tags'];
+    _tagsController.text = tags is List ? tags.join(', ') : _safe(tags);
+    _descriptionController.text = _safe(doc['description']);
+    _isVisible = doc['isVisible'] == true;
+
+    final expiry = _safe(doc['expiryAt'] ?? doc['expiryDate']);
+    final parsed = DateTime.tryParse(expiry);
+    if (parsed != null) {
+      _selectedExpiryAt = DateTime(
+        parsed.year,
+        parsed.month,
+        parsed.day,
+      ).toUtc().toIso8601String();
+      _selectedExpiryLabel =
+          '${parsed.year}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}';
+    }
   }
 
   void _ensureRepo() {
@@ -98,10 +125,19 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
       if (!mounted) return;
       res.when(
         success: (items) {
+          final currentDocTypeId = _intValue(widget.document['docTypeId']);
           setState(() {
             _loadingDocTypes = false;
             _docTypesErrorShown = false;
             _docTypes = items;
+            if (currentDocTypeId != null) {
+              for (final item in items) {
+                if (item.id == currentDocTypeId) {
+                  _selectedDocType = item;
+                  break;
+                }
+              }
+            }
             _selectedDocType ??= items.isNotEmpty ? items.first : null;
           });
         },
@@ -110,14 +146,18 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
           setState(() => _loadingDocTypes = false);
           if (_docTypesErrorShown) return;
           _docTypesErrorShown = true;
-          final msg = err is ApiException &&
+          final msg =
+              err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403)
               ? 'Not authorized to view document types.'
               : "Couldn't load document types.";
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(msg),
-              action: SnackBarAction(label: 'Retry', onPressed: _loadDocumentTypes),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: _loadDocumentTypes,
+              ),
             ),
           );
         },
@@ -265,52 +305,50 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                               ),
                             )
                           : filtered.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No document types found',
+                          ? Center(
+                              child: Text(
+                                'No document types found',
+                                style: GoogleFonts.roboto(
+                                  color: cs.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 6),
+                              itemBuilder: (_, i) {
+                                final item = filtered[i];
+                                final isSelected =
+                                    _selectedDocType?.id == item.id;
+                                return ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  title: Text(
+                                    item.name,
+                                    style: GoogleFonts.roboto(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    item.docFor.isEmpty
+                                        ? '—'
+                                        : item.docFor.toUpperCase(),
                                     style: GoogleFonts.roboto(
                                       color: cs.onSurface.withOpacity(0.6),
                                     ),
                                   ),
-                                )
-                              : ListView.separated(
-                                  itemCount: filtered.length,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 6),
-                                  itemBuilder: (_, i) {
-                                    final item = filtered[i];
-                                    final isSelected = _selectedDocType?.id == item.id;
-                                    return ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                      ),
-                                      title: Text(
-                                        item.name,
-                                        style: GoogleFonts.roboto(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        item.docFor.isEmpty
-                                            ? '—'
-                                            : item.docFor.toUpperCase(),
-                                        style: GoogleFonts.roboto(
-                                          color: cs.onSurface.withOpacity(0.6),
-                                        ),
-                                      ),
-                                      trailing: isSelected
-                                          ? Icon(
-                                              Icons.check,
-                                              color: cs.primary,
-                                            )
-                                          : null,
-                                      onTap: () {
-                                        setState(() => _selectedDocType = item);
-                                        Navigator.pop(context);
-                                      },
-                                    );
+                                  trailing: isSelected
+                                      ? Icon(Icons.check, color: cs.primary)
+                                      : null,
+                                  onTap: () {
+                                    setState(() => _selectedDocType = item);
+                                    Navigator.pop(context);
                                   },
-                                ),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -331,7 +369,9 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
       hintText: hint,
       hintStyle: GoogleFonts.roboto(
         color: cs.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       prefixIconConstraints: const BoxConstraints(minWidth: 48),
@@ -350,49 +390,59 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
     );
   }
 
-  Future<void> _upload() async {
-    if (_uploading) return;
+  String? _contentTypeFor(String? fileName) {
+    final lower = fileName?.toLowerCase() ?? '';
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+    return null;
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final documentId = _safe(widget.document['id']);
     final title = _titleController.text.trim();
-    if (_selectedDocType == null) {
-      _snack('Please select a document type.');
+    if (documentId.isEmpty) {
+      _snack('Document id is missing.');
       return;
     }
-    if (widget.associateId == null || widget.associateId!.trim().isEmpty) {
-      _snack('Please select an associate.');
+    if (_selectedDocType == null) {
+      _snack('Please select a document type.');
       return;
     }
     if (title.isEmpty) {
       _snack('Please enter a title.');
       return;
     }
-    if (_selectedFileBytes == null || _selectedFileName == null) {
-      _snack('Please upload a file.');
-      return;
-    }
 
     _ensureRepo();
-    _submitToken?.cancel('AddDocumentScreen submit');
+    _submitToken?.cancel('EditDocumentScreen submit');
     _submitToken = CancelToken();
-    setState(() => _uploading = true);
+    setState(() => _saving = true);
 
     try {
-      final res = await _repo!.uploadDocument(
-        associateType: widget.associateType,
-        associateId: widget.associateId!,
+      final res = await _repo!.updateDocument(
+        documentId: documentId,
         docTypeId: _selectedDocType!.id,
         title: title,
-        fileBytes: _selectedFileBytes!,
-        filename: _selectedFileName!,
         description: _descriptionController.text.trim(),
         tags: _tagsController.text.trim(),
         expiryAt: _selectedExpiryAt,
         isVisible: _isVisible,
+        fileBytes: _selectedFileBytes,
+        filename: _selectedFileName,
+        contentType: _contentTypeFor(_selectedFileName),
         cancelToken: _submitToken,
       );
 
       if (!mounted) return;
       if (res.isSuccess) {
-        _snack('Document uploaded successfully');
+        _snack('Document updated successfully');
         Navigator.pop(context, true);
         return;
       }
@@ -400,15 +450,15 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
       final err = res.error;
       if (err is ApiException &&
           (err.statusCode == 401 || err.statusCode == 403)) {
-        _snack('Not authorized to upload document.');
+        _snack('Not authorized to update document.');
       } else {
-        _snack("Couldn't upload document.");
+        _snack("Couldn't update document.");
       }
     } catch (_) {
       if (!mounted) return;
-      _snack("Couldn't upload document.");
+      _snack("Couldn't update document.");
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -419,9 +469,10 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
     final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
-    final associateLabel = widget.associateName?.trim().isNotEmpty == true
-        ? widget.associateName!.trim()
-        : 'Select associate';
+    final currentFileName = _safe(
+      widget.document['fileName'],
+      fallback: 'Current file',
+    );
 
     return Scaffold(
       backgroundColor: cs.background,
@@ -435,7 +486,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Add Document',
+                    'Edit Document',
                     style: GoogleFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
@@ -454,7 +505,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Upload a new document',
+                'Update document details',
                 style: GoogleFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
@@ -469,32 +520,6 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: cs.onSurface.withOpacity(0.12),
-                          ),
-                        ),
-                        child: Text(
-                          associateLabel,
-                          maxLines: 2,
-                          softWrap: true,
-                          overflow: TextOverflow.visible,
-                          style: GoogleFonts.roboto(
-                            fontSize: labelSize,
-                            height: 20 / 14,
-                            fontWeight: FontWeight.w500,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
                       Text(
                         'Document Type *',
                         style: GoogleFonts.roboto(
@@ -524,7 +549,8 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  _selectedDocType?.name ?? 'Select document type',
+                                  _selectedDocType?.name ??
+                                      'Select document type',
                                   style: GoogleFonts.roboto(
                                     fontSize: labelSize,
                                     color: _selectedDocType == null
@@ -631,9 +657,8 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                           ),
                           Switch.adaptive(
                             value: _isVisible,
-                            onChanged: (value) => setState(() {
-                              _isVisible = value;
-                            }),
+                            onChanged: (value) =>
+                                setState(() => _isVisible = value),
                           ),
                         ],
                       ),
@@ -693,7 +718,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'File Selection *',
+                        'File Selection (optional)',
                         style: GoogleFonts.roboto(
                           fontSize: 12 * (w / 420).clamp(0.9, 1.0),
                           height: 16 / 12,
@@ -722,18 +747,16 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _selectedFileName ?? 'Click to upload',
+                                _selectedFileName ?? currentFileName,
                                 style: GoogleFonts.roboto(
                                   fontSize: labelSize,
                                   fontWeight: FontWeight.w600,
-                                  color: _selectedFileName == null
-                                      ? cs.onSurface.withOpacity(0.6)
-                                      : cs.onSurface,
+                                  color: cs.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'JPG, JPEG, PNG, PDF, DOC, DOCX, WEBP (max 5.0 MB per file)',
+                                'Choose a new file only if you want to replace the current document.',
                                 style: GoogleFonts.roboto(
                                   fontSize: labelSize - 4,
                                   color: cs.onSurface.withOpacity(0.55),
@@ -760,7 +783,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: _uploading
+                              onTap: _saving
                                   ? null
                                   : () => Navigator.pop(context),
                               child: Container(
@@ -787,7 +810,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: GestureDetector(
-                              onTap: _uploading ? null : _upload,
+                              onTap: _saving ? null : _save,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 18,
@@ -797,7 +820,7 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(
-                                  child: _uploading
+                                  child: _saving
                                       ? SizedBox(
                                           width: 18,
                                           height: 18,
@@ -805,12 +828,12 @@ class _AddDocumentScreenState extends State<AddDocumentScreen> {
                                             strokeWidth: 2,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                              cs.onPrimary,
-                                            ),
+                                                  cs.onPrimary,
+                                                ),
                                           ),
                                         )
                                       : Text(
-                                          'Upload',
+                                          'Save',
                                           style: GoogleFonts.roboto(
                                             fontSize: labelSize,
                                             color: cs.onPrimary,

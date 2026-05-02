@@ -11,6 +11,7 @@ import 'package:fleet_stack/core/models/command_option.dart';
 import 'package:fleet_stack/core/models/credit_log_item.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
 import 'package:fleet_stack/core/models/localization_settings.dart';
+import 'package:fleet_stack/core/models/superadmin_document_type.dart';
 import 'package:fleet_stack/core/models/pricing_plan.dart';
 import 'package:fleet_stack/core/models/sent_command_item.dart';
 import 'package:fleet_stack/core/models/ssl_certificate_item.dart';
@@ -149,16 +150,31 @@ class SuperadminRepository {
     bool isActive, {
     CancelToken? cancelToken,
   }) async {
-    final res = await api.post(
-      '/superadmin/adminstatusupdate',
-      data: {'adminid': adminId, 'status': isActive},
+    final primaryRes = await api.post(
+      '/superadmin/activateadmin/$adminId',
+      data: {'isActive': isActive},
       cancelToken: cancelToken,
     );
 
-    return res.when(
-      success: (_) => Result.ok(null),
-      failure: (err) => Result.fail(err),
-    );
+    if (primaryRes.isSuccess) {
+      return Result.ok(null);
+    }
+
+    final err = primaryRes.error;
+    if (err is ApiException && err.statusCode == 404) {
+      final fallbackRes = await api.post(
+        '/superadmin/adminstatusupdate',
+        data: {'adminid': adminId, 'status': isActive},
+        cancelToken: cancelToken,
+      );
+
+      return fallbackRes.when(
+        success: (_) => Result.ok(null),
+        failure: (fallbackErr) => Result.fail(fallbackErr),
+      );
+    }
+
+    return Result.fail(err ?? StateError('Unknown error'));
   }
 
   Future<Result<String>> uploadSuperadminFile({
@@ -171,8 +187,8 @@ class SuperadminRepository {
   }) async {
     final MediaType? mediaType =
         (contentType == null || contentType.trim().isEmpty)
-            ? null
-            : MediaType.parse(contentType);
+        ? null
+        : MediaType.parse(contentType);
 
     final form = FormData.fromMap({
       'type': type,
@@ -189,9 +205,7 @@ class SuperadminRepository {
       cancelToken: cancelToken,
       options: Options(
         contentType: 'multipart/form-data',
-        headers: const {
-          'Accept': 'application/json',
-        },
+        headers: const {'Accept': 'application/json'},
       ),
     );
 
@@ -202,6 +216,23 @@ class SuperadminRepository {
         return Result.ok(url);
       },
       failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> uploadSuperadminProfileImage({
+    required String adminId,
+    required Uint8List bytes,
+    required String filename,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    return uploadSuperadminFile(
+      adminId: adminId,
+      type: 'PROFILE',
+      bytes: bytes,
+      filename: filename,
+      contentType: contentType,
+      cancelToken: cancelToken,
     );
   }
 
@@ -216,6 +247,159 @@ class SuperadminRepository {
 
     return res.when(
       success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<SuperadminDocumentType>>> getDocumentTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/superadmin/documenttypes',
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['data', 'documentTypes', 'types'],
+        );
+        final out = <SuperadminDocumentType>[];
+        if (list != null) {
+          for (final it in list) {
+            if (it is Map<String, dynamic>) {
+              out.add(SuperadminDocumentType.fromJson(it));
+            } else if (it is Map) {
+              out.add(
+                SuperadminDocumentType.fromJson(
+                  Map<String, dynamic>.from(it.cast()),
+                ),
+              );
+            }
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> uploadDocument({
+    required String associateType,
+    required String associateId,
+    required int docTypeId,
+    required String title,
+    required Uint8List fileBytes,
+    required String filename,
+    String? description,
+    String? tags,
+    String? expiryAt,
+    bool isVisible = true,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final MediaType? mediaType =
+        (contentType == null || contentType.trim().isEmpty)
+        ? null
+        : MediaType.parse(contentType);
+
+    final form = FormData.fromMap({
+      'title': title,
+      'docTypeId': docTypeId.toString(),
+      'description': description?.trim().isNotEmpty == true
+          ? description!.trim()
+          : '',
+      'tags': tags?.trim().isNotEmpty == true ? tags!.trim() : '',
+      'AssociateType': associateType,
+      'associateId': associateId,
+      if (expiryAt != null && expiryAt.trim().isNotEmpty) 'expiryAt': expiryAt,
+      'isVisible': isVisible,
+      'File': MultipartFile.fromBytes(
+        fileBytes,
+        filename: filename,
+        contentType: mediaType,
+      ),
+    });
+
+    final res = await api.post(
+      '/superadmin/uploaddoc',
+      data: form,
+      cancelToken: cancelToken,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: const {'Accept': 'application/json'},
+      ),
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateDocument({
+    required String documentId,
+    int? docTypeId,
+    String? title,
+    String? description,
+    String? tags,
+    String? expiryAt,
+    bool? isVisible,
+    Uint8List? fileBytes,
+    String? filename,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final MediaType? mediaType =
+        (contentType == null || contentType.trim().isEmpty)
+        ? null
+        : MediaType.parse(contentType);
+
+    final data = <String, dynamic>{
+      if (title != null) 'title': title.trim(),
+      if (docTypeId != null) 'docTypeId': docTypeId.toString(),
+      if (description != null) 'description': description.trim(),
+      if (tags != null) 'tags': tags.trim(),
+      if (expiryAt != null && expiryAt.trim().isNotEmpty) 'expiryAt': expiryAt,
+      if (isVisible != null) 'isVisible': isVisible,
+      if (fileBytes != null && filename != null)
+        'File': MultipartFile.fromBytes(
+          fileBytes,
+          filename: filename,
+          contentType: mediaType,
+        ),
+    };
+
+    final res = await api.patch(
+      '/superadmin/uploaddoc/$documentId',
+      data: FormData.fromMap(data),
+      cancelToken: cancelToken,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: const {'Accept': 'application/json'},
+      ),
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<Map<String, dynamic>>> updateCompanyConfig(
+    String companyId,
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/superadmin/companyconfig/$companyId',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(_extractMap(data)),
       failure: (err) => Result.fail(err),
     );
   }
@@ -999,15 +1183,12 @@ class SuperadminRepository {
             : (nested.isNotEmpty
                   ? nested
                   : (nestedFromRoot.isNotEmpty
-                      ? nestedFromRoot
-                      : (payload.isNotEmpty ? payload : root)));
+                        ? nestedFromRoot
+                        : (payload.isNotEmpty ? payload : root)));
 
         return Result.ok(
           VehicleDetails({
-            'data': {
-              'vehicle': mergedVehicle,
-              'telemetry': telemetry,
-            },
+            'data': {'vehicle': mergedVehicle, 'telemetry': telemetry},
           }),
         );
       },
@@ -1022,10 +1203,7 @@ class SuperadminRepository {
   }) async {
     final res = await api.get(
       '/geocoding/reverse',
-      queryParameters: <String, dynamic>{
-        'lat': lat,
-        'lng': lng,
-      },
+      queryParameters: <String, dynamic>{'lat': lat, 'lng': lng},
       cancelToken: cancelToken,
     );
 
@@ -1346,11 +1524,7 @@ class SuperadminRepository {
       if (internal) {
         payload['type'] = 'INTERNAL';
       }
-      res = await api.post(
-        endpoint,
-        data: payload,
-        cancelToken: cancelToken,
-      );
+      res = await api.post(endpoint, data: payload, cancelToken: cancelToken);
     }
 
     return res.when(

@@ -73,6 +73,24 @@ class _AdminScreenState extends State<AdminScreen> {
     return text.isEmpty ? fallback : text;
   }
 
+  String _displayUsername(String? value) {
+    final text = _safeText(value, fallback: '—');
+    if (text == '—') return text;
+    return text.replaceFirst(RegExp(r'^@+'), '');
+  }
+
+  Future<void> _openAdminDetails(Map<String, dynamic> admin) async {
+    final id = admin['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    final changed = await context.push<bool>(
+      '/superadmin/admins/details/$id',
+      extra: admin['active'] == true || admin['status'] == true,
+    );
+    if (changed == true) {
+      _loadAdmins(showShimmer: false);
+    }
+  }
+
   String _normalizeStatusLabel(String raw, bool isActive) {
     final t = raw.trim().toLowerCase();
     if (t.isEmpty) return isActive ? 'Active' : 'Disabled';
@@ -233,6 +251,35 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _openRecordsSheet() async {
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [10, 25, 50].map((v) {
+              final isSelected = _pageSize == v;
+              return ListTile(
+                title: Text('$v'),
+                trailing: isSelected
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(v),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+    if (selected == null || selected == _pageSize) return;
+    setState(() => _pageSize = selected);
+    _loadAdmins();
   }
 
   Future<void> _toggleAdminStatus({
@@ -608,26 +655,12 @@ class _AdminScreenState extends State<AdminScreen> {
                           ),
                           SizedBox(
                             width: cellWidth,
-                            child: PopupMenuButton<int>(
-                              onSelected: (value) {
-                                if (_pageSize == value) return;
-                                setState(() => _pageSize = value);
-                                _loadAdmins();
-                              },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(
-                                  value: 10,
-                                  child: Text('10'),
-                                ),
-                                PopupMenuItem(
-                                  value: 25,
-                                  child: Text('25'),
-                                ),
-                                PopupMenuItem(
-                                  value: 50,
-                                  child: Text('50'),
-                                ),
-                              ],
+                            child: InkWell(
+                              onTap: _openRecordsSheet,
+                              borderRadius: BorderRadius.circular(12),
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: padding,
@@ -812,7 +845,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         splashColor: Colors.transparent,
                         highlightColor: Colors.transparent,
                         hoverColor: Colors.transparent,
-                        onTap: null,
+                        onTap: () => _openAdminDetails(admin),
                               child: Padding(
                                 padding: EdgeInsets.all(cardPadding),
                                 child: Column(
@@ -870,11 +903,15 @@ class _AdminScreenState extends State<AdminScreen> {
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
                                                   Icon(
-                                                    CupertinoIcons.person,
+                                                    Icons
+                                                        .person_outline_rounded,
                                                     size: iconSize,
                                                     color: colorScheme.onSurface
                                                         .withOpacity(0.7),
@@ -882,86 +919,60 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   SizedBox(width: spacing),
                                                   Expanded(
                                                     child: InkWell(
-                                                      onTap: () async {
-                                                        final id = admin['id']
-                                                                ?.toString() ??
-                                                            '';
-                                                        if (id.isEmpty) return;
-                                                        final changed =
-                                                            await context.push<bool>(
-                                                          '/superadmin/admins/details/$id',
-                                                          extra: admin['active'] == true ||
-                                                                  admin['status'] == true,
-                                                        );
-                                                        if (changed == true) {
-                                                          _loadAdmins(
-                                                            showShimmer: false,
-                                                          );
-                                                        }
-                                                      },
+                                                      onTap: () =>
+                                                          _openAdminDetails(
+                                                        admin,
+                                                      ),
                                                       child: Text(
-                                                                 _safeText(
-                                                                   admin["name"]?.toString(),
-                                                                   fallback: '—',
-                                                                 ),
-                                                                 style:
-                                                                     GoogleFonts.roboto(
-                                                                   fontSize: fsMain,
-                                                                   height: 20 / 14,
-                                                                   fontWeight:
-                                                                       FontWeight.w600,
-                                                                   color: colorScheme
-                                                                       .onSurface,
-                                                                 ),
-                                                               ),                                                    ),
-                                                  ),
-                                                  Transform.scale(
-                                                    scale: 0.75,
-                                                    child: Switch(
-                                                      value: admin["active"],
-                                                      onChanged:
-                                                          _statusSubmittingAdminIds
-                                                                  .contains(
-                                                        admin['id']
-                                                                ?.toString() ??
-                                                            '',
-                                                      )
-                                                              ? null
-                                                              : (v) =>
-                                                                  _toggleAdminStatus(
-                                                                    admin:
-                                                                        admin,
-                                                                    isActive:
-                                                                        v,
-                                                                  ),
-                                                      activeColor:
-                                                          colorScheme.onPrimary,
-                                                      activeTrackColor:
-                                                          colorScheme.primary,
-                                                      inactiveThumbColor:
-                                                          colorScheme.onPrimary,
-                                                      inactiveTrackColor:
-                                                          colorScheme.primary
-                                                              .withOpacity(0.3),
+                                                        _safeText(
+                                                          admin["name"]
+                                                              ?.toString(),
+                                                          fallback: '—',
+                                                        ),
+                                                        style: GoogleFonts.roboto(
+                                                          fontSize: fsMain,
+                                                          height: 20 / 14,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: colorScheme
+                                                              .onSurface,
+                                                        ),
+                                                        softWrap: true,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                               SizedBox(height: spacing / 2),
-                                              Text(
-                                                _safeText(
-                                                  admin["username"]
-                                                      ?.toString(),
-                                                  fallback: '—',
-                                                ),
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: fsSecondary,
-                                                  height: 16 / 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme.onSurface
-                                                      .withOpacity(0.7),
-                                                ),
-                                                maxLines: 2,
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.person_rounded,
+                                                    size: iconSize,
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                  SizedBox(width: spacing),
+                                                  Expanded(
+                                                      child: Text(
+                                                        _displayUsername(
+                                                          admin["username"]
+                                                              ?.toString(),
+                                                        ),
+                                                        style:
+                                                            GoogleFonts.roboto(
+                                                          fontSize: fsSecondary,
+                                                          height: 16 / 12,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color: colorScheme
+                                                              .onSurface
+                                                              .withOpacity(0.7),
+                                                        ),
+                                                      softWrap: true,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                               SizedBox(height: spacing / 2),
                                               Row(
@@ -989,6 +1000,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
+                                                      softWrap: true,
                                                     ),
                                                   ),
                                                 ],
@@ -1019,6 +1031,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -1049,11 +1064,44 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             .onSurface
                                                             .withOpacity(0.7),
                                                       ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ],
+                                          ),
+                                        ),
+                                        SizedBox(width: spacing),
+                                        Align(
+                                          alignment: Alignment.topRight,
+                                          child: Transform.scale(
+                                            scale: 0.75,
+                                            child: Switch(
+                                              value: admin["active"],
+                                              onChanged:
+                                                  _statusSubmittingAdminIds
+                                                          .contains(
+                                                admin['id']?.toString() ?? '',
+                                              )
+                                                      ? null
+                                                      : (v) =>
+                                                          _toggleAdminStatus(
+                                                            admin: admin,
+                                                            isActive: v,
+                                                          ),
+                                              activeColor:
+                                                  colorScheme.onPrimary,
+                                              activeTrackColor:
+                                                  colorScheme.primary,
+                                              inactiveThumbColor:
+                                                  colorScheme.onPrimary,
+                                              inactiveTrackColor:
+                                                  colorScheme.primary
+                                                      .withOpacity(0.3),
+                                            ),
                                           ),
                                         ),
                                       ],

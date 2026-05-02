@@ -1,6 +1,6 @@
 import 'package:fleet_stack/modules/superadmin/components/admin/localization/localization.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/profile_box.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/documents_tab/documents_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/profile_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/payments_tab/admin_payments_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/vehicles_tab/admin_vehicles_tab.dart';
@@ -37,10 +37,10 @@ class AdministratorDetailsScreen extends StatefulWidget {
 class _AdministratorDetailsScreenState
     extends State<AdministratorDetailsScreen> {
   String selectedTab = "Profile";
-  int _profileReloadNonce = 0;
+  final int _profileReloadNonce = 0;
+  int _detailReloadNonce = 0;
   bool _headerLoading = false;
   String _headerName = 'Admin Details';
-  String _headerInitials = 'AD';
   bool _statusChanged = false;
   CancelToken? _headerToken;
   ApiClient? _api;
@@ -48,11 +48,11 @@ class _AdministratorDetailsScreenState
 
   final List<String> tabs = [
     "Profile",
+    "Documents",
     "Credit History",
     "Payments",
     "Vehicles",
     "Settings",
-    "Role",
     "Admin Activity",
   ];
 
@@ -72,14 +72,6 @@ class _AdministratorDetailsScreenState
     if (value == null) return fallback;
     final text = value.trim();
     return text.isEmpty ? fallback : text;
-  }
-
-  String _initials(String value) {
-    final t = value.trim();
-    if (t.isEmpty || t == '-') return 'AD';
-    final parts = t.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
-    if (parts.isEmpty) return 'AD';
-    return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
 
   Future<void> _loadHeader() async {
@@ -110,7 +102,6 @@ class _AdministratorDetailsScreenState
           setState(() {
             _headerLoading = false;
             _headerName = name;
-            _headerInitials = _initials(name);
           });
         },
         failure: (_) {
@@ -122,6 +113,12 @@ class _AdministratorDetailsScreenState
       if (!mounted) return;
       setState(() => _headerLoading = false);
     }
+  }
+
+  Future<void> _refreshDetails() async {
+    await _loadHeader();
+    if (!mounted) return;
+    setState(() => _detailReloadNonce++);
   }
 
   @override
@@ -140,29 +137,40 @@ class _AdministratorDetailsScreenState
           : const Color(0xFFF5F5F7),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 28,
-              horizontalPadding,
-              84,
-            ),
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NavigateBox(
-              selectedTab: selectedTab,
-              tabs: tabs,
-              onTabSelected: (newTab) {
-                setState(() {
-                  selectedTab = newTab;
-                });
-              },
-            ),
-            const SizedBox(height: 4),
-            _buildTabContent(), // Dynamic content based on selected tab
-            const SizedBox(height: 24),
-          ],
+          RefreshIndicator(
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            onRefresh: _refreshDetails,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding + AppUtils.appBarHeightCustom + 28,
+                horizontalPadding,
+                84,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NavigateBox(
+                    selectedTab: selectedTab,
+                    tabs: tabs,
+                    onTabSelected: (newTab) {
+                      setState(() {
+                        selectedTab = newTab;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  KeyedSubtree(
+                    key: ValueKey(
+                      'detail_${selectedTab}_$_detailReloadNonce',
+                    ),
+                    child: _buildTabContent(),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
           Positioned(
@@ -198,6 +206,14 @@ class _AdministratorDetailsScreenState
             ),
           ],
         );
+      case "Documents":
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            DocumentsTab(adminId: widget.id),
+            const SizedBox(height: 24),
+          ],
+        );
       case "Settings":
         return Column(
           children: [
@@ -226,7 +242,10 @@ class _AdministratorDetailsScreenState
         return Column(
           children: [
             const SizedBox(height: 24),
-            AdminPaymentsTab(adminId: widget.id),
+            AdminPaymentsTab(
+              adminId: widget.id,
+              adminName: _headerName,
+            ),
             const SizedBox(height: 24),
           ],
         );
@@ -236,14 +255,6 @@ class _AdministratorDetailsScreenState
             const SizedBox(height: 24),
             AdminVehiclesTab(adminId: widget.id),
             const SizedBox(height: 24),
-          ],
-        );
-      case "Role":
-        return Column(
-          children: const [
-            SizedBox(height: 24),
-            Center(child: Text('Coming soon')),
-            SizedBox(height: 24),
           ],
         );
       case "Admin Activity":

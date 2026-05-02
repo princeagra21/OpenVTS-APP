@@ -1,6 +1,10 @@
 import 'dart:io';
 
+import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
+import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
+import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -10,13 +14,17 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class AdminUserVehiclesTab extends StatefulWidget {
+  final String userId;
   final List<AdminVehicleListItem> items;
   final bool loading;
+  final Future<void> Function()? onAssigned;
 
   const AdminUserVehiclesTab({
     super.key,
+    required this.userId,
     required this.items,
     required this.loading,
+    this.onAssigned,
   });
 
   @override
@@ -28,6 +36,18 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
   late List<AdminVehicleListItem> _vehicles;
+  ApiClient? _apiClient;
+  AdminUsersRepository? _repo;
+  bool _assigning = false;
+
+  AdminUsersRepository _repoOrCreate() {
+    _apiClient ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+    _repo ??= AdminUsersRepository(api: _apiClient!);
+    return _repo!;
+  }
 
   @override
   void initState() {
@@ -102,6 +122,261 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openAssignVehicleSheet() async {
+    final cs = Theme.of(context).colorScheme;
+    final result = await _repoOrCreate().getUnlinkedVehicles(
+      userId: widget.userId,
+    );
+    if (!mounted) return;
+
+    result.when(
+      success: (all) async {
+        final existingIds = _vehicles.map((v) => v.id).toSet();
+        final available = all.where((v) => !existingIds.contains(v.id)).toList();
+
+        if (available.isEmpty) {
+          _showNoAvailableWarning(cs);
+          return;
+        }
+
+        final searchController = TextEditingController();
+        String query = '';
+        await showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: cs.surface,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          builder: (context) {
+            final width = MediaQuery.of(context).size.width;
+            return StatefulBuilder(
+              builder: (context, setSheetState) {
+                final filtered = available.where((v) {
+                  final text =
+                      '${v.nameModel} ${v.plateNumber} ${v.imei}'.toLowerCase();
+                  return text.contains(query.toLowerCase());
+                }).toList();
+                return SafeArea(
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        16 + MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Assign Vehicle',
+                                  style: GoogleFonts.roboto(
+                                    fontSize:
+                                        AdaptiveUtils.getTitleFontSize(width) + 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  height: 32,
+                                  width: 32,
+                                  decoration: BoxDecoration(
+                                    color: cs.primary.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: searchController,
+                            onChanged: (value) =>
+                                setSheetState(() => query = value),
+                            decoration: InputDecoration(
+                              hintText: 'Search available vehicles',
+                              filled: true,
+                              fillColor:
+                                  cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: cs.onSurface.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: filtered.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      'No available vehicle to assign.',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: cs.onSurface.withValues(alpha: 0.65),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    itemCount: filtered.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 6),
+                                    itemBuilder: (context, index) {
+                                      final v = filtered[index];
+                                      return InkWell(
+                                        borderRadius: BorderRadius.circular(12),
+                                        onTap: () async {
+                                          Navigator.of(context).pop();
+                                          await _assignVehicle(v);
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: cs.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: cs.onSurface.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                v.nameModel,
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: cs.onSurface,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${v.plateNumber} · ${v.imei}',
+                                                style: GoogleFonts.roboto(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: cs.onSurface.withValues(
+                                                    alpha: 0.7,
+                                                  ),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+        searchController.dispose();
+      },
+      failure: (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't load available vehicles.")),
+        );
+      },
+    );
+  }
+
+  void _showNoAvailableWarning(ColorScheme cs) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.error.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                'No available vehicle to assign.',
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: cs.error,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _assignVehicle(AdminVehicleListItem vehicle) async {
+    if (_assigning) return;
+    setState(() => _assigning = true);
+    final result = await _repoOrCreate().assignVehicleToUser(
+      userId: widget.userId,
+      vehicleId: vehicle.id,
+    );
+    if (!mounted) return;
+    setState(() => _assigning = false);
+
+    result.when(
+      success: (_) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vehicle assigned successfully.')),
+        );
+        if (widget.onAssigned != null) {
+          await widget.onAssigned!.call();
+        }
+      },
+      failure: (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't assign vehicle.")),
         );
       },
     );
@@ -469,14 +744,60 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Admin Vehicles',
-            style: GoogleFonts.roboto(
-              fontSize: headerSize,
-              height: 24 / 18,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Admin Vehicles',
+                style: GoogleFonts.roboto(
+                  fontSize: headerSize,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              InkWell(
+                onTap: _assigning ? null : _openAssignVehicleSheet,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cs.onSurface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      _assigning
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.surface,
+                              ),
+                            )
+                          : Icon(
+                              Icons.add,
+                              size: 16,
+                              color: cs.surface,
+                            ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Assign',
+                        style: GoogleFonts.roboto(
+                          fontSize: fsMain,
+                          fontWeight: FontWeight.w600,
+                          color: cs.surface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           if (widget.loading)
@@ -767,9 +1088,6 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
     final name = v.nameModel.isNotEmpty ? v.nameModel : '—';
     final plate = v.plateNumber.isNotEmpty ? v.plateNumber : '—';
     final imei = v.imei.isNotEmpty ? v.imei : '—';
-    final sim = (v.raw['simNumber']?.toString().isNotEmpty == true)
-        ? v.raw['simNumber'].toString()
-        : '—';
     final vin = v.vin.isNotEmpty ? v.vin : '—';
 
     return Container(

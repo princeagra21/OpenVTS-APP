@@ -21,8 +21,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _refreshToken = 0;
+
+  Future<void> _refreshDashboard() async {
+    if (!mounted) return;
+    setState(() => _refreshToken++);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,44 +51,74 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? const Color(0xFF0A0A0A)
           : const Color(0xFFF5F5F7),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 28,
-              horizontalPadding,
-              84,
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding,
+                horizontalPadding,
+                0,
+              ),
+              child: SuperAdminHomeAppBar(
+                title: 'Dashboard',
+                leadingIcon: Symbols.grid_view,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                FleetOverviewBox(),
-                SizedBox(height: 24),
-                AdoptionGrowthBox(),
-                SizedBox(height: 24),
-                VehicleStatusBox(),
-                SizedBox(height: 24),
-                _RecentVehiclesSection(),
-                SizedBox(height: 24),
-                _RecentTransactionsSection(),
-                SizedBox(height: 24),
-                _RecentUsersSection(),
-                SizedBox(height: 24),
-                SizedBox(height: 24),
-              ],
+            Expanded(
+              child: RefreshIndicator(
+                color: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                onRefresh: _refreshDashboard,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    28,
+                    horizontalPadding,
+                    MediaQuery.of(context).padding.bottom + 96,
+                  ),
+                  children: [
+                    KeyedSubtree(
+                      key: ValueKey('fleet_$_refreshToken'),
+                      child: const FleetOverviewBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: ValueKey('adoption_$_refreshToken'),
+                      child: const AdoptionGrowthBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: ValueKey('vehicle_status_$_refreshToken'),
+                      child: const VehicleStatusBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: ValueKey('recent_vehicles_$_refreshToken'),
+                      child: const _RecentVehiclesSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: ValueKey('recent_transactions_$_refreshToken'),
+                      child: const _RecentTransactionsSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: ValueKey('recent_users_$_refreshToken'),
+                      child: const _RecentUsersSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
             ),
-          ),
-          Positioned(
-            left: horizontalPadding,
-            right: horizontalPadding,
-            top: 0,
-            child: SuperAdminHomeAppBar(
-              title: 'Dashboard',
-              leadingIcon: Symbols.grid_view,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       // bottomNavigationBar: const CustomBottomBar(),
     );

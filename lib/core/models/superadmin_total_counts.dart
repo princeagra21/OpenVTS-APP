@@ -24,6 +24,7 @@ class SuperadminTotalCounts {
         'licensedCredits',
         'usedCredits',
         'licensesUsed',
+        'vehicleLiveStatus',
       };
       return m.keys.any(keys.contains);
     }
@@ -86,6 +87,27 @@ class SuperadminTotalCounts {
         data['licenseUsedCount'] ??
         data['license_used'] ??
         data['licenses_used'],
+  );
+
+  Map<String, dynamic> get vehicleLiveStatus {
+    final raw = data['vehicleLiveStatus'];
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw.cast());
+    return const <String, dynamic>{};
+  }
+
+  int get liveConnected => _int(
+    vehicleLiveStatus['connected'] ?? vehicleLiveStatus['online'],
+  );
+
+  int get liveRunning => _int(vehicleLiveStatus['running']);
+
+  int get liveStop => _int(vehicleLiveStatus['stop']);
+
+  int get liveInactive => _int(vehicleLiveStatus['inactive']);
+
+  int get liveNoData => _int(
+    vehicleLiveStatus['noData'] ?? vehicleLiveStatus['nodata'],
   );
 
   static int _int(Object? v) {

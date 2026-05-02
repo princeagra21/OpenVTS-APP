@@ -55,6 +55,10 @@ class _VehicleScreenState extends State<VehicleScreen> {
   final List<Map<String, dynamic>> _vehicles = <Map<String, dynamic>>[];
   bool _vehiclesLoadFailed = false;
 
+  Future<void> _refreshVehicles() async {
+    await _loadVehicles();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -777,16 +781,24 @@ class _VehicleScreenState extends State<VehicleScreen> {
           : const Color(0xFFF5F5F7),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              topPadding + AppUtils.appBarHeightCustom + 28,
-              horizontalPadding,
-              84,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          Positioned.fill(
+            child: RefreshIndicator(
+              color: Theme.of(context).colorScheme.primary,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              onRefresh: _refreshVehicles,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  topPadding + AppUtils.appBarHeightCustom + 28,
+                  horizontalPadding,
+                  (MediaQuery.of(context).padding.bottom + 24)
+                      .clamp(24.0, 84.0)
+                      .toDouble(),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
             // SEARCH BAR
             // Container(
             //   height: hp * 3.5,
@@ -2009,7 +2021,9 @@ class _VehicleScreenState extends State<VehicleScreen> {
               ),
             ),
             SizedBox(height: hp * 3),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
           Positioned(

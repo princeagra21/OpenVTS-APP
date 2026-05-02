@@ -58,6 +58,8 @@ class AdminDocumentItem {
   String get fileUrl => _string(
     raw['fileUrl'] ??
         raw['url'] ??
+        raw['filePath'] ??
+        raw['file_path'] ??
         raw['file'] ??
         raw['path'] ??
         raw['downloadUrl'],

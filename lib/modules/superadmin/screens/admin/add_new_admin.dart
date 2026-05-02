@@ -171,6 +171,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
 
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

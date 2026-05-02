@@ -152,7 +152,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/unlinkvehicles/$userId',
+      '/admin/linkvehicles/$userId',
       cancelToken: cancelToken,
     );
 
@@ -175,6 +175,106 @@ class AdminUsersRepository {
               .toList(),
         );
       },
+      failure: (err) async {
+        // Backward-compatible fallback for APIs that expect query param form.
+        final fallback = await api.get(
+          '/admin/linkvehicles',
+          queryParameters: <String, dynamic>{'userId': userId},
+          cancelToken: cancelToken,
+        );
+        return fallback.when(
+          success: (data) {
+            final list = _extractList(
+              data,
+              listKeys: const ['vehicles', 'items', 'data'],
+            );
+            return Result.ok(
+              list
+                  .whereType<Map>()
+                  .map(
+                    (item) => AdminVehicleListItem.fromRaw(
+                      item is Map<String, dynamic>
+                          ? item
+                          : Map<String, dynamic>.from(item.cast()),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+          failure: (_) => Result.fail(err),
+        );
+      },
+    );
+  }
+
+  Future<Result<List<AdminVehicleListItem>>> getUnlinkedVehicles({
+    String? userId,
+    CancelToken? cancelToken,
+  }) async {
+    Future<Result<List<AdminVehicleListItem>>> parseResult(
+      Future<Result<dynamic>> req,
+    ) async {
+      final res = await req;
+      return res.when(
+        success: (data) {
+          final list = _extractList(
+            data,
+            listKeys: const ['vehicles', 'items', 'data'],
+          );
+          return Result.ok(
+            list
+                .whereType<Map>()
+                .map(
+                  (item) => AdminVehicleListItem.fromRaw(
+                    item is Map<String, dynamic>
+                        ? item
+                        : Map<String, dynamic>.from(item.cast()),
+                  ),
+                )
+                .toList(),
+          );
+        },
+        failure: (err) => Result.fail(err),
+      );
+    }
+
+    final first = await parseResult(
+      api.get('/admin/unlinkvehicles', cancelToken: cancelToken),
+    );
+    if (first is Success<List<AdminVehicleListItem>>) return first;
+
+    if (userId != null && userId.trim().isNotEmpty) {
+      final byPath = await parseResult(
+        api.get('/admin/unlinkvehicles/$userId', cancelToken: cancelToken),
+      );
+      if (byPath is Success<List<AdminVehicleListItem>>) return byPath;
+
+      final byQuery = await parseResult(
+        api.get(
+          '/admin/unlinkvehicles',
+          queryParameters: <String, dynamic>{'userId': userId},
+          cancelToken: cancelToken,
+        ),
+      );
+      if (byQuery is Success<List<AdminVehicleListItem>>) return byQuery;
+    }
+
+    return first;
+  }
+
+  Future<Result<void>> assignVehicleToUser({
+    required String userId,
+    required String vehicleId,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/admin/linkusers/$vehicleId',
+      data: <String, dynamic>{'userId': int.tryParse(userId) ?? userId},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
     );
   }

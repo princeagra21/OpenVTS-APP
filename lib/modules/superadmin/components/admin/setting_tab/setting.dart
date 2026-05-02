@@ -1,6 +1,4 @@
 // components/admin/admin_settings_tab.dart
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_settings.dart';
@@ -10,7 +8,6 @@ import 'package:fleet_stack/core/repositories/common_repository.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/main.dart' show themeController;
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -84,7 +81,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   // Cancel on dispose.
   CancelToken? _loadToken;
   CancelToken? _saveToken;
-  Timer? _saveDebounce;
 
   // Local deps (kept in-widget to avoid global state).
   ApiClient? _api;
@@ -99,7 +95,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
 
   @override
   void dispose() {
-    _saveDebounce?.cancel();
     _saveToken?.cancel('dispose');
     _loadToken?.cancel('dispose');
     super.dispose();
@@ -276,7 +271,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (adminSettingsRes.isSuccess) {
         _applyServerSettings(adminSettingsRes.data!);
         await _persistLocalSettings();
-        await _syncAppSettings();
       } else if (!_errorShown) {
         _errorShown = true;
         _showSnackBarOnce("Couldn't load admin settings. Showing saved info.");
@@ -308,7 +302,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (adminSettingsRes.isSuccess) {
         _applyServerSettings(adminSettingsRes.data!, clearIfEmpty: true);
         await _persistLocalSettings(clearIfNull: true);
-        await _syncAppSettings();
         if (mounted) {
           _showSnackBarOnce('Settings reset to saved values.');
         }
@@ -329,36 +322,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   String? _safeValue(String? selected, List<String> allowed) {
     if (selected == null) return null;
     return allowed.contains(selected) ? selected : null;
-  }
-
-  void _applyThemeToApp() {
-    if (_selectedTheme == 'dark') {
-      themeController.setThemeMode(ThemeMode.dark);
-      return;
-    }
-    if (_selectedTheme == 'light') {
-      themeController.setThemeMode(ThemeMode.light);
-      return;
-    }
-    if (_selectedTheme == 'system') {
-      themeController.setThemeMode(ThemeMode.system);
-    }
-  }
-
-  Future<void> _syncAppSettings() async {
-    _applyThemeToApp();
-    if (_selectedDirection != null) {
-      themeController.setTextDirection(_selectedDirection!);
-    }
-    if (_selectedUnit != null) {
-      themeController.setUnits(_selectedUnit!);
-    }
-  }
-
-  void _onAnySettingChanged() {
-    _saveErrorShown = false;
-    _saveDebounce?.cancel();
-    _saveDebounce = Timer(const Duration(milliseconds: 400), _saveSettings);
   }
 
   Future<void> _saveSettings() async {
@@ -411,7 +374,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       if (res.isSuccess) {
         _applyServerSettings(res.data!);
         await _persistLocalSettings();
-        await _syncAppSettings();
         if (mounted) _showSnackBarOnce('Settings saved.');
       } else if (!_saveErrorShown) {
         _saveErrorShown = true;
@@ -585,7 +547,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colorScheme.onSurface.withOpacity(0.12)),
+              border: Border.all(
+                color: colorScheme.onSurface.withOpacity(0.12),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -631,8 +595,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       child: InkWell(
         onTap: () {
           setState(() => _selectedTheme = value);
-          _applyThemeToApp();
-          _onAnySettingChanged();
         },
         child: Column(
           children: [
@@ -653,8 +615,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               activeColor: colorScheme.primary,
               onChanged: (v) {
                 setState(() => _selectedTheme = v);
-                _applyThemeToApp();
-                _onAnySettingChanged();
               },
             ),
             if (!textOnTop)
@@ -677,11 +637,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const AppShimmer(
-        width: double.infinity,
-        height: 360,
-        radius: 12,
-      );
+      return const AppShimmer(width: double.infinity, height: 360, radius: 12);
     }
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -763,7 +719,8 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                         child: Text(
                           "Admin Settings",
                           style: GoogleFonts.roboto(
-                            fontSize: 18 *
+                            fontSize:
+                                18 *
                                 (AdaptiveUtils.getTitleFontSize(
                                       MediaQuery.of(context).size.width,
                                     ) /
@@ -1009,8 +966,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        colorScheme.onSurface.withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1026,7 +984,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                           showLabel: false,
                           onSelected: (v) {
                             setState(() => _selectedLanguage = v);
-                            _onAnySettingChanged();
                           },
                         ),
                       ],
@@ -1083,8 +1040,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        colorScheme.onSurface.withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1108,8 +1066,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedDirection = 'LTR');
-                                    themeController.setTextDirection('LTR');
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1154,8 +1110,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedDirection = 'RTL');
-                                    themeController.setTextDirection('RTL');
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1252,8 +1206,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        colorScheme.onSurface.withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1269,7 +1224,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                           showLabel: false,
                           onSelected: (v) {
                             setState(() => _selectedDateFormat = v);
-                            _onAnySettingChanged();
                           },
                         ),
                       ],
@@ -1326,8 +1280,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        colorScheme.onSurface.withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1354,7 +1309,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 setState(
                                   () => _selectedTimeFormat = v ? '24h' : '12h',
                                 );
-                                _onAnySettingChanged();
                               },
                               activeColor: colorScheme.primary,
                             ),
@@ -1387,8 +1341,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.2),
+                                  color: colorScheme.onSurface.withOpacity(0.2),
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -1416,8 +1369,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1441,8 +1395,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedTheme = 'light');
-                                    _applyThemeToApp();
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1474,8 +1426,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedTheme = 'dark');
-                                    _applyThemeToApp();
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1507,8 +1457,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedTheme = 'system');
-                                    _applyThemeToApp();
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1564,8 +1512,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.2),
+                                  color: colorScheme.onSurface.withOpacity(0.2),
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -1593,8 +1540,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1617,7 +1565,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               .toList(),
                           onSelected: (v) {
                             setState(() => _selectedTimezone = v);
-                            _onAnySettingChanged();
                           },
                         ),
                       ],
@@ -1647,8 +1594,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.2),
+                                  color: colorScheme.onSurface.withOpacity(0.2),
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -1676,8 +1622,9 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   style: GoogleFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1701,8 +1648,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedUnit = 'KM');
-                                    themeController.setUnits('KM');
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
@@ -1734,8 +1679,6 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 child: InkWell(
                                   onTap: () {
                                     setState(() => _selectedUnit = 'MILES');
-                                    themeController.setUnits('MILES');
-                                    _onAnySettingChanged();
                                   },
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(

@@ -145,24 +145,30 @@ class _AppLayoutState extends State<AppLayout> {
               }
               return true;
             },
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.horizontalPadding,
-              ),
+            child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height:
-                        topPadding +
-                        (widget.showAppBar
-                            ? AppUtils.appBarHeightCustom + 32
-                            : (hasCustomTopBar ? (topBarHeight + 24) : 16)),
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: widget.horizontalPadding,
                   ),
-                  widget.child,
-                  SizedBox(height: 68 + 16 + bottomPadding),
-                ],
-              ),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height:
+                              topPadding +
+                              (widget.showAppBar
+                                  ? AppUtils.appBarHeightCustom + 32
+                                  : (hasCustomTopBar ? (topBarHeight + 24) : 16)),
+                        ),
+                        widget.child,
+                        SizedBox(height: 68 + 16 + bottomPadding),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

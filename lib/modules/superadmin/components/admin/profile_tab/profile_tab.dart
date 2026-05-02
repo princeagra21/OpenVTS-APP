@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/edit_company_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/update_password_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/edit_admin_profile_screen.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/widget/delete_account_box.dart';
@@ -98,6 +99,28 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _openExternalLink(String rawUrl) async {
+    final text = rawUrl.trim();
+    if (text.isEmpty || text == '-') return;
+    final normalized = text.startsWith('http://') || text.startsWith('https://')
+        ? text
+        : 'https://$text';
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invalid link')));
+      return;
+    }
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open link')));
+    }
   }
 
   Future<void> _handlePushRegister() async {
@@ -193,6 +216,7 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _handlePushTest() async {
+    final messenger = ScaffoldMessenger.of(context);
     final state =
         _pushState ?? await PushNotificationsService.instance.getStatus();
     if (!mounted) return;
@@ -219,9 +243,22 @@ class _ProfileTabState extends State<ProfileTab> {
     );
     if (confirmed != true) return;
 
-    ScaffoldMessenger.of(
+    messenger.showSnackBar(const SnackBar(content: Text('Test push queued.')));
+  }
+
+  Future<void> _openCompanyEdit() async {
+    final profile = _profile;
+    if (profile == null) return;
+    final updated = await Navigator.push<bool>(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Test push queued.')));
+      MaterialPageRoute(
+        builder: (_) => EditCompanyScreen(profile: profile),
+      ),
+    );
+    if (!mounted) return;
+    if (updated == true) {
+      await _loadProfile();
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -394,13 +431,11 @@ class _ProfileTabState extends State<ProfileTab> {
     final phone = _display(p?.phone);
     final isVerified = p?.isVerified == true;
     final companyName = _display(p?.companyName);
-    final socialLabels = _companySocialLabels(p);
-    final companyId = _valueFromKeys(p, const [
-      'companyId',
-      'company_id',
-      'companyID',
-      'orgId',
-      'organizationId',
+    final socialLinks = _companySocialLinks(p);
+    final websiteUrl = _valueFromKeys(p, const [
+      'websiteUrl',
+      'website',
+      'siteUrl',
     ]);
     final customDomain = _valueFromKeys(p, const [
       'customDomain',
@@ -609,13 +644,13 @@ class _ProfileTabState extends State<ProfileTab> {
             fs: fs,
             colorScheme: colorScheme,
             companyName: companyName,
-            companyId: companyId,
+            websiteUrl: websiteUrl,
             customDomain: customDomain,
             primaryColor: primaryColor,
             favicon: favicon,
             logoLight: logoLight,
             logoDark: logoDark,
-            socialLabels: socialLabels,
+            socialLinks: socialLinks,
             loading: loading,
           ),
           SizedBox(height: padding),
@@ -998,13 +1033,13 @@ class _ProfileTabState extends State<ProfileTab> {
     required double fs,
     required ColorScheme colorScheme,
     required String companyName,
-    required String companyId,
+    required String websiteUrl,
     required String customDomain,
     required String primaryColor,
     required String favicon,
     required String logoLight,
     required String logoDark,
-    required List<String> socialLabels,
+    required List<_CompanyLink> socialLinks,
     required bool loading,
   }) {
     final double scale = fs / 14;
@@ -1024,6 +1059,7 @@ class _ProfileTabState extends State<ProfileTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: iconBox,
@@ -1060,7 +1096,11 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     const SizedBox(height: 4),
                     loading
-                        ? const AppShimmer(width: 180, height: 18, radius: 8)
+                        ? const AppShimmer(
+                            width: 180,
+                            height: 18,
+                            radius: 8,
+                          )
                         : Text(
                             companyName,
                             style: GoogleFonts.roboto(
@@ -1070,50 +1110,95 @@ class _ProfileTabState extends State<ProfileTab> {
                               color: colorScheme.onSurface,
                             ),
                           ),
-                    if (!loading && socialLabels.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: socialLabels
-                            .map(
-                              (label) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? colorScheme.surfaceVariant
-                                          : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.12),
-                                  ),
-                                ),
-                                child: Text(
-                                  label,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: labelFs,
-                                    height: 14 / 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                    if (!loading && websiteUrl != '-') ...[
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () => _openExternalLink(websiteUrl),
+                        child: Text(
+                          websiteUrl,
+                          style: GoogleFonts.roboto(
+                            fontSize: labelFs,
+                            height: 14 / 11,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
+              if (!loading) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _openCompanyEdit,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.primary.withOpacity(0.14),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 16),
+          if (!loading && socialLinks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.only(left: iconBox + 10),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: socialLinks
+                    .map(
+                      (link) => InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => _openExternalLink(link.url),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? colorScheme.surfaceVariant
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          child: Text(
+                            link.label,
+                            style: GoogleFonts.roboto(
+                              fontSize: labelFs,
+                              height: 14 / 11,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1221,7 +1306,7 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  List<String> _companySocialLabels(AdminProfile? profile) {
+  List<_CompanyLink> _companySocialLinks(AdminProfile? profile) {
     final data = profile?.data;
     if (data == null) return const [];
     Map<String, dynamic>? company;
@@ -1234,15 +1319,33 @@ class _ProfileTabState extends State<ProfileTab> {
     company ??= data['company'] is Map
         ? Map<String, dynamic>.from(data['company'] as Map)
         : null;
-    final social = company?['socialLinks'];
-    if (social is! Map) return const [];
-    final labels = <String>[];
-    social.forEach((key, value) {
-      final v = value?.toString() ?? '';
-      if (v.isEmpty) return;
-      labels.add(_titleCaseKey(key.toString()));
-    });
-    return labels;
+    final links = <_CompanyLink>[];
+
+    void addLink(String label, Object? value) {
+      final v = (value?.toString() ?? '').trim();
+      if (v.isEmpty || v == '-') return;
+      if (links.any((e) => e.url == v)) return;
+      links.add(_CompanyLink(label: label, url: v));
+    }
+
+    final social = company?['socialLinks'] ?? _deepFindKey(data, 'socialLinks');
+    if (social is Map) {
+      social.forEach((key, value) {
+        addLink(_titleCaseKey(key.toString()), value);
+      });
+    }
+
+    // Fallbacks when API returns social links outside company.socialLinks.
+    addLink(
+      'Custom Domain',
+      _deepFindAnyKey(data, const ['customDomain', 'domain', 'custom_domain']),
+    );
+    addLink('Facebook', _deepFindAnyKey(data, const ['facebook']));
+    addLink('Instagram', _deepFindAnyKey(data, const ['instagram']));
+    addLink('Linkedin', _deepFindAnyKey(data, const ['linkedin']));
+    addLink('Twitter', _deepFindAnyKey(data, const ['twitter', 'x']));
+
+    return links;
   }
 
   String _titleCaseKey(String key) {
@@ -1575,7 +1678,50 @@ class _ProfileTabState extends State<ProfileTab> {
       final t = v.toString().trim();
       if (t.isNotEmpty) return t;
     }
+    final company = p.data['company'];
+    if (company is Map) {
+      final map = Map<String, dynamic>.from(company.cast());
+      for (final key in keys) {
+        final v = map[key];
+        if (v == null) continue;
+        final t = v.toString().trim();
+        if (t.isNotEmpty) return t;
+      }
+    }
+    final deep = _deepFindAnyKey(p.data, keys);
+    if (deep != null) {
+      final t = deep.toString().trim();
+      if (t.isNotEmpty) return t;
+    }
     return '-';
+  }
+
+  Object? _deepFindAnyKey(Map<String, dynamic> root, List<String> keys) {
+    for (final key in keys) {
+      final found = _deepFindKey(root, key);
+      if (found != null && found.toString().trim().isNotEmpty) return found;
+    }
+    return null;
+  }
+
+  Object? _deepFindKey(Map<String, dynamic> root, String key) {
+    if (root.containsKey(key)) return root[key];
+    for (final value in root.values) {
+      if (value is Map) {
+        final nested = Map<String, dynamic>.from(value.cast());
+        final found = _deepFindKey(nested, key);
+        if (found != null) return found;
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map) {
+            final nested = Map<String, dynamic>.from(item.cast());
+            final found = _deepFindKey(nested, key);
+            if (found != null) return found;
+          }
+        }
+      }
+    }
+    return null;
   }
 
   String _addressValue(AdminProfile? p, List<String> keys) {
@@ -2038,4 +2184,11 @@ class _DatePair {
   final String time;
 
   const _DatePair(this.date, this.time);
+}
+
+class _CompanyLink {
+  final String label;
+  final String url;
+
+  const _CompanyLink({required this.label, required this.url});
 }

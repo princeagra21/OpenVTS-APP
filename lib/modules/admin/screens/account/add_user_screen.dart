@@ -34,8 +34,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _pincodeController = TextEditingController();
 
-  static const String _fixedRoleLabel = "User";
-
   bool _submitting = false;
   bool _passwordObscured = true;
 
@@ -229,7 +227,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final searchController = TextEditingController();
     String query = '';
-    final double fontSize = AdaptiveUtils.getSubtitleFontSize(
+    final double fontSize = AdaptiveUtils.getTitleFontSize(
       MediaQuery.of(context).size.width,
     );
 
@@ -260,7 +258,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -292,17 +290,20 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             setSheetState(() => query = value),
                         decoration: InputDecoration(
                           hintText: 'Search',
-                          prefixIcon: const Icon(Icons.search),
                           filled: true,
                           fillColor:
                               colorScheme.surfaceVariant.withOpacity(0.3),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ),
@@ -310,24 +311,26 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       Expanded(
                         child: ListView.separated(
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, __) => const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
                             final trailing = trailingFor?.call(item);
                             return ListTile(
                               title: Text(
                                 labelFor(item),
-                                style: GoogleFonts.inter(
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.roboto(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              trailing: trailing == null
+                              trailing: trailing == null || trailing.isEmpty
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.inter(
-                                        fontSize: fontSize - 3,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
                                       ),
@@ -601,18 +604,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             return null;
                           },
                           width: w,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        StylishDropdown(
-                          label: "Role",
-                          hint: _fixedRoleLabel,
-                          value: _fixedRoleLabel,
-                          items: const [_fixedRoleLabel],
-                          onChanged: (_) {},
-                          width: w,
-                          enabled: false,
                         ),
 
                         const SizedBox(height: 16),

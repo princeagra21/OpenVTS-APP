@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/vehicle_list_item.dart';
+import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
@@ -24,11 +24,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
   CancelToken? _token;
   ApiClient? _api;
   SuperadminRepository? _repo;
-
-  int _runningCount = 0;
-  int _stopCount = 0;
-  int _notWorkingCount = 0;
-  int _noDataCount = 0;
+  SuperadminTotalCounts? _counts;
 
   @override
   void initState() {
@@ -57,42 +53,23 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
       );
       _repo ??= SuperadminRepository(api: _api!);
 
-      final res = await _repo!.getVehicles(limit: 1000, cancelToken: token);
+      final res = await _repo!.getTotalCounts(cancelToken: token);
       if (!mounted) return;
 
       res.when(
-        success: (vehicles) {
-          var running = 0;
-          var stop = 0;
-          var notWorking = 0;
-          var noData = 0;
-
-          for (final vehicle in vehicles) {
-            switch (_bucketFor(vehicle)) {
-              case 'Running':
-                running += 1;
-              case 'Stop':
-                stop += 1;
-              case 'Not Working (48h)':
-                notWorking += 1;
-              case 'No Data':
-                noData += 1;
-            }
-          }
-
+        success: (counts) {
           if (kDebugMode) {
             debugPrint(
-              '[Home] GET /superadmin/vehicles status=2xx '
-              'running=$running stop=$stop notWorking=$notWorking noData=$noData',
+              '[Home] GET /superadmin/dashboard/totalcounts status=2xx '
+              'connected=${counts.liveConnected} running=${counts.liveRunning} '
+              'stop=${counts.liveStop} inactive=${counts.liveInactive} '
+              'noData=${counts.liveNoData}',
             );
           }
 
           if (!mounted) return;
           setState(() {
-            _runningCount = running;
-            _stopCount = stop;
-            _notWorkingCount = notWorking;
-            _noDataCount = noData;
+            _counts = counts;
             _loading = false;
             _errorShown = false;
           });
@@ -101,7 +78,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
             debugPrint(
-              '[Home] GET /superadmin/vehicles status=${status ?? 'error'}',
+              '[Home] GET /superadmin/dashboard/totalcounts status=${status ?? 'error'}',
             );
           }
           if (!mounted) return;
@@ -127,42 +104,14 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     }
   }
 
-  String _bucketFor(VehicleListItem vehicle) {
-    final status = vehicle.status.trim().toLowerCase();
-    final lastSeen = DateTime.tryParse(vehicle.updatedAt);
-    final now = DateTime.now().toUtc();
-    final isOlderThan48h =
-        lastSeen != null && now.difference(lastSeen.toUtc()).inHours >= 48;
-
-    if (status.contains('no data') || status.contains('nodata')) {
-      return 'No Data';
-    }
-    if (status.contains('not working') ||
-        status.contains('offline') ||
-        status.contains('inactive') ||
-        status.contains('disconnected')) {
-      return 'Not Working (48h)';
-    }
-    if (status.contains('stop') ||
-        status.contains('stopped') ||
-        status.contains('idle') ||
-        status.contains('parked')) {
-      return 'Stop';
-    }
-    if (status.contains('running') ||
-        status.contains('moving') ||
-        status.contains('active') ||
-        status.contains('online')) {
-      return 'Running';
-    }
-    if (isOlderThan48h) return 'Not Working (48h)';
-    if (lastSeen == null) return 'No Data';
-    return 'Stop';
-  }
-
   List<Map<String, dynamic>> get _statusData {
-    final total = _runningCount + _stopCount + _notWorkingCount + _noDataCount;
-    final connectedCount = _runningCount + _stopCount;
+    final counts = _counts;
+    final connectedCount = counts?.liveConnected ?? 0;
+    final runningCount = counts?.liveRunning ?? 0;
+    final stopCount = counts?.liveStop ?? 0;
+    final inactiveCount = counts?.liveInactive ?? 0;
+    final noDataCount = counts?.liveNoData ?? 0;
+    final total = connectedCount + runningCount + stopCount + inactiveCount + noDataCount;
     double percent(int count) {
       if (total <= 0) return 0;
       return ((count * 10000) / total).roundToDouble() / 100;
@@ -176,19 +125,19 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
       },
       {
         'label': 'RUNNING',
-        'count': _runningCount,
-        'percent': percent(_runningCount),
+        'count': runningCount,
+        'percent': percent(runningCount),
       },
-      {'label': 'STOP', 'count': _stopCount, 'percent': percent(_stopCount)},
+      {'label': 'STOP', 'count': stopCount, 'percent': percent(stopCount)},
       {
         'label': 'INACTIVE (48H)',
-        'count': _notWorkingCount,
-        'percent': percent(_notWorkingCount),
+        'count': inactiveCount,
+        'percent': percent(inactiveCount),
       },
       {
         'label': 'NO DATA',
-        'count': _noDataCount,
-        'percent': percent(_noDataCount),
+        'count': noDataCount,
+        'percent': percent(noDataCount),
       },
     ];
   }
@@ -226,8 +175,14 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final statusData = _statusData;
-    final totalDevices =
-        _runningCount + _stopCount + _notWorkingCount + _noDataCount;
+    final counts = _counts;
+    final totalDevices = counts?.vehicleLiveStatus.isNotEmpty == true
+        ? (counts!.liveConnected +
+            counts.liveRunning +
+            counts.liveStop +
+            counts.liveInactive +
+            counts.liveNoData)
+        : 0;
 
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
