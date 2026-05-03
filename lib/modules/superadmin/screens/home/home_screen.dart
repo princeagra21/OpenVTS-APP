@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
 
-  String _appTitle() => 'FLEET STACK';
+  String _appTitle() => 'Open VTS';
 
   String _buildAbsoluteUrl(String raw) {
     final value = raw.trim();
@@ -404,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final initials = _initials(displayName, username);
     final profileImageUrl = _extractProfileImageUrl(profile);
     final currentYear = DateTime.now().year;
-    final footerText = '© $currentYear Fleet Stack All rights reserved.';
+    final footerText = '© $currentYear Open VTS All rights reserved.';
     final roleLabel = _display(profile?.roleName, fallback: 'Super Admin');
 
     final List<_HomeShortcut> shortcuts = [

@@ -138,7 +138,7 @@ class _AdminScreenState extends State<AdminScreen> {
         _isGridView ? CupertinoIcons.list_bullet : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Admin Menu",
       horizontalPadding: 5,
       actionIcons: [_toggleViewIcon],

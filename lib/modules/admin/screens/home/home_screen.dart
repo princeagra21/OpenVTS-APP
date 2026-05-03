@@ -317,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final String logoAsset = AppLogo.assetFor(context);
 
-    const footerText = '© 2026 Fleet Stack All rights reserved.';
+    const footerText = '© 2026 Open VTS All rights reserved.';
 
     final List<_HomeShortcut> shortcuts = [
       _HomeShortcut(
@@ -469,76 +469,66 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  hp,
-                  AppUtils.spacingMedium,
-                  hp * 0.5,
-                  AppUtils.spacingLarge,
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Transform.translate(
-                        offset: const Offset(0, -30),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SizedBox(height: AppUtils.spacingLarge * 1.5),
-                            Center(
-                              child: Transform.translate(
-                                offset: const Offset(0, -40),
-                                child: Image.asset(
-                                  logoAsset,
-                                  width: (screenWidth * 0.45).clamp(140, 200),
-                                  fit: BoxFit.contain,
-                                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    hp,
+                    AppUtils.spacingMedium,
+                    hp * 0.5,
+                    AppUtils.spacingLarge,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(height: AppUtils.spacingSmall),
+                        Center(
+                          child: Image.asset(
+                            logoAsset,
+                            width: (screenWidth * 0.45).clamp(140, 200),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        SizedBox(height: AppUtils.spacingLarge),
+                        Wrap(
+                          alignment: WrapAlignment.start,
+                          spacing: gridGap,
+                          runSpacing: gridGap,
+                          children: shortcuts.map((item) {
+                            return SizedBox(
+                              width: tileSize,
+                              child: _HomeShortcutTile(
+                                item: item,
+                                tileSize: tileSize,
+                                labelFontSize: labelFontSize,
+                                colorScheme: cs,
+                                onTap: () => context.go(item.route),
                               ),
-                            ),
-                            SizedBox(height: AppUtils.spacingLarge * 1.5),
-                            Wrap(
-                              alignment: WrapAlignment.start,
-                              spacing: gridGap,
-                              runSpacing: gridGap,
-                              children: shortcuts.map((item) {
-                                return SizedBox(
-                                  width: tileSize,
-                                  child: _HomeShortcutTile(
-                                    item: item,
-                                    tileSize: tileSize,
-                                    labelFontSize: labelFontSize,
-                                    colorScheme: cs,
-                                    onTap: () => context.go(item.route),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                            );
+                          }).toList(),
                         ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Text(
-                        footerText,
-                        textAlign: TextAlign.center,
-                        style: AppUtils.bodySmallBase.copyWith(
-                          color: cs.onSurface.withOpacity(0.55),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
+                        const Spacer(),
+                        Text(
+                          footerText,
+                          textAlign: TextAlign.center,
+                          style: AppUtils.bodySmallBase.copyWith(
+                            color: cs.onSurface.withOpacity(0.55),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

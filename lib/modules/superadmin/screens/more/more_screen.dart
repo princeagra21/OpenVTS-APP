@@ -151,7 +151,7 @@ class _MoreScreenState extends State<MoreScreen> {
         : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Menu",
       actionIcons: [CupertinoIcons.square_arrow_right, toggleViewIcon],
       onActionTaps: [_confirmLogout, _toggleViewMode],

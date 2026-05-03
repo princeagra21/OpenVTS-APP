@@ -335,7 +335,7 @@ class _VehicleToggleScreenState extends State<VehicleToggleScreen> {
     final overspeedRule = _overspeedRuleForSelectedVehicle();
 
     return AppLayout(
-      title: 'FLEET STACK',
+      title: 'Open VTS',
       subtitle: 'Notifications for $label',
       actionIcons: const [],
       leftAvatarText: 'FS',

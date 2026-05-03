@@ -121,7 +121,7 @@ class UserSupportRepository {
         ),
       });
       res = await api.post(
-        '/user/tickets/$ticketId/messages',
+        '/user/tickets/$ticketId',
         data: form,
         cancelToken: cancelToken,
         options: Options(
@@ -133,7 +133,7 @@ class UserSupportRepository {
       );
     } else {
       res = await api.post(
-        '/user/tickets/$ticketId/messages',
+        '/user/tickets/$ticketId',
         data: <String, dynamic>{'message': message},
         cancelToken: cancelToken,
       );

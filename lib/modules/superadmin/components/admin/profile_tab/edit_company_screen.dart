@@ -316,7 +316,6 @@ class _EditCompanyScreenState extends State<EditCompanyScreen> {
   Future<void> _submit() async {
     if (_saving) return;
 
-    final companyId = _companyId();
     final name = _nameController.text.trim();
     final websiteUrl = _normalizeUrl(_websiteController.text);
     final customDomain = _normalizeUrl(_customDomainController.text);
@@ -324,10 +323,6 @@ class _EditCompanyScreenState extends State<EditCompanyScreen> {
         ? 'Black'
         : _primaryColorController.text.trim();
 
-    if (companyId.isEmpty) {
-      _snackOnce('Company id not available.');
-      return;
-    }
     if (name.isEmpty) {
       _snackOnce('Company name is required.');
       return;
@@ -360,11 +355,18 @@ class _EditCompanyScreenState extends State<EditCompanyScreen> {
         if (socialLinks.isNotEmpty) 'socialLinks': socialLinks,
       };
 
-      final res = await _repo!.updateCompanyConfig(
-        companyId,
+      var res = await _repo!.updateCompanyDetails(
         payload,
         cancelToken: _saveToken,
       );
+      final companyId = _companyId();
+      if (res.isFailure && companyId.isNotEmpty) {
+        res = await _repo!.updateCompanyConfig(
+          companyId,
+          payload,
+          cancelToken: _saveToken,
+        );
+      }
 
       if (!mounted) return;
 

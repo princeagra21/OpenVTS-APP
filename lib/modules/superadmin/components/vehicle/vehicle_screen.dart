@@ -422,7 +422,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Generated from Fleet Stack Super Admin',
+                'Generated from Open VTS Super Admin',
                 style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
               ),
               pw.Text(

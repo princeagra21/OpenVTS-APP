@@ -23,7 +23,7 @@ class LocalizationSettingsScreen extends StatelessWidget {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Localization",
       actionIcons: const [],
       leftAvatarText: 'FS',

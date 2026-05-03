@@ -428,7 +428,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Generated from Fleet Stack Admin',
+                'Generated from Open VTS Admin',
                 style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
               ),
               pw.Text(

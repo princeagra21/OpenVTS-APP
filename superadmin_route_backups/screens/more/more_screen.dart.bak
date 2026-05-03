@@ -54,7 +54,7 @@ class MoreScreen extends StatelessWidget {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) * 1.5;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Menu",
       actionIcons: const [CupertinoIcons.search, CupertinoIcons.bell],
       leftAvatarText: 'FS',

@@ -13,6 +13,7 @@ import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
@@ -529,41 +530,7 @@ class _RecentVehiclesSection extends StatelessWidget {
   }
 
   Widget _buildVehicleSkeletonItem(double screenWidth) {
-    final itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
-    final avatarSize = AdaptiveUtils.getAvatarSize(screenWidth) / 1.2;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: itemPadding),
-      child: Row(
-        children: [
-          AppShimmer(width: avatarSize, height: avatarSize, radius: avatarSize),
-          SizedBox(width: itemPadding + 2),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppShimmer(
-                  width: screenWidth * 0.3,
-                  height: itemPadding + 10,
-                  radius: 6,
-                ),
-                SizedBox(height: itemPadding / 1.5),
-                AppShimmer(
-                  width: screenWidth * 0.45,
-                  height: itemPadding + 8,
-                  radius: 6,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: itemPadding + 2),
-          AppShimmer(
-            width: screenWidth * 0.2,
-            height: itemPadding + 10,
-            radius: 999,
-          ),
-        ],
-      ),
-    );
+    return const AppShimmer(width: double.infinity, height: 64, radius: 12);
   }
 
   Widget _buildVehicleItem(
@@ -571,13 +538,12 @@ class _RecentVehiclesSection extends StatelessWidget {
     UserTopAssetItem asset,
     double screenWidth,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final bool small = screenWidth < 420;
     final double scale = small ? 0.9 : 1.0;
-    final double mainFontSize = 14 * scale;
-    final double subFontSize = 12 * scale;
-    final double badgeFontSize = 11 * scale;
-    final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
 
     final name = _safeString(
       asset.raw['plateNumber'] ?? asset.raw['vehicleNo'] ?? asset.title,
@@ -587,134 +553,97 @@ class _RecentVehiclesSection extends StatelessWidget {
     final status = _assetStatus(asset);
     final timeRaw = _assetTime(asset);
 
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: itemPadding / 2),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: itemPadding,
-          vertical: itemPadding,
-        ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.onSurface.withOpacity(0.12),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey.shade50
+                  : cs.surfaceVariant,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.directions_car_outlined,
+              size: 18,
+              color: cs.onSurface.withOpacity(0.8),
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.1,
-              backgroundColor: Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
-              child: Icon(
-                Icons.directions_car_outlined,
-                size: 18 * scale,
-                color: colorScheme.primary,
-              ),
-            ),
-            SizedBox(width: itemPadding + 2),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
-                      fontSize: mainFontSize,
-                      fontWeight: FontWeight.w600,
-                      height: 20 / 14,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          type,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.roboto(
-                            fontSize: subFontSize,
-                            fontWeight: FontWeight.w500,
-                            height: 16 / 12,
-                            color: colorScheme.onSurface.withOpacity(0.54),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            _formatDate(timeRaw),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
-                              fontSize: subFontSize,
-                              fontWeight: FontWeight.w500,
-                              height: 16 / 12,
-                              color: colorScheme.onSurface.withOpacity(0.54),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: SizedBox.shrink()),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: itemPadding + 2),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: itemPadding - 2,
-                    vertical: itemPadding - 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey[100]
-                        : colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    status,
-                    style: GoogleFonts.roboto(
-                      color: colorScheme.onSurface.withOpacity(0.7),
-                      fontSize: badgeFontSize,
-                      fontWeight: FontWeight.w600,
-                      height: 14 / 11,
-                    ),
+                Text(
+                  name,
+                  maxLines: 2,
+                  style: GoogleFonts.roboto(
+                    fontSize: mainRowFs,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _timeLabel(timeRaw),
+                  type,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.roboto(
-                    fontSize: subFontSize,
-                    fontWeight: FontWeight.w500,
+                    fontSize: secondaryFs,
                     height: 16 / 12,
-                    color: colorScheme.onSurface.withOpacity(0.54),
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey.shade50
+                      : cs.surfaceVariant,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  status,
+                  style: GoogleFonts.roboto(
+                    fontSize: metaFs,
+                    height: 14 / 11,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _timeLabel(timeRaw),
+                style: GoogleFonts.roboto(
+                  fontSize: metaFs,
+                  height: 14 / 11,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -749,7 +678,6 @@ class _RecentVehiclesSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 width: 36,
@@ -768,69 +696,67 @@ class _RecentVehiclesSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text.rich(
-                TextSpan(
+              Text(
+                'Recent Vehicles',
+                style: AppUtils.headlineSmallBase.copyWith(
+                  fontSize: sectionTitleFs,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () => context.push('/user/vehicles'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextSpan(
-                      text: 'Recent Vehicles',
+                    Text(
+                      'View all',
                       style: GoogleFonts.roboto(
-                        fontSize: sectionTitleFs,
-                        height: 24 / 18,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
+                        fontSize: 14 * scale,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.primary.withOpacity(0.8),
                       ),
                     ),
-                    if (loading)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: AppShimmer(
-                            width: 14,
-                            height: 14,
-                            radius: 7,
-                          ),
-                        ),
-                      ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: cs.primary.withOpacity(0.8),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: pad - 2),
-          SizedBox(
-            height: 320,
-            child: loading
-                ? ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, __) =>
-                        _buildVehicleSkeletonItem(screenWidth),
-                  )
-                : assets.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No recent vehicles',
-                          style: GoogleFonts.roboto(
-                            fontSize: linkFontSize,
-                            height: 20 / 14,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface.withOpacity(0.54),
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: EdgeInsets.zero,
-                        itemCount: assets.length > 5 ? 5 : assets.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, index) => _buildVehicleItem(
-                          context,
-                          assets[index],
-                          screenWidth,
-                        ),
-                      ),
-          ),
+          const SizedBox(height: 12),
+          if (loading)
+            Column(
+              children: [
+                _buildVehicleSkeletonItem(screenWidth),
+                const SizedBox(height: 10),
+                _buildVehicleSkeletonItem(screenWidth),
+              ],
+            )
+          else if (assets.isEmpty)
+            Text(
+              'No recent vehicles',
+              style: GoogleFonts.roboto(
+                fontSize: linkFontSize,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            )
+          else
+            Column(
+              children: assets
+                  .take(5)
+                  .map((asset) => _buildVehicleItem(context, asset, screenWidth))
+                  .toList(),
+            ),
         ],
       ),
     );

@@ -165,6 +165,33 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
     return labels.join(' ');
   }
 
+  String _publicBaseUrl() {
+    final apiBase = AppConfig.fromDartDefine().baseUrl.trim();
+    final uri = Uri.tryParse(apiBase);
+    if (uri == null || uri.host.isEmpty) return 'https://app.openvts.io';
+
+    final segments = List<String>.from(uri.pathSegments);
+    if (segments.isNotEmpty && segments.last.toLowerCase() == 'api') {
+      segments.removeLast();
+    }
+    final path = segments.isEmpty ? '' : '/${segments.join('/')}';
+    return '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}$path';
+  }
+
+  String _resolvedTrackUrl(UserShareTrackLinkItem item) {
+    final raw = item.finalUrl.trim();
+    final code = item.uniqueCode.trim();
+    final base = _publicBaseUrl();
+
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    if (raw.startsWith('/track/')) return '$base$raw';
+    if (raw.startsWith('track/')) return '$base/$raw';
+
+    final slug = code.isNotEmpty ? code : raw;
+    if (slug.isEmpty) return '';
+    return '$base/track/$slug';
+  }
+
   Future<void> _openLink(String rawUrl) async {
     final value = rawUrl.trim();
     if (value.isEmpty) return;
@@ -178,7 +205,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
   }
 
   void _copyLink(UserShareTrackLinkItem item) {
-    final value = item.finalUrl.trim();
+    final value = _resolvedTrackUrl(item).trim();
     if (value.isEmpty) return;
     final normalized =
         value.startsWith('http://') || value.startsWith('https://')
@@ -461,7 +488,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
       final matchesSearch =
           query.isEmpty ||
           track.displayName.toLowerCase().contains(query) ||
-          track.finalUrl.toLowerCase().contains(query) ||
+          _resolvedTrackUrl(track).toLowerCase().contains(query) ||
           track.statusLabel.toLowerCase().contains(query);
 
       final matchesTab =
@@ -993,7 +1020,8 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
     double screenWidth,
   ) {
     final name = _safe(track.displayName);
-    final url = _safe(track.finalUrl);
+    final resolvedUrl = _resolvedTrackUrl(track);
+    final url = _safe(resolvedUrl);
     final vehicles = _safe(_vehiclesDisplay(track));
     final expiry = _safe(_formatDate(track.expiryDate));
     final initials = _initials(name);
@@ -1019,7 +1047,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           hoverColor: Colors.transparent,
-          onTap: url == '—' ? null : () => _openLink(track.finalUrl),
+          onTap: url == '—' ? null : () => _openLink(resolvedUrl),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(

@@ -404,6 +404,22 @@ class SuperadminRepository {
     );
   }
 
+  Future<Result<Map<String, dynamic>>> updateCompanyDetails(
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.patch(
+      '/superadmin/companydetails',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) => Result.ok(_extractMap(data)),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<void>> deleteAdmin(
     String adminId, {
     CancelToken? cancelToken,

@@ -1,6 +1,6 @@
-# Fleet Stack Mobile (Flutter)
+# Open VTS Mobile (Flutter)
 
-A production‑grade Flutter app for Fleet Stack. The project is organized by role‑based modules (`superadmin`, `admin`, `user`) with shared core services and UI utilities.
+A production‑grade Flutter app for Open VTS. The project is organized by role‑based modules (`superadmin`, `admin`, `user`) with shared core services and UI utilities.
 
 ## Highlights
 - Role‑based navigation and screens (Superadmin/Admin/User)
@@ -55,4 +55,4 @@ See module documentation:
 - `lib/modules/user/README.md`
 
 ---
-© 2026 Fleet Stack. All rights reserved.
+© 2026 Open VTS. All rights reserved.

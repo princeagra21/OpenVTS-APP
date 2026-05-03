@@ -17,7 +17,7 @@ class NotificationPreferencesScreen extends StatelessWidget {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Notifications",
       actionIcons: const [],
       leftAvatarText: 'FS',

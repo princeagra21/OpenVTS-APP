@@ -1082,7 +1082,6 @@ class _ProfileTabState extends State<ProfileTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: iconBox,
@@ -1118,22 +1117,18 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    loading
-                        ? const AppShimmer(
-                            width: 180,
-                            height: 18,
-                            radius: 8,
-                          )
-                        : Text(
-                            companyName,
-                            style: GoogleFonts.roboto(
-                              fontSize: titleFs,
-                              height: 20 / 14,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                    if (!loading && websiteUrl != '-') ...[
+                    Text(
+                      companyName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.roboto(
+                        fontSize: titleFs,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    if (websiteUrl != '-') ...[
                       const SizedBox(height: 6),
                       InkWell(
                         onTap: () => _openExternalLink(websiteUrl),
@@ -1153,39 +1148,37 @@ class _ProfileTabState extends State<ProfileTab> {
                   ],
                 ),
               ),
-              if (!loading) ...[
-                const SizedBox(width: 8),
-                InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: _openCompanyEdit,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colorScheme.primary.withOpacity(0.14),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.edit_outlined,
-                      size: 18,
-                      color: colorScheme.primary,
+              const SizedBox(width: 8),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _openCompanyEdit,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.14),
                     ),
                   ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
                 ),
-              ],
+              ),
             ],
           ),
-          if (!loading && socialLinks.isNotEmpty) ...[
+          if (socialLinks.isNotEmpty) ...[
             const SizedBox(height: 10),
             Padding(
               padding: EdgeInsets.only(left: iconBox + 10),
               child: Wrap(
                 spacing: 8,
-                runSpacing: 8,
+                runSpacing: 6,
                 children: socialLinks
                     .map(
                       (link) => InkWell(

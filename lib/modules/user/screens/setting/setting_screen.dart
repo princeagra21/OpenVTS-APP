@@ -195,6 +195,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '';
   }
 
+  String _fullAddress(AdminProfile? profile) {
+    if (profile == null) return '';
+    final data = profile.data;
+    final addr = data['address'];
+    if (addr is Map) {
+      final map = addr is Map<String, dynamic>
+          ? addr
+          : Map<String, dynamic>.from(addr.cast());
+      final direct = map['fullAddress']?.toString().trim();
+      if (direct != null && direct.isNotEmpty) return direct;
+      final parts = <String>[
+        map['addressLine']?.toString().trim() ?? '',
+        map['city']?.toString().trim() ??
+            map['cityName']?.toString().trim() ??
+            '',
+        map['state']?.toString().trim() ??
+            map['stateName']?.toString().trim() ??
+            '',
+        map['country']?.toString().trim() ??
+            map['countryName']?.toString().trim() ??
+            '',
+        map['pincode']?.toString().trim() ?? '',
+      ].where((e) => e.isNotEmpty && e != '-').toList();
+      if (parts.isNotEmpty) return parts.join(', ');
+    }
+    final parts = <String>[
+      profile.addressLine.trim(),
+      profile.city.trim(),
+      profile.state.trim(),
+      profile.country.trim(),
+      profile.pincode.trim(),
+    ].where((e) => e.isNotEmpty && e != '-').toList();
+    return parts.join(', ');
+  }
+
   List<String> _formatDateTimeParts(String? raw) {
     final text = raw?.trim() ?? '';
     if (text.isEmpty) return const ['—', '—'];
@@ -301,6 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         customDomain: _display(
                           company['customDomain']?.toString(),
                         ),
+                        address: _display(_fullAddress(_profile)),
                         socialLabels: _socialLabels(company),
                         socialLinks: socialLinks,
                         createdParts: _formatDateTimeParts(
@@ -540,6 +576,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
   final String companyId;
   final String primaryColor;
   final String customDomain;
+  final String address;
   final List<String> socialLabels;
   final Map<String, dynamic> socialLinks;
   final List<String> createdParts;
@@ -562,6 +599,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
     required this.companyId,
     required this.primaryColor,
     required this.customDomain,
+    required this.address,
     required this.socialLabels,
     required this.socialLinks,
     required this.createdParts,
@@ -580,6 +618,49 @@ class _ProfileOverviewHeader extends StatelessWidget {
     final double subtitleSize = AdaptiveUtils.getTitleFontSize(width);
     final double buttonFont = 12 * scale;
     final double iconSize = subtitleSize + 6;
+
+    if (loading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmer(width: 90, height: 16, radius: 6),
+                      const SizedBox(height: 6),
+                      AppShimmer(width: 60, height: 12, radius: 6),
+                    ],
+                  ),
+                ),
+                AppShimmer(width: 72, height: 32, radius: 10),
+                const SizedBox(width: 8),
+                AppShimmer(width: 88, height: 32, radius: 10),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const _ProfileOverviewSkeleton(),
+          ],
+        ),
+      );
+    }
 
     Widget actionButton({
       required IconData icon,
@@ -640,26 +721,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (loading)
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppShimmer(width: 90, height: 16, radius: 6),
-                      const SizedBox(height: 6),
-                      AppShimmer(width: 60, height: 12, radius: 6),
-                    ],
-                  ),
-                ),
-                AppShimmer(width: 72, height: 32, radius: 10),
-                const SizedBox(width: 8),
-                AppShimmer(width: 88, height: 32, radius: 10),
-              ],
-            )
-          else
-            Row(
+          Row(
               children: [
                 Expanded(
                   child: Column(
@@ -749,9 +811,76 @@ class _ProfileOverviewHeader extends StatelessWidget {
             socialLabels: socialLabels,
             socialLinks: socialLinks,
             loading: loading,
+            onEditCompany: onEdit,
+          ),
+          const SizedBox(height: 12),
+          _ProfileAddressCard(
+            address: address,
+            loading: loading,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileOverviewSkeleton extends StatelessWidget {
+  const _ProfileOverviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget block({double height = 16, double width = double.infinity, double radius = 8}) {
+      return AppShimmer(width: width, height: height, radius: radius);
+    }
+
+    Widget cardSkeleton() {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+        ),
+        child: Row(
+          children: [
+            const AppShimmer(width: 36, height: 36, radius: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  block(width: 96, height: 14),
+                  const SizedBox(height: 6),
+                  block(width: 140, height: 12),
+                ],
+              ),
+            ),
+            block(width: 72, height: 28, radius: 10),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: cardSkeleton()),
+            const SizedBox(width: 12),
+            Expanded(child: cardSkeleton()),
+          ],
+        ),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+      ],
     );
   }
 }
@@ -1127,13 +1256,13 @@ class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: cs.primary,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: _sending
                   ? const AppShimmer(width: 52, height: 12, radius: 6)
                   : Text(
-                      'Send OTP',
+                      'Verify',
                       style: GoogleFonts.roboto(
                         fontSize: 12 * scale,
                         height: 16 / 12,
@@ -1501,6 +1630,7 @@ class _ProfileCompanyCard extends StatelessWidget {
   final List<String> socialLabels;
   final Map<String, dynamic> socialLinks;
   final bool loading;
+  final VoidCallback onEditCompany;
 
   const _ProfileCompanyCard({
     required this.companyName,
@@ -1511,54 +1641,19 @@ class _ProfileCompanyCard extends StatelessWidget {
     required this.socialLabels,
     required this.socialLinks,
     required this.loading,
+    required this.onEditCompany,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
-    final double scale = (width / 420).clamp(0.9, 1.0);
-    final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
-    final double titleSize = AdaptiveUtils.getSubtitleFontSize(width) - 1;
-
-    Widget infoRow(String label, String value) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            flex: 2,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
-                fontSize: labelSize,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface.withOpacity(0.65),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 3,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                loading ? '—' : value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.roboto(
-                  fontSize: valueSize,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double scale2 = fs / 14;
+    final double labelFs = 11 * scale2;
+    final double titleFs = 14 * scale2;
+    final double iconBox = 40 * scale2;
+    final double iconSize = 18 * scale2;
 
     String? _socialUrl(String label) {
       final key = label.toLowerCase().replaceAll(' ', '');
@@ -1583,34 +1678,36 @@ class _ProfileCompanyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: cs.onSurface.withOpacity(0.12),
-        ),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36 * scale,
-                height: 36 * scale,
+                width: iconBox,
+                height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? cs.surfaceVariant
                       : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: cs.onSurface.withOpacity(0.12),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.apartment,
-                  size: 18 * scale,
+                  size: iconSize,
                   color: cs.onSurface,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1618,84 +1715,211 @@ class _ProfileCompanyCard extends StatelessWidget {
                     Text(
                       'Company',
                       style: GoogleFonts.roboto(
-                        fontSize: labelSize,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface.withOpacity(0.65),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      loading ? '—' : companyName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      loading ? '—' : companyWebsite,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
-                        fontSize: valueSize,
-                        fontWeight: FontWeight.w600,
+                        fontSize: labelFs,
+                        height: 14 / 11,
+                        fontWeight: FontWeight.w500,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    loading
+                        ? const AppShimmer(
+                            width: 180,
+                            height: 18,
+                            radius: 8,
+                          )
+                        : Text(
+                            companyName,
+                            style: GoogleFonts.roboto(
+                              fontSize: titleFs,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                    if (!loading && companyWebsite != '-') ...[
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () async {
+                          final uri = Uri.tryParse(companyWebsite);
+                          if (uri == null) return;
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        child: Text(
+                          companyWebsite,
+                          style: GoogleFonts.roboto(
+                            fontSize: labelFs,
+                            height: 14 / 11,
+                            fontWeight: FontWeight.w500,
+                            color: cs.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
+              if (!loading) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onEditCompany,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: cs.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cs.primary.withOpacity(0.14),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: cs.primary,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           if (!loading && socialLabels.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: socialLabels.map((label) {
-                final url = _socialUrl(label);
-                return InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: url == null ? null : () => _openUrl(url),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: cs.onSurface.withOpacity(0.1),
+            const SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.only(left: iconBox + 10),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: socialLabels.map((label) {
+                  final url = _socialUrl(label);
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: url == null ? null : () => _openUrl(url),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? cs.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Text(
+                        label,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelFs,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      label,
-                      style: GoogleFonts.roboto(
-                        fontSize: 13 * scale,
-                        height: 18 / 13,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ],
-          const SizedBox(height: 12),
-          const SizedBox(height: 12),
-          Column(
-            children: [
-              infoRow('Company ID', companyId),
-              const SizedBox(height: 10),
-              infoRow('Primary Color', primaryColor),
-              const SizedBox(height: 10),
-              infoRow('Custom Domain', customDomain),
-            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileAddressCard extends StatelessWidget {
+  final String address;
+  final bool loading;
+
+  const _ProfileAddressCard({
+    required this.address,
+    required this.loading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double scale = fs / 14;
+    final double labelFs = 11 * scale;
+    final double titleFs = 14 * scale;
+    final double iconBox = 40 * scale;
+    final double iconSize = 18 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: iconBox,
+            height: iconBox,
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? cs.surfaceVariant
+                  : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: cs.onSurface.withOpacity(0.12),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.location_on_outlined,
+              size: iconSize,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Address',
+                  style: GoogleFonts.roboto(
+                    fontSize: labelFs,
+                    height: 14 / 11,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                loading
+                    ? const AppShimmer(
+                        width: double.infinity,
+                        height: 16,
+                        radius: 8,
+                      )
+                    : Text(
+                        address,
+                        style: GoogleFonts.roboto(
+                          fontSize: titleFs,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+              ],
+            ),
           ),
         ],
       ),

@@ -389,7 +389,7 @@ class _RolesScreenState extends State<RolesScreen> {
     final bool showNoData = !_loading && _roles.isEmpty;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Role Permissions",
       actionIcons: const [],
       leftAvatarText: 'FS',

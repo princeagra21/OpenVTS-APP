@@ -324,7 +324,7 @@ class _SuperadminNotificationsScreenState
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
     return AppLayout(
-      title: 'FLEET STACK',
+      title: 'Open VTS',
       subtitle: 'Notifications',
       showAppBar: false,
       customTopBar: const SuperAdminHomeAppBar(

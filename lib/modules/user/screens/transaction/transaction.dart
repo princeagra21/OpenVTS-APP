@@ -464,7 +464,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Generated from Fleet Stack User',
+                'Generated from Open VTS User',
                 style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
               ),
               pw.Text(

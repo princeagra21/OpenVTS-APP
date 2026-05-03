@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
     return AppLayout(
-      title: 'FLEET STACK',
+      title: 'Open VTS',
       subtitle: 'Profile',
       actionIcons: const [],
       leftAvatarText: 'FS',

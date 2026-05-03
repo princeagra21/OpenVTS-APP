@@ -321,7 +321,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
     return AppLayout(
-      title: 'FLEET STACK',
+      title: 'Open VTS',
       subtitle: 'Notifications',
       showAppBar: true,
       actionIcons: const [Icons.done_all],

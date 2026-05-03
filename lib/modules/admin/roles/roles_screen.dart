@@ -147,7 +147,7 @@ class _RolesScreenState extends State<RolesScreen> {
     final double titleFs = AdaptiveUtils.getTitleFontSize(width);
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Role Permissions",
       showAppBar: false,
       customTopBar: AdminHomeAppBar(

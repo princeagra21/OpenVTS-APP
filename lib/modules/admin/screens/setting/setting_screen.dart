@@ -622,6 +622,49 @@ class _ProfileOverviewHeader extends StatelessWidget {
     final double buttonFont = 12 * scale;
     final double iconSize = subtitleSize + 6;
 
+    if (loading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmer(width: 90, height: 16, radius: 6),
+                      const SizedBox(height: 6),
+                      AppShimmer(width: 60, height: 12, radius: 6),
+                    ],
+                  ),
+                ),
+                AppShimmer(width: 72, height: 32, radius: 10),
+                const SizedBox(width: 8),
+                AppShimmer(width: 88, height: 32, radius: 10),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const _ProfileOverviewSkeleton(),
+          ],
+        ),
+      );
+    }
+
     Widget actionButton({
       required IconData icon,
       required String label,
@@ -681,26 +724,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (loading)
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppShimmer(width: 90, height: 16, radius: 6),
-                      const SizedBox(height: 6),
-                      AppShimmer(width: 60, height: 12, radius: 6),
-                    ],
-                  ),
-                ),
-                AppShimmer(width: 72, height: 32, radius: 10),
-                const SizedBox(width: 8),
-                AppShimmer(width: 88, height: 32, radius: 10),
-              ],
-            )
-          else
-            Row(
+          Row(
               children: [
                 Expanded(
                   child: Column(
@@ -799,6 +823,72 @@ class _ProfileOverviewHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileOverviewSkeleton extends StatelessWidget {
+  const _ProfileOverviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget block({double height = 16, double width = double.infinity, double radius = 8}) {
+      return AppShimmer(width: width, height: height, radius: radius);
+    }
+
+    Widget cardSkeleton({double height = 84}) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const AppShimmer(width: 36, height: 36, radius: 10),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      block(width: 96, height: 14),
+                      const SizedBox(height: 6),
+                      block(width: 140, height: 12),
+                    ],
+                  ),
+                ),
+                block(width: 72, height: 28, radius: 10),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: cardSkeleton(height: 88)),
+            const SizedBox(width: 12),
+            Expanded(child: cardSkeleton(height: 88)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+      ],
     );
   }
 }
@@ -1175,13 +1265,13 @@ class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: cs.primary,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: _sending
                   ? const AppShimmer(width: 52, height: 12, radius: 6)
                   : Text(
-                      'Send OTP',
+                      'Verify',
                       style: GoogleFonts.roboto(
                         fontSize: 12 * scale,
                         height: 16 / 12,

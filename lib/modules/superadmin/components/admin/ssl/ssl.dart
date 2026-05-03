@@ -248,7 +248,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
     final showNoData = !_loading && _items.isEmpty;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "SSL Management",
       actionIcons: const [],
       leftAvatarText: 'FS',

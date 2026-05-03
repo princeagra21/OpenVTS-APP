@@ -293,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileId = _display(profile?.id, fallback: '');
 
     return AppLayout(
-      title: 'FLEET STACK',
+      title: 'Open VTS',
       subtitle: 'Profile',
       actionIcons: const [],
       leftAvatarText: 'FS',

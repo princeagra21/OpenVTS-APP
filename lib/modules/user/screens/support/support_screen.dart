@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
@@ -5,7 +6,6 @@ import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_support_repository.dart';
-import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
@@ -473,7 +473,6 @@ class _SupportScreenState extends State<SupportScreen> {
 
 class TicketDetailsScreen extends StatefulWidget {
   final AdminTicketListItem ticket;
-
   const TicketDetailsScreen({super.key, required this.ticket});
 
   @override
@@ -481,36 +480,35 @@ class TicketDetailsScreen extends StatefulWidget {
 }
 
 class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
+  final messageController = TextEditingController();
+  final List<String> localTabs = ['Conversation'];
   String selectedLocalTab = 'Conversation';
-  late String selectedDropdownStatus;
-  final TextEditingController messageController = TextEditingController();
 
-  final List<String> statusOptions = const [
-    'Closed',
-    'Open',
-    'In Process',
-    'Answered',
-    'Hold',
-  ];
-
+  Map<String, dynamic> _ticketDetail = const <String, dynamic>{};
   List<AdminTicketMessageItem> _messages = const <AdminTicketMessageItem>[];
+  String _myUserIdentifier = '';
 
   bool _loadingMessages = false;
   bool _sending = false;
+  bool _updatingStatus = false;
   bool _hasChanges = false;
   PickedFilePayload? _attachment;
 
   bool _messagesErrorShown = false;
   bool _sendErrorShown = false;
-  bool _aiUnavailableShown = false;
 
   CancelToken? _messagesToken;
   CancelToken? _sendToken;
+  CancelToken? _statusToken;
 
   ApiClient? _apiClient;
   UserSupportRepository? _repo;
-  UserProfileRepository? _profileRepo;
-  String _currentUserId = '';
+
+  final ScrollController _chatScrollController = ScrollController();
+  final ScrollController _fullscreenChatScrollController = ScrollController();
+
+  final List<String> statusOptions = ['Open', 'In Process', 'Answered', 'Closed'];
+  String selectedDropdownStatus = 'Open';
 
   UserSupportRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -521,29 +519,456 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     return _repo!;
   }
 
-  UserProfileRepository _profileRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _profileRepo ??= UserProfileRepository(api: _apiClient!);
-    return _profileRepo!;
-  }
-
   bool _isCancelled(Object err) {
-    return err is ApiException &&
-        err.message.toLowerCase() == 'request cancelled';
+    return err is ApiException && err.message.toLowerCase() == 'request cancelled';
   }
 
-  Future<void> _loadCurrentUserProfile() async {
-    final result = await _profileRepoOrCreate().getMyProfile();
-    if (!mounted) return;
-    result.when(
-      success: (profile) {
-        setState(() => _currentUserId = profile.id.trim());
-      },
-      failure: (_) {},
+  @override
+  void initState() {
+    super.initState();
+    selectedDropdownStatus = _toDisplayStatus(widget.ticket.status);
+    _myUserIdentifier = (widget.ticket.raw['fromUserId'] ??
+            widget.ticket.raw['userId'] ??
+            widget.ticket.raw['createdById'] ??
+            '')
+        .toString()
+        .trim();
+    _resolveMyUserIdFromToken();
+    _loadMessages();
+  }
+
+  Future<void> _resolveMyUserIdFromToken() async {
+    if (_myUserIdentifier.isNotEmpty) return;
+    final token = await TokenStorage.defaultInstance().readAccessToken();
+    if (!mounted || token == null || token.trim().isEmpty) return;
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return;
+      final normalized = base64Url.normalize(parts[1]);
+      final payload = utf8.decode(base64Url.decode(normalized));
+      final map = jsonDecode(payload);
+      if (map is! Map) return;
+      final sub = (map['sub'] ?? '').toString().trim();
+      if (sub.isEmpty || !mounted) return;
+      setState(() => _myUserIdentifier = sub);
+    } catch (_) {
+      // Ignore token parse failures; fallback logic remains active.
+    }
+  }
+
+  @override
+  void dispose() {
+    _messagesToken?.cancel('TicketDetailsScreen disposed');
+    _sendToken?.cancel('TicketDetailsScreen disposed');
+    _statusToken?.cancel('TicketDetailsScreen disposed');
+    _chatScrollController.dispose();
+    _fullscreenChatScrollController.dispose();
+    messageController.dispose();
+    super.dispose();
+  }
+
+  DateTime? _parseMessageDate(String raw) {
+    final v = raw.trim();
+    if (v.isEmpty) return null;
+    final iso = DateTime.tryParse(v);
+    if (iso != null) return iso.toLocal();
+    final match = RegExp(
+      r'^(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})$',
+    ).firstMatch(v);
+    if (match == null) return null;
+    return DateTime(
+      int.parse(match.group(3)!),
+      int.parse(match.group(2)!),
+      int.parse(match.group(1)!),
+      int.parse(match.group(4)!),
+      int.parse(match.group(5)!),
     );
+  }
+
+  String _formatMessageTime(AdminTicketMessageItem msg) {
+    final dt = _parseMessageDate(msg.createdAt);
+    if (dt == null) return msg.createdAt.trim().isEmpty ? '—' : msg.createdAt;
+    final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$hour12:$minute $suffix';
+  }
+
+  String _dateLabelForMessage(AdminTicketMessageItem msg) {
+    final dt = _parseMessageDate(msg.createdAt);
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${dt.day} ${months[dt.month - 1]}';
+  }
+
+  void _scrollToLatest([ScrollController? controller]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = controller ?? _chatScrollController;
+      if (!c.hasClients) return;
+      c.animateTo(
+        c.position.maxScrollExtent + 80,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  Color _chatAccentBackground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.18),
+      cs.surface,
+    );
+  }
+
+  Color _chatAccentForeground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return cs.onSurface;
+  }
+
+  Widget _buildChatSurface({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.03),
+      cs.surfaceContainerLowest,
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: CustomPaint(
+        painter: _ChatPatternPainter(
+          color: cs.onSurface.withValues(alpha: 0.035),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyComposer({
+    required BuildContext context,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    VoidCallback? onChangedForParent,
+  }) {
+    final accentBg = _chatAccentBackground(context);
+    final accentFg = _chatAccentForeground(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await _pickAttachment();
+                      onChangedForParent?.call();
+                    },
+                    child: Container(
+                      height: 32,
+                      width: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.attach_file,
+                        size: 16,
+                        color: colorScheme.onSurface.withValues(alpha: 0.72),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: messageController,
+                          minLines: 1,
+                          maxLines: 3,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: 'Type a message…',
+                            hintStyle: GoogleFonts.roboto(
+                              fontSize: bodyFs,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                        if (_attachment != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _attachment!.filename,
+                              style: GoogleFonts.roboto(
+                                fontSize: secondaryFs - 1,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _sending
+                        ? null
+                        : () async {
+                            onChangedForParent?.call();
+                            await _sendMessage();
+                            onChangedForParent?.call();
+                          },
+                    child: Container(
+                      height: 38,
+                      width: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accentBg,
+                      ),
+                      alignment: Alignment.center,
+                      child: _sending
+                          ? SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accentFg,
+                              ),
+                            )
+                          : Icon(Icons.send, size: 18, color: accentFg),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatList({
+    required List<AdminTicketMessageItem> messages,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    required ScrollController controller,
+  }) {
+    final baseBg = colorScheme.surface;
+    final baseText = colorScheme.onSurface;
+    final mutedText = colorScheme.onSurfaceVariant;
+
+    if (messages.isEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          '—',
+          style: GoogleFonts.roboto(
+            fontSize: secondaryFs,
+            fontWeight: FontWeight.w500,
+            color: mutedText,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: controller,
+      padding: EdgeInsets.zero,
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final bubbleMinWidth = (screenWidth * 0.24).clamp(86.0, 120.0);
+        final bubbleMaxWidth = screenWidth * 0.74;
+        final accentBg = _chatAccentBackground(context);
+        final accentFg = _chatAccentForeground(context);
+        final msg = messages[index];
+        final isOutgoing = _isOutgoingMessage(msg);
+        final prev = index > 0 ? messages[index - 1] : null;
+        final currentDate = _dateLabelForMessage(msg);
+        final prevDate = prev == null ? '' : _dateLabelForMessage(prev);
+        final showDateSeparator = currentDate.isNotEmpty && currentDate != prevDate;
+
+        return Column(
+          children: [
+            if (showDateSeparator)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      currentDate,
+                      style: GoogleFonts.roboto(
+                        fontSize: secondaryFs - 1,
+                        fontWeight: FontWeight.w600,
+                        color: mutedText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Align(
+                alignment: isOutgoing ? Alignment.centerRight : Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: bubbleMinWidth,
+                    maxWidth: bubbleMaxWidth,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isOutgoing ? accentBg : baseBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isOutgoing
+                            ? accentBg.withValues(alpha: 0.9)
+                            : colorScheme.onSurface.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isOutgoing ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          msg.message,
+                          textAlign: isOutgoing ? TextAlign.right : TextAlign.left,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs - 0.5,
+                            fontWeight: FontWeight.w500,
+                            color: isOutgoing ? accentFg : baseText,
+                          ),
+                        ),
+                        if (_messageAttachmentName(msg).trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _downloadAttachment(msg),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isOutgoing
+                                    ? accentFg.withValues(alpha: 0.12)
+                                    : colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: colorScheme.outline.withValues(alpha: 0.18),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.attach_file,
+                                    size: 14,
+                                    color: isOutgoing ? accentFg : mutedText,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      _messageAttachmentName(msg),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs - 1,
+                                        fontWeight: FontWeight.w500,
+                                        color: isOutgoing ? accentFg : mutedText,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _formatMessageTime(msg),
+                            style: GoogleFonts.roboto(
+                              fontSize: secondaryFs - 2.5,
+                              fontWeight: FontWeight.w500,
+                              color: isOutgoing ? accentFg.withValues(alpha: 0.85) : mutedText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAttachment() async {
+    final file = await pickSingleFilePayload();
+    if (!mounted) return;
+    if (file == null) return;
+    if (file.bytes.length > 5 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Max file size is 5MB.')),
+      );
+      return;
+    }
+    setState(() => _attachment = file);
   }
 
   Future<Directory> _resolveDownloadDir() async {
@@ -552,8 +977,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       if (await androidDir.exists()) return androidDir;
     }
     if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-      final home =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
       if (home != null && home.trim().isNotEmpty) {
         final dl = Directory('$home${Platform.pathSeparator}Downloads');
         if (await dl.exists()) return dl;
@@ -569,8 +993,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   String _messageAttachmentName(AdminTicketMessageItem msg) {
-    final direct =
-        msg.raw['attachmentName']?.toString().trim() ??
+    final direct = msg.raw['attachmentName']?.toString().trim() ??
         msg.raw['fileName']?.toString().trim() ??
         '';
     if (direct.isNotEmpty) return direct;
@@ -578,8 +1001,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (attachments is List && attachments.isNotEmpty) {
       final first = attachments.first;
       if (first is Map) {
-        final name =
-            first['originalName']?.toString().trim() ??
+        final name = first['originalName']?.toString().trim() ??
             first['storedName']?.toString().trim() ??
             first['name']?.toString().trim() ??
             '';
@@ -590,8 +1012,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   String _messageAttachmentUrl(AdminTicketMessageItem msg) {
-    final direct =
-        msg.raw['attachmentUrl']?.toString().trim() ??
+    final direct = msg.raw['attachmentUrl']?.toString().trim() ??
         msg.raw['filePath']?.toString().trim() ??
         '';
     if (direct.isNotEmpty) return direct;
@@ -599,8 +1020,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (attachments is List && attachments.isNotEmpty) {
       final first = attachments.first;
       if (first is Map) {
-        final path =
-            first['filePath']?.toString().trim() ??
+        final path = first['filePath']?.toString().trim() ??
             first['url']?.toString().trim() ??
             '';
         if (path.isNotEmpty) return path;
@@ -620,11 +1040,19 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   bool _isOutgoingMessage(AdminTicketMessageItem msg) {
     final senderId = _messageSenderId(msg);
-    final myId = _currentUserId.isNotEmpty
-        ? _currentUserId
-        : widget.ticket.raw['fromUserId']?.toString().trim() ?? '';
-    if (senderId.isNotEmpty && myId.isNotEmpty) {
-      return senderId == myId;
+    final senderType = (msg.raw['senderType'] ??
+            msg.raw['fromType'] ??
+            msg.raw['createdByType'] ??
+            msg.raw['userType'] ??
+            msg.raw['loginType'] ??
+            '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (senderType.contains('admin')) return false;
+    if (senderType.contains('user')) return true;
+    if (_myUserIdentifier.isNotEmpty && senderId.isNotEmpty) {
+      return senderId == _myUserIdentifier;
     }
     return msg.senderName.trim().toLowerCase() == 'you';
   }
@@ -663,33 +1091,166 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    selectedDropdownStatus = _toDisplayStatus(widget.ticket.status);
-    _loadCurrentUserProfile();
-    _loadMessages();
-  }
+  Future<void> _openFullscreenChat() async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final w = MediaQuery.of(context).size.width;
+    final scale = _supportScale(w);
+    final bodyFs = 14 + scale;
+    final secondaryFs = 12 + scale;
 
-  @override
-  void dispose() {
-    _messagesToken?.cancel('TicketDetailsScreen disposed');
-    _sendToken?.cancel('TicketDetailsScreen disposed');
-    messageController.dispose();
-    super.dispose();
-  }
+    final fromUserMap = (_ticketDetail['fromUser'] is Map)
+        ? Map<String, dynamic>.from((_ticketDetail['fromUser'] as Map).cast())
+        : const <String, dynamic>{};
+    final String fromName = ((fromUserMap['name'] ?? '').toString().trim().isNotEmpty)
+        ? fromUserMap['name'].toString().trim()
+        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '').toString().trim().isNotEmpty
+            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName']).toString().trim()
+            : widget.ticket.ownerName.isNotEmpty
+                ? widget.ticket.ownerName
+                : '—';
+    final String fromDate = _formatDateTimeDisplay(
+      (_ticketDetail['updatedAt']?.toString().trim().isNotEmpty == true)
+          ? _ticketDetail['updatedAt'].toString()
+          : widget.ticket.updatedAt.isNotEmpty
+              ? widget.ticket.updatedAt
+              : widget.ticket.createdAt,
+    );
 
-  Future<void> _pickAttachment() async {
-    final file = await pickSingleFilePayload();
-    if (!mounted) return;
-    if (file == null) return;
-    if (file.bytes.length > 5 * 1024 * 1024) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Max file size is 5MB.')),
-      );
-      return;
-    }
-    setState(() => _attachment = file);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              final filteredMessages = (selectedLocalTab == 'Conversation'
+                      ? _messages.where((m) => !m.isInternal)
+                      : _messages.where((m) => m.isInternal))
+                  .toList();
+              _scrollToLatest(_fullscreenChatScrollController);
+
+              return Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                                child: Text(
+                                  fromName.isNotEmpty ? fromName[0].toUpperCase() : '—',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs - 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fromName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      fromDate,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Tooltip(
+                                message: 'Collapse content',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    height: 36,
+                                    width: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.surface,
+                                      border: Border.all(
+                                        color: colorScheme.outline.withValues(alpha: 0.22),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.close_fullscreen,
+                                      size: 18,
+                                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: _buildChatSurface(
+                              context: context,
+                              child: _buildChatList(
+                                messages: filteredMessages,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                controller: _fullscreenChatScrollController,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildReplyComposer(
+                            context: context,
+                            colorScheme: colorScheme,
+                            bodyFs: bodyFs,
+                            secondaryFs: secondaryFs,
+                            onChangedForParent: () {
+                              if (mounted) {
+                                setModalState(() {});
+                                _scrollToLatest(_fullscreenChatScrollController);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadMessages() async {
@@ -700,20 +1261,47 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (!mounted) return;
     setState(() => _loadingMessages = true);
 
-    final result = await _repoOrCreate().getTicketDetails(
+    final detailResult = await _repoOrCreate().getTicketDetails(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       cancelToken: token,
     );
 
     if (!mounted) return;
 
-    result.when(
-      success: (details) {
+    detailResult.when(
+      success: (detail) {
+        final detailMap = _coerceDetailMap(detail.raw);
+        final items = detail.messages;
         setState(() {
-          _messages = details.messages;
+          _ticketDetail = detailMap;
+          _messages = items;
+          if (_myUserIdentifier.isEmpty) {
+            final fromUser = detailMap['fromUser'];
+            if (fromUser is Map) {
+              _myUserIdentifier = (fromUser['uid'] ??
+                      fromUser['id'] ??
+                      fromUser['userId'] ??
+                      '')
+                  .toString()
+                  .trim();
+            }
+            if (_myUserIdentifier.isEmpty) {
+              _myUserIdentifier = (detailMap['fromUserId'] ??
+                      detailMap['userId'] ??
+                      detailMap['createdById'] ??
+                      '')
+                  .toString()
+                  .trim();
+            }
+          }
+          final detailStatus = detailMap['status']?.toString() ?? '';
+          if (detailStatus.trim().isNotEmpty) {
+            selectedDropdownStatus = _toDisplayStatus(detailStatus);
+          }
           _loadingMessages = false;
           _messagesErrorShown = false;
         });
+        _scrollToLatest();
       },
       failure: (err) {
         setState(() {
@@ -722,46 +1310,60 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         });
         if (_isCancelled(err) || _messagesErrorShown) return;
         _messagesErrorShown = true;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't load conversation.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        final message = err is ApiException ? err.message : "Couldn't load conversation.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       },
     );
+  }
+
+  Map<String, dynamic> _coerceDetailMap(Map<String, dynamic> source) {
+    Map<String, dynamic> map = source;
+    Map<String, dynamic> asMap(Object? value) {
+      if (value is Map<String, dynamic>) return value;
+      if (value is Map) return Map<String, dynamic>.from(value.cast());
+      return const <String, dynamic>{};
+    }
+    bool looksLikeTicket(Map<String, dynamic> m) {
+      return m.containsKey('id') || m.containsKey('ticketNo') || m.containsKey('title') || m.containsKey('status') || m.containsKey('messages');
+    }
+    for (var i = 0; i < 4; i++) {
+      final nested = asMap(map['data']);
+      if (nested.isEmpty) break;
+      map = nested;
+      if (looksLikeTicket(map)) break;
+    }
+    return map;
   }
 
   String _toDisplayStatus(String raw) {
     final normalized = AdminTicketListItem.normalizeStatus(raw);
     switch (normalized) {
-      case 'closed':
-        return 'Closed';
-      case 'open':
-        return 'Open';
+      case 'closed': return 'Closed';
+      case 'open': return 'Open';
       case 'in_process':
       case 'in_progress':
-        return 'In Process';
       case 'resolved':
       case 'answered':
-        return 'Answered';
       case 'hold':
       case 'on_hold':
-        return 'Hold';
-      default:
-        return 'Open';
+        return 'In Process';
+      default: return 'Open';
     }
+  }
+
+  Future<void> _updateStatus(String? value) async {
+    if (value == null || _updatingStatus) return;
+    setState(() => selectedDropdownStatus = value);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Status update is not available for user tickets.')),
+    );
   }
 
   Future<void> _sendMessage() async {
     if (_sending) return;
     final text = messageController.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Message cannot be empty.')));
-      return;
-    }
+    if (text.isEmpty && _attachment == null) return;
 
     setState(() {
       _sending = true;
@@ -771,7 +1373,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     _sendToken?.cancel('Replace send message');
     final token = CancelToken();
     _sendToken = token;
-    final isInternal = selectedLocalTab == 'Internal Note';
     final result = await _repoOrCreate().sendTicketMessage(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       text,
@@ -783,29 +1384,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
     result.when(
       success: (item) {
-        final raw = <String, dynamic>{
-          'senderName': 'You',
-          'message': text,
-          'createdAt': DateTime.now().toIso8601String(),
-          'isInternal': isInternal,
-        };
-        if (_currentUserId.isNotEmpty) {
-          raw['senderId'] = _currentUserId;
-        }
-        if (_attachment != null) {
-          raw['attachmentName'] = _attachment!.filename;
-          raw['attachmentUrl'] = _attachment!.filename;
-          raw['attachments'] = <Map<String, dynamic>>[
-            <String, dynamic>{
-              'originalName': _attachment!.filename,
-              'filePath': _attachment!.filename,
-            },
-          ];
-        }
-        final msg = item ?? AdminTicketMessageItem(raw);
-
         setState(() {
-          _messages = <AdminTicketMessageItem>[..._messages, msg];
           _sending = false;
           _hasChanges = true;
           _attachment = null;
@@ -817,40 +1396,85 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         setState(() => _sending = false);
         if (_isCancelled(err) || _sendErrorShown) return;
         _sendErrorShown = true;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't send message.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        final message = err is ApiException ? err.message : "Couldn't send message.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
 
-  void _showAiUnavailableOnce() {
-    if (!kDebugMode || _aiUnavailableShown || !mounted) return;
-    _aiUnavailableShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('AI answer API not available yet')),
-    );
-  }
-
-  InputDecoration _dropdownDecoration(BuildContext context) {
+  Future<String?> _showStatusSheet() async {
     final colorScheme = Theme.of(context).colorScheme;
+    final double fontSize = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
 
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2),
-      ),
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Select Status',
+                        style: GoogleFonts.roboto(fontSize: fontSize, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        height: 32, width: 32,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.close, size: 18, color: colorScheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...statusOptions.map((status) {
+                  final selected = status == selectedDropdownStatus;
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.pop(ctx, status),
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: selected ? colorScheme.primary.withValues(alpha: 0.08) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: selected ? colorScheme.primary.withValues(alpha: 0.45) : colorScheme.onSurface.withValues(alpha: 0.12)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              status,
+                              style: GoogleFonts.roboto(fontSize: fontSize - 1, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                            ),
+                          ),
+                          if (selected) Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -864,13 +1488,26 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double bodyFs = 14 + scale;
     final double secondaryFs = 12 + scale;
     final double metaFs = 11 + scale;
-    final filteredMessages =
-        (selectedLocalTab == 'Conversation'
-                ? _messages.where((m) => !m.isInternal)
-                : _messages.where((m) => m.isInternal))
-            .toList();
-    final bool showDetailsSkeleton =
-        _loadingMessages && _messages.isEmpty;
+
+    final fromUserMap = (_ticketDetail['fromUser'] is Map)
+        ? Map<String, dynamic>.from((_ticketDetail['fromUser'] as Map).cast())
+        : const <String, dynamic>{};
+    final String fromName = ((fromUserMap['name'] ?? '').toString().trim().isNotEmpty)
+        ? fromUserMap['name'].toString().trim()
+        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '').toString().trim().isNotEmpty
+            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName']).toString().trim()
+            : widget.ticket.ownerName.isNotEmpty
+                ? widget.ticket.ownerName
+                : '—';
+    final String fromDate = _formatDateTimeDisplay(
+      (_ticketDetail['updatedAt']?.toString().trim().isNotEmpty == true)
+          ? _ticketDetail['updatedAt'].toString()
+          : widget.ticket.updatedAt.isNotEmpty
+              ? widget.ticket.updatedAt
+              : widget.ticket.createdAt,
+    );
+    final filteredMessages = _messages.toList();
+    final bool showDetailsSkeleton = _loadingMessages && _messages.isEmpty;
 
     final double topPadding = MediaQuery.of(context).padding.top;
 
@@ -882,439 +1519,213 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         children: [
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                padding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
-                padding,
-                padding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
+              padding: EdgeInsets.fromLTRB(padding, topPadding + AppUtils.appBarHeightCustom + 28, padding, padding),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.ticket.subject.isNotEmpty
-                                    ? widget.ticket.subject
-                                    : 'Support Ticket',
-                                style: GoogleFonts.roboto(
-                                  fontSize: ticketTitleFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surface,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: _statusColor(
-                                    selectedDropdownStatus,
-                                    colorScheme,
-                                  ).withOpacity(0.4),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _statusIcon(selectedDropdownStatus),
-                                    size: AdaptiveUtils.getIconSize(w) - 4,
-                                    color: _statusColor(
-                                      selectedDropdownStatus,
-                                      colorScheme,
-                                    ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  (_ticketDetail['title']?.toString().trim().isNotEmpty == true)
+                                      ? _ticketDetail['title'].toString().trim()
+                                      : widget.ticket.subject.isNotEmpty
+                                          ? widget.ticket.subject
+                                          : 'Support Ticket',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: ticketTitleFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    selectedDropdownStatus,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: metaFs,
-                                      height: 14 / 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: _statusColor(
-                                        selectedDropdownStatus,
-                                        colorScheme,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: _statusColor(selectedDropdownStatus, colorScheme).withValues(alpha: 0.4)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(_statusIcon(selectedDropdownStatus), size: AdaptiveUtils.getIconSize(w) - 4, color: _statusColor(selectedDropdownStatus, colorScheme)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      selectedDropdownStatus,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: metaFs,
+                                        height: 14 / 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _statusColor(selectedDropdownStatus, colorScheme),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const SizedBox(height: 6),
-                        Text(
-                          [
-                            widget.ticket.ticketNumber.isNotEmpty
-                                ? widget.ticket.ticketNumber
-                                : widget.ticket.id,
-                            if (_titleCase(widget.ticket.category).isNotEmpty)
-                              _titleCase(widget.ticket.category),
-                            if (_titleCase(widget.ticket.priority).isNotEmpty)
-                              '${_titleCase(widget.ticket.priority)} Priority',
-                          ].join(' · '),
-                          style: GoogleFonts.roboto(
-                            fontSize: metaFs,
-                            height: 14 / 11,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                            fontWeight: FontWeight.w500,
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 12),
-                        const SizedBox(height: 12),
-                        if (showDetailsSkeleton)
-                          const AppShimmer(
-                            width: double.infinity,
-                            height: 52,
-                            radius: 16,
-                          )
-                        else
-                          DropdownButtonFormField<String>(
-                            decoration: _dropdownDecoration(context),
-                            value: statusOptions.contains(selectedDropdownStatus)
-                                ? selectedDropdownStatus
-                                : null,
-                            items: statusOptions
-                                .map(
-                                  (status) => DropdownMenuItem(
-                                    value: status,
-                                    child: Text(status),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: null,
+                          const SizedBox(height: 6),
+                          Text(
+                            [
+                              widget.ticket.ticketNumber.isNotEmpty ? widget.ticket.ticketNumber : widget.ticket.id,
+                              if (_titleCase((_ticketDetail['category']?.toString().trim().isNotEmpty == true) ? _ticketDetail['category'].toString() : widget.ticket.category).isNotEmpty)
+                                _titleCase((_ticketDetail['category']?.toString().trim().isNotEmpty == true) ? _ticketDetail['category'].toString() : widget.ticket.category),
+                              if (_titleCase((_ticketDetail['priority']?.toString().trim().isNotEmpty == true) ? _ticketDetail['priority'].toString() : widget.ticket.priority).isNotEmpty)
+                                '${_titleCase((_ticketDetail['priority']?.toString().trim().isNotEmpty == true) ? _ticketDetail['priority'].toString() : widget.ticket.priority)} Priority',
+                            ].join(' · '),
                             style: GoogleFonts.roboto(
-                              fontSize: secondaryFs,
-                              height: 16 / 12,
-                              color: colorScheme.onSurface,
+                              fontSize: metaFs,
+                              height: 14 / 11,
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
                             ),
-                            icon: Icon(
-                              Icons.arrow_drop_down,
-                              color: colorScheme.primary,
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
-                      ),
-                    ),
-                    child: Container(
-                      width: double.infinity,
-                      height: 160,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: filteredMessages.isEmpty
-                          ? Align(
-                              alignment: Alignment.centerRight,
+                          const SizedBox(height: 12),
+                          if (showDetailsSkeleton)
+                            const AppShimmer(width: double.infinity, height: 52, radius: 16)
+                          else
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+                              ),
                               child: Text(
-                                'No messages yet',
-                                textAlign: TextAlign.right,
+                                selectedDropdownStatus,
                                 style: GoogleFonts.roboto(
                                   fontSize: secondaryFs,
                                   height: 16 / 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            )
-                              : ListView.separated(
-                                  itemCount: filteredMessages.length,
-                                  padding: EdgeInsets.zero,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 8),
-                                  itemBuilder: (context, index) {
-                                    final msg = filteredMessages[index];
-                                    final isOutgoing = _isOutgoingMessage(msg);
-                                    final attachmentName =
-                                        _messageAttachmentName(msg);
-                                    return Align(
-                                      alignment: isOutgoing
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.of(context).size.width *
-                                              0.68,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isOutgoing
-                                              ? colorScheme.primary
-                                                  .withOpacity(0.08)
-                                              : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.12),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: isOutgoing
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              msg.message,
-                                              textAlign: isOutgoing
-                                                  ? TextAlign.right
-                                                  : TextAlign.left,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.7),
-                                              ),
-                                            ),
-                                            if (attachmentName
-                                                .trim()
-                                                .isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                onTap: () =>
-                                                    _downloadAttachment(msg),
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.04),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      10,
-                                                    ),
-                                                    border: Border.all(
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withOpacity(0.08),
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.attach_file,
-                                                        size: 14,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.6),
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Flexible(
-                                                        child: Text(
-                                                          attachmentName,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              GoogleFonts.roboto(
-                                                            fontSize:
-                                                                secondaryFs - 1,
-                                                            height: 14 / 11,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: colorScheme
-                                                                .onSurface
-                                                                .withOpacity(
-                                                                  0.7,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
+                            ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: colorScheme.onSurface
-                                    .withOpacity(0.12),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                                child: Text(
+                                  fromName.isNotEmpty ? fromName[0].toUpperCase() : '—',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fromName,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: bodyFs,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      fromDate,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs,
+                                        height: 16 / 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Tooltip(
+                                message: 'Full screen chat',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => _openFullscreenChat(),
+                                  child: Container(
+                                    height: 38, width: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.surface,
+                                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.22)),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(Icons.open_in_full_rounded, size: 18, color: colorScheme.onSurface.withValues(alpha: 0.8)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 260,
+                            child: _buildChatSurface(
+                              context: context,
+                              child: _buildChatList(
+                                messages: filteredMessages,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                controller: _chatScrollController,
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: _pickAttachment,
-                                  child: Container(
-                                    height: 32,
-                                    width: 32,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.06),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Icon(
-                                      Icons.attach_file,
-                                      size: 16,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.6),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      TextField(
-                                        controller: messageController,
-                                        minLines: 1,
-                                        maxLines: 3,
-                                        style: GoogleFonts.roboto(
-                                          fontSize: bodyFs,
-                                          height: 20 / 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          hintText: 'Type a message…',
-                                          hintStyle: GoogleFonts.roboto(
-                                            fontSize: bodyFs,
-                                            height: 20 / 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.6),
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.transparent,
-                                          border: InputBorder.none,
-                                          enabledBorder: InputBorder.none,
-                                          focusedBorder: InputBorder.none,
-                                        ),
-                                      ),
-                                      if (_attachment != null)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 4,
-                                          ),
-                                          child: Text(
-                                            _attachment!.filename,
-                                            style: GoogleFonts.roboto(
-                                              fontSize: secondaryFs - 1,
-                                              height: 14 / 11,
-                                              fontWeight: FontWeight.w500,
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.6),
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                GestureDetector(
-                                  onTap: _sending ? null : _sendMessage,
-                                  child: Container(
-                                    height: 38,
-                                    width: 38,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: colorScheme.primary,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Icon(
-                                      Icons.send,
-                                      size: 18,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          _buildReplyComposer(
+                            context: context,
+                            colorScheme: colorScheme,
+                            bodyFs: bodyFs,
+                            secondaryFs: secondaryFs,
+                            onChangedForParent: () { if (mounted) setState(() {}); },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1323,13 +1734,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             right: padding,
             top: 0,
             child: Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
               child: UserHomeAppBar(
-                title: widget.ticket.ticketNumber.isNotEmpty
-                    ? widget.ticket.ticketNumber
-                    : widget.ticket.id,
+                title: widget.ticket.ticketNumber.isNotEmpty ? widget.ticket.ticketNumber : widget.ticket.id,
                 leadingIcon: Icons.confirmation_number_outlined,
                 onClose: () => Navigator.pop(context, _hasChanges),
               ),
@@ -1341,137 +1748,33 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 }
 
-class _MessagesContainer extends StatelessWidget {
-  final List<AdminTicketMessageItem> messages;
-  final String selectedTab;
-  final bool loading;
-
-  const _MessagesContainer({
-    required this.messages,
-    required this.selectedTab,
-    required this.loading,
-  });
+class _ChatPatternPainter extends CustomPainter {
+  final Color color;
+  const _ChatPatternPainter({required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double messageHeight = MediaQuery.of(context).size.height * 0.4;
-
-    if (loading) {
-      return Container(
-        width: double.infinity,
-        height: messageHeight,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: ListView(
-          children: const [
-            AppShimmer(width: 160, height: 12, radius: 6),
-            SizedBox(height: 8),
-            AppShimmer(width: double.infinity, height: 14, radius: 7),
-            SizedBox(height: 14),
-            AppShimmer(width: 130, height: 12, radius: 6),
-            SizedBox(height: 8),
-            AppShimmer(width: double.infinity, height: 14, radius: 7),
-          ],
-        ),
-      );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    const step = 34.0;
+    for (double y = 10; y < size.height; y += step) {
+      for (double x = 10; x < size.width; x += step) {
+        canvas.drawCircle(Offset(x, y), 3.2, paint);
+        canvas.drawLine(Offset(x + 7, y + 7), Offset(x + 12, y + 12), paint);
+      }
     }
-
-    if (messages.isEmpty) {
-      return Container(
-        width: double.infinity,
-        height: messageHeight,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: Text(
-          'No ${selectedTab.toLowerCase()} messages for this ticket.',
-          style: GoogleFonts.inter(
-            color: colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      height: messageHeight,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: ListView.builder(
-        reverse: false,
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        message.senderName.isEmpty ? '—' : message.senderName,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: message.isInternal
-                              ? Colors.purple
-                              : colorScheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      message.createdAt.isEmpty ? '—' : message.createdAt,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message.message.isEmpty ? '—' : message.message,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
   }
+
+  @override
+  bool shouldRepaint(covariant _ChatPatternPainter oldDelegate) => oldDelegate.color != color;
 }
 
-Widget _tabPill(
-  BuildContext context, {
-  required String label,
-  required bool selected,
-  required VoidCallback onTap,
-}) {
+Widget _tabPill(BuildContext context, {required String label, required bool selected, required VoidCallback onTap}) {
   final cs = Theme.of(context).colorScheme;
   final width = MediaQuery.of(context).size.width;
-  final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
+  final double scale = _supportScale(width);
   final double tabFs = 14 + scale;
   return InkWell(
     onTap: onTap,
@@ -1481,7 +1784,7 @@ Widget _tabPill(
       decoration: BoxDecoration(
         color: selected ? cs.onSurface : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.12)),
       ),
       child: Text(
         label,

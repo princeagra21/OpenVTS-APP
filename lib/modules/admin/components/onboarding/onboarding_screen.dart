@@ -18,17 +18,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       'image': 'assets/image/group.webp',
       'title': 'We Make It Easiest Just Deploy',
-      'subtitle': 'Fleet Stack’s ethos is simple: remove barriers and empower businesses to manage their fleets without technical expertise. Our software is built on simplicity, community, and real empowerment—giving clients full control and fueling success through easy, self-managed installations.',
+      'subtitle': 'Open VTS’s ethos is simple: remove barriers and empower businesses to manage their fleets without technical expertise. Our software is built on simplicity, community, and real empowerment—giving clients full control and fueling success through easy, self-managed installations.',
     },
     {
       'image': 'assets/image/Delivery.webp',
       'title': 'Delivery',
-      'subtitle': 'Fleet Stack™ GPS Software boosts delivery efficiency, profitability, and client satisfaction. Designed for modern delivery services, it ensures accurate, timely deliveries, helping organizations thrive in today’s fast-paced world.',
+      'subtitle': 'Open VTS™ GPS Software boosts delivery efficiency, profitability, and client satisfaction. Designed for modern delivery services, it ensures accurate, timely deliveries, helping organizations thrive in today’s fast-paced world.',
     },
     {
       'image': 'assets/image/logistics.webp',
       'title': 'Logistics & Trucking',
-      'subtitle': 'Fleet Stack’s self-hosted GPS system gives logistics and trucking providers real-time updates, ensuring timely deliveries and compliance with traffic regulations. On-time reporting helps businesses streamline operations and keep clients satisfied.',
+      'subtitle': 'Open VTS’s self-hosted GPS system gives logistics and trucking providers real-time updates, ensuring timely deliveries and compliance with traffic regulations. On-time reporting helps businesses streamline operations and keep clients satisfied.',
     },
   ];
 

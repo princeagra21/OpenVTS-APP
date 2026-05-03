@@ -13,7 +13,7 @@ class PaymentGatewaySettingsScreen extends StatelessWidget {
     final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Payment Gateway",
       actionIcons: const [],
       leftAvatarText: 'FS',

@@ -46,7 +46,7 @@ class ProfileCompanyBox extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Fleet Stack Global Pvt. Ltd.",
+                "Open VTS Global Pvt. Ltd.",
                 style: GoogleFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,

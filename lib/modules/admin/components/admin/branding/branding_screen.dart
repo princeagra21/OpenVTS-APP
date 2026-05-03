@@ -57,7 +57,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
     final hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "White Label",
       actionIcons: const [],
       leftAvatarText: 'FS',

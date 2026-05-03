@@ -278,7 +278,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
     final double fs = AdaptiveUtils.getTitleFontSize(width);
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "User Policy",
       actionIcons: const [],
       leftAvatarText: 'FS',

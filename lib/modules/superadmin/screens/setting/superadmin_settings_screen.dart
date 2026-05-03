@@ -39,6 +39,8 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
   bool _errorShown = false;
   CancelToken? _profileToken;
   bool _pushActionLoading = false;
+  bool _emailOtpLoading = false;
+  bool _whatsappOtpLoading = false;
   PushDeviceState? _pushState;
   ApiClient? _api;
   SuperadminRepository? _repo;
@@ -301,6 +303,18 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
     return '';
   }
 
+  String _fullAddress(SuperadminProfile? profile) {
+    if (profile == null) return '';
+    final address = profile.address;
+    final full = (address['fullAddress'] ?? address['fulladdress'] ?? '')
+        .toString()
+        .trim();
+    if (full.isNotEmpty) return full;
+    final line = (address['addressLine'] ?? profile.addressLine).toString().trim();
+    if (line.isNotEmpty) return line;
+    return '';
+  }
+
   List<String> _formatDateTimeParts(String? raw) {
     final text = raw?.trim() ?? '';
     if (text.isEmpty) return const ['—', '—'];
@@ -359,6 +373,64 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
     }
   }
 
+  String _responseMessage(Object? data, {String fallback = 'Request completed.'}) {
+    if (data is Map) {
+      final root = data.cast<dynamic, dynamic>();
+      final direct = root['message']?.toString().trim();
+      if (direct != null && direct.isNotEmpty) return direct;
+      final d = root['data'];
+      if (d is Map) {
+        final nested = d['message']?.toString().trim();
+        if (nested != null && nested.isNotEmpty) return nested;
+      }
+    }
+    return fallback;
+  }
+
+  Future<void> _requestEmailOtp() async {
+    if (_emailOtpLoading) return;
+    _ensureRepo();
+    setState(() => _emailOtpLoading = true);
+    final res = await _api!.post('/superadmin/profile/verify/email/request');
+    if (!mounted) return;
+    setState(() => _emailOtpLoading = false);
+    res.when(
+      success: (data) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_responseMessage(data, fallback: 'Email OTP request sent.'))),
+        );
+      },
+      failure: (err) {
+        final msg = err is ApiException && err.message.trim().isNotEmpty
+            ? err.message
+            : 'Failed to request email OTP.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Future<void> _requestWhatsappOtp() async {
+    if (_whatsappOtpLoading) return;
+    _ensureRepo();
+    setState(() => _whatsappOtpLoading = true);
+    final res = await _api!.post('/superadmin/profile/verify/whatsapp/request');
+    if (!mounted) return;
+    setState(() => _whatsappOtpLoading = false);
+    res.when(
+      success: (data) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_responseMessage(data, fallback: 'WhatsApp OTP request sent.'))),
+        );
+      },
+      failure: (err) {
+        final msg = err is ApiException && err.message.trim().isNotEmpty
+            ? err.message
+            : 'Failed to request WhatsApp OTP.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
@@ -401,6 +473,10 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
                         verified: _profile?.isVerified ?? false,
                         imageUrl: _extractProfileImageUrl(_profile),
                         loading: _loadingProfile,
+                        emailOtpLoading: _emailOtpLoading,
+                        whatsappOtpLoading: _whatsappOtpLoading,
+                        onRequestEmailOtp: _requestEmailOtp,
+                        onRequestWhatsappOtp: _requestWhatsappOtp,
                         email: _display(_profile?.email),
                         phone: _display(_profile?.phone),
                         whatsapp: _extractWhatsapp(_profile),
@@ -421,6 +497,7 @@ class _SuperAdminSettingsScreenState extends State<SuperAdminSettingsScreen> {
                                 (_profile?.company['socialLinks'] as Map).cast(),
                               )
                             : const {},
+                        address: _display(_fullAddress(_profile)),
                         createdParts: _formatDateTimeParts(
                           _profile?.createdAt,
                         ),
@@ -639,6 +716,10 @@ class _ProfileOverviewHeader extends StatelessWidget {
   final bool verified;
   final String imageUrl;
   final bool loading;
+  final bool emailOtpLoading;
+  final bool whatsappOtpLoading;
+  final VoidCallback onRequestEmailOtp;
+  final VoidCallback onRequestWhatsappOtp;
   final String email;
   final String phone;
   final String whatsapp;
@@ -649,6 +730,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
   final String customDomain;
   final List<String> socialLabels;
   final Map<String, dynamic> socialLinks;
+  final String address;
   final List<String> createdParts;
   final List<String> updatedParts;
 
@@ -659,6 +741,10 @@ class _ProfileOverviewHeader extends StatelessWidget {
     required this.verified,
     required this.imageUrl,
     required this.loading,
+    required this.emailOtpLoading,
+    required this.whatsappOtpLoading,
+    required this.onRequestEmailOtp,
+    required this.onRequestWhatsappOtp,
     required this.email,
     required this.phone,
     required this.whatsapp,
@@ -669,6 +755,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
     required this.customDomain,
     required this.socialLabels,
     required this.socialLinks,
+    required this.address,
     required this.createdParts,
     required this.updatedParts,
   });
@@ -682,6 +769,49 @@ class _ProfileOverviewHeader extends StatelessWidget {
     final double subtitleSize = AdaptiveUtils.getTitleFontSize(width) + 1;
     final double buttonFont = 12 * scale;
     final double iconSize = subtitleSize + 6;
+
+    if (loading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppShimmer(width: 90, height: 16, radius: 6),
+                      const SizedBox(height: 6),
+                      AppShimmer(width: 60, height: 12, radius: 6),
+                    ],
+                  ),
+                ),
+                AppShimmer(width: 72, height: 32, radius: 10),
+                const SizedBox(width: 8),
+                AppShimmer(width: 88, height: 32, radius: 10),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const _ProfileOverviewSkeleton(),
+          ],
+        ),
+      );
+    }
 
     Widget actionButton({
       required IconData icon,
@@ -744,26 +874,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (loading)
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppShimmer(width: 90, height: 16, radius: 6),
-                      const SizedBox(height: 6),
-                      AppShimmer(width: 60, height: 12, radius: 6),
-                    ],
-                  ),
-                ),
-                AppShimmer(width: 72, height: 32, radius: 10),
-                const SizedBox(width: 8),
-                AppShimmer(width: 88, height: 32, radius: 10),
-              ],
-            )
-          else
-            Row(
+          Row(
               children: [
                 Expanded(
                   child: Column(
@@ -842,12 +953,16 @@ class _ProfileOverviewHeader extends StatelessWidget {
         email: email,
         verified: verified,
         loading: loading,
+        otpLoading: emailOtpLoading,
+        onRequestOtp: onRequestEmailOtp,
       ),
       const SizedBox(height: 12),
       _ProfilePhoneCard(
         phone: phone,
         verified: verified,
         loading: loading,
+        otpLoading: whatsappOtpLoading,
+        onRequestOtp: onRequestWhatsappOtp,
       ),
       if (!loading &&
           whatsapp.trim().isNotEmpty &&
@@ -870,6 +985,160 @@ class _ProfileOverviewHeader extends StatelessWidget {
         socialLinks: socialLinks,
         loading: loading,
       ),
+      const SizedBox(height: 12),
+      _ProfileAddressCard(
+        address: address,
+        loading: loading,
+      ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileOverviewSkeleton extends StatelessWidget {
+  const _ProfileOverviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget block({double height = 16, double width = double.infinity, double radius = 8}) {
+      return AppShimmer(width: width, height: height, radius: radius);
+    }
+
+    Widget cardSkeleton() {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+        ),
+        child: Row(
+          children: [
+            const AppShimmer(width: 36, height: 36, radius: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  block(width: 96, height: 14),
+                  const SizedBox(height: 6),
+                  block(width: 140, height: 12),
+                ],
+              ),
+            ),
+            block(width: 72, height: 28, radius: 10),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: cardSkeleton()),
+            const SizedBox(width: 12),
+            Expanded(child: cardSkeleton()),
+          ],
+        ),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+        const SizedBox(height: 12),
+        cardSkeleton(),
+      ],
+    );
+  }
+}
+
+class _ProfileAddressCard extends StatelessWidget {
+  final String address;
+  final bool loading;
+
+  const _ProfileAddressCard({
+    required this.address,
+    required this.loading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double scale = fs / 14;
+    final double labelFs = 11 * scale;
+    final double titleFs = 14 * scale;
+    final double iconBox = 40 * scale;
+    final double iconSize = 18 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: iconBox,
+            height: iconBox,
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? cs.surfaceVariant
+                  : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: cs.onSurface.withOpacity(0.12),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.location_on_outlined,
+              size: iconSize,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Address',
+                  style: GoogleFonts.roboto(
+                    fontSize: labelFs,
+                    height: 14 / 11,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                loading
+                    ? const AppShimmer(
+                        width: double.infinity,
+                        height: 16,
+                        radius: 8,
+                      )
+                    : Text(
+                        address,
+                        style: GoogleFonts.roboto(
+                          fontSize: titleFs,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -986,11 +1255,15 @@ class _ProfileEmailCard extends StatelessWidget {
   final String email;
   final bool verified;
   final bool loading;
+  final bool otpLoading;
+  final VoidCallback onRequestOtp;
 
   const _ProfileEmailCard({
     required this.email,
     required this.verified,
     required this.loading,
+    required this.otpLoading,
+    required this.onRequestOtp,
   });
 
   @override
@@ -1058,33 +1331,65 @@ class _ProfileEmailCard extends StatelessWidget {
             ),
           ),
           if (!loading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    verified ? Icons.verified : Icons.error_outline,
-                    size: 14 * scale,
-                    color: verified ? cs.primary : cs.error,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? cs.surfaceVariant
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.roboto(
-                      fontSize: 12 * scale,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w600,
-                      color: verified ? cs.primary : cs.error,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        verified ? Icons.verified : Icons.error_outline,
+                        size: 14 * scale,
+                        color: verified ? cs.primary : cs.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        verified ? 'Verified' : 'Unverified',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * scale,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w600,
+                          color: verified ? cs.primary : cs.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: otpLoading ? null : onRequestOtp,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 96),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: otpLoading
+                          ? const AppShimmer(width: 52, height: 12, radius: 6)
+                          : Text(
+                              'Verify',
+                              style: GoogleFonts.roboto(
+                                fontSize: 12 * scale,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onPrimary,
+                              ),
+                            ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
         ],
       ),
@@ -1096,11 +1401,15 @@ class _ProfilePhoneCard extends StatelessWidget {
   final String phone;
   final bool verified;
   final bool loading;
+  final bool otpLoading;
+  final VoidCallback onRequestOtp;
 
   const _ProfilePhoneCard({
     required this.phone,
     required this.verified,
     required this.loading,
+    required this.otpLoading,
+    required this.onRequestOtp,
   });
 
   @override
@@ -1167,33 +1476,65 @@ class _ProfilePhoneCard extends StatelessWidget {
             ),
           ),
           if (!loading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    verified ? Icons.verified : Icons.error_outline,
-                    size: 14 * scale,
-                    color: verified ? cs.primary : cs.error,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? cs.surfaceVariant
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.roboto(
-                      fontSize: 12 * scale,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w600,
-                      color: verified ? cs.primary : cs.error,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        verified ? Icons.verified : Icons.error_outline,
+                        size: 14 * scale,
+                        color: verified ? cs.primary : cs.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        verified ? 'Verified' : 'Unverified',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * scale,
+                          height: 16 / 12,
+                          fontWeight: FontWeight.w600,
+                          color: verified ? cs.primary : cs.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: otpLoading ? null : onRequestOtp,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 96),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: otpLoading
+                          ? const AppShimmer(width: 52, height: 12, radius: 6)
+                          : Text(
+                              'Verify',
+                              style: GoogleFonts.roboto(
+                                fontSize: 12 * scale,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onPrimary,
+                              ),
+                            ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
         ],
       ),
@@ -1288,6 +1629,7 @@ class _ProfileCompanyCard extends StatelessWidget {
   final List<String> socialLabels;
   final Map<String, dynamic> socialLinks;
   final bool loading;
+  final VoidCallback? onEditCompany;
 
   const _ProfileCompanyCard({
     required this.companyName,
@@ -1298,54 +1640,19 @@ class _ProfileCompanyCard extends StatelessWidget {
     required this.socialLabels,
     required this.socialLinks,
     required this.loading,
+    this.onEditCompany,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final double width = MediaQuery.of(context).size.width;
-    final double scale = (width / 420).clamp(0.9, 1.0);
-    final double labelSize = AdaptiveUtils.getTitleFontSize(width) + 1;
-    final double valueSize = AdaptiveUtils.getSubtitleFontSize(width) - 2;
-    final double titleSize = AdaptiveUtils.getSubtitleFontSize(width) - 1;
-
-    Widget infoRow(String label, String value) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            flex: 2,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppUtils.bodySmallBase.copyWith(
-                fontSize: labelSize,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface.withOpacity(0.65),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 3,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                loading ? '—' : value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppUtils.bodySmallBase.copyWith(
-                  fontSize: valueSize,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    final double fs = AdaptiveUtils.getTitleFontSize(width);
+    final double scale = fs / 14;
+    final double labelSize = 11 * scale;
+    final double titleSize = 14 * scale;
+    final double iconBox = 40 * scale;
+    final double iconSize = 18 * scale;
 
     String? _socialUrl(String label) {
       final key = label.toLowerCase().replaceAll(' ', '');
@@ -1370,120 +1677,152 @@ class _ProfileCompanyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: cs.onSurface.withOpacity(0.12),
-        ),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36 * scale,
-                height: 36 * scale,
+                width: iconBox,
+                height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? cs.surfaceVariant
                       : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: cs.onSurface.withOpacity(0.12),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.apartment,
-                  size: 18 * scale,
+                  size: iconSize,
                   color: cs.onSurface,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Company',
-                      style: AppUtils.bodySmallBase.copyWith(
+                      style: GoogleFonts.roboto(
                         fontSize: labelSize,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface.withOpacity(0.65),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      loading ? '—' : companyName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppUtils.headlineSmallBase.copyWith(
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      loading ? '—' : companyWebsite,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppUtils.bodySmallBase.copyWith(
-                        fontSize: valueSize,
-                        fontWeight: FontWeight.w600,
+                        height: 14 / 11,
+                        fontWeight: FontWeight.w500,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    loading
+                        ? const AppShimmer(
+                            width: 180,
+                            height: 18,
+                            radius: 8,
+                          )
+                        : Text(
+                            companyName,
+                            style: GoogleFonts.roboto(
+                              fontSize: titleSize,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                    if (!loading && companyWebsite != '-') ...[
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () => _openUrl(companyWebsite),
+                        child: Text(
+                          companyWebsite,
+                          style: GoogleFonts.roboto(
+                            fontSize: labelSize,
+                            height: 14 / 11,
+                            fontWeight: FontWeight.w500,
+                            color: cs.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
+              if (!loading) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onEditCompany,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: cs.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cs.primary.withOpacity(0.14),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: cs.primary,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           if (!loading && socialLabels.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: socialLabels.map((label) {
-                final url = _socialUrl(label);
-                return InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: url == null ? null : () => _openUrl(url),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: cs.onSurface.withOpacity(0.1),
+            const SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.only(left: iconBox + 10),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: socialLabels.map((label) {
+                  final url = _socialUrl(label);
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: url == null ? null : () => _openUrl(url),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? cs.surfaceVariant
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Text(
+                        label,
+                        style: GoogleFonts.roboto(
+                          fontSize: labelSize,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      label,
-                      style: GoogleFonts.roboto(
-                        fontSize: 13 * scale,
-                        height: 18 / 13,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ],
-          const SizedBox(height: 12),
-          const SizedBox(height: 12),
-          Column(
-            children: [
-              infoRow('Company ID', companyId),
-              const SizedBox(height: 10),
-              infoRow('Primary Color', primaryColor),
-              const SizedBox(height: 10),
-              infoRow('Custom Domain', customDomain),
-            ],
-          ),
         ],
       ),
     );
@@ -1511,6 +1850,65 @@ class _PushDiagnosticsCard extends StatelessWidget {
     final double headingFs = 18 * scale;
     final double subtitleFs = 12 * scale;
     final double alertFs = 12 * scale;
+
+    if (loading || state == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppShimmer(width: 132, height: 18, radius: 6),
+            const SizedBox(height: 4),
+            AppShimmer(width: 176, height: 12, radius: 6),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double gap = 10;
+                final double cellWidth = (constraints.maxWidth - gap) / 2;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    SizedBox(
+                      width: cellWidth,
+                      child: AppShimmer(
+                        width: double.infinity,
+                        height: 64,
+                        radius: 12,
+                      ),
+                    ),
+                    SizedBox(
+                      width: cellWidth,
+                      child: AppShimmer(
+                        width: double.infinity,
+                        height: 64,
+                        radius: 12,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            AppShimmer(width: double.infinity, height: 48, radius: 12),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: AppShimmer(width: double.infinity, height: 44, radius: 12)),
+                const SizedBox(width: 10),
+                Expanded(child: AppShimmer(width: double.infinity, height: 44, radius: 12)),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     final permissionLabel = state == null
         ? 'Checking...'

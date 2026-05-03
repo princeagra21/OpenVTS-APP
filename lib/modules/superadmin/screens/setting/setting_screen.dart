@@ -142,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isGridView ? CupertinoIcons.list_bullet : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
-      title: "FLEET STACK",
+      title: "Open VTS",
       subtitle: "Settings",
       actionIcons: [toggleIcon, CupertinoIcons.bell],
       onActionTaps: [
