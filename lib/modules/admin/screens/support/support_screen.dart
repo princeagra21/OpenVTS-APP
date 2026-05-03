@@ -476,7 +476,6 @@ class _SupportScreenState extends State<SupportScreen> {
 
 class TicketDetailsScreen extends StatefulWidget {
   final AdminTicketListItem ticket;
-
   const TicketDetailsScreen({super.key, required this.ticket});
 
   @override
@@ -484,18 +483,12 @@ class TicketDetailsScreen extends StatefulWidget {
 }
 
 class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
+  final messageController = TextEditingController();
+  final List<String> localTabs = ['Conversation', 'Internal Note'];
   String selectedLocalTab = 'Conversation';
-  late String selectedDropdownStatus;
-  final TextEditingController messageController = TextEditingController();
 
-  final List<String> statusOptions = const [
-    'Open',
-    'In Process',
-    'Closed',
-  ];
-
-  List<AdminTicketMessageItem> _messages = const <AdminTicketMessageItem>[];
   Map<String, dynamic> _ticketDetail = const <String, dynamic>{};
+  List<AdminTicketMessageItem> _messages = const <AdminTicketMessageItem>[];
   String _adminIdentifier = '';
 
   bool _loadingMessages = false;
@@ -507,7 +500,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   bool _messagesErrorShown = false;
   bool _sendErrorShown = false;
   bool _statusErrorShown = false;
-  bool _aiUnavailableShown = false;
 
   CancelToken? _messagesToken;
   CancelToken? _sendToken;
@@ -515,6 +507,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   ApiClient? _apiClient;
   AdminSupportRepository? _repo;
+
+  final ScrollController _chatScrollController = ScrollController();
+  final ScrollController _fullscreenChatScrollController = ScrollController();
+
+  final List<String> statusOptions = ['Open', 'In Process', 'Answered', 'Closed'];
+  String selectedDropdownStatus = 'Open';
 
   AdminSupportRepository _repoOrCreate() {
     _apiClient ??= ApiClient(
@@ -526,8 +524,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   bool _isCancelled(Object err) {
-    return err is ApiException &&
-        err.message.toLowerCase() == 'request cancelled';
+    return err is ApiException && err.message.toLowerCase() == 'request cancelled';
   }
 
   @override
@@ -542,8 +539,401 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     _messagesToken?.cancel('TicketDetailsScreen disposed');
     _sendToken?.cancel('TicketDetailsScreen disposed');
     _statusToken?.cancel('TicketDetailsScreen disposed');
+    _chatScrollController.dispose();
+    _fullscreenChatScrollController.dispose();
     messageController.dispose();
     super.dispose();
+  }
+
+  DateTime? _parseMessageDate(String raw) {
+    final v = raw.trim();
+    if (v.isEmpty) return null;
+    final iso = DateTime.tryParse(v);
+    if (iso != null) return iso.toLocal();
+    final match = RegExp(
+      r'^(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})$',
+    ).firstMatch(v);
+    if (match == null) return null;
+    return DateTime(
+      int.parse(match.group(3)!),
+      int.parse(match.group(2)!),
+      int.parse(match.group(1)!),
+      int.parse(match.group(4)!),
+      int.parse(match.group(5)!),
+    );
+  }
+
+  String _formatMessageTime(AdminTicketMessageItem msg) {
+    final dt = _parseMessageDate(msg.createdAt);
+    if (dt == null) return msg.createdAt.trim().isEmpty ? '—' : msg.createdAt;
+    final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$hour12:$minute $suffix';
+  }
+
+  String _dateLabelForMessage(AdminTicketMessageItem msg) {
+    final dt = _parseMessageDate(msg.createdAt);
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${dt.day} ${months[dt.month - 1]}';
+  }
+
+  void _scrollToLatest([ScrollController? controller]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = controller ?? _chatScrollController;
+      if (!c.hasClients) return;
+      c.animateTo(
+        c.position.maxScrollExtent + 80,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  Color _chatAccentBackground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.18),
+      cs.surface,
+    );
+  }
+
+  Color _chatAccentForeground(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return cs.onSurface;
+  }
+
+  Widget _buildChatSurface({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.03),
+      cs.surfaceContainerLowest,
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: CustomPaint(
+        painter: _ChatPatternPainter(
+          color: cs.onSurface.withValues(alpha: 0.035),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyComposer({
+    required BuildContext context,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    VoidCallback? onChangedForParent,
+  }) {
+    final accentBg = _chatAccentBackground(context);
+    final accentFg = _chatAccentForeground(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await _pickAttachment();
+                      onChangedForParent?.call();
+                    },
+                    child: Container(
+                      height: 32,
+                      width: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.attach_file,
+                        size: 16,
+                        color: colorScheme.onSurface.withValues(alpha: 0.72),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: messageController,
+                          minLines: 1,
+                          maxLines: 3,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: 'Type a message…',
+                            hintStyle: GoogleFonts.roboto(
+                              fontSize: bodyFs,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                        if (_attachment != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _attachment!.filename,
+                              style: GoogleFonts.roboto(
+                                fontSize: secondaryFs - 1,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _sending
+                        ? null
+                        : () async {
+                            onChangedForParent?.call();
+                            await _sendMessage();
+                            onChangedForParent?.call();
+                          },
+                    child: Container(
+                      height: 38,
+                      width: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accentBg,
+                      ),
+                      alignment: Alignment.center,
+                      child: _sending
+                          ? SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accentFg,
+                              ),
+                            )
+                          : Icon(Icons.send, size: 18, color: accentFg),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatList({
+    required List<AdminTicketMessageItem> messages,
+    required ColorScheme colorScheme,
+    required double bodyFs,
+    required double secondaryFs,
+    required ScrollController controller,
+  }) {
+    final baseBg = colorScheme.surface;
+    final baseText = colorScheme.onSurface;
+    final mutedText = colorScheme.onSurfaceVariant;
+
+    if (messages.isEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          '—',
+          style: GoogleFonts.roboto(
+            fontSize: secondaryFs,
+            fontWeight: FontWeight.w500,
+            color: mutedText,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: controller,
+      padding: EdgeInsets.zero,
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final bubbleMinWidth = (screenWidth * 0.24).clamp(86.0, 120.0);
+        final bubbleMaxWidth = screenWidth * 0.74;
+        final accentBg = _chatAccentBackground(context);
+        final accentFg = _chatAccentForeground(context);
+        final msg = messages[index];
+        final isOutgoing = _isOutgoingMessage(msg);
+        final prev = index > 0 ? messages[index - 1] : null;
+        final currentDate = _dateLabelForMessage(msg);
+        final prevDate = prev == null ? '' : _dateLabelForMessage(prev);
+        final showDateSeparator = currentDate.isNotEmpty && currentDate != prevDate;
+
+        return Column(
+          children: [
+            if (showDateSeparator)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      currentDate,
+                      style: GoogleFonts.roboto(
+                        fontSize: secondaryFs - 1,
+                        fontWeight: FontWeight.w600,
+                        color: mutedText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Align(
+                alignment: isOutgoing ? Alignment.centerRight : Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: bubbleMinWidth,
+                    maxWidth: bubbleMaxWidth,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isOutgoing ? accentBg : baseBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isOutgoing
+                            ? accentBg.withValues(alpha: 0.9)
+                            : colorScheme.onSurface.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isOutgoing ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          msg.message,
+                          textAlign: isOutgoing ? TextAlign.right : TextAlign.left,
+                          style: GoogleFonts.roboto(
+                            fontSize: bodyFs - 0.5,
+                            fontWeight: FontWeight.w500,
+                            color: isOutgoing ? accentFg : baseText,
+                          ),
+                        ),
+                        if (_messageAttachmentName(msg).trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _downloadAttachment(msg),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isOutgoing
+                                    ? accentFg.withValues(alpha: 0.12)
+                                    : colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: colorScheme.outline.withValues(alpha: 0.18),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.attach_file,
+                                    size: 14,
+                                    color: isOutgoing ? accentFg : mutedText,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      _messageAttachmentName(msg),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs - 1,
+                                        fontWeight: FontWeight.w500,
+                                        color: isOutgoing ? accentFg : mutedText,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _formatMessageTime(msg),
+                            style: GoogleFonts.roboto(
+                              fontSize: secondaryFs - 2.5,
+                              fontWeight: FontWeight.w500,
+                              color: isOutgoing ? accentFg.withValues(alpha: 0.85) : mutedText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _pickAttachment() async {
@@ -565,8 +955,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       if (await androidDir.exists()) return androidDir;
     }
     if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-      final home =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
       if (home != null && home.trim().isNotEmpty) {
         final dl = Directory('$home${Platform.pathSeparator}Downloads');
         if (await dl.exists()) return dl;
@@ -582,8 +971,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   String _messageAttachmentName(AdminTicketMessageItem msg) {
-    final direct =
-        msg.raw['attachmentName']?.toString().trim() ??
+    final direct = msg.raw['attachmentName']?.toString().trim() ??
         msg.raw['fileName']?.toString().trim() ??
         '';
     if (direct.isNotEmpty) return direct;
@@ -591,8 +979,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (attachments is List && attachments.isNotEmpty) {
       final first = attachments.first;
       if (first is Map) {
-        final name =
-            first['originalName']?.toString().trim() ??
+        final name = first['originalName']?.toString().trim() ??
             first['storedName']?.toString().trim() ??
             first['name']?.toString().trim() ??
             '';
@@ -603,8 +990,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   String _messageAttachmentUrl(AdminTicketMessageItem msg) {
-    final direct =
-        msg.raw['attachmentUrl']?.toString().trim() ??
+    final direct = msg.raw['attachmentUrl']?.toString().trim() ??
         msg.raw['filePath']?.toString().trim() ??
         '';
     if (direct.isNotEmpty) return direct;
@@ -612,8 +998,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (attachments is List && attachments.isNotEmpty) {
       final first = attachments.first;
       if (first is Map) {
-        final path =
-            first['filePath']?.toString().trim() ??
+        final path = first['filePath']?.toString().trim() ??
             first['url']?.toString().trim() ??
             '';
         if (path.isNotEmpty) return path;
@@ -673,6 +1058,168 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
   }
 
+  Future<void> _openFullscreenChat() async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final w = MediaQuery.of(context).size.width;
+    final scale = _supportScale(w);
+    final bodyFs = 14 + scale;
+    final secondaryFs = 12 + scale;
+
+    final fromUserMap = (_ticketDetail['fromUser'] is Map)
+        ? Map<String, dynamic>.from((_ticketDetail['fromUser'] as Map).cast())
+        : const <String, dynamic>{};
+    final String fromName = ((fromUserMap['name'] ?? '').toString().trim().isNotEmpty)
+        ? fromUserMap['name'].toString().trim()
+        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '').toString().trim().isNotEmpty
+            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName']).toString().trim()
+            : widget.ticket.ownerName.isNotEmpty
+                ? widget.ticket.ownerName
+                : '—';
+    final String fromDate = _formatDateTimeDisplay(
+      (_ticketDetail['updatedAt']?.toString().trim().isNotEmpty == true)
+          ? _ticketDetail['updatedAt'].toString()
+          : widget.ticket.updatedAt.isNotEmpty
+              ? widget.ticket.updatedAt
+              : widget.ticket.createdAt,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              final filteredMessages = (selectedLocalTab == 'Conversation'
+                      ? _messages.where((m) => !m.isInternal)
+                      : _messages.where((m) => m.isInternal))
+                  .toList();
+              _scrollToLatest(_fullscreenChatScrollController);
+
+              return Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                                child: Text(
+                                  fromName.isNotEmpty ? fromName[0].toUpperCase() : '—',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs - 1,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fromName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: bodyFs,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      fromDate,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: secondaryFs,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Tooltip(
+                                message: 'Collapse content',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    height: 36,
+                                    width: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.surface,
+                                      border: Border.all(
+                                        color: colorScheme.outline.withValues(alpha: 0.22),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.close_fullscreen,
+                                      size: 18,
+                                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: _buildChatSurface(
+                              context: context,
+                              child: _buildChatList(
+                                messages: filteredMessages,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                controller: _fullscreenChatScrollController,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildReplyComposer(
+                            context: context,
+                            colorScheme: colorScheme,
+                            bodyFs: bodyFs,
+                            secondaryFs: secondaryFs,
+                            onChangedForParent: () {
+                              if (mounted) {
+                                setModalState(() {});
+                                _scrollToLatest(_fullscreenChatScrollController);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _loadMessages() async {
     _messagesToken?.cancel('Reload ticket messages');
     final token = CancelToken();
@@ -699,19 +1246,14 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             if (item is Map<String, dynamic>) {
               items.add(AdminTicketMessageItem(item));
             } else if (item is Map) {
-              items.add(
-                AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())),
-              );
+              items.add(AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())));
             }
           }
         }
         setState(() {
           _ticketDetail = detailMap;
           _messages = items;
-          _adminIdentifier =
-              (detailMap['adminUserId'] ?? detailMap['adminId'] ?? '')
-                  .toString()
-                  .trim();
+          _adminIdentifier = (detailMap['adminUserId'] ?? detailMap['adminId'] ?? '').toString().trim();
           final detailStatus = detailMap['status']?.toString() ?? '';
           if (detailStatus.trim().isNotEmpty) {
             selectedDropdownStatus = _toDisplayStatus(detailStatus);
@@ -719,6 +1261,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           _loadingMessages = false;
           _messagesErrorShown = false;
         });
+        _scrollToLatest();
       },
       failure: (err) {
         setState(() {
@@ -727,51 +1270,36 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         });
         if (_isCancelled(err) || _messagesErrorShown) return;
         _messagesErrorShown = true;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't load conversation.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        final message = err is ApiException ? err.message : "Couldn't load conversation.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
 
   Map<String, dynamic> _coerceDetailMap(Map<String, dynamic> source) {
     Map<String, dynamic> map = source;
-
     Map<String, dynamic> asMap(Object? value) {
       if (value is Map<String, dynamic>) return value;
       if (value is Map) return Map<String, dynamic>.from(value.cast());
       return const <String, dynamic>{};
     }
-
     bool looksLikeTicket(Map<String, dynamic> m) {
-      return m.containsKey('id') ||
-          m.containsKey('ticketNo') ||
-          m.containsKey('title') ||
-          m.containsKey('status') ||
-          m.containsKey('fromUser') ||
-          m.containsKey('messages');
+      return m.containsKey('id') || m.containsKey('ticketNo') || m.containsKey('title') || m.containsKey('status') || m.containsKey('messages');
     }
-
     for (var i = 0; i < 4; i++) {
       final nested = asMap(map['data']);
       if (nested.isEmpty) break;
       map = nested;
       if (looksLikeTicket(map)) break;
     }
-
     return map;
   }
 
   String _toDisplayStatus(String raw) {
     final normalized = AdminTicketListItem.normalizeStatus(raw);
     switch (normalized) {
-      case 'closed':
-        return 'Closed';
-      case 'open':
-        return 'Open';
+      case 'closed': return 'Closed';
+      case 'open': return 'Open';
       case 'in_process':
       case 'in_progress':
       case 'resolved':
@@ -779,8 +1307,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       case 'hold':
       case 'on_hold':
         return 'In Process';
-      default:
-        return 'Open';
+      default: return 'Open';
     }
   }
 
@@ -827,15 +1354,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           selectedDropdownStatus = previous;
           _updatingStatus = false;
         });
-
         if (_isCancelled(err) || _statusErrorShown) return;
         _statusErrorShown = true;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't update status.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        final message = err is ApiException ? err.message : "Couldn't update status.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
@@ -843,12 +1365,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   Future<void> _sendMessage() async {
     if (_sending) return;
     final text = messageController.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Message cannot be empty.')));
-      return;
-    }
+    if (text.isEmpty && _attachment == null) return;
 
     setState(() {
       _sending = true;
@@ -873,35 +1390,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
     result.when(
       success: (item) {
-        final raw = <String, dynamic>{
-          ...(item?.raw ?? const <String, dynamic>{}),
-        };
-        raw.putIfAbsent('senderName', () => 'You');
-        raw.putIfAbsent('message', () => text);
-        raw.putIfAbsent('createdAt', () => DateTime.now().toIso8601String());
-        raw.putIfAbsent('isInternal', () => isInternal);
-        if (_adminIdentifier.isNotEmpty) {
-          raw.putIfAbsent('senderId', () => _adminIdentifier);
-        }
-        if (_attachment != null) {
-          final hasAttachment =
-              _messageAttachmentName(AdminTicketMessageItem(raw))
-                  .trim()
-                  .isNotEmpty;
-          if (!hasAttachment) {
-            raw['attachmentName'] = _attachment!.filename;
-            raw['attachments'] = <Map<String, dynamic>>[
-              <String, dynamic>{
-                'originalName': _attachment!.filename,
-                'filePath': _attachment!.filename,
-              },
-            ];
-          }
-        }
-        final msg = AdminTicketMessageItem(raw);
-
         setState(() {
-          _messages = <AdminTicketMessageItem>[..._messages, msg];
           _sending = false;
           _hasChanges = true;
           _attachment = null;
@@ -913,56 +1402,21 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         setState(() => _sending = false);
         if (_isCancelled(err) || _sendErrorShown) return;
         _sendErrorShown = true;
-        final message = err is ApiException
-            ? err.message
-            : "Couldn't send message.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        final message = err is ApiException ? err.message : "Couldn't send message.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       },
-    );
-  }
-
-  void _showAiUnavailableOnce() {
-    if (!kDebugMode || _aiUnavailableShown || !mounted) return;
-    _aiUnavailableShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('AI answer API not available yet')),
-    );
-  }
-
-  InputDecoration _dropdownDecoration(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2),
-      ),
     );
   }
 
   Future<String?> _showStatusSheet() async {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fontSize = AdaptiveUtils.getTitleFontSize(
-      MediaQuery.of(context).size.width,
-    );
+    final double fontSize = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
 
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) {
         return SafeArea(
           child: Padding(
@@ -976,27 +1430,19 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     Expanded(
                       child: Text(
                         'Select Status',
-                        style: GoogleFonts.roboto(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: GoogleFonts.roboto(fontSize: fontSize, fontWeight: FontWeight.w700),
                       ),
                     ),
                     InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () => Navigator.pop(ctx),
                       child: Container(
-                        height: 32,
-                        width: 32,
+                        height: 32, width: 32,
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.08),
+                          color: colorScheme.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
-                          Icons.close,
-                          size: 18,
-                          color: colorScheme.primary,
-                        ),
+                        child: Icon(Icons.close, size: 18, color: colorScheme.primary),
                       ),
                     ),
                   ],
@@ -1010,39 +1456,21 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     child: Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? colorScheme.primary.withOpacity(0.08)
-                            : Colors.transparent,
+                        color: selected ? colorScheme.primary.withValues(alpha: 0.08) : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected
-                              ? colorScheme.primary.withOpacity(0.45)
-                              : colorScheme.onSurface.withOpacity(0.12),
-                        ),
+                        border: Border.all(color: selected ? colorScheme.primary.withValues(alpha: 0.45) : colorScheme.onSurface.withValues(alpha: 0.12)),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               status,
-                              style: GoogleFonts.roboto(
-                                fontSize: fontSize - 1,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
+                              style: GoogleFonts.roboto(fontSize: fontSize - 1, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
                             ),
                           ),
-                          if (selected)
-                            Icon(
-                              Icons.check_rounded,
-                              size: 18,
-                              color: colorScheme.primary,
-                            ),
+                          if (selected) Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
                         ],
                       ),
                     ),
@@ -1066,38 +1494,26 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double bodyFs = 14 + scale;
     final double secondaryFs = 12 + scale;
     final double metaFs = 11 + scale;
-    final raw = widget.ticket.raw;
+
     final fromUserMap = (_ticketDetail['fromUser'] is Map)
         ? Map<String, dynamic>.from((_ticketDetail['fromUser'] as Map).cast())
         : const <String, dynamic>{};
-    final String fromName = ((fromUserMap['name'] ?? '')
-                .toString()
-                .trim()
-                .isNotEmpty)
+    final String fromName = ((fromUserMap['name'] ?? '').toString().trim().isNotEmpty)
         ? fromUserMap['name'].toString().trim()
-        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '')
-                .toString()
-                .trim()
-                .isNotEmpty
-            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'])
-                .toString()
-                .trim()
+        : (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName'] ?? '').toString().trim().isNotEmpty
+            ? (_ticketDetail['fromUserName'] ?? _ticketDetail['fromName']).toString().trim()
             : widget.ticket.ownerName.isNotEmpty
                 ? widget.ticket.ownerName
                 : '—';
     String fromEmail = '—';
     final rawEmail = (fromUserMap.isNotEmpty
             ? fromUserMap['email']
-            : (_ticketDetail['fromUserEmail'] ??
-                  _ticketDetail['email'] ??
-                  raw['email']))
-        ?.toString()
-        .trim() ??
-        '';
+            : (_ticketDetail['fromUserEmail'] ?? _ticketDetail['email'] ?? widget.ticket.raw['email']))
+        ?.toString().trim() ?? '';
     if (rawEmail.isNotEmpty) {
       fromEmail = rawEmail;
-    } else if (raw['fromUser'] is Map) {
-      final email = (raw['fromUser'] as Map)['email']?.toString().trim() ?? '';
+    } else if (widget.ticket.raw['fromUser'] is Map) {
+      final email = (widget.ticket.raw['fromUser'] as Map)['email']?.toString().trim() ?? '';
       if (email.isNotEmpty) fromEmail = email;
     }
     final String fromDate = _formatDateTimeDisplay(
@@ -1107,13 +1523,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               ? widget.ticket.updatedAt
               : widget.ticket.createdAt,
     );
-    final filteredMessages =
-        (selectedLocalTab == 'Conversation'
-                ? _messages.where((m) => !m.isInternal)
-                : _messages.where((m) => m.isInternal))
-            .toList();
-    final bool showDetailsSkeleton =
-        _loadingMessages && _messages.isEmpty;
+    final filteredMessages = (selectedLocalTab == 'Conversation'
+            ? _messages.where((m) => !m.isInternal)
+            : _messages.where((m) => m.isInternal))
+        .toList();
+    final bool showDetailsSkeleton = _loadingMessages && _messages.isEmpty;
 
     final double topPadding = MediaQuery.of(context).padding.top;
 
@@ -1125,589 +1539,273 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         children: [
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                padding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
-                padding,
-                padding,
-              ),
+              padding: EdgeInsets.fromLTRB(padding, topPadding + AppUtils.appBarHeightCustom + 28, padding, padding),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                (_ticketDetail['title']?.toString().trim().isNotEmpty == true)
-                                    ? _ticketDetail['title'].toString().trim()
-                                    : widget.ticket.subject.isNotEmpty
-                                        ? widget.ticket.subject
-                                    : 'Support Ticket',
-                                style: GoogleFonts.roboto(
-                                  fontSize: ticketTitleFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surface,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: _statusColor(
-                                    selectedDropdownStatus,
-                                    colorScheme,
-                                  ).withOpacity(0.4),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _statusIcon(selectedDropdownStatus),
-                                    size: AdaptiveUtils.getIconSize(w) - 4,
-                                    color: _statusColor(
-                                      selectedDropdownStatus,
-                                      colorScheme,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    selectedDropdownStatus,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: metaFs,
-                                      height: 14 / 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: _statusColor(
-                                        selectedDropdownStatus,
-                                        colorScheme,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const SizedBox(height: 6),
-                        Text(
-                          [
-                            widget.ticket.ticketNumber.isNotEmpty
-                                ? widget.ticket.ticketNumber
-                                : widget.ticket.id,
-                            if (_titleCase(
-                                  (_ticketDetail['category']?.toString().trim().isNotEmpty ==
-                                              true)
-                                      ? _ticketDetail['category'].toString()
-                                      : widget.ticket.category,
-                                ).isNotEmpty)
-                              _titleCase(
-                                (_ticketDetail['category']?.toString().trim().isNotEmpty == true)
-                                    ? _ticketDetail['category'].toString()
-                                    : widget.ticket.category,
-                              ),
-                            if (_titleCase(
-                                  (_ticketDetail['priority']?.toString().trim().isNotEmpty ==
-                                              true)
-                                      ? _ticketDetail['priority'].toString()
-                                      : widget.ticket.priority,
-                                ).isNotEmpty)
-                              '${_titleCase(
-                                (_ticketDetail['priority']?.toString().trim().isNotEmpty == true)
-                                    ? _ticketDetail['priority'].toString()
-                                    : widget.ticket.priority,
-                              )} Priority',
-                          ].join(' · '),
-                          style: GoogleFonts.roboto(
-                            fontSize: metaFs,
-                            height: 14 / 11,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.12),
-                            ),
-                          ),
-                          child: Column(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'From',
-                                style: GoogleFonts.roboto(
-                                  fontSize: metaFs,
-                                  height: 14 / 11,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                              Expanded(
+                                child: Text(
+                                  (_ticketDetail['title']?.toString().trim().isNotEmpty == true)
+                                      ? _ticketDetail['title'].toString().trim()
+                                      : widget.ticket.subject.isNotEmpty
+                                          ? widget.ticket.subject
+                                          : 'Support Ticket',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: ticketTitleFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                fromName,
-                                style: GoogleFonts.roboto(
-                                  fontSize: bodyFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface,
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: _statusColor(selectedDropdownStatus, colorScheme).withValues(alpha: 0.4)),
                                 ),
-                                softWrap: true,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                fromEmail,
-                                style: GoogleFonts.roboto(
-                                  fontSize: secondaryFs,
-                                  height: 16 / 12,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                child: Row(
+                                  children: [
+                                    Icon(_statusIcon(selectedDropdownStatus), size: AdaptiveUtils.getIconSize(w) - 4, color: _statusColor(selectedDropdownStatus, colorScheme)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      selectedDropdownStatus,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: metaFs,
+                                        height: 14 / 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _statusColor(selectedDropdownStatus, colorScheme),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                softWrap: true,
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (showDetailsSkeleton)
-                          const AppShimmer(
+                          const SizedBox(height: 6),
+                          Text(
+                            [
+                              widget.ticket.ticketNumber.isNotEmpty ? widget.ticket.ticketNumber : widget.ticket.id,
+                              if (_titleCase((_ticketDetail['category']?.toString().trim().isNotEmpty == true) ? _ticketDetail['category'].toString() : widget.ticket.category).isNotEmpty)
+                                _titleCase((_ticketDetail['category']?.toString().trim().isNotEmpty == true) ? _ticketDetail['category'].toString() : widget.ticket.category),
+                              if (_titleCase((_ticketDetail['priority']?.toString().trim().isNotEmpty == true) ? _ticketDetail['priority'].toString() : widget.ticket.priority).isNotEmpty)
+                                '${_titleCase((_ticketDetail['priority']?.toString().trim().isNotEmpty == true) ? _ticketDetail['priority'].toString() : widget.ticket.priority)} Priority',
+                            ].join(' · '),
+                            style: GoogleFonts.roboto(
+                              fontSize: metaFs,
+                              height: 14 / 11,
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
                             width: double.infinity,
-                            height: 52,
-                            radius: 16,
-                          )
-                        else
-                          InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: _updatingStatus
-                                ? null
-                                : () async {
-                                    final chosen = await _showStatusSheet();
-                                    if (!mounted || chosen == null) return;
-                                    if (chosen == selectedDropdownStatus) return;
-                                    _updateStatus(chosen);
-                                  },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outline.withOpacity(0.3),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'From',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: metaFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  fromName,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  softWrap: true,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  fromEmail,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: secondaryFs,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                  softWrap: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (showDetailsSkeleton)
+                            const AppShimmer(width: double.infinity, height: 52, radius: 16)
+                          else
+                            InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: _updatingStatus ? null : () async {
+                                final chosen = await _showStatusSheet();
+                                if (!mounted || chosen == null) return;
+                                if (chosen == selectedDropdownStatus) return;
+                                _updateStatus(chosen);
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        selectedDropdownStatus,
+                                        style: GoogleFonts.roboto(
+                                          fontSize: secondaryFs,
+                                          height: 16 / 12,
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.primary),
+                                  ],
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      selectedDropdownStatus,
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                                child: Text(
+                                  fromName.isNotEmpty ? fromName[0].toUpperCase() : '—',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: bodyFs,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fromName,
+                                      style: GoogleFonts.roboto(
+                                        fontSize: bodyFs,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      fromDate,
                                       style: GoogleFonts.roboto(
                                         fontSize: secondaryFs,
                                         height: 16 / 12,
-                                        color: colorScheme.onSurface,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: colorScheme.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                    const SizedBox(height: 12),
-                    Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.08),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor:
-                                  colorScheme.onSurface.withOpacity(0.06),
-                              child: Text(
-                                fromName.isNotEmpty
-                                    ? fromName[0].toUpperCase()
-                                    : '—',
-                                style: GoogleFonts.roboto(
-                                  fontSize: bodyFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w700,
-                                  color:
-                                      colorScheme.onSurface.withOpacity(0.6),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    fromName,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: bodyFs,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
+                              Tooltip(
+                                message: 'Full screen chat',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => _openFullscreenChat(),
+                                  child: Container(
+                                    height: 38, width: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.surface,
+                                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.22)),
                                     ),
-                                    softWrap: true,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    fromDate,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.6),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: double.infinity,
-                          height: 160,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: filteredMessages.isEmpty
-                              ? Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    '—',
-                                    textAlign: TextAlign.right,
-                                    style: GoogleFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.7),
-                                    ),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: filteredMessages.length,
-                                  padding: EdgeInsets.zero,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 8),
-                                  itemBuilder: (context, index) {
-                                    final msg = filteredMessages[index];
-                                    final isOutgoing = _isOutgoingMessage(msg);
-                                    final attachmentName =
-                                        _messageAttachmentName(msg);
-                                    return Align(
-                                      alignment: isOutgoing
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.of(context).size.width *
-                                              0.68,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isOutgoing
-                                              ? colorScheme.primary
-                                                  .withOpacity(0.08)
-                                              : Colors.transparent,
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.12),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: isOutgoing
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              msg.message,
-                                              textAlign: isOutgoing
-                                                  ? TextAlign.right
-                                                  : TextAlign.left,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.7),
-                                              ),
-                                            ),
-                                            if (attachmentName
-                                                .trim()
-                                                .isNotEmpty) ...[
-                                              const SizedBox(height: 8),
-                                              InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                onTap: () =>
-                                                    _downloadAttachment(msg),
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.04),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      10,
-                                                    ),
-                                                    border: Border.all(
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withOpacity(0.08),
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.attach_file,
-                                                        size: 14,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.6),
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      Flexible(
-                                                        child: Text(
-                                                          attachmentName,
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              GoogleFonts.roboto(
-                                                            fontSize:
-                                                                secondaryFs - 1,
-                                                            height: 14 / 11,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: colorScheme
-                                                                .onSurface
-                                                                .withOpacity(
-                                                                  0.7,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.onSurface.withOpacity(0.08),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.12),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: _pickAttachment,
-                                        child: Container(
-                                          height: 32,
-                                          width: 32,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.06),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.attach_file,
-                                            size: 16,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.6),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            TextField(
-                                              controller: messageController,
-                                              minLines: 1,
-                                              maxLines: 3,
-                                              style: GoogleFonts.roboto(
-                                                fontSize: bodyFs,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: colorScheme.onSurface,
-                                              ),
-                                              decoration: InputDecoration(
-                                                isDense: true,
-                                                hintText: 'Type a message…',
-                                                hintStyle: GoogleFonts.roboto(
-                                                  fontSize: bodyFs,
-                                                  height: 20 / 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: colorScheme.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                                filled: true,
-                                                fillColor: Colors.transparent,
-                                                border: InputBorder.none,
-                                                enabledBorder: InputBorder.none,
-                                                focusedBorder: InputBorder.none,
-                                              ),
-                                            ),
-                                            if (_attachment != null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 4),
-                                                child: Text(
-                                                  _attachment!.filename,
-                                                  style: GoogleFonts.roboto(
-                                                    fontSize: secondaryFs - 1,
-                                                    height: 14 / 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.6),
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      GestureDetector(
-                                        onTap: _sending ? null : _sendMessage,
-                                        child: Container(
-                                          height: 38,
-                                          width: 38,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: colorScheme.primary,
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.send,
-                                            size: 18,
-                                            color: colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    alignment: Alignment.center,
+                                    child: Icon(Icons.open_in_full_rounded, size: 18, color: colorScheme.onSurface.withValues(alpha: 0.8)),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 260,
+                            child: _buildChatSurface(
+                              context: context,
+                              child: _buildChatList(
+                                messages: filteredMessages,
+                                colorScheme: colorScheme,
+                                bodyFs: bodyFs,
+                                secondaryFs: secondaryFs,
+                                controller: _chatScrollController,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildReplyComposer(
+                            context: context,
+                            colorScheme: colorScheme,
+                            bodyFs: bodyFs,
+                            secondaryFs: secondaryFs,
+                            onChangedForParent: () { if (mounted) setState(() {}); },
+                          ),
+                        ],
+                      ),
                     ),
-                    ),
-                    const SizedBox(height: 12),
                   ],
                 ),
               ),
@@ -1718,13 +1816,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             right: padding,
             top: 0,
             child: Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
               child: AdminHomeAppBar(
-                title: widget.ticket.ticketNumber.isNotEmpty
-                    ? widget.ticket.ticketNumber
-                    : widget.ticket.id,
+                title: widget.ticket.ticketNumber.isNotEmpty ? widget.ticket.ticketNumber : widget.ticket.id,
                 leadingIcon: Icons.confirmation_number_outlined,
                 onClose: () => Navigator.pop(context, _hasChanges),
               ),
@@ -1736,136 +1830,33 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 }
 
-class _MessagesContainer extends StatelessWidget {
-  final List<AdminTicketMessageItem> messages;
-  final String selectedTab;
-  final bool loading;
-
-  const _MessagesContainer({
-    required this.messages,
-    required this.selectedTab,
-    required this.loading,
-  });
+class _ChatPatternPainter extends CustomPainter {
+  final Color color;
+  const _ChatPatternPainter({required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double messageHeight = MediaQuery.of(context).size.height * 0.4;
-
-    if (loading) {
-      return Container(
-        width: double.infinity,
-        height: messageHeight,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: ListView(
-          children: const [
-            AppShimmer(width: 160, height: 12, radius: 6),
-            SizedBox(height: 8),
-            AppShimmer(width: double.infinity, height: 14, radius: 7),
-            SizedBox(height: 14),
-            AppShimmer(width: 130, height: 12, radius: 6),
-            SizedBox(height: 8),
-            AppShimmer(width: double.infinity, height: 14, radius: 7),
-          ],
-        ),
-      );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    const step = 34.0;
+    for (double y = 10; y < size.height; y += step) {
+      for (double x = 10; x < size.width; x += step) {
+        canvas.drawCircle(Offset(x, y), 3.2, paint);
+        canvas.drawLine(Offset(x + 7, y + 7), Offset(x + 12, y + 12), paint);
+      }
     }
-
-    if (messages.isEmpty) {
-      return Container(
-        width: double.infinity,
-        height: messageHeight,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: Text(
-          'No ${selectedTab.toLowerCase()} messages for this ticket.',
-          style: GoogleFonts.inter(
-            color: colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      height: messageHeight,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: ListView.builder(
-        reverse: false,
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        message.senderName.isEmpty ? '—' : message.senderName,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: message.isInternal
-                              ? Colors.purple
-                              : colorScheme.onSurface,
-                        ),
-                        softWrap: true,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      message.createdAt.isEmpty ? '—' : message.createdAt,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message.message.isEmpty ? '—' : message.message,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withOpacity(0.87),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
   }
+
+  @override
+  bool shouldRepaint(covariant _ChatPatternPainter oldDelegate) => oldDelegate.color != color;
 }
 
-Widget _tabPill(
-  BuildContext context, {
-  required String label,
-  required bool selected,
-  required VoidCallback onTap,
-}) {
+Widget _tabPill(BuildContext context, {required String label, required bool selected, required VoidCallback onTap}) {
   final cs = Theme.of(context).colorScheme;
   final width = MediaQuery.of(context).size.width;
-  final double scale = width >= 900 ? 1 : (width < 360 ? -1 : 0);
+  final double scale = _supportScale(width);
   final double tabFs = 14 + scale;
   return InkWell(
     onTap: onTap,
@@ -1875,7 +1866,7 @@ Widget _tabPill(
       decoration: BoxDecoration(
         color: selected ? cs.onSurface : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.12)),
       ),
       child: Text(
         label,
@@ -1906,7 +1897,7 @@ class _TicketCardShimmer extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1925,8 +1916,8 @@ class _TicketCardShimmer extends StatelessWidget {
 }
 
 class _TicketCard extends StatelessWidget {
-  final AdminTicketListItem? ticket;
-  final VoidCallback? onTap;
+  final AdminTicketListItem ticket;
+  final VoidCallback onTap;
 
   const _TicketCard({required this.ticket, required this.onTap});
 
@@ -1944,9 +1935,7 @@ class _TicketCard extends StatelessWidget {
       final m = dt.month.toString().padLeft(2, '0');
       final y = dt.year.toString();
       return '$d/$m/$y';
-    } catch (_) {
-      return '—';
-    }
+    } catch (_) { return '—'; }
   }
 
   @override
@@ -1955,32 +1944,11 @@ class _TicketCard extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
 
-    if (ticket == null) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: EdgeInsets.all(hp),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-        ),
-        child: Text(
-          'No tickets found',
-          style: GoogleFonts.roboto(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-      );
-    }
-
-    final status = _safe(ticket?.statusLabel ?? '');
+    final status = _safe(ticket.statusLabel);
     final statusColor = _statusColor(status, colorScheme);
-    final category = _safe(ticket?.category ?? '');
-    final priority = _safe(ticket?.priority ?? '');
-    final createdText = _formatShortDate(_safe(ticket?.createdAt ?? ''));
+    final category = _safe(ticket.category);
+    final priority = _safe(ticket.priority);
+    final createdText = _formatShortDate(_safe(ticket.createdAt));
 
     return InkWell(
       onTap: onTap,
@@ -1992,13 +1960,13 @@ class _TicketCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _safe(ticket?.subject ?? ''),
+              _safe(ticket.subject),
               style: GoogleFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 fontWeight: FontWeight.w700,
@@ -2013,36 +1981,25 @@ class _TicketCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    _safe(
-                      ticket?.ticketNumber.isNotEmpty == true
-                          ? ticket!.ticketNumber
-                          : ticket?.id ?? '',
-                    ),
+                    _safe(ticket.ticketNumber.isNotEmpty ? ticket.ticketNumber : ticket.id),
                     style: GoogleFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                      color: colorScheme.onSurface.withOpacity(0.54),
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: statusColor.withOpacity(0.4),
-                    ),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        _statusIcon(status),
-                        size: AdaptiveUtils.getIconSize(width) - 4,
-                        color: statusColor,
-                      ),
+                      Icon(_statusIcon(status), size: AdaptiveUtils.getIconSize(width) - 4, color: statusColor),
                       const SizedBox(width: 6),
                       Text(
                         status,
@@ -2059,39 +2016,37 @@ class _TicketCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            if (category != '—' || priority != '—' || createdText != '—')
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      [
-                        if (category != '—') _titleCase(category),
-                        if (priority != '—')
-                          '${_titleCase(priority)} Priority',
-                      ].join(' · '),
-                      style: GoogleFonts.roboto(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                        height: 16 / 12,
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    [
+                      if (category != '—') _titleCase(category),
+                      if (priority != '—') '${_titleCase(priority)} Priority',
+                    ].join(' · '),
+                    style: GoogleFonts.roboto(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      height: 16 / 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (createdText != '—')
+                  Text(
+                    createdText,
+                    style: GoogleFonts.roboto(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      height: 16 / 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (createdText != '—')
-                    Text(
-                      createdText,
-                      style: GoogleFonts.roboto(
-                        fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
-                        height: 16 / 12,
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                ],
-              ),
+              ],
+            ),
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerLeft,
@@ -2099,8 +2054,7 @@ class _TicketCard extends StatelessWidget {
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -2114,11 +2068,7 @@ class _TicketCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right,
-                        size: AdaptiveUtils.getIconSize(width),
-                        color: colorScheme.primary,
-                      ),
+                      Icon(Icons.chevron_right, size: AdaptiveUtils.getIconSize(width), color: colorScheme.primary),
                     ],
                   ),
                 ),

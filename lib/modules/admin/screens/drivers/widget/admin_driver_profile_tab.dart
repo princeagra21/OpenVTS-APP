@@ -699,93 +699,85 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             ),
           ),
           const SizedBox(height: 16),
-          _keyValueRow(
-            context,
-            "Address ID",
-            addressData.id,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Line",
-            addressData.line,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "City",
-            addressData.city,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "State",
-            addressData.state,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Postal",
-            addressData.postal,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Country",
-            addressData.country,
-            labelFs,
-            detailValueFs,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _keyValueColumn(
+                  "City",
+                  addressData.city,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "State",
+                  addressData.state,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                  align: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "Country",
+                  addressData.country,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                  align: TextAlign.right,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _keyValueRow(
-    BuildContext context,
+  Widget _keyValueColumn(
     String label,
     String value,
     double labelFs,
     double valueFs,
-  ) {
-    final cs = Theme.of(context).colorScheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    ColorScheme colorScheme, {
+    TextAlign align = TextAlign.left,
+  }) {
+    return Column(
+      crossAxisAlignment: align == TextAlign.right
+          ? CrossAxisAlignment.end
+          : align == TextAlign.center
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.roboto(
-              fontSize: labelFs,
-              height: 14 / 11,
-              fontWeight: FontWeight.w500,
-              color: cs.onSurface.withOpacity(0.7),
-            ),
+        Text(
+          label,
+          textAlign: align,
+          style: GoogleFonts.roboto(
+            fontSize: labelFs,
+            height: 14 / 11,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
-              fontSize: valueFs,
-              height: 16 / 12,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
-            ),
-            softWrap: true,
+        const SizedBox(height: 4),
+        Text(
+          value,
+          textAlign: align,
+          style: GoogleFonts.roboto(
+            fontSize: valueFs,
+            height: 16 / 12,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

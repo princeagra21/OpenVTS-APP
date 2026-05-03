@@ -8,6 +8,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_devices_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
@@ -31,6 +32,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<AdminDeviceListItem>? _devices;
   bool _loading = false;
   bool _errorShown = false;
+  final Set<String> _togglingDeviceIds = <String>{};
 
   CancelToken? _loadToken;
   Timer? _searchDebounce;
@@ -159,6 +161,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  Future<void> _toggleDeviceActive(AdminDeviceListItem item, bool next) async {
+    final id = item.id.trim();
+    if (id.isEmpty || _togglingDeviceIds.contains(id)) return;
+    setState(() => _togglingDeviceIds.add(id));
+    final res = await _repoOrCreate().updateDeviceStatus(id, next);
+    if (!mounted) return;
+    setState(() => _togglingDeviceIds.remove(id));
+    res.when(
+      success: (_) => _loadDevices(),
+      failure: (err) {
+        final message = err is ApiException && err.message.trim().isNotEmpty
+            ? err.message
+            : "Couldn't update device status.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
+  }
+
   List<AdminDeviceListItem> _applyLocalFilters(List<AdminDeviceListItem> source) {
     final query = _searchController.text.trim().toLowerCase();
 
@@ -202,6 +224,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return '$day/$month/$year';
   }
 
+  int _newestFirstCompare(AdminDeviceListItem a, AdminDeviceListItem b) {
+    final aDate = DateTime.tryParse(a.raw['createdAt']?.toString() ?? '');
+    final bDate = DateTime.tryParse(b.raw['createdAt']?.toString() ?? '');
+    if (aDate != null && bDate != null) return bDate.compareTo(aDate);
+    if (aDate != null) return -1;
+    if (bDate != null) return 1;
+
+    final aId = int.tryParse(a.id);
+    final bId = int.tryParse(b.id);
+    if (aId != null && bId != null) return bId.compareTo(aId);
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -218,6 +253,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     final allDevices = _devices ?? const <AdminDeviceListItem>[];
     var filteredDevices = _applyLocalFilters(allDevices);
+    filteredDevices.sort(_newestFirstCompare);
     if (filteredDevices.length > _pageSize) {
       filteredDevices = filteredDevices.take(_pageSize).toList();
     }
@@ -240,6 +276,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                NavigateBox(
+                  selectedTab: 'Device',
+                  tabs: const ['Device', 'Sim'],
+                  title: 'Inventory',
+                  subtitle: 'Switch between device and sim inventory.',
+                  onTabSelected: (tab) {
+                    if (tab == 'Sim') {
+                      context.go('/admin/sims');
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(cardPadding),
@@ -824,26 +872,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? colorScheme.surfaceVariant
-                                    : Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                status,
-                                style: GoogleFonts.roboto(
-                                  fontSize: fsMeta,
-                                  height: 14 / 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface.withOpacity(0.8),
-                                ),
+                            Transform.scale(
+                              scale: 0.85,
+                              child: CupertinoSwitch(
+                                activeColor: colorScheme.primary,
+                                value: device.isActive,
+                                onChanged: _togglingDeviceIds.contains(device.id)
+                                    ? null
+                                    : (v) => _toggleDeviceActive(device, v),
                               ),
                             ),
                           ],
@@ -904,6 +940,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ],
               ),
               SizedBox(height: spacing * 1.5),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? colorScheme.surfaceVariant
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    status,
+                    style: GoogleFonts.roboto(
+                      fontSize: fsMeta,
+                      height: 14 / 11,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: spacing),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(
@@ -958,9 +1019,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ],
                 ),
               ),
-              ],
-            ),
+            ],
           ),
+        ),
         ),
       ),
     );

@@ -12,6 +12,7 @@ import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.d
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
@@ -23,7 +24,7 @@ class InventoryAddScreen extends StatefulWidget {
 }
 
 class _InventoryAddScreenState extends State<InventoryAddScreen> {
-  static const List<String> _tabs = <String>['Device', 'Sim'];
+  static const List<String> _tabs = <String>['Device', 'Sim', 'Device & Sim'];
   String _selectedTab = 'Device';
 
   final _deviceFormKey = GlobalKey<FormState>();
@@ -404,6 +405,59 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
     );
   }
 
+  Future<void> _submitDeviceAndSim() async {
+    if (_submitting) return;
+    if (!(_deviceFormKey.currentState?.validate() ?? false)) return;
+    if (!(_simFormKey.currentState?.validate() ?? false)) return;
+
+    final label = (_selectedDeviceTypeLabel ?? '').trim();
+    if (label.isEmpty) {
+      _snack('Select device type.');
+      return;
+    }
+    final typeId = _deviceTypeIdFromLabel(label);
+    if (typeId.isEmpty) {
+      _snack('Selected device type is invalid.');
+      return;
+    }
+
+    _submitToken?.cancel('Replace device+sim submit');
+    final token = CancelToken();
+    _submitToken = token;
+
+    final providerLabel = (_selectedProviderLabel ?? '').trim();
+    final providerId = providerLabel.isEmpty
+        ? ''
+        : _providerIdFromLabel(providerLabel);
+
+    setState(() => _submitting = true);
+    final res = await _devicesRepoOrCreate().addDeviceAndSim(
+      imei: _imeiController.text.trim(),
+      deviceTypeId: typeId,
+      simNumber: _simNumberController.text.trim(),
+      providerId: providerId,
+      imsi: _imsiController.text.trim(),
+      iccid: _iccidController.text.trim(),
+      cancelToken: token,
+    );
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    res.when(
+      success: (_) {
+        _snack('Device and SIM created');
+        Navigator.pop(context, true);
+      },
+      failure: (err) {
+        final message =
+            err is ApiException && err.message.trim().isNotEmpty
+                ? err.message
+                : "Couldn't create device and SIM.";
+        _snack(message);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -436,11 +490,19 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                   tabs: _tabs,
                   title: 'Add Inventory',
                   subtitle: 'Create Device or SIM card.',
-                  onTabSelected: (tab) => setState(() => _selectedTab = tab),
+                  onTabSelected: (tab) {
+                    if (tab == 'Sim') {
+                      context.go('/admin/sims/add');
+                      return;
+                    }
+                    setState(() => _selectedTab = tab);
+                  },
                 ),
                 const SizedBox(height: 4),
                 _selectedTab == 'Device'
                     ? _buildDeviceTab(colorScheme, screenWidth)
+                    : _selectedTab == 'Device & Sim'
+                    ? _buildDeviceAndSimTab(colorScheme, screenWidth)
                     : _buildSimTab(colorScheme, screenWidth),
                 const SizedBox(height: 24),
               ],
@@ -660,6 +722,192 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceAndSimTab(ColorScheme cs, double w) {
+    final typeLabels = _deviceTypeLabels;
+    final providerLabels = _providerLabels;
+    if (_selectedDeviceTypeLabel != null &&
+        !typeLabels.contains(_selectedDeviceTypeLabel)) {
+      _selectedDeviceTypeLabel = null;
+    }
+    if (_selectedProviderLabel != null &&
+        !providerLabels.contains(_selectedProviderLabel)) {
+      _selectedProviderLabel = null;
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Form(
+            key: _deviceFormKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create Device',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getSubtitleFontSize(w),
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'IMEI + Device Type.',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _InputField(
+                  label: 'IMEI*',
+                  hint: '356938035643809',
+                  controller: _imeiController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+                _SelectField(
+                  label: 'Device Type*',
+                  value: _selectedDeviceTypeLabel ?? '',
+                  hint: 'Select device type',
+                  loading: _loadingRefs,
+                  onTap: () async {
+                    if (_loadingRefs) return;
+                    final picked = await _showOptionSheet<String>(
+                      title: 'Select Device Type',
+                      items: typeLabels,
+                      labelFor: (item) => item,
+                    );
+                    if (!mounted || picked == null) return;
+                    setState(() => _selectedDeviceTypeLabel = picked);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Form(
+            key: _simFormKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create Sim Card',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getSubtitleFontSize(w),
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'SIM No. plus optional identifiers.',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _InputField(
+                  label: 'Sim No.*',
+                  hint: '+971501234567',
+                  controller: _simNumberController,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+                _SelectField(
+                  label: 'Sim Provider',
+                  value: _selectedProviderLabel ?? '',
+                  hint: 'Select provider (optional)',
+                  loading: _loadingRefs,
+                  onTap: () async {
+                    if (_loadingRefs) return;
+                    final picked = await _showOptionSheet<String>(
+                      title: 'Select Provider',
+                      items: providerLabels,
+                      labelFor: (item) => item,
+                    );
+                    if (!mounted) return;
+                    setState(() => _selectedProviderLabel = picked);
+                  },
+                ),
+                const SizedBox(height: 16),
+                _InputField(
+                  label: 'IMSI',
+                  hint: '(optional)',
+                  controller: _imsiController,
+                ),
+                const SizedBox(height: 16),
+                _InputField(
+                  label: 'ICCID',
+                  hint: '(optional)',
+                  controller: _iccidController,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Linking',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(w),
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'In "Device & Sim", the SIM will be linked to the Device IMEI you enter above.',
+                  style: GoogleFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _submitting ? null : _submitDeviceAndSim,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: cs.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: _submitting
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(cs.onPrimary),
+                      ),
+                    )
+                  : Text(
+                      'Create Device & Sim',
+                      style: GoogleFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(w),
+                        fontWeight: FontWeight.w600,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,13 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_linked_vehicle.dart';
 import 'package:fleet_stack/core/models/admin_user_list_item.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
+import 'package:fleet_stack/core/models/admin_linked_vehicle.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_payments_repository.dart';
 import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
-import 'package:fleet_stack/core/repositories/admin_vehicle_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
@@ -15,14 +12,16 @@ import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 
-class AddPaymentScreen extends StatefulWidget {
-  const AddPaymentScreen({super.key});
+class RenewVehicleScreen extends StatefulWidget {
+  final String? initialUserId;
+
+  const RenewVehicleScreen({super.key, this.initialUserId});
 
   @override
-  State<AddPaymentScreen> createState() => _AddPaymentScreenState();
+  State<RenewVehicleScreen> createState() => _RenewVehicleScreenState();
 }
 
-class _AddPaymentScreenState extends State<AddPaymentScreen> {
+class _RenewVehicleScreenState extends State<RenewVehicleScreen> {
   static const List<String> _paymentModes = <String>[
     'BANK_TRANSFER',
     'CASH',
@@ -34,22 +33,19 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
 
   ApiClient? _apiClient;
   AdminUsersRepository? _usersRepo;
-  AdminVehicleRepository? _vehicleRepo;
-  AdminPaymentsRepository? _paymentsRepo;
   CancelToken? _loadToken;
   CancelToken? _submitToken;
 
   List<AdminUserListItem> _users = const <AdminUserListItem>[];
-  List<AdminVehiclePreviewItem> _vehicles = const <AdminVehiclePreviewItem>[];
+  List<AdminLinkedVehicle> _vehicles = const <AdminLinkedVehicle>[];
   AdminUserListItem? _selectedUser;
-  final Set<String> _selectedVehicleIds = <String>{};
+  final Set<int> _selectedVehicleIds = <int>{};
   String _paymentMode = 'BANK_TRANSFER';
   final TextEditingController _amountController = TextEditingController();
 
   bool _loading = true;
-  bool _loadingLinkedVehicles = false;
+  bool _loadingVehicles = false;
   bool _submitting = false;
-  VoidCallback? _refreshVehiclesSheet;
 
   ApiClient _apiOrCreate() {
     _apiClient ??= ApiClient(
@@ -64,26 +60,16 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     return _usersRepo!;
   }
 
-  AdminVehicleRepository _vehicleRepoOrCreate() {
-    _vehicleRepo ??= AdminVehicleRepository(api: _apiOrCreate());
-    return _vehicleRepo!;
-  }
-
-  AdminPaymentsRepository _paymentsRepoOrCreate() {
-    _paymentsRepo ??= AdminPaymentsRepository(api: _apiOrCreate());
-    return _paymentsRepo!;
-  }
-
   @override
   void initState() {
     super.initState();
-    _loadRefs();
+    _loadInitialData();
   }
 
   @override
   void dispose() {
-    _loadToken?.cancel('Add payment disposed');
-    _submitToken?.cancel('Add payment disposed');
+    _loadToken?.cancel('Renew vehicle disposed');
+    _submitToken?.cancel('Renew vehicle disposed');
     _amountController.dispose();
     super.dispose();
   }
@@ -93,86 +79,6 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  double _vehiclePlanPrice(AdminVehiclePreviewItem item) {
-    final raw = item.raw;
-    final plan = raw['plan'];
-    if (plan is Map) {
-      final price = plan['price'];
-      if (price is num) return price.toDouble();
-      final parsed = double.tryParse(price?.toString() ?? '');
-      if (parsed != null) return parsed;
-    }
-    final fallback = raw['planPrice'] ?? raw['price'] ?? raw['amount'];
-    if (fallback is num) return fallback.toDouble();
-    return double.tryParse(fallback?.toString() ?? '') ?? 0;
-  }
-
-  AdminVehiclePreviewItem _toPreview(AdminLinkedVehicle v) {
-    return AdminVehiclePreviewItem(<String, dynamic>{
-      'id': v.id,
-      'name': v.name,
-      'plateNumber': v.plateNumber,
-      'imei': v.imei ?? '',
-      'plan': v.plan == null
-          ? null
-          : <String, dynamic>{
-              'id': v.plan!.id,
-              'name': v.plan!.name,
-              'price': v.plan!.price,
-              'durationDays': v.plan!.durationDays,
-              'currency': v.plan!.currency,
-            },
-    });
-  }
-
-  Future<void> _loadLinkedVehiclesForUser(String userId) async {
-    final token = CancelToken();
-    _loadToken?.cancel('Replace linked vehicles load');
-    _loadToken = token;
-    setState(() => _loadingLinkedVehicles = true);
-    _refreshVehiclesSheet?.call();
-    final res = await _usersRepoOrCreate().getLinkedVehicles(
-      userId: userId,
-      cancelToken: token,
-    );
-    if (!mounted) return;
-    res.when(
-      success: (items) {
-        setState(() {
-          _vehicles = items.map(_toPreview).toList();
-          _selectedVehicleIds.clear();
-          _amountController.clear();
-          _loadingLinkedVehicles = false;
-        });
-        _refreshVehiclesSheet?.call();
-      },
-      failure: (_) {
-        setState(() {
-          _vehicles = const <AdminVehiclePreviewItem>[];
-          _selectedVehicleIds.clear();
-          _amountController.clear();
-          _loadingLinkedVehicles = false;
-        });
-        _refreshVehiclesSheet?.call();
-      },
-    );
-  }
-
-  void _syncAmountFromSelectedVehicles() {
-    if (_selectedVehicleIds.isEmpty) return;
-    double total = 0;
-    for (final vehicle in _vehicles) {
-      if (_selectedVehicleIds.contains(vehicle.id.trim())) {
-        total += _vehiclePlanPrice(vehicle);
-      }
-    }
-    if (total <= 0) return;
-    final hasFraction = total % 1 != 0;
-    _amountController.text = hasFraction
-        ? total.toStringAsFixed(2)
-        : total.toStringAsFixed(0);
-  }
-
   String _userLabel(AdminUserListItem item) {
     final name = item.fullName.trim();
     final username = item.username.trim();
@@ -180,8 +86,8 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     return '$name (@$username)';
   }
 
-  Future<void> _loadRefs() async {
-    _loadToken?.cancel('Reload add payment refs');
+  Future<void> _loadInitialData() async {
+    _loadToken?.cancel('Reload renew vehicle refs');
     final token = CancelToken();
     _loadToken = token;
     setState(() => _loading = true);
@@ -189,30 +95,67 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     try {
       final usersRes = await _usersRepoOrCreate().getUsers(
         page: 1,
-        limit: 200,
-        cancelToken: token,
-      );
-      final vehiclesRes = await _vehicleRepoOrCreate().getVehiclePreviewList(
-        limit: 1000,
+        limit: 500,
         cancelToken: token,
       );
 
       List<AdminUserListItem> users = const <AdminUserListItem>[];
-      List<AdminVehiclePreviewItem> vehicles = const <AdminVehiclePreviewItem>[];
       usersRes.when(success: (d) => users = d, failure: (_) {});
-      vehiclesRes.when(success: (d) => vehicles = d, failure: (_) {});
 
       if (!mounted) return;
       setState(() {
         _users = users;
-        _vehicles = vehicles;
+        if (widget.initialUserId != null) {
+          _selectedUser = _users.where((u) => u.id == widget.initialUserId).firstOrNull;
+        }
         _loading = false;
       });
+
+      if (_selectedUser != null) {
+        await _loadUserVehicles(_selectedUser!.id);
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _snack("Couldn't load users/vehicles.");
+      _snack("Couldn't load users.");
     }
+  }
+
+  Future<void> _loadUserVehicles(String userId) async {
+    setState(() {
+      _loadingVehicles = true;
+      _vehicles = const [];
+      _selectedVehicleIds.clear();
+      _amountController.text = '0';
+    });
+
+    final res = await _usersRepoOrCreate().getLinkedVehicles(
+      userId: userId,
+      cancelToken: _loadToken,
+    );
+
+    if (!mounted) return;
+    setState(() => _loadingVehicles = false);
+
+    res.when(
+      success: (items) {
+        setState(() => _vehicles = items);
+      },
+      failure: (err) {
+        _snack("Couldn't load linked vehicles.");
+      },
+    );
+  }
+
+  void _updateAmount() {
+    double total = 0;
+    for (final id in _selectedVehicleIds) {
+      final v = _vehicles.where((e) => e.id == id).firstOrNull;
+      if (v != null && v.plan != null) {
+        total += v.plan!.price;
+      }
+    }
+    _amountController.text = total.toStringAsFixed(2);
   }
 
   Future<T?> _showOptionSheet<T>({
@@ -284,13 +227,18 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
 
   Future<void> _openVehiclesSheet() async {
     if (_selectedUser == null) {
-      _snack('Select user first.');
+      _snack('Please select a customer first.');
       return;
     }
+    if (_loadingVehicles) return;
+    if (_vehicles.isEmpty) {
+      _snack('No linked vehicles found for this customer.');
+      return;
+    }
+
     final cs = Theme.of(context).colorScheme;
     String query = '';
     final search = TextEditingController();
-    final vehiclesSnapshot = List<AdminVehiclePreviewItem>.from(_vehicles);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -304,12 +252,8 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
           height: MediaQuery.of(ctx).size.height * 0.8,
           child: StatefulBuilder(
             builder: (context, setSheetState) {
-              _refreshVehiclesSheet = () {
-                if (mounted) setSheetState(() {});
-              };
-              final filtered = vehiclesSnapshot.where((v) {
-                final t =
-                    '${v.plateNumber} ${v.imei} ${v.statusLabel}'.toLowerCase();
+              final filtered = _vehicles.where((v) {
+                final t = '${v.name} ${v.plateNumber} ${v.imei ?? ''}'.toLowerCase();
                 return t.contains(query.toLowerCase());
               }).toList();
               return Padding(
@@ -335,65 +279,32 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                     ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: _loadingLinkedVehicles
-                          ? const Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(strokeWidth: 2.4),
-                              ),
-                            )
-                          : filtered.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.directions_car_outlined,
-                                    size: 34,
-                                    color: cs.onSurface.withOpacity(0.45),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'No vehicles available',
-                                    style: TextStyle(
-                                      color: cs.onSurface.withOpacity(0.7),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Select a user with linked vehicles.',
-                                    style: TextStyle(
-                                      color: cs.onSurface.withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) {
-                                final v = filtered[i];
-                                final id = v.id.trim();
-                                final checked = _selectedVehicleIds.contains(id);
-                                return CheckboxListTile(
-                                  value: checked,
-                                  onChanged: (_) {
-                                    if (checked) {
-                                      _selectedVehicleIds.remove(id);
-                                    } else {
-                                      _selectedVehicleIds.add(id);
-                                    }
-                                    _syncAmountFromSelectedVehicles();
-                                    setSheetState(() {});
-                                  },
-                                  title: Text(v.plateNumber),
-                                  subtitle: Text(v.imei.isEmpty ? '—' : v.imei),
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                );
-                              },
-                            ),
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final v = filtered[i];
+                          final id = v.id;
+                          final checked = _selectedVehicleIds.contains(id);
+                          final planInfo = v.plan != null ? ' (${v.plan!.name}: ${v.plan!.price} ${v.plan!.currency})' : '';
+                          return CheckboxListTile(
+                            value: checked,
+                            onChanged: (_) {
+                              setState(() {
+                                if (checked) {
+                                  _selectedVehicleIds.remove(id);
+                                } else {
+                                  _selectedVehicleIds.add(id);
+                                }
+                                _updateAmount();
+                              });
+                              setSheetState(() {});
+                            },
+                            title: Text(v.name.isNotEmpty ? v.name : v.plateNumber),
+                            subtitle: Text('${v.plateNumber}$planInfo'),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          );
+                        },
+                      ),
                     ),
                     SizedBox(
                       width: double.infinity,
@@ -419,7 +330,6 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
         ),
       ),
     );
-    _refreshVehiclesSheet = null;
   }
 
   Future<void> _submit() async {
@@ -432,40 +342,35 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       _snack('Select at least one vehicle.');
       return;
     }
-    final amount = _amountController.text.trim();
-    if (amount.isEmpty) {
-      _snack('Enter amount.');
-      return;
-    }
-    final parsedAmount = double.tryParse(amount);
-    if (parsedAmount == null || parsedAmount <= 0) {
-      _snack('Enter a valid amount.');
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    if (amount <= 0) {
+      _snack('Please enter a valid amount.');
       return;
     }
 
-    _submitToken?.cancel('Replace renew submit');
+    _submitToken?.cancel('Renew submit');
     final token = CancelToken();
     _submitToken = token;
 
     setState(() => _submitting = true);
-    final res = await _paymentsRepoOrCreate().createRenewPayment(
+    final res = await _usersRepoOrCreate().renewVehicles(
       userId: _selectedUser!.id,
       vehicleIds: _selectedVehicleIds.toList(),
-      amount: amount,
       paymentMode: _paymentMode,
+      amount: amount,
       cancelToken: token,
     );
     if (!mounted) return;
     setState(() => _submitting = false);
     res.when(
       success: (_) {
-        _snack('Payment recorded.');
+        _snack('Vehicles renewed successfully.');
         Navigator.pop(context, true);
       },
       failure: (err) {
         final message = err is ApiException && err.message.trim().isNotEmpty
             ? err.message
-            : "Couldn't save payment.";
+            : "Couldn't renew vehicles.";
         _snack(message);
       },
     );
@@ -508,7 +413,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                 child: SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _submitting ? null : _submit,
+                    onPressed: (_submitting || _loading || _selectedUser == null || _selectedVehicleIds.isEmpty) ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       foregroundColor: cs.onPrimary,
@@ -518,7 +423,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Text(_submitting ? 'Saving...' : 'Save Payment'),
+                    child: Text(_submitting ? 'Processing...' : 'Save Renewal'),
                   ),
                 ),
               ),
@@ -569,7 +474,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                               ? ''
                               : _userLabel(_selectedUser!),
                           hint: 'Select user',
-                          onTap: () async {
+                          onTap: widget.initialUserId != null ? null : () async {
                             final picked = await _showOptionSheet<AdminUserListItem>(
                               title: 'Select User',
                               items: _users,
@@ -577,25 +482,26 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                             );
                             if (!mounted || picked == null) return;
                             setState(() => _selectedUser = picked);
-                            await _loadLinkedVehiclesForUser(picked.id);
+                            _loadUserVehicles(picked.id);
                           },
                         ),
                         const SizedBox(height: 16),
                         _selectField(
                           label: 'Vehicles*',
-                          value: _selectedVehicleIds.isNotEmpty
-                              ? '${_selectedVehicleIds.length} selected'
-                              : _loadingLinkedVehicles
+                          value: _loadingVehicles
                               ? 'Loading vehicles...'
-                              : '',
+                              : (_selectedVehicleIds.isEmpty
+                                  ? ''
+                                  : '${_selectedVehicleIds.length} selected'),
                           hint: 'Select vehicles',
                           onTap: _openVehiclesSheet,
                         ),
                         const SizedBox(height: 16),
                         _inputField(
                           label: 'Amount*',
-                          hint: 'Enter renew amount',
                           controller: _amountController,
+                          hint: '0.00',
+                          keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 16),
                         _selectField(
@@ -621,8 +527,8 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
             right: pad,
             top: 0,
             child: const AdminHomeAppBar(
-              title: 'Add Payment',
-              leadingIcon: Icons.payments_outlined,
+              title: 'Renew Vehicle',
+              leadingIcon: Icons.autorenew,
             ),
           ),
         ],
@@ -634,10 +540,12 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     required String label,
     required String value,
     required String hint,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     final cs = Theme.of(context).colorScheme;
     final fs = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+    final isDisabled = onTap == null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -657,6 +565,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
+              color: isDisabled ? cs.onSurface.withOpacity(0.04) : null,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: cs.onSurface.withOpacity(0.12)),
             ),
@@ -675,10 +584,11 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.keyboard_arrow_down,
-                  color: cs.onSurface.withOpacity(0.6),
-                ),
+                if (!isDisabled)
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: cs.onSurface.withOpacity(0.6),
+                  ),
               ],
             ),
           ),
@@ -689,11 +599,13 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
 
   Widget _inputField({
     required String label,
-    required String hint,
     required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     final cs = Theme.of(context).colorScheme;
     final fs = AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -708,18 +620,18 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
         const SizedBox(height: 12),
         TextField(
           controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: keyboardType,
+          style: TextStyle(
+            fontSize: fs,
+            fontWeight: FontWeight.w500,
+            color: cs.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              fontSize: fs,
-              fontWeight: FontWeight.w500,
               color: cs.onSurface.withOpacity(0.6),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: cs.onSurface.withOpacity(0.12)),
@@ -730,7 +642,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: cs.primary),
+              borderSide: BorderSide(color: cs.primary, width: 1.5),
             ),
           ),
         ),

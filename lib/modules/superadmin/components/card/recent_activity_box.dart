@@ -926,6 +926,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     required double screenWidth,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double scale = screenWidth < 420 ? 0.9 : 1.0;
     final icon = switch (title) {
       'Transactions' => Icons.credit_card,
       'Users' => Icons.group,

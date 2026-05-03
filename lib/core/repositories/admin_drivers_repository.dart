@@ -124,8 +124,10 @@ class AdminDriversRepository {
     String driverId, {
     CancelToken? cancelToken,
   }) async {
+    final rk = DateTime.now().millisecondsSinceEpoch;
     final res = await api.get(
       '/admin/drivers/linkedusers/$driverId',
+      queryParameters: <String, dynamic>{'rk': rk},
       cancelToken: cancelToken,
     );
 
@@ -145,6 +147,69 @@ class AdminDriversRepository {
               .toList(),
         );
       },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<AdminUserListItem>>> getUnlinkedUsers(
+    String driverId, {
+    CancelToken? cancelToken,
+  }) async {
+    final rk = DateTime.now().millisecondsSinceEpoch;
+    final res = await api.get(
+      '/admin/drivers/unlinkedusers/$driverId',
+      queryParameters: <String, dynamic>{'rk': rk},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => AdminUserListItem(
+                  item is Map<String, dynamic>
+                      ? item
+                      : Map<String, dynamic>.from(item.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> assignUserToDriver(
+    String driverId, {
+    required int userId,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/admin/drivers/linkedusers/$driverId',
+      data: <String, dynamic>{'userId': userId},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> unassignUserFromDriver(
+    String driverId, {
+    required int userId,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      '/admin/drivers/unlinkedusers/$driverId',
+      data: <String, dynamic>{'userId': userId},
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
     );
   }

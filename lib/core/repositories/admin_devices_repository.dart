@@ -166,6 +166,10 @@ class AdminDevicesRepository {
     required String imei,
     required String deviceTypeId,
     String? simId,
+    String? simNumber,
+    String? providerId,
+    String? imsi,
+    String? iccid,
     CancelToken? cancelToken,
   }) async {
     final payload = <String, dynamic>{
@@ -177,9 +181,65 @@ class AdminDevicesRepository {
     if (sim.isNotEmpty) {
       payload['simId'] = _toNumOrString(sim);
     }
+    final simNo = (simNumber ?? '').trim();
+    if (simNo.isNotEmpty) {
+      payload['simNumber'] = simNo;
+    }
+    final provider = (providerId ?? '').trim();
+    if (provider.isNotEmpty) {
+      payload['providerId'] = _toNumOrString(provider);
+    }
+    final imsiValue = (imsi ?? '').trim();
+    if (imsiValue.isNotEmpty) {
+      payload['imsi'] = imsiValue;
+    }
+    final iccidValue = (iccid ?? '').trim();
+    if (iccidValue.isNotEmpty) {
+      payload['iccid'] = iccidValue;
+    }
 
     final res = await api.post(
       '/admin/devices',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> addDeviceAndSim({
+    required String imei,
+    required String deviceTypeId,
+    required String simNumber,
+    String? providerId,
+    String? imsi,
+    String? iccid,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{
+      'imei': imei.trim(),
+      'deviceTypeId': _toNumOrString(deviceTypeId.trim()),
+      'simNumber': simNumber.trim(),
+    };
+
+    final provider = (providerId ?? '').trim();
+    if (provider.isNotEmpty) {
+      payload['providerId'] = _toNumOrString(provider);
+    }
+    final imsiValue = (imsi ?? '').trim();
+    if (imsiValue.isNotEmpty) {
+      payload['imsi'] = imsiValue;
+    }
+    final iccidValue = (iccid ?? '').trim();
+    if (iccidValue.isNotEmpty) {
+      payload['iccid'] = iccidValue;
+    }
+
+    final res = await api.post(
+      '/admin/deviceandsim',
       data: payload,
       cancelToken: cancelToken,
     );

@@ -28,6 +28,7 @@ class AdminUserDriversTab extends StatelessWidget {
     final subtitleFs = 12 * scale;
     final statusFs = 11 * scale;
     final iconSize = subtitleFs + 2;
+
     if (loading) {
       return listShimmer(context, count: 3, height: 108);
     }
@@ -41,13 +42,13 @@ class AdminUserDriversTab extends StatelessWidget {
 
     return Column(
       children: items.map((driver) {
-        final name = safeText(driver.fullName);
-        final username = safeText(driver.username);
-        final email = safeText(driver.email);
-        final phone = safeText(driver.fullPhone);
-        final primary = safeText(driver.primaryUserName);
-        final location = safeText(driver.addressLocation);
+        final name = driver.fullName;
+        final username = driver.username;
+        final email = driver.email;
+        final phone = driver.fullPhone;
+        final status = driver.statusLabel;
         final joined = _formatDateOnly(driver.raw['createdAt']?.toString());
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: detailsCard(
@@ -92,7 +93,7 @@ class AdminUserDriversTab extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  name,
+                                  name.isEmpty ? 'Unknown Driver' : name,
                                   style: GoogleFonts.roboto(
                                     fontSize: titleFs,
                                     height: 20 / 14,
@@ -102,286 +103,141 @@ class AdminUserDriversTab extends StatelessWidget {
                                   softWrap: true,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? cs.surfaceVariant
-                                      : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  safeText(driver.statusLabel),
-                                  style: GoogleFonts.roboto(
-                                    fontSize: statusFs,
-                                    height: 14 / 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: cs.onSurface.withOpacity(0.8),
+                              if (status.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? cs.surfaceVariant
+                                        : Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: GoogleFonts.roboto(
+                                      fontSize: statusFs,
+                                      height: 14 / 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: cs.onSurface.withOpacity(0.8),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: iconSize,
-                                color: cs.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  username,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: cs.onSurface.withOpacity(0.7),
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.mail_outline,
-                                size: iconSize,
-                                color: cs.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  email,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: cs.onSurface.withOpacity(0.7),
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.phone_outlined,
-                                size: iconSize,
-                                color: cs.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  phone,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: cs.onSurface.withOpacity(0.7),
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: spacing / 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.verified_user_outlined,
-                                size: iconSize,
-                                color: cs.onSurface.withOpacity(0.7),
-                              ),
-                              SizedBox(width: spacing),
-                              Expanded(
-                                child: Text(
-                                  primary,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: cs.onSurface.withOpacity(0.7),
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                            ],
-                          ),
+                          if (username.isNotEmpty) ...[
+                            SizedBox(height: spacing / 2),
+                            _infoRow(Icons.person_outline, username, iconSize,
+                                subtitleFs, cs),
+                          ],
+                          if (email.isNotEmpty) ...[
+                            SizedBox(height: spacing / 2),
+                            _infoRow(Icons.mail_outline, email, iconSize,
+                                subtitleFs, cs),
+                          ],
+                          if (phone.isNotEmpty) ...[
+                            SizedBox(height: spacing / 2),
+                            _infoRow(Icons.phone_outlined, phone, iconSize,
+                                subtitleFs, cs),
+                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: spacing * 1.5),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final gap = spacing;
-                    final cellWidth = (constraints.maxWidth - gap) / 2;
-                    final primaryUser = _safeText(driver.primaryUserName);
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
+                if (joined != '—' && joined.isNotEmpty) ...[
+                  SizedBox(height: spacing * 1.5),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AdaptiveUtils.getHorizontalPadding(width),
+                      vertical: spacing,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cs.onSurface.withOpacity(0.1),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: cellWidth,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  AdaptiveUtils.getHorizontalPadding(width),
-                              vertical: spacing,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: iconSize,
+                              color: cs.onSurface.withOpacity(0.7),
                             ),
-                            decoration: BoxDecoration(
-                              color: cs.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: cs.onSurface.withOpacity(0.1),
+                            SizedBox(width: spacing),
+                            Expanded(
+                              child: Text(
+                                "Joined",
+                                style: GoogleFonts.roboto(
+                                  fontSize: subtitleFs,
+                                  height: 14 / 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: cs.onSurface.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Primary User",
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 14 / 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: cs.onSurface.withOpacity(0.6),
-                                  ),
-                                ),
-                                SizedBox(height: spacing / 2),
-                                Text(
-                                  primaryUser,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: subtitleFs,
-                                    height: 16 / 12,
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
-                        SizedBox(
-                          width: cellWidth,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  AdaptiveUtils.getHorizontalPadding(width),
-                              vertical: spacing - 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: cs.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: cs.onSurface.withOpacity(0.1),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.schedule,
-                                      size: iconSize,
-                                      color: cs.onSurface.withOpacity(0.7),
-                                    ),
-                                    SizedBox(width: spacing),
-                                    Expanded(
-                                      child: Text(
-                                        "Joined",
-                                        style: GoogleFonts.roboto(
-                                          fontSize: subtitleFs,
-                                          height: 14 / 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: cs.onSurface.withOpacity(0.7),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: spacing),
-                                Text(
-                                  joined,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: titleFs,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: cs.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                        SizedBox(height: spacing),
+                        Text(
+                          joined,
+                          style: GoogleFonts.roboto(
+                            fontSize: titleFs,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    );
-                  },
-                ),
-                SizedBox(height: spacing),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AdaptiveUtils.getHorizontalPadding(width),
-                    vertical: spacing,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: cs.onSurface.withOpacity(0.1),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Location",
-                        style: GoogleFonts.roboto(
-                          fontSize: subtitleFs,
-                          height: 14 / 11,
-                          fontWeight: FontWeight.w500,
-                          color: cs.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      SizedBox(height: spacing / 2),
-                      Text(
-                        location,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
-                          fontSize: subtitleFs,
-                          height: 16 / 12,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ],
             ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text, double iconSize, double fs,
+      ColorScheme cs) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: iconSize,
+          color: cs.onSurface.withOpacity(0.7),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.roboto(
+              fontSize: fs,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: cs.onSurface.withOpacity(0.7),
+            ),
+            softWrap: true,
+          ),
+        ),
+      ],
     );
   }
 
@@ -409,21 +265,5 @@ class AdminUserDriversTab extends StatelessWidget {
     final month = months[local.month - 1];
     final year = local.year.toString();
     return '$day $month $year';
-  }
-
-  String _safeText(String? value, {String fallback = '—'}) {
-    final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty || trimmed.toLowerCase() == 'null') return fallback;
-    return trimmed;
-  }
-
-  String _countryCode(AdminDriverListItem driver) {
-    final raw = driver.raw['address'];
-    if (raw is Map) {
-      final map = Map<String, dynamic>.from(raw.cast());
-      final code = _safeText(map['countryCode']?.toString());
-      if (code != '—') return code;
-    }
-    return _safeText(driver.raw['countryCode']?.toString());
   }
 }

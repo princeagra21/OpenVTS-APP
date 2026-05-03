@@ -124,6 +124,28 @@ class AdminProfileRepository {
     );
   }
 
+  Future<Result<Map<String, dynamic>>> updateCompanyDetails(
+    String companyId,
+    Map<String, dynamic> payload, {
+    CancelToken? cancelToken,
+  }) async {
+    final id = companyId.trim();
+    if (id.isEmpty) {
+      return Result.fail(
+        const ApiException(message: 'Company id is required'),
+      );
+    }
+    final res = await api.patch(
+      '/admin/companydetails/$id',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (data) => Result.ok(_asMap(data)),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Map<String, dynamic> _asMap(Object? value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return Map<String, dynamic>.from(value.cast());

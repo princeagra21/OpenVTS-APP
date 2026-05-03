@@ -1,63 +1,45 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_document_item.dart';
 import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
-import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
-import 'package:fleet_stack/core/models/admin_transaction_item.dart';
 import 'package:fleet_stack/core/models/admin_user_details.dart';
 import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
+import 'package:fleet_stack/core/models/admin_transaction_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
+import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_activity_tab.dart';
+import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_details_ui.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_documents_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_drivers_tab.dart';
-import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_activity_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_payments_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_profile_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_tickets_tab.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_vehicles_tab.dart';
-import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
-import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
-class AdminUserDetailsScreen extends StatefulWidget {
+class UserDetailsScreen extends StatefulWidget {
   final String id;
+  final String? name;
 
-  const AdminUserDetailsScreen({super.key, required this.id});
+  const UserDetailsScreen({
+    super.key,
+    required this.id,
+    this.name,
+  });
 
   @override
-  State<AdminUserDetailsScreen> createState() => _AdminUserDetailsScreenState();
+  State<UserDetailsScreen> createState() => _UserDetailsScreenState();
 }
 
-class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
-  // Confirmed endpoints (FleetStack-API-Reference.md + Postman):
-  // - GET /admin/users/:id
-  // - GET /admin/linkvehicles/:userId
-  // - GET /admin/users/unlinkeddrivers/:userId
-  // - GET /admin/documents/:userId
-  // - GET /admin/tickets?userId=:userId
-  // - GET /admin/payments?page=1&limit=1000&userId=:userId
-
-  static const List<String> _tabs = <String>[
-    'Profile',
-    'Vehicles',
-    'Drivers',
-    'Documents',
-    'Tickets',
-    'Payments',
-    'Activity Logs',
-  ];
-
-  String _selectedTab = 'Profile';
-  int _detailReloadNonce = 0;
-
+class _UserDetailsScreenState extends State<UserDetailsScreen> {
   AdminUserDetails? _details;
   bool _loadingDetails = false;
-  bool _detailsErrorShown = false;
   CancelToken? _detailsToken;
 
   List<AdminVehicleListItem> _vehicles = const <AdminVehicleListItem>[];
@@ -70,47 +52,28 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
   bool _driversLoaded = false;
   CancelToken? _driversToken;
 
-  List<AdminDocumentItem> _documents = const <AdminDocumentItem>[];
-  bool _loadingDocuments = false;
-  bool _documentsLoaded = false;
-  CancelToken? _documentsToken;
-
-  List<AdminTicketListItem> _tickets = const <AdminTicketListItem>[];
-  bool _loadingTickets = false;
-  bool _ticketsLoaded = false;
-  CancelToken? _ticketsToken;
-
   List<AdminTransactionItem> _payments = const <AdminTransactionItem>[];
   bool _loadingPayments = false;
   bool _paymentsLoaded = false;
   CancelToken? _paymentsToken;
 
-  final Map<String, bool> _tabErrorShown = <String, bool>{
-    'Vehicles': false,
-    'Drivers': false,
-    'Documents': false,
-    'Tickets': false,
-    'Payments': false,
-    'Activity Logs': false,
-  };
+  String _selectedTab = 'Profile';
 
-  ApiClient? _apiClient;
+  final List<String> _tabs = const [
+    'Profile',
+    'Vehicles',
+    'Drivers',
+    'Documents',
+    'Tickets',
+    'Payments',
+    'Activity Logs',
+  ];
+
+  final Map<String, bool> _tabErrorShown = {};
+  int _detailReloadNonce = 0;
+
+  ApiClient? _api;
   AdminUsersRepository? _repo;
-
-  String _safe(String? value, {String fallback = '-'}) {
-    if (value == null) return fallback;
-    final text = value.trim();
-    return text.isEmpty ? fallback : text;
-  }
-
-  AdminUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= AdminUsersRepository(api: _apiClient!);
-    return _repo!;
-  }
 
   @override
   void initState() {
@@ -123,8 +86,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
     _detailsToken?.cancel('User details disposed');
     _vehiclesToken?.cancel('Vehicles tab disposed');
     _driversToken?.cancel('Drivers tab disposed');
-    _documentsToken?.cancel('Documents tab disposed');
-    _ticketsToken?.cancel('Tickets tab disposed');
     _paymentsToken?.cancel('Payments tab disposed');
     super.dispose();
   }
@@ -134,37 +95,42 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         err.message.toLowerCase() == 'request cancelled';
   }
 
-  void _showDetailsErrorOnce(String message) {
-    if (_detailsErrorShown || !mounted) return;
-    _detailsErrorShown = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _showTabErrorOnce(String tab, String message) {
+    if (_tabErrorShown[tab] == true || !mounted) return;
+
+    _tabErrorShown[tab] = true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
-  void _showTabErrorOnce(String tab, String message) {
-    if ((_tabErrorShown[tab] ?? false) || !mounted) return;
-    _tabErrorShown[tab] = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  AdminUsersRepository _repoOrCreate() {
+    _api ??= ApiClient(
+      config: AppConfig.fromDartDefine(),
+      tokenStorage: TokenStorage.defaultInstance(),
+    );
+
+    _repo ??= AdminUsersRepository(api: _api!);
+
+    return _repo!;
   }
 
   Future<void> _loadDetails({bool silent = false}) async {
     _detailsToken?.cancel('Reload user details');
+
     final token = CancelToken();
     _detailsToken = token;
 
     if (!mounted) return;
-    if (!silent) {
-      setState(() => _loadingDetails = true);
-    }
+    if (!silent) setState(() => _loadingDetails = true);
 
     try {
       final result = await _repoOrCreate().getUserDetails(
         widget.id,
         cancelToken: token,
       );
+
       if (!mounted) return;
 
       result.when(
@@ -172,103 +138,145 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
           setState(() {
             _details = details;
             _loadingDetails = false;
-            _detailsErrorShown = false;
+            _tabErrorShown['Profile'] = false;
           });
+
+          _ensureSelectedTabLoaded(_selectedTab);
         },
         failure: (err) {
           setState(() {
-            _details = null;
             _loadingDetails = false;
           });
+
           if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
+
+          final message = (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load user details.'
               : "Couldn't load user details.";
-          _showDetailsErrorOnce(message);
+
+          _showTabErrorOnce('Profile', message);
         },
       );
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
-        _details = null;
         _loadingDetails = false;
       });
-      _showDetailsErrorOnce("Couldn't load user details.");
+
+      _showTabErrorOnce('Profile', "Couldn't load user details.");
     }
   }
 
-  void _selectTab(String tab) {
-    if (_selectedTab == tab) return;
-    setState(() => _selectedTab = tab);
-    _ensureSelectedTabLoaded(tab);
-  }
+  Widget tabSelectionCard(
+    BuildContext context, {
+    required String selectedTab,
+    required List<String> tabs,
+    required String title,
+    required String subtitle,
+    required ValueChanged<String> onTabSelected,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-  void _ensureSelectedTabLoaded(String tab) {
-    switch (tab) {
-      case 'Vehicles':
-        if (!_vehiclesLoaded && !_loadingVehicles) _loadVehicles();
-        break;
-      case 'Drivers':
-        if (!_driversLoaded && !_loadingDrivers) _loadDrivers();
-        break;
-      case 'Documents':
-        if (!_documentsLoaded && !_loadingDocuments) _loadDocuments();
-        break;
-      case 'Tickets':
-        if (!_ticketsLoaded && !_loadingTickets) _loadTickets();
-        break;
-      case 'Payments':
-        if (!_paymentsLoaded && !_loadingPayments) _loadPayments();
-        break;
-      case 'Activity Logs':
-      default:
-        break;
-    }
-  }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF151515) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.06),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.20 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: tabs.map((tab) {
+                final selected = tab == selectedTab;
 
-  Future<void> _refreshDetails() async {
-    await _loadDetails(silent: true);
-    if (!mounted) return;
-
-    switch (_selectedTab) {
-      case 'Vehicles':
-        _vehiclesLoaded = false;
-        await _loadVehicles();
-        break;
-      case 'Drivers':
-        _driversLoaded = false;
-        await _loadDrivers();
-        break;
-      case 'Documents':
-        _documentsLoaded = false;
-        await _loadDocuments();
-        break;
-      case 'Tickets':
-        _ticketsLoaded = false;
-        await _loadTickets();
-        break;
-      case 'Payments':
-        _paymentsLoaded = false;
-        await _loadPayments();
-        break;
-      case 'Activity Logs':
-        setState(() => _detailReloadNonce++);
-        break;
-      case 'Profile':
-      default:
-        setState(() => _detailReloadNonce++);
-        break;
-    }
+                return Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: InkWell(
+                    onTap: () => onTabSelected(tab),
+                    borderRadius: BorderRadius.circular(999),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? theme.colorScheme.primary
+                            : isDark
+                                ? Colors.white.withOpacity(0.06)
+                                : const Color(0xFFF4F5F7),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: selected
+                              ? theme.colorScheme.primary
+                              : isDark
+                                  ? Colors.white.withOpacity(0.08)
+                                  : Colors.black.withOpacity(0.06),
+                        ),
+                      ),
+                      child: Text(
+                        tab,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w600,
+                          color: selected
+                              ? Colors.white
+                              : theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadVehicles() async {
     _vehiclesToken?.cancel('Reload user vehicles');
+
     final token = CancelToken();
     _vehiclesToken = token;
 
     if (!mounted) return;
+
     setState(() => _loadingVehicles = true);
 
     try {
@@ -276,7 +284,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         widget.id,
         cancelToken: token,
       );
+
       if (!mounted) return;
+
       result.when(
         success: (items) {
           setState(() {
@@ -292,32 +302,38 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             _vehiclesLoaded = true;
             _loadingVehicles = false;
           });
+
           if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
+
+          final message = (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load user vehicles.'
               : "Couldn't load user vehicles.";
+
           _showTabErrorOnce('Vehicles', message);
         },
       );
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _vehicles = const <AdminVehicleListItem>[];
         _vehiclesLoaded = true;
         _loadingVehicles = false;
       });
+
       _showTabErrorOnce('Vehicles', "Couldn't load user vehicles.");
     }
   }
 
   Future<void> _loadDrivers() async {
     _driversToken?.cancel('Reload user drivers');
+
     final token = CancelToken();
     _driversToken = token;
 
     if (!mounted) return;
+
     setState(() => _loadingDrivers = true);
 
     try {
@@ -325,7 +341,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         widget.id,
         cancelToken: token,
       );
+
       if (!mounted) return;
+
       result.when(
         success: (items) {
           setState(() {
@@ -341,130 +359,38 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             _driversLoaded = true;
             _loadingDrivers = false;
           });
+
           if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
+
+          final message = (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load user drivers.'
               : "Couldn't load user drivers.";
+
           _showTabErrorOnce('Drivers', message);
         },
       );
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _drivers = const <AdminDriverListItem>[];
         _driversLoaded = true;
         _loadingDrivers = false;
       });
+
       _showTabErrorOnce('Drivers', "Couldn't load user drivers.");
-    }
-  }
-
-  Future<void> _loadDocuments() async {
-    _documentsToken?.cancel('Reload user documents');
-    final token = CancelToken();
-    _documentsToken = token;
-
-    if (!mounted) return;
-    setState(() => _loadingDocuments = true);
-
-    try {
-      final result = await _repoOrCreate().getUserDocuments(
-        widget.id,
-        cancelToken: token,
-      );
-      if (!mounted) return;
-      result.when(
-        success: (items) {
-          setState(() {
-            _documents = items;
-            _documentsLoaded = true;
-            _loadingDocuments = false;
-            _tabErrorShown['Documents'] = false;
-          });
-        },
-        failure: (err) {
-          setState(() {
-            _documents = const <AdminDocumentItem>[];
-            _documentsLoaded = true;
-            _loadingDocuments = false;
-          });
-          if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
-                  (err.statusCode == 401 || err.statusCode == 403))
-              ? 'Not authorized to load user documents.'
-              : "Couldn't load user documents.";
-          _showTabErrorOnce('Documents', message);
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _documents = const <AdminDocumentItem>[];
-        _documentsLoaded = true;
-        _loadingDocuments = false;
-      });
-      _showTabErrorOnce('Documents', "Couldn't load user documents.");
-    }
-  }
-
-  Future<void> _loadTickets() async {
-    _ticketsToken?.cancel('Reload user tickets');
-    final token = CancelToken();
-    _ticketsToken = token;
-
-    if (!mounted) return;
-    setState(() => _loadingTickets = true);
-
-    try {
-      final result = await _repoOrCreate().getUserTickets(
-        widget.id,
-        cancelToken: token,
-      );
-      if (!mounted) return;
-      result.when(
-        success: (items) {
-          setState(() {
-            _tickets = items;
-            _ticketsLoaded = true;
-            _loadingTickets = false;
-            _tabErrorShown['Tickets'] = false;
-          });
-        },
-        failure: (err) {
-          setState(() {
-            _tickets = const <AdminTicketListItem>[];
-            _ticketsLoaded = true;
-            _loadingTickets = false;
-          });
-          if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
-                  (err.statusCode == 401 || err.statusCode == 403))
-              ? 'Not authorized to load user tickets.'
-              : "Couldn't load user tickets.";
-          _showTabErrorOnce('Tickets', message);
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _tickets = const <AdminTicketListItem>[];
-        _ticketsLoaded = true;
-        _loadingTickets = false;
-      });
-      _showTabErrorOnce('Tickets', "Couldn't load user tickets.");
     }
   }
 
   Future<void> _loadPayments() async {
     _paymentsToken?.cancel('Reload user payments');
+
     final token = CancelToken();
     _paymentsToken = token;
 
     if (!mounted) return;
+
     setState(() => _loadingPayments = true);
 
     try {
@@ -472,7 +398,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
         widget.id,
         cancelToken: token,
       );
+
       if (!mounted) return;
+
       result.when(
         success: (items) {
           setState(() {
@@ -488,42 +416,96 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             _paymentsLoaded = true;
             _loadingPayments = false;
           });
+
           if (_isCancelled(err)) return;
-          final message =
-              (err is ApiException &&
+
+          final message = (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to load user payments.'
               : "Couldn't load user payments.";
+
           _showTabErrorOnce('Payments', message);
         },
       );
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _payments = const <AdminTransactionItem>[];
         _paymentsLoaded = true;
         _loadingPayments = false;
       });
+
       _showTabErrorOnce('Payments', "Couldn't load user payments.");
     }
   }
 
+  void _selectTab(String tab) {
+    if (_selectedTab == tab) return;
+
+    setState(() => _selectedTab = tab);
+
+    _ensureSelectedTabLoaded(tab);
+  }
+
+  void _ensureSelectedTabLoaded(String tab) {
+    switch (tab) {
+      case 'Vehicles':
+        if (!_vehiclesLoaded && !_loadingVehicles) _loadVehicles();
+        break;
+      case 'Drivers':
+        if (!_driversLoaded && !_loadingDrivers) _loadDrivers();
+        break;
+      case 'Payments':
+        if (!_paymentsLoaded && !_loadingPayments) _loadPayments();
+        break;
+      case 'Documents':
+      case 'Tickets':
+      case 'Activity Logs':
+      default:
+        break;
+    }
+  }
+
+  Future<void> _refreshDetails() async {
+    await _loadDetails(silent: true);
+
+    if (!mounted) return;
+
+    switch (_selectedTab) {
+      case 'Vehicles':
+        _vehiclesLoaded = false;
+        await _loadVehicles();
+        break;
+      case 'Drivers':
+        _driversLoaded = false;
+        await _loadDrivers();
+        break;
+      case 'Payments':
+        _paymentsLoaded = false;
+        await _loadPayments();
+        break;
+      case 'Documents':
+      case 'Tickets':
+      case 'Activity Logs':
+      default:
+        break;
+    }
+
+    if (mounted) setState(() => _detailReloadNonce++);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bodyFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 1;
-    final smallFs = AdaptiveUtils.getTitleFontSize(screenWidth) - 3;
+    final width = MediaQuery.of(context).size.width;
+    final horizontalPadding = AdaptiveUtils.getHorizontalPadding(width);
     final topPadding = MediaQuery.of(context).padding.top;
-    final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
-        ? 8.0
-        : AdaptiveUtils.isSmallScreen(screenWidth)
-            ? 10.0
-            : 12.0;
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final bodyFs = 14 * scale;
+    final smallFs = 12 * scale;
 
-    final headerName = _safe(
-      _details?.fullName,
-      fallback: _safe(_details?.username, fallback: 'User Details'),
-    );
+    final headerName =
+        widget.name?.trim().isNotEmpty == true ? widget.name! : 'User Details';
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -531,35 +513,39 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
           : const Color(0xFFF5F5F7),
       body: Stack(
         children: [
-          RefreshIndicator(
-            color: Theme.of(context).colorScheme.primary,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            onRefresh: _refreshDetails,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
-                horizontalPadding,
-                84,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  NavigateBox(
-                    selectedTab: _selectedTab,
-                    tabs: _tabs,
-                    title: 'User mobile screens',
-                    subtitle: 'Switch between the user screens below.',
-                    onTabSelected: _selectTab,
-                  ),
-                  const SizedBox(height: 4),
-                  KeyedSubtree(
-                    key: ValueKey('admin_user_${_selectedTab}_$_detailReloadNonce'),
-                    child: _buildTabContent(bodyFs, smallFs),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+          Positioned.fill(
+            child: RefreshIndicator(
+              color: Theme.of(context).colorScheme.primary,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              onRefresh: _refreshDetails,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  topPadding + AppUtils.appBarHeightCustom + 28,
+                  horizontalPadding,
+                  84,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    NavigateBox(
+                      selectedTab: _selectedTab,
+                      tabs: _tabs,
+                      title: 'User mobile screens',
+                      subtitle: 'Switch between the user screens below.',
+                      onTabSelected: _selectTab,
+                    ),
+                    const SizedBox(height: 4),
+                    KeyedSubtree(
+                      key: ValueKey(
+                        'admin_user_${_selectedTab}_$_detailReloadNonce',
+                      ),
+                      child: _buildTabContent(bodyFs, smallFs),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -584,6 +570,22 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
 
   Widget _buildTabContent(double bodyFs, double smallFs) {
     switch (_selectedTab) {
+      case 'Profile':
+        return Column(
+          children: [
+            const SizedBox(height: 24),
+            AdminUserProfileTab(
+              details: _details,
+              loading: _loadingDetails,
+              bodyFontSize: bodyFs,
+              userId: widget.id,
+              onRefresh: ({bool silent = false}) {
+                _loadDetails(silent: silent);
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
       case 'Vehicles':
         return Column(
           children: [
@@ -597,6 +599,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             const SizedBox(height: 24),
           ],
         );
+
       case 'Drivers':
         return Column(
           children: [
@@ -610,45 +613,53 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             const SizedBox(height: 24),
           ],
         );
+
       case 'Documents':
         return Column(
           children: [
             const SizedBox(height: 24),
             AdminUserDocumentsTab(
-              items: _documents,
-              loading: _loadingDocuments,
-              bodyFontSize: bodyFs,
-              smallFontSize: smallFs,
+              userId: widget.id,
             ),
             const SizedBox(height: 24),
           ],
         );
+
       case 'Tickets':
         return Column(
           children: [
             const SizedBox(height: 24),
-            AdminUserTicketsTab(
-              items: _tickets,
-              loading: _loadingTickets,
-              bodyFontSize: bodyFs,
-              smallFontSize: smallFs,
-            ),
+            if (_details != null)
+              AdminUserTicketsTab(
+                userId: widget.id,
+                userSummary: _details!.summary,
+              )
+            else if (_loadingDetails)
+              listShimmer(context, count: 2, height: 100)
+            else
+              const Center(
+                child: Text('User details not available.'),
+              ),
             const SizedBox(height: 24),
           ],
         );
+
       case 'Payments':
         return Column(
           children: [
             const SizedBox(height: 24),
             AdminUserPaymentsTab(
+              userId: widget.id,
               items: _payments,
               loading: _loadingPayments,
               bodyFontSize: bodyFs,
               smallFontSize: smallFs,
+              onRenew: _loadPayments,
             ),
             const SizedBox(height: 24),
           ],
         );
+
       case 'Activity Logs':
         return Column(
           children: [
@@ -657,21 +668,9 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen> {
             const SizedBox(height: 24),
           ],
         );
-      case 'Profile':
+
       default:
-        return Column(
-          children: [
-            const SizedBox(height: 24),
-            AdminUserProfileTab(
-              details: _details,
-              loading: _loadingDetails,
-              bodyFontSize: bodyFs,
-              userId: widget.id,
-              onRefresh: _loadDetails,
-            ),
-            const SizedBox(height: 24),
-          ],
-        );
+        return const SizedBox.shrink();
     }
   }
 }

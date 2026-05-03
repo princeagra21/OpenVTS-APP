@@ -14,7 +14,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
-import 'package:fleet_stack/modules/admin/components/admin/update_password_screen.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
 
@@ -168,7 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _showProfileMenu({
     required BuildContext anchorContext,
     required String displayName,
-    required String roleLabel,
     required String initials,
   }) async {
     final box = anchorContext.findRenderObject() as RenderBox?;
@@ -219,19 +217,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        roleLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                        ),
-                      ),
+                      // Text(
+                      //   roleLabel,
+                      //   maxLines: 1,
+                      //   overflow: TextOverflow.ellipsis,
+                      //   style: GoogleFonts.roboto(
+                      //     fontSize: 12,
+                      //     fontWeight: FontWeight.w500,
+                      //     color: Theme.of(context)
+                      //         .colorScheme
+                      //         .onSurface
+                      //         .withOpacity(0.6),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -248,19 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: const [
               Expanded(child: Text('Profile')),
-              Icon(Icons.chevron_right, size: 18),
-            ],
-          ),
-        ),
-        PopupMenuDivider(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-        ),
-        PopupMenuItem<String>(
-          value: 'password',
-          height: 36,
-          child: Row(
-            children: const [
-              Expanded(child: Text('Change Password')),
               Icon(Icons.chevron_right, size: 18),
             ],
           ),
@@ -289,12 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
       context.push('/admin/settings');
-    } else if (selected == 'password') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const UpdatePasswordScreen(),
-        ),
-      );
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -390,11 +369,11 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Symbols.widgets,
         route: '/admin/plans',
       ),
-      _HomeShortcut(
-        label: 'Roles',
-        icon: Symbols.admin_panel_settings,
-        route: '/admin/roles',
-      ),
+      // _HomeShortcut(
+      //   label: 'Roles',
+      //   icon: Symbols.admin_panel_settings,
+      //   route: '/admin/roles',
+      // ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.settings,
@@ -464,12 +443,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         final username = profile?.username.trim() ?? '';
                         final displayName =
                             name.isNotEmpty ? name : username;
-                        final roleLabel =
-                            username.isNotEmpty ? username : 'Administrator';
                         _showProfileMenu(
                           anchorContext: avatarContext,
                           displayName: displayName,
-                          roleLabel: roleLabel,
                           initials: _initials(name, username),
                         );
                       },
@@ -526,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             SizedBox(height: AppUtils.spacingLarge * 1.5),
                             Wrap(
-                              alignment: WrapAlignment.center,
+                              alignment: WrapAlignment.start,
                               spacing: gridGap,
                               runSpacing: gridGap,
                               children: shortcuts.map((item) {

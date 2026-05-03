@@ -177,14 +177,25 @@ class AdminProfile {
         (data['address'] is Map ? (data['address'] as Map)['cityId'] : null),
   );
   String get state => _string(
-    data['stateCode'] ??
+    data['stateName'] ??
         data['state'] ??
+        data['stateCode'] ??
         (data['address'] is Map ? (data['address'] as Map)['state'] : null) ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['stateName']
+            : null) ??
         (data['address'] is Map ? (data['address'] as Map)['stateCode'] : null),
   );
   String get country => _string(
-    data['countryCode'] ??
+    data['countryName'] ??
         data['country'] ??
+        data['countryCode'] ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['country']
+            : null) ??
+        (data['address'] is Map
+            ? (data['address'] as Map)['countryName']
+            : null) ??
         (data['address'] is Map
             ? (data['address'] as Map)['countryCode']
             : null),

@@ -14,7 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class NewTicketScreen extends StatefulWidget {
-  const NewTicketScreen({super.key});
+  final AdminUserListItem? preSelectedUser;
+  const NewTicketScreen({super.key, this.preSelectedUser});
 
   @override
   State<NewTicketScreen> createState() => _NewTicketScreenState();
@@ -32,6 +33,17 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   List<AdminUserListItem> _users = <AdminUserListItem>[];
   AdminUserListItem? _selectedUser;
 
+  final List<String> _categories = [
+    'INSTALLATION',
+    'SERVER',
+    'BILLING',
+    'OTHER'
+  ];
+  String? _selectedCategory = 'SERVER';
+
+  final List<String> _priorities = ['LOW', 'MEDIUM', 'HIGH'];
+  String? _selectedPriority = 'MEDIUM';
+
   ApiClient? _api;
   AdminUsersRepository? _usersRepo;
   AdminSupportRepository? _supportRepo;
@@ -39,7 +51,11 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    if (widget.preSelectedUser != null) {
+      _selectedUser = widget.preSelectedUser;
+    } else {
+      _loadUsers();
+    }
   }
 
   @override
@@ -92,10 +108,10 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
           setState(() => _loadingUsers = false);
           if (_usersErrorShown) return;
           _usersErrorShown = true;
-          final msg =
-              (err is ApiException && (err.statusCode == 401 || err.statusCode == 403))
-                  ? 'Not authorized to load users.'
-                  : "Couldn't load users.";
+          final msg = (err is ApiException &&
+                  (err.statusCode == 401 || err.statusCode == 403))
+              ? 'Not authorized to load users.'
+              : "Couldn't load users.";
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(msg)));
         },
@@ -114,6 +130,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     final user = _selectedUser;
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
+    final category = _selectedCategory;
+    final priority = _selectedPriority;
 
     if (user == null) {
       ScaffoldMessenger.of(context)
@@ -126,6 +144,12 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
       );
       return;
     }
+    if (category == null || priority == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Category and priority are required.')),
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _submitting = true);
@@ -134,6 +158,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
       userId: user.id,
       subject: subject,
       message: message,
+      category: category,
+      priority: priority,
       cancelToken: _loadToken,
     );
 
@@ -148,9 +174,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
       },
       failure: (err) {
         setState(() => _submitting = false);
-        final msg = err is ApiException
-            ? err.message
-            : "Couldn't create ticket.";
+        final msg =
+            err is ApiException ? err.message : "Couldn't create ticket.";
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(msg)));
       },
@@ -237,70 +262,81 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                           else
                             InkWell(
                               borderRadius: BorderRadius.circular(12),
-                              onTap: () async {
-                                final chosen =
-                                    await showModalBottomSheet<AdminUserListItem>(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: cs.surface,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                  ),
-                                  builder: (ctx) {
-                                    return SafeArea(
-                                      child: SizedBox(
-                                        height:
-                                            MediaQuery.of(ctx).size.height * 0.7,
-                                        child: ListView.separated(
-                                          padding: const EdgeInsets.all(16),
-                                          itemCount: _users.length,
-                                          separatorBuilder: (_, __) =>
-                                              const SizedBox(height: 8),
-                                          itemBuilder: (_, index) {
-                                            final user = _users[index];
-                                            final title = user.fullName.isNotEmpty
-                                                ? user.fullName
-                                                : user.email.isNotEmpty
-                                                    ? user.email
-                                                    : user.id;
-                                            final subtitle = user.email.isNotEmpty
-                                                ? user.email
-                                                : user.id;
-                                            return ListTile(
-                                              title: Text(
-                                                title,
-                                                softWrap: true,
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: 14 * scale,
-                                                  height: 20 / 14,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              subtitle: Text(
-                                                subtitle,
-                                                softWrap: true,
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: 12 * scale,
-                                                  height: 16 / 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  color:
-                                                      cs.onSurface.withOpacity(0.6),
-                                                ),
-                                              ),
-                                              onTap: () => Navigator.pop(ctx, user),
-                                            );
-                                          },
+                              onTap: widget.preSelectedUser != null
+                                  ? null
+                                  : () async {
+                                      final chosen =
+                                          await showModalBottomSheet<
+                                              AdminUserListItem>(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: cs.surface,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(16),
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                );
-                                if (chosen != null) {
-                                  setState(() => _selectedUser = chosen);
-                                }
-                              },
+                                        builder: (ctx) {
+                                          return SafeArea(
+                                            child: SizedBox(
+                                              height: MediaQuery.of(ctx)
+                                                      .size
+                                                      .height *
+                                                  0.7,
+                                              child: ListView.separated(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                itemCount: _users.length,
+                                                separatorBuilder: (_, __) =>
+                                                    const SizedBox(height: 8),
+                                                itemBuilder: (_, index) {
+                                                  final user = _users[index];
+                                                  final title = user
+                                                          .fullName.isNotEmpty
+                                                      ? user.fullName
+                                                      : user.email.isNotEmpty
+                                                          ? user.email
+                                                          : user.id;
+                                                  final subtitle =
+                                                      user.email.isNotEmpty
+                                                          ? user.email
+                                                          : user.id;
+                                                  return ListTile(
+                                                    title: Text(
+                                                      title,
+                                                      softWrap: true,
+                                                      style: GoogleFonts.roboto(
+                                                        fontSize: 14 * scale,
+                                                        height: 20 / 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    subtitle: Text(
+                                                      subtitle,
+                                                      softWrap: true,
+                                                      style: GoogleFonts.roboto(
+                                                        fontSize: 12 * scale,
+                                                        height: 16 / 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: cs.onSurface
+                                                            .withOpacity(0.6),
+                                                      ),
+                                                    ),
+                                                    onTap: () =>
+                                                        Navigator.pop(ctx, user),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                      if (chosen != null) {
+                                        setState(() => _selectedUser = chosen);
+                                      }
+                                    },
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
@@ -308,6 +344,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
+                                  color: widget.preSelectedUser != null
+                                      ? cs.onSurface.withOpacity(0.04)
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: cs.onSurface.withOpacity(0.12),
@@ -333,14 +372,83 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                         ),
                                       ),
                                     ),
-                                    Icon(
-                                      Icons.expand_more,
-                                      color: cs.onSurface.withOpacity(0.6),
-                                    ),
+                                    if (widget.preSelectedUser == null)
+                                      Icon(
+                                        Icons.expand_more,
+                                        color: cs.onSurface.withOpacity(0.6),
+                                      ),
                                   ],
                                 ),
                               ),
                             ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    RichText(
+                                      text: TextSpan(
+                                        style: labelStyle,
+                                        children: [
+                                          const TextSpan(text: 'Category'),
+                                          TextSpan(
+                                            text: ' *',
+                                            style: labelStyle.copyWith(
+                                              color: cs.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildDropdown(
+                                      value: _selectedCategory,
+                                      items: _categories,
+                                      onChanged: (v) => setState(
+                                          () => _selectedCategory = v),
+                                      colorScheme: cs,
+                                      scale: scale,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    RichText(
+                                      text: TextSpan(
+                                        style: labelStyle,
+                                        children: [
+                                          const TextSpan(text: 'Priority'),
+                                          TextSpan(
+                                            text: ' *',
+                                            style: labelStyle.copyWith(
+                                              color: cs.primary,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildDropdown(
+                                      value: _selectedPriority,
+                                      items: _priorities,
+                                      onChanged: (v) => setState(
+                                          () => _selectedPriority = v),
+                                      colorScheme: cs,
+                                      scale: scale,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 16),
                           RichText(
                             text: TextSpan(
@@ -548,5 +656,48 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required ColorScheme colorScheme,
+    required double scale,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.onSurface.withOpacity(0.12)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: Icon(Icons.expand_more,
+              color: colorScheme.onSurface.withOpacity(0.6)),
+          items: items.map((s) {
+            return DropdownMenuItem(
+              value: s,
+              child: Text(
+                _titleCase(s),
+                style: GoogleFonts.roboto(
+                  fontSize: 14 * scale,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  String _titleCase(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1).toLowerCase();
   }
 }

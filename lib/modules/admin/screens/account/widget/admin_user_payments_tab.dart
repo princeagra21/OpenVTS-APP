@@ -1,3 +1,4 @@
+import 'package:fleet_stack/modules/admin/screens/account/widget/vehicles/renew_vehicle_screen.dart';
 import 'package:fleet_stack/core/models/admin_transaction_item.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
@@ -5,17 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AdminUserPaymentsTab extends StatelessWidget {
+  final String userId;
   final List<AdminTransactionItem> items;
   final bool loading;
   final double bodyFontSize;
   final double smallFontSize;
+  final Future<void> Function()? onRenew;
 
   const AdminUserPaymentsTab({
     super.key,
+    required this.userId,
     required this.items,
     required this.loading,
     required this.bodyFontSize,
     required this.smallFontSize,
+    this.onRenew,
   });
 
   @override
@@ -98,14 +103,63 @@ class AdminUserPaymentsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Recent Transactions',
-                  style: GoogleFonts.roboto(
-                    fontSize: headerSize,
-                    height: 24 / 18,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Transactions',
+                      style: GoogleFonts.roboto(
+                        fontSize: headerSize,
+                        height: 24 / 18,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () async {
+                        final res = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RenewVehicleScreen(
+                              initialUserId: userId,
+                            ),
+                          ),
+                        );
+                        if (res == true && onRenew != null) {
+                          await onRenew!.call();
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cs.onSurface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.autorenew,
+                              size: 16,
+                              color: cs.surface,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Renew',
+                              style: GoogleFonts.roboto(
+                                fontSize: labelSize,
+                                fontWeight: FontWeight.w600,
+                                color: cs.surface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (loading)

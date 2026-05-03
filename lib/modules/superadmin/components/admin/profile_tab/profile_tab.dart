@@ -659,22 +659,45 @@ class _ProfileTabState extends State<ProfileTab> {
             fs: fs,
             colorScheme: colorScheme,
             address: address,
-            addressId: _addressValue(p, const [
-              'id',
-              'addressId',
-              'address_id',
-              'addressID',
-            ]),
-            line: _addressValue(p, const ['addressLine', 'address_line']),
-            city: _addressValue(p, const ['cityId', 'city', 'cityName']),
-            state: _addressValue(p, const ['stateCode', 'state', 'stateName']),
-            postal: _addressValue(p, const ['pincode', 'postalCode']),
-            country: _addressValue(p, const ['countryCode', 'country']),
+            city: _resolvedAddressPart(
+              primary: _addressValue(p, const ['cityId', 'city', 'cityName']),
+              fullAddress: address,
+              fallbackIndexFromEnd: 4,
+            ),
+            state: _resolvedAddressPart(
+              primary: _addressValue(p, const ['state', 'stateName', 'stateCode']),
+              fullAddress: address,
+              fallbackIndexFromEnd: 3,
+            ),
+            country: _resolvedAddressPart(
+              primary: _addressValue(p, const ['country', 'countryName', 'countryCode']),
+              fullAddress: address,
+              fallbackIndexFromEnd: 2,
+            ),
             loading: loading,
           ),
         ],
       ),
     );
+  }
+
+  String _resolvedAddressPart({
+    required String primary,
+    required String fullAddress,
+    required int fallbackIndexFromEnd,
+  }) {
+    final value = primary.trim();
+    final looksLikeCode = RegExp(r'^[A-Z]{2,3}$').hasMatch(value);
+    if (value.isNotEmpty && value != '-' && !looksLikeCode) return value;
+
+    final parts = fullAddress
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final idx = parts.length - fallbackIndexFromEnd;
+    if (idx >= 0 && idx < parts.length) return parts[idx];
+    return value.isEmpty ? '-' : value;
   }
 
   Widget _buildAccountCard(
@@ -1209,11 +1232,8 @@ class _ProfileTabState extends State<ProfileTab> {
     required double fs,
     required ColorScheme colorScheme,
     required String address,
-    required String addressId,
-    required String line,
     required String city,
     required String state,
-    required String postal,
     required String country,
     required bool loading,
   }) {
@@ -1290,19 +1310,85 @@ class _ProfileTabState extends State<ProfileTab> {
             ],
           ),
           const SizedBox(height: 16),
-          _keyValueRow("Address ID", addressId, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Line", line, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("City", city, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("State", state, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Postal", postal, fs, colorScheme, loading),
-          const SizedBox(height: 8),
-          _keyValueRow("Country", country, fs, colorScheme, loading),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _keyValueColumn("City", city, fs, colorScheme, loading),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "State",
+                  state,
+                  fs,
+                  colorScheme,
+                  loading,
+                  align: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "Country",
+                  country,
+                  fs,
+                  colorScheme,
+                  loading,
+                  align: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _keyValueColumn(
+    String title,
+    String value,
+    double fs,
+    ColorScheme colorScheme,
+    bool loading, {
+    TextAlign align = TextAlign.left,
+  }) {
+    final labelFs = fs * (12 / 14);
+    final valueFs = fs * (13 / 14);
+    return Column(
+      crossAxisAlignment: align == TextAlign.right
+          ? CrossAxisAlignment.end
+          : align == TextAlign.center
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          textAlign: align,
+          style: GoogleFonts.roboto(
+            fontSize: labelFs,
+            height: 16 / 12,
+            color: colorScheme.onSurface.withOpacity(0.65),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        if (loading)
+          const AppShimmer(width: 56, height: 14, radius: 7)
+        else
+          Text(
+            value.isEmpty ? '-' : value,
+            textAlign: align,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.roboto(
+              fontSize: valueFs,
+              height: 18 / 13,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+      ],
     );
   }
 

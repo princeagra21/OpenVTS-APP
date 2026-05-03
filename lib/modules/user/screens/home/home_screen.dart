@@ -16,7 +16,6 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
-import 'package:fleet_stack/modules/user/screens/profile/widget/update_password_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -261,23 +260,6 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
         ),
         PopupMenuItem<String>(
-          value: 'password',
-          height: 36,
-          child: Row(
-            children: [
-              const Expanded(child: Text('Change Password')),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: cs.primary,
-              ),
-            ],
-          ),
-        ),
-        PopupMenuDivider(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-        ),
-        PopupMenuItem<String>(
           value: 'logout',
           height: 36,
           child: Row(
@@ -298,12 +280,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted || selected == null) return;
     if (selected == 'settings') {
       context.push('/user/settings');
-    } else if (selected == 'password') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const UpdatePasswordScreen(),
-        ),
-      );
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -522,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             SizedBox(height: AppUtils.spacingLarge * 1.5),
                             Wrap(
-                              alignment: WrapAlignment.center,
+                              alignment: WrapAlignment.start,
                               spacing: gridGap,
                               runSpacing: gridGap,
                               children: shortcuts.map((item) {

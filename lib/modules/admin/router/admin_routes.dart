@@ -63,7 +63,7 @@ final List<GoRoute> adminRoutes = [
   GoRoute(
     path: '/admin/users/details/:id',
     builder: (context, state) =>
-        AdminUserDetailsScreen(id: state.pathParameters['id']!),
+        UserDetailsScreen(id: state.pathParameters['id']!),
   ),
   GoRoute(path: '/admin/vehicles', builder: (_, __) => const VehicleScreen()),
   GoRoute(

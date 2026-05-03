@@ -1089,6 +1089,8 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
     final plate = v.plateNumber.isNotEmpty ? v.plateNumber : '—';
     final imei = v.imei.isNotEmpty ? v.imei : '—';
     final vin = v.vin.isNotEmpty ? v.vin : '—';
+    final secondaryExpiry = (v.raw['secondaryExpiry'] ?? '').toString();
+    final expiry = secondaryExpiry.isNotEmpty ? secondaryExpiry : v.expiry;
 
     return Container(
       width: double.infinity,
@@ -1183,7 +1185,13 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                     title: 'VIN',
                     lines: [vin],
                   ),
-                  // Expiry/Created removed (not provided by admin vehicles API).
+                  if (expiry.isNotEmpty)
+                    _infoCard(
+                      context,
+                      width: cardWidth,
+                      title: 'Expiry',
+                      lines: [_formatDate(expiry)],
+                    ),
                 ],
               );
             },
@@ -1191,6 +1199,13 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
         ],
       ),
     );
+  }
+
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return '—';
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    return DateFormat('dd MMM yyyy').format(dt.toLocal());
   }
 
   Widget _infoCard(

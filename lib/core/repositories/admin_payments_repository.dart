@@ -10,12 +10,14 @@ class AdminPaymentsRepository {
   Future<Result<void>> createRenewPayment({
     required String userId,
     required List<String> vehicleIds,
+    required String amount,
     required String paymentMode,
     CancelToken? cancelToken,
   }) async {
     final payload = <String, dynamic>{
       'userId': _toNumOrString(userId.trim()),
       'vehicleIds': vehicleIds.map(_toNumOrString).toList(),
+      'amount': amount.trim(),
       'paymentMode': paymentMode.trim(),
     };
 

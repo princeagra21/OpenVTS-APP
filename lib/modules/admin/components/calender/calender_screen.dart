@@ -1,5 +1,5 @@
 // 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME
-// EventCalendarScreen (Admin - Superadmin parity)
+// EventCalendarScreen (Drop-in Replacement)
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -196,6 +196,23 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
   List _list(Object? v) => v is List ? v : const [];
 
+  String _firstNonEmpty(List<Object?> values, {String fallback = ''}) {
+    for (final v in values) {
+      final t = (v ?? '').toString().trim();
+      if (t.isNotEmpty) return t;
+    }
+    return fallback;
+  }
+
+  String _eventDisplayTitle(AdminCalendarEventItem e) {
+    final t = e.title.trim();
+    if (t.isNotEmpty) return t;
+    final d = e.description.trim();
+    if (d.isNotEmpty) return d;
+    final byType = _normType(e.type).contains('user') ? 'User' : 'Event';
+    return byType;
+  }
+
   List<AdminCalendarEventItem> _buildDayItems(Map<String, dynamic> root) {
     final dataMap = _map(_map(root)['data']);
     final inner = _map(dataMap['data']);
@@ -208,8 +225,14 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
         AdminCalendarEventItem(<String, dynamic>{
           'type': 'USER_CREATED',
           'id': m['uid'] ?? m['id'],
-          'title': m['name'] ?? m['email'] ?? '',
-          'description': m['email'] ?? '',
+          'title': _firstNonEmpty([
+            m['name'],
+            m['userName'],
+            m['username'],
+            m['fullName'],
+            m['email'],
+          ]),
+          'description': _firstNonEmpty([m['email'], m['name']]),
           'createdAt': m['createdAt'],
           'date': dateStr,
         }),
@@ -222,8 +245,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
         AdminCalendarEventItem(<String, dynamic>{
           'type': 'VEHICLE_CREATED',
           'id': m['id'],
-          'title': m['name'] ?? m['plateNumber'] ?? '',
-          'description': m['plateNumber'] ?? '',
+          'title': _firstNonEmpty([m['name'], m['plateNumber']]),
+          'description': _firstNonEmpty([m['plateNumber'], m['name']]),
           'createdAt': m['createdAt'],
           'date': dateStr,
         }),
@@ -236,8 +259,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
         AdminCalendarEventItem(<String, dynamic>{
           'type': 'VEHICLE_EXPIRY',
           'id': m['id'],
-          'title': m['name'] ?? m['plateNumber'] ?? '',
-          'description': m['plateNumber'] ?? '',
+          'title': _firstNonEmpty([m['name'], m['plateNumber']]),
+          'description': _firstNonEmpty([m['plateNumber'], m['name']]),
           'createdAt': m['createdAt'],
           'date': dateStr,
         }),
@@ -297,15 +320,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
   }
 
   void _loadDayIfNeeded(DateTime date) {
-    final key = _dayKey(date);
-    if (!_eventsByDate.containsKey(key)) {
-      setState(() {
-        _dayItems = const [];
-        _loadedDay = date;
-        _loadingDay = false;
-      });
-      return;
-    }
+    // Day details endpoint can return richer data (e.g. user names)
+    // even when month snapshot map misses/normalizes the day entries.
     _loadDay(date);
   }
 
@@ -515,7 +531,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     if (time.isNotEmpty) return "Time: $time";
     final dt = e.createdAt ?? e.date;
     if (dt != null) {
-      return "Date: ${DateFormat('d MMMM, yyyy').format(dt)}";
+      return "Date: ${dt.day}/${dt.month}/${dt.year}";
     }
     return "No additional details.";
   }
@@ -541,6 +557,150 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
         debugPrint('Calendar open route failed: $err');
       }
     }
+  }
+
+  List<AdminCalendarEventItem> _eventsForDate(DateTime date) {
+    final key = _dayKey(date);
+    final useDayItems =
+        _loadedDay != null && _dayKey(_loadedDay!) == key && _dayItems.isNotEmpty;
+    if (useDayItems) return List<AdminCalendarEventItem>.from(_dayItems);
+    final raw = _effectiveEventMap[key] ?? const <Map<String, dynamic>>[];
+    return raw.map((e) => _eventFromMap(e, date)).toList(growable: false);
+  }
+
+  Future<void> _openEventsBottomSheet(DateTime date) async {
+    final items = _eventsForDate(date);
+    if (items.isEmpty) return;
+    final cs = Theme.of(context).colorScheme;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.82,
+          ),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Event',
+                        style: GoogleFonts.roboto(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (context, index) {
+                    final e = items[index];
+                    final subtitle = _eventSubtitle(e);
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: cs.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              _normType(e.type).contains('expiry')
+                                  ? Icons.event_busy_outlined
+                                  : _normType(e.type).contains('vehicle')
+                                  ? Icons.directions_car_outlined
+                                  : _normType(e.type).contains('admin')
+                                  ? Icons.admin_panel_settings_outlined
+                                  : Icons.person_outline,
+                              size: 18,
+                              color: cs.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _eventDisplayTitle(e),
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _eventTime(e),
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemCount: items.length,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -765,132 +925,6 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'This Week',
-                          style: GoogleFonts.roboto(
-                            fontSize: fsMonth,
-                            height: 24 / 18,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final days = List<DateTime>.generate(
-                              7,
-                              (i) => _weekAnchor.add(Duration(days: i - 3)),
-                            );
-                            const gap = 8.0;
-                            final cellWidth = (constraints.maxWidth - gap * 2) / 3.2;
-                            final viewportWidth = constraints.maxWidth;
-                            final desiredOffset =
-                                (cellWidth + gap) * 3 - (viewportWidth - cellWidth) / 2;
-                            final clampedOffset = desiredOffset < 0 ? 0.0 : desiredOffset;
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!_weekScrollController.hasClients) return;
-                              _weekScrollController.jumpTo(clampedOffset);
-                            });
-                            return SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              controller: _weekScrollController,
-                              child: Row(
-                                children: days.map((day) {
-                                  final key = _dayKey(day);
-                                  final count = eventMap[key]?.length ?? 0;
-                                  final isActiveDay = _dayKey(day) == _dayKey(_weekAnchor);
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: gap),
-                                    child: SizedBox(
-                                      width: cellWidth,
-                                      child: InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _weekAnchor = day;
-                                            _selectedDate = day;
-                                            _selectedEvent = null;
-                                          });
-                                          if (_loadedMonth == null ||
-                                              _monthStart(_loadedMonth!) != _monthStart(day)) {
-                                            _loadMonth(day);
-                                          }
-                                          _loadDayIfNeeded(day);
-                                        },
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: isActiveDay ? cs.onSurface : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: cs.onSurface.withOpacity(0.1),
-                                            ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                DateFormat('EEE').format(day),
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: fsWeekday,
-                                                  height: 14 / 11,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: isActiveDay ? cs.surface : cs.onSurface,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                day.day.toString(),
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: fsDate,
-                                                  height: 20 / 14,
-                                                  fontWeight: isActiveDay
-                                                      ? FontWeight.w600
-                                                      : FontWeight.w500,
-                                                  color: isActiveDay ? cs.surface : cs.onSurface,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                count == 0
-                                                    ? 'No events'
-                                                    : '$count event${count == 1 ? '' : 's'}',
-                                                style: GoogleFonts.roboto(
-                                                  fontSize: fsEventMeta,
-                                                  height: 14 / 11,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: isActiveDay
-                                                      ? cs.surface.withOpacity(0.85)
-                                                      : cs.onSurface.withOpacity(0.7),
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(hp),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: cs.onSurface.withOpacity(0.08)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
                           'Month Snapshot',
                           style: GoogleFonts.roboto(
                             fontSize: fsMonth,
@@ -909,6 +943,14 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                         else
                           CalendarDatePicker2(
                             key: ValueKey(_monthKey(currentMonth)),
+                            displayedMonthDate: currentMonth,
+                            onDisplayedMonthChanged: (displayedMonth) {
+                              final monthStart = _monthStart(displayedMonth);
+                              if (_loadedMonth == null ||
+                                  _monthStart(_loadedMonth!) != monthStart) {
+                                _loadMonth(displayedMonth);
+                              }
+                            },
                             config: CalendarDatePicker2Config(
                               calendarType: CalendarDatePicker2Type.single,
                               currentDate: _selectedDate,
@@ -982,11 +1024,17 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                           Positioned(
                                             bottom: 3,
                                             child: Container(
-                                              width: 6,
-                                              height: 6,
+                                              width: 7,
+                                              height: 7,
                                               decoration: BoxDecoration(
-                                                color: cs.primary,
+                                                color: isSelected == true
+                                                    ? cs.onPrimary
+                                                    : cs.primary,
                                                 shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: cs.surface,
+                                                  width: 1,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1001,6 +1049,8 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                               if (dates.isNotEmpty) {
                                 final nextDate = dates.first;
                                 final nextMonth = _monthStart(nextDate);
+                                final shouldOpenEventsSheet =
+                                    (eventMap[_dayKey(nextDate)] ?? const []).isNotEmpty;
                                 setState(() {
                                   _selectedDate = nextDate;
                                   _selectedEvent = null;
@@ -1011,302 +1061,15 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                   _loadMonth(nextDate);
                                 }
                                 _loadDayIfNeeded(nextDate);
+                                if (shouldOpenEventsSheet) {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (!mounted) return;
+                                    _openEventsBottomSheet(nextDate);
+                                  });
+                                }
                               }
                             },
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.onSurface.withOpacity(0.1)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          DateFormat('EEEE').format(_selectedDate),
-                          style: GoogleFonts.roboto(
-                            fontSize: fsEventTitle,
-                            height: 20 / 14,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('MMMM d, yyyy').format(_selectedDate),
-                          style: GoogleFonts.roboto(
-                            fontSize: fsEventSecondary,
-                            height: 16 / 12,
-                            fontWeight: FontWeight.w500,
-                            color: cs.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          height: hp * 3.5,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: cs.onSurface.withOpacity(0.1),
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _eventSearchController,
-                            style: GoogleFonts.roboto(
-                              fontSize: fsSearch,
-                              height: 20 / 14,
-                              color: cs.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Search users or vehicles',
-                              hintStyle: GoogleFonts.roboto(
-                                color: cs.onSurface.withOpacity(0.5),
-                                fontSize: fsLabel,
-                                height: 16 / 12,
-                              ),
-                              prefixIcon: Icon(
-                                CupertinoIcons.search,
-                                size: fsButton,
-                                color: cs.onSurface,
-                              ),
-                              filled: true,
-                              fillColor: Colors.transparent,
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: hp,
-                                vertical: hp,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Builder(
-                          builder: (context) {
-                            final dayKey = _dayKey(_selectedDate);
-                            final useDayItems = _loadedDay != null &&
-                                _dayKey(_loadedDay!) == dayKey &&
-                                _dayItems.isNotEmpty;
-                            final rawItems = eventMap[dayKey] ?? const [];
-                            final items = useDayItems
-                                ? _dayItems
-                                : rawItems
-                                    .map((e) => _eventFromMap(e, dayKey))
-                                    .toList(growable: false);
-                            final query = _eventSearchController.text.toLowerCase();
-                            final filtered = query.isEmpty
-                                ? items
-                                : items
-                                    .where(
-                                      (e) =>
-                                          e.title.toLowerCase().contains(query) ||
-                                          e.description.toLowerCase().contains(query) ||
-                                          _eventId(e).toLowerCase().contains(query),
-                                    )
-                                    .toList();
-                            final label =
-                                filtered.isEmpty ? 'Events' : _eventLabel(filtered.first);
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_loadingDay && _dayKey(_loadedDay ?? _selectedDate) == dayKey)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: AppShimmer(
-                                      width: double.infinity,
-                                      height: 48,
-                                      radius: 12,
-                                    ),
-                                  ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      label,
-                                      style: GoogleFonts.roboto(
-                                        fontSize: fsEventTitle,
-                                        height: 20 / 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: cs.onSurface,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${filtered.length} event${filtered.length == 1 ? '' : 's'}',
-                                      style: GoogleFonts.roboto(
-                                        fontSize: fsEventMeta,
-                                        height: 14 / 11,
-                                        fontWeight: FontWeight.w500,
-                                        color: cs.onSurface.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                if (filtered.isEmpty)
-                                  Text(
-                                    'No events',
-                                    style: GoogleFonts.roboto(
-                                      fontSize: fsEventSecondary,
-                                      height: 16 / 12,
-                                      color: cs.onSurface.withOpacity(0.7),
-                                    ),
-                                  )
-                                else
-                                  ...filtered.map((e) {
-                                    final pillLabel = _eventLabel(e);
-                                    final time = _eventTime(e);
-                                    final entity = _eventEntity(e);
-                                    final name = e.title.isNotEmpty ? e.title : '—';
-                                    final subtitle = _eventSubtitle(e);
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 10,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.transparent,
-                                              borderRadius: BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: cs.onSurface.withOpacity(0.12),
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 6,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: Theme.of(context).brightness ==
-                                                                Brightness.dark
-                                                            ? cs.surfaceVariant
-                                                            : Colors.grey.shade50,
-                                                        borderRadius:
-                                                            BorderRadius.circular(999),
-                                                      ),
-                                                      child: Row(
-                                                        children: [
-                                                          Icon(
-                                                            Icons.access_time,
-                                                            size: fsButton,
-                                                            color: cs.onSurface,
-                                                          ),
-                                                          const SizedBox(width: 8),
-                                                          Text(
-                                                            pillLabel,
-                                                            style: GoogleFonts.roboto(
-                                                              fontSize: fsChip,
-                                                              height: 20 / 14,
-                                                              fontWeight: FontWeight.w600,
-                                                              color: cs.onSurface,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      time,
-                                                      style: GoogleFonts.roboto(
-                                                        fontSize: fsEventSecondary,
-                                                        height: 16 / 12,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: cs.onSurface
-                                                            .withOpacity(0.7),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 10),
-                                                Row(
-                                                  children: [
-                                                    Container(
-                                                      width: 36,
-                                                      height: 36,
-                                                      decoration: BoxDecoration(
-                                                        color: cs.primary,
-                                                        borderRadius:
-                                                            BorderRadius.circular(10),
-                                                      ),
-                                                      alignment: Alignment.center,
-                                                      child: Icon(
-                                                        _normType(e.type).contains('expiry')
-                                                            ? Icons.event_busy_outlined
-                                                            : _normType(e.type).contains('vehicle')
-                                                                ? Icons.directions_car_outlined
-                                                                : _normType(e.type).contains('admin')
-                                                                    ? Icons.admin_panel_settings_outlined
-                                                                    : Icons.person_outline,
-                                                        size: 18 * scale,
-                                                        color: cs.onPrimary,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment.start,
-                                                        children: [
-                                                          const SizedBox(height: 2),
-                                                          Text(
-                                                            name,
-                                                            style: GoogleFonts.roboto(
-                                                              fontSize: fsEventTitle,
-                                                              height: 20 / 14,
-                                                              fontWeight:
-                                                                  FontWeight.w600,
-                                                              color: cs.onSurface,
-                                                            ),
-                                                            maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                          Text(
-                                                            subtitle,
-                                                            style: GoogleFonts.roboto(
-                                                              fontSize: fsEventSecondary,
-                                                              height: 16 / 12,
-                                                              fontWeight:
-                                                                  FontWeight.w500,
-                                                              color: cs.onSurface
-                                                                  .withOpacity(0.7),
-                                                            ),
-                                                            maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }),
-                              ],
-                            );
-                          },
-                        ),
                       ],
                     ),
                   ),

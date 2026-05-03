@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:fleet_stack/core/models/admin_linked_vehicle.dart';
+import 'package:fleet_stack/core/models/superadmin_document_type.dart';
 import 'package:fleet_stack/core/models/admin_document_item.dart';
 import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
 import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
@@ -9,6 +11,8 @@ import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:typed_data';
 
 class AdminUsersRepository {
   final ApiClient api;
@@ -76,6 +80,7 @@ class AdminUsersRepository {
     }
     if (page != null) query['page'] = page;
     if (limit != null) query['limit'] = limit;
+    query['rk'] = DateTime.now().millisecondsSinceEpoch;
 
     final res = await api.get(
       '/admin/users',
@@ -343,6 +348,140 @@ class AdminUsersRepository {
     );
   }
 
+  Future<Result<List<SuperadminDocumentType>>> getDocumentTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/documenttypes/USER', cancelToken: cancelToken);
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['data', 'documentTypes', 'types'],
+        );
+        final out = <SuperadminDocumentType>[];
+        for (final it in list.whereType<Map>()) {
+          out.add(
+            SuperadminDocumentType.fromJson(
+              it is Map<String, dynamic>
+                  ? it
+                  : Map<String, dynamic>.from(it.cast()),
+            ),
+          );
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> uploadDocument({
+    required String associateType,
+    required String associateId,
+    required int docTypeId,
+    required String title,
+    required Uint8List fileBytes,
+    required String filename,
+    String? description,
+    String? tags,
+    String? expiryAt,
+    bool isVisible = true,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final mediaType = (contentType == null || contentType.trim().isEmpty)
+        ? null
+        : MediaType.parse(contentType);
+    final form = FormData.fromMap({
+      'title': title,
+      'docTypeId': docTypeId.toString(),
+      'description': description?.trim().isNotEmpty == true
+          ? description!.trim()
+          : '',
+      'tags': tags?.trim().isNotEmpty == true ? tags!.trim() : '',
+      'AssociateType': associateType,
+      'associateId': associateId,
+      if (expiryAt != null && expiryAt.trim().isNotEmpty) 'expiryAt': expiryAt,
+      'isVisible': isVisible,
+      'File': MultipartFile.fromBytes(
+        fileBytes,
+        filename: filename,
+        contentType: mediaType,
+      ),
+    });
+    final res = await api.post(
+      '/admin/uploaddoc',
+      data: form,
+      cancelToken: cancelToken,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: const {'Accept': 'application/json'},
+      ),
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateDocument({
+    required String documentId,
+    int? docTypeId,
+    String? title,
+    String? description,
+    String? tags,
+    String? expiryAt,
+    bool? isVisible,
+    Uint8List? fileBytes,
+    String? filename,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final mediaType = (contentType == null || contentType.trim().isEmpty)
+        ? null
+        : MediaType.parse(contentType);
+    final data = <String, dynamic>{
+      if (title != null) 'title': title.trim(),
+      if (docTypeId != null) 'docTypeId': docTypeId.toString(),
+      if (description != null) 'description': description.trim(),
+      if (tags != null) 'tags': tags.trim(),
+      if (expiryAt != null && expiryAt.trim().isNotEmpty) 'expiryAt': expiryAt,
+      if (isVisible != null) 'isVisible': isVisible,
+      if (fileBytes != null && filename != null)
+        'File': MultipartFile.fromBytes(
+          fileBytes,
+          filename: filename,
+          contentType: mediaType,
+        ),
+    };
+    final res = await api.patch(
+      '/admin/uploaddoc/$documentId',
+      data: FormData.fromMap(data),
+      cancelToken: cancelToken,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: const {'Accept': 'application/json'},
+      ),
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> deleteDocumentFile(
+    String documentId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.delete(
+      '/admin/uploaddoc/$documentId',
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<List<AdminTicketListItem>>> getUserTickets(
     String userId, {
     CancelToken? cancelToken,
@@ -471,6 +610,62 @@ class AdminUsersRepository {
     }
 
     return level0;
+  }
+
+  Future<Result<List<AdminLinkedVehicle>>> getLinkedVehicles({
+    required String userId,
+    CancelToken? cancelToken,
+  }) async {
+    final rk = DateTime.now().millisecondsSinceEpoch;
+    final res = await api.get(
+      '/admin/linkvehicles/$userId',
+      queryParameters: {'rk': rk},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(data);
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (e) => AdminLinkedVehicle.fromJson(
+                  e is Map<String, dynamic>
+                      ? e
+                      : Map<String, dynamic>.from(e.cast()),
+                ),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> renewVehicles({
+    required String userId,
+    required List<int> vehicleIds,
+    required String paymentMode,
+    required double amount,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = {
+      'userId': int.tryParse(userId) ?? userId,
+      'vehicleIds': vehicleIds,
+      'paymentMode': paymentMode,
+    };
+
+    final res = await api.post(
+      '/admin/payments/renew',
+      data: payload,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
   }
 
   List _extractList(Object? data, {List<String> listKeys = const <String>[]}) {

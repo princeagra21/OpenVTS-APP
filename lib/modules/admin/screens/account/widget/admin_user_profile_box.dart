@@ -8,22 +8,27 @@ import 'package:google_fonts/google_fonts.dart';
 class AdminUserProfileBox extends StatelessWidget {
   final AdminUserDetails? details;
   final bool loading;
+  final Future<void> Function()? onRefresh;
 
   const AdminUserProfileBox({
     super.key,
     required this.details,
     required this.loading,
+    this.onRefresh,
   });
 
   String _initials(String name, String username) {
     final source = name == '—' ? username : name;
     if (source == '—') return '--';
+
     final clean = source.replaceAll('@', ' ').trim();
     final parts = clean
         .split(RegExp(r'\s+'))
         .where((e) => e.isNotEmpty)
         .toList();
+
     if (parts.isEmpty) return '--';
+
     return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
 
@@ -147,6 +152,39 @@ class AdminUserProfileBox extends StatelessWidget {
                                   ),
                                 ),
                         ),
+                        if (onRefresh != null) ...[
+                          SizedBox(width: spacing),
+                          Tooltip(
+                            message: 'Refresh user details',
+                            child: InkWell(
+                              onTap: loading ? null : () => onRefresh?.call(),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: loading
+                                    ? Padding(
+                                        padding: const EdgeInsets.all(9),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colorScheme.primary,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.refresh_rounded,
+                                        size: 20,
+                                        color: colorScheme.primary,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     SizedBox(height: spacing / 2),

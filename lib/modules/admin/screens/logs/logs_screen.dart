@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
+import 'package:fleet_stack/modules/admin/screens/logs/log_details_screen.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -665,22 +666,32 @@ class _LogsScreenState extends State<LogsScreen> {
                                   log,
                                   ['platform', 'os', 'device'],
                                 );
-                                return Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.08),
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            AdminLogDetailsScreen(log: log),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.08),
+                                      ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                       Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -818,7 +829,8 @@ class _LogsScreenState extends State<LogsScreen> {
                                           ],
                                         ),
                                       ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 );
                               }).toList(),

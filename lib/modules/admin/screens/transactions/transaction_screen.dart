@@ -995,7 +995,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 ),
                               ),
                               InkWell(
-                                onTap: _openRecordTransaction,
+                                onTap: null,
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1006,19 +1006,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                     color: Colors.black,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Row(
-                                    children: const [
-                                      Icon(Icons.add,
-                                          size: 16, color: Colors.white),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Record',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+                                  child: const Text(
+                                    'Purchase Credit',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),

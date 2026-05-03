@@ -532,11 +532,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                   child: Row(
                                     children: const [
-                                      Icon(Icons.add,
-                                          size: 16, color: Colors.white),
-                                      SizedBox(width: 6),
                                       Text(
-                                        'Record',
+                                        'Renew Vehicle',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,

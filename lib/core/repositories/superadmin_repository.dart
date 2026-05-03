@@ -255,7 +255,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/documenttypes',
+      '/documenttypes/USER',
       cancelToken: cancelToken,
     );
 

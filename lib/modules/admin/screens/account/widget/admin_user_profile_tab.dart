@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/models/admin_user_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
@@ -8,9 +9,11 @@ import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/admin/update_user_password_screen.dart';
+import 'package:fleet_stack/modules/admin/screens/account/widget/edit_company_screen.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminUserProfileTab extends StatefulWidget {
   final AdminUserDetails? details;
@@ -66,6 +69,29 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
     final time =
         '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     return _DatePair(date, time);
+  }
+
+  Future<void> _openExternalLink(String rawUrl) async {
+    final text = rawUrl.trim();
+    if (text.isEmpty || text == '—') return;
+    final normalized =
+        text.startsWith('http://') || text.startsWith('https://')
+        ? text
+        : 'https://$text';
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  void _openCompanyEdit() {
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminEditCompanyScreen(
+          profile: AdminProfile(widget.details?.raw ?? const <String, dynamic>{}),
+        ),
+      ),
+    );
   }
 
   @override
@@ -628,52 +654,41 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             ),
           ),
           const SizedBox(height: 16),
-          _keyValueRow(
-            context,
-            "Address ID",
-            addressData.id,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Line",
-            addressData.line,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "City",
-            addressData.city,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "State",
-            addressData.state,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Postal",
-            addressData.postal,
-            labelFs,
-            detailValueFs,
-          ),
-          const SizedBox(height: 8),
-          _keyValueRow(
-            context,
-            "Country",
-            addressData.country,
-            labelFs,
-            detailValueFs,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _keyValueColumn(
+                  "City",
+                  addressData.city,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "State",
+                  addressData.state,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                  align: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _keyValueColumn(
+                  "Country",
+                  addressData.country,
+                  labelFs,
+                  detailValueFs,
+                  colorScheme,
+                  align: TextAlign.right,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -877,47 +892,136 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    if (company.socialLabels.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: company.socialLabels
-                            .map(
-                              (label) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? colorScheme.surfaceVariant
-                                          : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  label,
-                                  style: GoogleFonts.roboto(
-                                    fontSize: labelFs,
-                                    height: 14 / 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                    if (company.websiteUrl != '—') ...[
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () => _openExternalLink(company.websiteUrl),
+                        child: Text(
+                          company.websiteUrl,
+                          style: GoogleFonts.roboto(
+                            fontSize: labelFs,
+                            height: 14 / 11,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _openCompanyEdit,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.14),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
             ],
           ),
+          if (company.socialLinks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.only(left: iconBox + 10),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: company.socialLinks
+                    .map(
+                      (link) => InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => _openExternalLink(link.url),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? colorScheme.surfaceVariant
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: colorScheme.onSurface.withOpacity(0.12),
+                            ),
+                          ),
+                          child: Text(
+                            link.label,
+                            style: GoogleFonts.roboto(
+                              fontSize: labelFs,
+                              height: 14 / 11,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _keyValueColumn(
+    String label,
+    String value,
+    double labelFs,
+    double valueFs,
+    ColorScheme colorScheme, {
+    TextAlign align = TextAlign.left,
+  }) {
+    return Column(
+      crossAxisAlignment: align == TextAlign.right
+          ? CrossAxisAlignment.end
+          : align == TextAlign.center
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          textAlign: align,
+          style: GoogleFonts.roboto(
+            fontSize: labelFs,
+            height: 14 / 11,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          textAlign: align,
+          style: GoogleFonts.roboto(
+            fontSize: valueFs,
+            height: 16 / 12,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 
@@ -964,7 +1068,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
 
   _CompanyData _companyData(AdminUserDetails? details) {
     if (details == null) {
-      return const _CompanyData('—', <String>[]);
+      return const _CompanyData('—', '—', <_CompanyLink>[]);
     }
     Map<String, dynamic>? company;
     final companies = details.raw['companies'];
@@ -975,16 +1079,37 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         ? Map<String, dynamic>.from(details.raw['company'] as Map)
         : null;
     final name = _safe(company?['name']?.toString());
+    final websiteUrlRaw = (company?['websiteUrl'] ?? '').toString().trim();
+    final websiteFallback = (company?['website'] ?? '').toString().trim();
+    final customDomain = (company?['customDomain'] ?? '').toString().trim();
+    final rootWebsiteUrl = (details.raw['websiteUrl'] ?? '').toString().trim();
+    final rootWebsite = (details.raw['website'] ?? '').toString().trim();
+    final socialWebsite = company?['socialLinks'] is Map
+        ? ((company?['socialLinks'] as Map)['website'] ?? '').toString().trim()
+        : '';
+    final websiteUrl = _safe(
+      websiteUrlRaw.isNotEmpty
+          ? websiteUrlRaw
+          : websiteFallback.isNotEmpty
+          ? websiteFallback
+          : rootWebsiteUrl.isNotEmpty
+          ? rootWebsiteUrl
+          : rootWebsite.isNotEmpty
+          ? rootWebsite
+          : customDomain.isNotEmpty
+          ? customDomain
+          : socialWebsite,
+    );
     final social = company?['socialLinks'];
-    final labels = <String>[];
+    final links = <_CompanyLink>[];
     if (social is Map) {
       social.forEach((key, value) {
-        final v = value?.toString() ?? '';
+        final v = (value?.toString() ?? '').trim();
         if (v.isEmpty) return;
-        labels.add(_titleCaseKey(key.toString()));
+        links.add(_CompanyLink(label: _titleCaseKey(key.toString()), url: v));
       });
     }
-    return _CompanyData(name, labels);
+    return _CompanyData(name, websiteUrl, links);
   }
 
   _AddressData _addressData(AdminUserDetails? details) {
@@ -1195,9 +1320,17 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
 
 class _CompanyData {
   final String name;
-  final List<String> socialLabels;
+  final String websiteUrl;
+  final List<_CompanyLink> socialLinks;
 
-  const _CompanyData(this.name, this.socialLabels);
+  const _CompanyData(this.name, this.websiteUrl, this.socialLinks);
+}
+
+class _CompanyLink {
+  final String label;
+  final String url;
+
+  const _CompanyLink({required this.label, required this.url});
 }
 
 class _AddressData {

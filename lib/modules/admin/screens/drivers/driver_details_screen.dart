@@ -276,8 +276,8 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 8.0
         : AdaptiveUtils.isSmallScreen(screenWidth)
-            ? 10.0
-            : 12.0;
+        ? 10.0
+        : 12.0;
 
     final headerName =
         (_details?.fullName ?? _details?.username ?? 'Driver Details').trim();
@@ -336,12 +336,7 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
         return Column(
           children: [
             const SizedBox(height: 24),
-            AdminDriverDocumentsTab(
-              items: _documents,
-              loading: _loadingDocuments,
-              bodyFontSize: bodyFs,
-              smallFontSize: smallFs,
-            ),
+            AdminDriverDocumentsTab(driverId: widget.id),
             const SizedBox(height: 24),
           ],
         );
@@ -354,6 +349,9 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
               loading: _loadingUsers,
               bodyFontSize: bodyFs,
               smallFontSize: smallFs,
+              driverId: widget.id,
+              repository: _repoOrCreate(),
+              onRefreshLinkedUsers: _loadUsers,
             ),
             const SizedBox(height: 24),
           ],
