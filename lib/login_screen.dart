@@ -11,8 +11,10 @@ import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/config/server_configuration_sheet.dart';
+import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -288,125 +290,135 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginForm(ColorScheme colorScheme, double labelSize) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset = AppLogo.assetFor(context);
+
+    Widget inputField({
+      required String label,
+      required TextEditingController controller,
+      required String hint,
+      required IconData icon,
+      TextInputType? keyboardType,
+      bool obscure = false,
+      bool password = false,
+    }) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: labelSize,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? colorScheme.surface : Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              obscureText: obscure,
+              style: GoogleFonts.inter(
+                fontSize: labelSize,
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: GoogleFonts.inter(
+                  color: colorScheme.onSurface.withValues(alpha: 0.45),
+                  fontSize: labelSize,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                prefixIcon: Icon(icon, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+                suffixIcon: password
+                    ? IconButton(
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'Login',
-                style: GoogleFonts.inter(
-                  fontSize: labelSize + 4,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Material(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              shape: const CircleBorder(),
-              child: IconButton(
-                onPressed: _openServerConfiguration,
-                tooltip: 'Server configuration',
-                icon: Icon(
-                  Icons.settings_rounded,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Enter your credentials',
-          style: GoogleFonts.inter(
-            fontSize: labelSize - 2,
-            color: colorScheme.onSurface.withOpacity(0.7),
+        Align(
+          alignment: Alignment.topRight,
+          child: IconButton(
+            onPressed: _openServerConfiguration,
+            tooltip: 'Server configuration',
+            icon: Icon(Icons.settings_rounded, color: colorScheme.onSurface),
           ),
         ),
-        const SizedBox(height: 32),
-
-        // Email Field
-        TextField(
+        const SizedBox(height: 30),
+        Center(
+          child: Image.asset(
+            logoAsset,
+            width: (MediaQuery.of(context).size.width * 0.5).clamp(160, 230),
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) {
+              final alt = isDark
+                  ? 'assets/images/logos/open_vts_logo_dark.png'
+                  : 'assets/images/logos/open_vts_logo_light.png';
+              return Image.asset(
+                alt,
+                width: (MediaQuery.of(context).size.width * 0.5).clamp(160, 230),
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/image/logo.png',
+                  width: (MediaQuery.of(context).size.width * 0.42).clamp(120, 180),
+                  fit: BoxFit.contain,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 30),
+        const SizedBox(height: 10),
+        inputField(
+          label: 'Email or Username',
           controller: _emailController,
+          hint: 'Enter your email',
+          icon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.inter(
-            fontSize: labelSize,
-            color: colorScheme.onSurface,
-          ),
-          decoration: _minimalDecoration(context, hint: "Email").copyWith(
-            prefixIcon: Icon(
-              Icons.email_outlined,
-              color: colorScheme.primary,
-              size: 22,
-            ),
-          ),
         ),
-        const SizedBox(height: 16),
-
-        // Password Field
-        TextField(
+        const SizedBox(height: 18),
+        inputField(
+          label: 'Password',
           controller: _passwordController,
-          obscureText: _obscurePassword,
-          style: GoogleFonts.inter(
-            fontSize: labelSize,
-            color: colorScheme.onSurface,
-          ),
-          decoration:
-              _minimalDecoration(
-                context,
-                hint: "Password",
-                isPassword: true,
-              ).copyWith(
-                prefixIcon: Icon(
-                  Icons.lock_outlined,
-                  color: colorScheme.primary,
-                  size: 22,
-                ),
-              ),
+          hint: 'Enter your password',
+          icon: Icons.lock_outline,
+          obscure: _obscurePassword,
+          password: true,
         ),
-        const SizedBox(height: 24),
-
-        // Login Button
-        GestureDetector(
-          onTap: _isLoggingIn ? null : _submitLogin,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: _isLoggingIn
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      "Login",
-                      style: GoogleFonts.inter(
-                        fontSize: labelSize,
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Forgot Password
+        const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
           child: GestureDetector(
@@ -419,9 +431,62 @@ class _LoginScreenState extends State<LoginScreen> {
               "Forgot Password?",
               style: GoogleFonts.inter(
                 fontSize: labelSize - 2,
-                color: colorScheme.primary,
+                color: colorScheme.onSurface.withValues(alpha: 0.75),
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 22),
+        SizedBox(
+          width: double.infinity,
+          child: GestureDetector(
+            onTap: _isLoggingIn ? null : _submitLogin,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: _isLoggingIn
+                  ? const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    )
+                  : Row(
+                      children: [
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: Text(
+                            "Login",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: labelSize + 1,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -670,41 +735,56 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-        child: Align(
-          alignment: Alignment.topCenter, // push toward top
-          child: Padding(
-            padding: const EdgeInsets.only(
-              top: 80,
-            ), // adjust this value higher/lower
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(20),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: isDark ? colorScheme.background : Colors.white,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      child: PageTransitionSwitcher(
+                        duration: const Duration(milliseconds: 500),
+                        transitionBuilder: (child, animation, secondaryAnimation) {
+                          return SharedAxisTransition(
+                            animation: animation,
+                            secondaryAnimation: secondaryAnimation,
+                            transitionType: SharedAxisTransitionType.horizontal,
+                            child: child,
+                          );
+                        },
+                        child: _isForgot
+                            ? Container(
+                                key: const ValueKey('forgot'),
+                                margin: const EdgeInsets.only(top: 60),
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: _buildForgotForm(colorScheme, labelSize),
+                              )
+                            : Container(
+                                key: const ValueKey('login'),
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _buildLoginForm(colorScheme, labelSize),
+                              ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: PageTransitionSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation, secondaryAnimation) {
-                    return SharedAxisTransition(
-                      animation: animation,
-                      secondaryAnimation: secondaryAnimation,
-                      transitionType: SharedAxisTransitionType.horizontal,
-                      child: child,
-                    );
-                  },
-                  child: _isForgot
-                      ? _buildForgotForm(colorScheme, labelSize)
-                      : _buildLoginForm(colorScheme, labelSize),
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),

@@ -11,7 +11,7 @@ import 'package:fleet_stack/modules/superadmin/components/admin/navigate.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/send_command.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_config_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_details_tab.dart';
-import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_documents_tab.dart';
+import 'package:fleet_stack/modules/shared/vehicle/widgets/vehicle_documents_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_logs_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_map_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_users_tab.dart';

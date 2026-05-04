@@ -188,7 +188,7 @@ class ThemeController extends ChangeNotifier {
     final isDark = prefs.getBool("isDark") ?? false;
     final modeRaw = prefs.getString("themeMode");
     final colorValue =
-        prefs.getInt("brandColor") ?? AppTheme.defaultBrand.value;
+        prefs.getInt("brandColor") ?? AppTheme.defaultBrand.toARGB32();
     final directionRaw =
         prefs.getString("layoutDirection") ?? prefs.getString("direction");
     final unitsRaw = prefs.getString("units") ?? 'KM';
@@ -206,7 +206,7 @@ class ThemeController extends ChangeNotifier {
         ThemeData.estimateBrightnessForColor(nextBrand) ==
             Brightness.light) {
       nextBrand = AppTheme.defaultBrand;
-      await prefs.setInt("brandColor", nextBrand.value);
+      await prefs.setInt("brandColor", nextBrand.toARGB32());
     }
     brandColor.value = nextBrand;
     textDirection.value = (directionRaw ?? '').trim().toUpperCase() == 'RTL'
@@ -229,6 +229,16 @@ class ThemeController extends ChangeNotifier {
 
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode.value = mode;
+
+    // Keep default brand contrast usable immediately when toggling modes.
+    if (mode == ThemeMode.dark &&
+        brandColor.value == AppTheme.defaultBrand) {
+      brandColor.value = AppTheme.defaultDarkBrand;
+    } else if (mode == ThemeMode.light &&
+        brandColor.value == AppTheme.defaultDarkBrand) {
+      brandColor.value = AppTheme.defaultBrand;
+    }
+
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -239,6 +249,7 @@ class ThemeController extends ChangeNotifier {
           : (mode == ThemeMode.dark ? "dark" : "light"),
     );
     await prefs.setBool("isDark", mode == ThemeMode.dark);
+    await prefs.setInt("brandColor", brandColor.value.toARGB32());
   }
 
   Future<void> setBrand(Color color) async {
@@ -246,7 +257,7 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt("brandColor", color.value);
+    await prefs.setInt("brandColor", color.toARGB32());
   }
 
   Future<void> setTextDirection(String direction) async {

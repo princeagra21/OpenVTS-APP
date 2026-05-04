@@ -62,6 +62,7 @@ flutter:
     - assets/images/logos/
     - assets/images/vehicle_icons_named/
     - assets/images/vehicle_icons_status/
+    - assets/images/login/login_globe_orbit.png
     - assets/images/
 
   # Fonts

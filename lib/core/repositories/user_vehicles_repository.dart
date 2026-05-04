@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/models/map_vehicle_point.dart';
+import 'package:fleet_stack/core/models/superadmin_document_type.dart';
 import 'package:fleet_stack/core/models/user_vehicle_details.dart';
+import 'package:fleet_stack/core/models/vehicle_document_item.dart';
 import 'package:fleet_stack/core/models/vehicle_list_item.dart';
 import 'package:fleet_stack/core/models/vehicle_details.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:typed_data';
 
 class UserVehiclesRepository {
   final ApiClient api;
@@ -58,6 +62,105 @@ class UserVehiclesRepository {
       cancelToken: cancelToken,
     );
 
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<VehicleDocumentItem>>> getVehicleDocuments(
+    String vehicleId, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      '/user/vehicles/$vehicleId/documents',
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['documents', 'items', 'rows'],
+        );
+        final out = <VehicleDocumentItem>[];
+        if (list != null) {
+          for (final item in list.whereType<Map>()) {
+            out.add(
+              VehicleDocumentItem(
+                item is Map<String, dynamic>
+                    ? item
+                    : Map<String, dynamic>.from(item.cast()),
+              ),
+            );
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<SuperadminDocumentType>>> getVehicleDocumentTypes({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get('/documenttypes/VEHICLE', cancelToken: cancelToken);
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['documentTypes', 'types'],
+        );
+        final out = <SuperadminDocumentType>[];
+        if (list != null) {
+          for (final it in list.whereType<Map>()) {
+            out.add(
+              SuperadminDocumentType.fromJson(
+                it is Map<String, dynamic>
+                    ? it
+                    : Map<String, dynamic>.from(it.cast()),
+              ),
+            );
+          }
+        }
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> uploadVehicleDocument({
+    required String vehicleId,
+    required String title,
+    required int docTypeId,
+    required Uint8List fileBytes,
+    required String filename,
+    bool isVisible = true,
+    String? tags,
+    String? expiryAt,
+    String? contentType,
+    CancelToken? cancelToken,
+  }) async {
+    final mediaType = (contentType == null || contentType.trim().isEmpty)
+        ? null
+        : MediaType.parse(contentType);
+    final form = FormData.fromMap({
+      'title': title,
+      'docTypeId': docTypeId.toString(),
+      'isVisible': isVisible,
+      if (tags != null && tags.trim().isNotEmpty) 'tags': tags.trim(),
+      if (expiryAt != null && expiryAt.trim().isNotEmpty) 'expiryAt': expiryAt,
+      'File': MultipartFile.fromBytes(
+        fileBytes,
+        filename: filename,
+        contentType: mediaType,
+      ),
+    });
+    final res = await api.post(
+      '/user/vehicles/$vehicleId/documents',
+      data: form,
+      cancelToken: cancelToken,
+      options: Options(contentType: 'multipart/form-data'),
+    );
     return res.when(
       success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),

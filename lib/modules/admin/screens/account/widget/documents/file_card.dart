@@ -455,7 +455,7 @@ class FileCard extends StatelessWidget {
                 label: const Text('Open Document'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: cs.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),

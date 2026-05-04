@@ -648,7 +648,13 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
       (e) => e.id == _selectedTileLayerId,
       orElse: () => kMapTileOptions.first,
     );
-    return option.urlTemplate;
+    final template = option.urlTemplate.trim();
+    if (template.isEmpty) {
+      return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+    // Some providers include Leaflet's {r} token. FlutterMap may not expand it
+    // for all configs, so normalize it to avoid 404 tile requests.
+    return template.replaceAll('{r}', '');
   }
 
   List<String> _tileSubdomains() {
@@ -1711,6 +1717,9 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
           urlTemplate: _tileUrlTemplate(),
           subdomains: _tileSubdomains(),
           userAgentPackageName: 'com.example.fleek_stack_mobile',
+          tileProvider: NetworkTileProvider(
+            cachingProvider: const DisabledMapCachingProvider(),
+          ),
         ),
         MouseRegion(
           hitTestBehavior: HitTestBehavior.deferToChild,

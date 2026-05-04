@@ -322,13 +322,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<_HomeShortcut> shortcuts = [
       _HomeShortcut(
         label: 'Dashboard',
-        icon: Symbols.dashboard,
+        icon: Symbols.finance,
         route: '/admin/dashboard',
       ),
       _HomeShortcut(label: 'Users', icon: Symbols.group, route: '/admin/users'),
       _HomeShortcut(
         label: 'Vehicles',
-        icon: Symbols.directions_car,
+        icon: Symbols.sync_alt,
         route: '/admin/vehicles',
       ),
       _HomeShortcut(
@@ -376,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // ),
       _HomeShortcut(
         label: 'Settings',
-        icon: Symbols.settings,
+        icon: Symbols.brightness_5,
         route: '/admin/settings',
       ),
     ];

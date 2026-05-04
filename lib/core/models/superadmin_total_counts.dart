@@ -101,6 +101,7 @@ class SuperadminTotalCounts {
   );
 
   int get liveRunning => _int(vehicleLiveStatus['running']);
+  int get liveIdle => _int(vehicleLiveStatus['idle']);
 
   int get liveStop => _int(vehicleLiveStatus['stop']);
 

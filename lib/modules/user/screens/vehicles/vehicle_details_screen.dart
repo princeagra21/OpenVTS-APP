@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
+import 'package:fleet_stack/core/models/superadmin_document_type.dart';
 import 'package:fleet_stack/core/models/user_vehicle_details.dart';
+import 'package:fleet_stack/core/models/vehicle_document_item.dart';
 import 'package:fleet_stack/core/models/vehicle_list_item.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
@@ -9,7 +12,9 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/modules/admin/screens/account/widget/documents/file_card.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -42,6 +47,19 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   bool _loadingConfig = true;
   bool _savingConfig = false;
   bool _configLoaded = false;
+  bool _loadingDocuments = false;
+  bool _documentsLoadFailed = false;
+  bool _loadingDocTypes = false;
+  bool _uploadingDocument = false;
+  bool _documentsLoaded = false;
+  final TextEditingController _docSearchController = TextEditingController();
+  String _docFilterTab = 'All';
+  int _docPageSize = 10;
+  List<VehicleDocumentItem> _documents = const <VehicleDocumentItem>[];
+  List<SuperadminDocumentType> _docTypes = const <SuperadminDocumentType>[];
+  CancelToken? _documentsToken;
+  CancelToken? _docTypesToken;
+  CancelToken? _uploadDocumentToken;
   final TextEditingController _speedController =
       TextEditingController(text: '1.00');
   final TextEditingController _distanceController =
@@ -86,15 +104,21 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   void initState() {
     super.initState();
     _loadDetails();
+    _loadVehicleDocuments();
+    _loadVehicleDocumentTypes();
   }
 
   @override
   void dispose() {
     _token?.cancel('User vehicle details disposed');
+    _documentsToken?.cancel('User vehicle documents disposed');
+    _docTypesToken?.cancel('User vehicle document types disposed');
+    _uploadDocumentToken?.cancel('User vehicle document upload disposed');
     _speedController.dispose();
     _distanceController.dispose();
     _odometerController.dispose();
     _engineHoursController.dispose();
+    _docSearchController.dispose();
     super.dispose();
   }
 
@@ -151,6 +175,53 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
       },
+    );
+  }
+
+  Future<void> _loadVehicleDocuments() async {
+    _documentsToken?.cancel('Reload vehicle documents');
+    final token = CancelToken();
+    _documentsToken = token;
+    if (!mounted) return;
+    setState(() => _loadingDocuments = true);
+    final res = await _repoOrCreate().getVehicleDocuments(
+      widget.vehicleId,
+      cancelToken: token,
+    );
+    if (!mounted || token.isCancelled) return;
+    res.when(
+      success: (items) {
+        setState(() {
+          _documents = items;
+          _loadingDocuments = false;
+          _documentsLoaded = true;
+          _documentsLoadFailed = false;
+        });
+      },
+      failure: (_) {
+        setState(() {
+          _loadingDocuments = false;
+          _documentsLoaded = true;
+          _documentsLoadFailed = true;
+        });
+      },
+    );
+  }
+
+  Future<void> _loadVehicleDocumentTypes() async {
+    _docTypesToken?.cancel('Reload vehicle doc types');
+    final token = CancelToken();
+    _docTypesToken = token;
+    if (!mounted) return;
+    setState(() => _loadingDocTypes = true);
+    final res = await _repoOrCreate().getVehicleDocumentTypes(cancelToken: token);
+    if (!mounted || token.isCancelled) return;
+    res.when(
+      success: (items) => setState(() {
+        _docTypes = items;
+        _loadingDocTypes = false;
+      }),
+      failure: (_) => setState(() => _loadingDocTypes = false),
     );
   }
 
@@ -863,6 +934,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   subtitle: 'Switch between vehicle sections below.',
                   onTabSelected: (tab) {
                     setState(() => _selectedTab = tab);
+                    if (tab == 'Documents' && !_documentsLoaded) {
+                      _loadVehicleDocuments();
+                    }
                   },
                 ),
                 const SizedBox(height: 16),
@@ -1289,92 +1363,464 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
   Widget _buildDocumentsTab(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final w = MediaQuery.of(context).size.width;
-    final spacing = AdaptiveUtils.getLeftSectionSpacing(w);
-    const totalDocs = 0;
-    const validCount = 0;
-    const warningCount = 0;
-    const expiredCount = 0;
+    final width = MediaQuery.of(context).size.width;
+    final hp = AdaptiveUtils.getHorizontalPadding(width);
+    final spacing = AdaptiveUtils.getLeftSectionSpacing(width);
+    final scale = (width / 420).clamp(0.9, 1.0);
+    final fsSection = 18 * scale;
+    final fsMain = 14 * scale;
+    final fsSecondary = 12 * scale;
+    final iconSize = 16 * scale;
+    final cardPadding = hp + 4;
+
+    final q = _docSearchController.text.trim().toLowerCase();
+    final mappedDocs = _documents.map(_mapVehicleDocToAdminStyle).toList();
+    final filtered = mappedDocs.where((file) {
+      final matchesSearch = q.isEmpty ||
+          file['fileName'].toString().toLowerCase().contains(q) ||
+          file['title'].toString().toLowerCase().contains(q) ||
+          file['fileType'].toString().toLowerCase().contains(q) ||
+          file['type'].toString().toLowerCase().contains(q) ||
+          file['status'].toString().toLowerCase().contains(q) ||
+          file['isVisible'].toString().toLowerCase().contains(q) ||
+          (file['tags'] as List<String>).any(
+            (tag) => tag.toLowerCase().contains(q),
+          ) ||
+          file['expiryDate'].toString().toLowerCase().contains(q) ||
+          file['uploadedDate'].toString().toLowerCase().contains(q);
+      final matchesTab = switch (_docFilterTab) {
+        'All' => true,
+        'Valid' => file['_valid'] == true,
+        'Warning' => file['_warning'] == true,
+        'Expired' => file['_expired'] == true,
+        _ => true,
+      };
+      return matchesSearch && matchesTab;
+    }).toList();
+    final visible = filtered.take(_docPageSize).toList();
+    final showEmpty = !_loadingDocuments && filtered.isEmpty;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _detailsCard(
-          context,
-          Column(
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(cardPadding),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.surfaceVariant),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Text(
+                    'Browse Documents',
+                    style: GoogleFonts.roboto(
+                      fontSize: fsSection,
+                      height: 24 / 18,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+              ),
+              SizedBox(height: spacing),
+              Container(
+                height: hp * 3.5,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+                ),
+                child: TextField(
+                  controller: _docSearchController,
+                  onChanged: (_) => setState(() => _docPageSize = 10),
+                  style: GoogleFonts.roboto(
+                    fontSize: fsMain,
+                    height: 20 / 14,
+                    color: cs.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search title, type, status, tag...',
+                    hintStyle: GoogleFonts.roboto(
+                      color: cs.onSurface.withOpacity(0.5),
+                      fontSize: fsSecondary,
+                      height: 16 / 12,
+                    ),
+                    prefixIcon: Icon(Icons.search, size: iconSize, color: cs.onSurface),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
+                  ),
+                ),
+              ),
+              SizedBox(height: spacing),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final gap = spacing;
+                  final cellWidth = (constraints.maxWidth - gap * 2) / 3;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
                     children: [
-                      Icon(
-                        Icons.description,
-                        color: cs.onSurface.withOpacity(0.7),
+                      SizedBox(
+                        width: cellWidth,
+                        child: PopupMenuButton<String>(
+                          onSelected: (value) => setState(() {
+                            _docFilterTab = value;
+                            _docPageSize = 10;
+                          }),
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'All', child: Text('All')),
+                            PopupMenuItem(value: 'Valid', child: Text('Valid')),
+                            PopupMenuItem(value: 'Warning', child: Text('Warning')),
+                            PopupMenuItem(value: 'Expired', child: Text('Expired')),
+                          ],
+                          child: _actionCell(context, 'Filter', Icons.tune, hp, spacing, fsMain, iconSize),
+                        ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: cellWidth,
+                        child: PopupMenuButton<int>(
+                          onSelected: (value) => setState(() => _docPageSize = value),
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 10, child: Text('10')),
+                            PopupMenuItem(value: 25, child: Text('25')),
+                            PopupMenuItem(value: 50, child: Text('50')),
+                          ],
+                          child: _actionCell(context, 'Records', Icons.keyboard_arrow_down, hp, spacing, fsMain, iconSize, trailing: true),
+                        ),
+                      ),
+                      SizedBox(
+                        width: cellWidth,
+                        child: InkWell(
+                          onTap: (_loadingDocTypes || _uploadingDocument) ? null : _openAddVehicleDocumentSheet,
+                          borderRadius: BorderRadius.circular(12),
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          hoverColor: Colors.transparent,
+                          child: _actionCell(context, 'Upload', Icons.upload_outlined, hp, spacing, fsMain, iconSize),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              if (_loadingDocuments)
+                ...List<Widget>.generate(3, (_) => _buildDocumentFileSkeleton(cs))
+              else if (showEmpty && !_documentsLoadFailed)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cs.surfaceVariant),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Vehicle Documents',
-                        style: GoogleFonts.inter(
+                        'No documents found',
+                        style: GoogleFonts.roboto(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface.withOpacity(0.7),
-                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Upload a document to see it listed here.',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12,
+                          height: 1.45,
+                          color: cs.onSurface.withOpacity(0.68),
                         ),
                       ),
                     ],
                   ),
-                  Text(
-                    '$totalDocs total',
-                    style: GoogleFonts.inter(
-                      fontSize: AdaptiveUtils.getTitleFontSize(w) - 1,
-                      color: cs.onSurface,
-                    ),
+                )
+              else if (showEmpty && _documentsLoadFailed)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "Couldn't load documents.",
+                          style: GoogleFonts.roboto(
+                            fontSize: 14,
+                            color: cs.onSurface.withOpacity(0.75),
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadVehicleDocuments,
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: _overviewCard(
-                      context,
-                      title: 'Valid',
-                      value: '$validCount',
-                      color: Colors.green,
-                    ),
+                )
+              else
+                ...visible.map(
+                  (f) => FileCard(
+                    document: f,
+                    onChanged: _loadVehicleDocuments,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _overviewCard(
-                      context,
-                      title: 'Warning',
-                      value: '$warningCount',
-                      color: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _overviewCard(
-                      context,
-                      title: 'Expired',
-                      value: '$expiredCount',
-                      color: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
+                ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        _emptyStateCard(
-          context,
-          title: 'No documents found',
-          subtitle: 'This vehicle has no uploaded documents yet.',
-        ),
       ],
     );
+  }
+
+  Widget _actionCell(
+    BuildContext context,
+    String label,
+    IconData icon,
+    double hp,
+    double spacing,
+    double fsMain,
+    double iconSize, {
+    bool trailing = false,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: hp, vertical: spacing),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!trailing) ...[
+            Icon(icon, size: iconSize, color: cs.onSurface),
+            SizedBox(width: spacing / 2),
+          ],
+          Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: fsMain,
+              height: 20 / 14,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+            ),
+          ),
+          if (trailing) ...[
+            SizedBox(width: spacing / 2),
+            Icon(icon, size: iconSize, color: cs.onSurface),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentFileSkeleton(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppShimmer(width: 200, height: 16, radius: 8),
+          SizedBox(height: 10),
+          AppShimmer(width: 130, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: double.infinity, height: 14, radius: 8),
+          SizedBox(height: 8),
+          AppShimmer(width: 170, height: 14, radius: 8),
+        ],
+      ),
+    );
+  }
+
+  String _docBucket(VehicleDocumentItem d) {
+    final s = d.status.toLowerCase();
+    if (s.contains('expired')) return 'Expired';
+    if (s.contains('warning') || s.contains('expiring')) return 'Warning';
+    if (d.expiresAt.trim().isNotEmpty) {
+      final dt = DateTime.tryParse(d.expiresAt.trim());
+      if (dt != null) {
+        final days = dt.difference(DateTime.now()).inDays;
+        if (days < 0) return 'Expired';
+        if (days <= 15) return 'Warning';
+      }
+    }
+    return 'Valid';
+  }
+
+  Map<String, dynamic> _mapVehicleDocToAdminStyle(VehicleDocumentItem d) {
+    String readDocTypeName() {
+      final rawDocType = d.raw['docType'];
+      if (rawDocType is Map) {
+        final name = (rawDocType['name'] ?? '').toString().trim();
+        if (name.isNotEmpty) return name;
+      }
+      final rawType = d.raw['type'] ?? d.raw['documentType'] ?? d.raw['docType'];
+      if (rawType is String && rawType.trim().isNotEmpty) return rawType.trim();
+      if (rawType is Map) {
+        final name = (rawType['name'] ?? '').toString().trim();
+        if (name.isNotEmpty) return name;
+      }
+      final fallback = d.type.trim();
+      return fallback.isEmpty ? 'Document' : fallback;
+    }
+
+    final fileName = d.fileName.trim().isEmpty ? '—' : d.fileName.trim();
+    final titleValue = (d.raw['title'] ?? '').toString().trim();
+    final cleanTitle = titleValue.isEmpty ? fileName : titleValue;
+    final fileTypeValue = (d.raw['fileType'] ?? '').toString().trim();
+    final tagsRaw = d.raw['tags'];
+    final tagsList = <String>[];
+    if (tagsRaw is String && tagsRaw.trim().isNotEmpty) {
+      tagsList.addAll(
+        tagsRaw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty),
+      );
+    } else if (tagsRaw is List) {
+      tagsList.addAll(
+        tagsRaw
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    final bucket = _docBucket(d);
+    final isValid = bucket == 'Valid';
+    final isWarning = bucket == 'Warning';
+    final isExpired = bucket == 'Expired';
+    final rawFilePath = (d.raw['filePath'] ?? d.raw['fileUrl'] ?? d.raw['url'] ?? d.raw['path'])
+        .toString()
+        .trim();
+    final mappedFilePath = rawFilePath.isNotEmpty ? rawFilePath : d.url.trim();
+
+    return <String, dynamic>{
+      'id': d.id,
+      'docTypeId': '',
+      'fileName': fileName,
+      'version': '',
+      'fileSize': d.sizeBytes <= 0 ? '' : '${(d.sizeBytes / 1024).toStringAsFixed(2)} KB',
+      'type': readDocTypeName(),
+      'fileType': fileTypeValue,
+      'filePath': mappedFilePath,
+      'title': cleanTitle,
+      'description': '',
+      'tags': tagsList,
+      'uploadedDate': d.uploadedAt,
+      'createdAt': d.uploadedAt,
+      'expiryAt': d.expiresAt,
+      'expiryDate': d.expiresAt.trim().isEmpty ? '—' : d.expiresAt.trim(),
+      'status': d.status.trim().isEmpty ? bucket : d.status.trim(),
+      'isVisible': true,
+      'associateType': 'VEHICLE',
+      'associateUserId': '',
+      'associateDriverId': '',
+      'associateVehicleId': widget.vehicleId,
+      'uploadedByType': 'USER',
+      'uploadedByUserId': '',
+      'uploadedByDriverId': '',
+      '_valid': isValid,
+      '_warning': isWarning,
+      '_expired': isExpired,
+      '_sizeBytes': d.sizeBytes,
+    };
+  }
+
+  Future<void> _openAddVehicleDocumentSheet() async {
+    if (_docTypes.isEmpty) {
+      await _loadVehicleDocumentTypes();
+    }
+    if (!mounted) return;
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _UserVehicleAddDocumentScreen(
+          docTypes: _docTypes,
+          vehicleLabel: _vehicleAppBarTitle(),
+          loadingDocTypes: _loadingDocTypes,
+          onReloadTypes: _loadVehicleDocumentTypes,
+          onSubmit: ({
+            required String title,
+            required int docTypeId,
+            required PlatformFile file,
+            required String tags,
+            required String description,
+            required String? expiryAt,
+            required bool isVisible,
+          }) async {
+            _uploadDocumentToken?.cancel('Upload document');
+            final token = CancelToken();
+            _uploadDocumentToken = token;
+            final bytes = file.bytes;
+            if (bytes == null) return 'Unable to read selected file.';
+            final res = await _repoOrCreate().uploadVehicleDocument(
+              vehicleId: widget.vehicleId,
+              title: title,
+              docTypeId: docTypeId,
+              fileBytes: bytes,
+              filename: file.name,
+              tags: tags,
+              expiryAt: expiryAt,
+              isVisible: isVisible,
+              cancelToken: token,
+            );
+            if (res.isSuccess) return null;
+            final err = res.error;
+            if (err is ApiException && err.message.trim().isNotEmpty) {
+              return err.message;
+            }
+            return "Couldn't upload document.";
+          },
+        ),
+      ),
+    );
+    if (submitted == true) {
+      await _loadVehicleDocuments();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Document uploaded successfully')),
+        );
+      }
+    }
   }
 
   Widget _buildConfigTab(
@@ -1671,6 +2117,519 @@ class _SmallTab extends StatelessWidget {
             fontSize: fontSize ?? defaultFontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserVehicleAddDocumentScreen extends StatefulWidget {
+  final List<SuperadminDocumentType> docTypes;
+  final String vehicleLabel;
+  final bool loadingDocTypes;
+  final Future<void> Function() onReloadTypes;
+  final Future<String?> Function({
+    required String title,
+    required int docTypeId,
+    required PlatformFile file,
+    required String tags,
+    required String description,
+    required String? expiryAt,
+    required bool isVisible,
+  }) onSubmit;
+
+  const _UserVehicleAddDocumentScreen({
+    required this.docTypes,
+    required this.vehicleLabel,
+    required this.loadingDocTypes,
+    required this.onReloadTypes,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_UserVehicleAddDocumentScreen> createState() =>
+      _UserVehicleAddDocumentScreenState();
+}
+
+class _UserVehicleAddDocumentScreenState
+    extends State<_UserVehicleAddDocumentScreen> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _tagsController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  bool _isVisible = true;
+  bool _uploading = false;
+  SuperadminDocumentType? _selectedDocType;
+  String? _selectedExpiryAt;
+  String? _selectedExpiryLabel;
+  PlatformFile? _selectedFile;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDocType = widget.docTypes.isNotEmpty ? widget.docTypes.first : null;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _tagsController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _snack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _pickExpiryDate() async {
+    final result = await showCalendarDatePicker2Dialog(
+      context: context,
+      config: CalendarDatePicker2WithActionButtonsConfig(
+        calendarType: CalendarDatePicker2Type.single,
+      ),
+      dialogSize: const Size(325, 400),
+      borderRadius: BorderRadius.circular(12),
+      value: const [],
+    );
+    if (result != null && result.isNotEmpty && result.first != null) {
+      final date = result.first!;
+      setState(() {
+        _selectedExpiryAt = DateTime(date.year, date.month, date.day)
+            .toUtc()
+            .toIso8601String();
+        _selectedExpiryLabel =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      withData: true,
+      allowMultiple: false,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'webp'],
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.single;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      _snack('Unable to read selected file.');
+      return;
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (bytes.length > maxSize) {
+      _snack('File must be 5 MB or smaller.');
+      return;
+    }
+    setState(() => _selectedFile = file);
+  }
+
+  Future<void> _openDocumentTypePicker() async {
+    final searchController = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final query = searchController.text.trim().toLowerCase();
+            final filtered = widget.docTypes.where((d) {
+              if (query.isEmpty) return true;
+              return d.name.toLowerCase().contains(query) ||
+                  d.docFor.toLowerCase().contains(query);
+            }).toList();
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Select Document Type',
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        )),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: searchController,
+                      onChanged: (_) => setModalState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Search document type...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.55,
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No document types found',
+                                style: GoogleFonts.roboto(
+                                  color: cs.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 6),
+                              itemBuilder: (_, i) {
+                                final item = filtered[i];
+                                final selected = _selectedDocType?.id == item.id;
+                                return ListTile(
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  title: Text(
+                                    item.name,
+                                    style: GoogleFonts.roboto(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    item.docFor.isEmpty
+                                        ? '—'
+                                        : item.docFor.toUpperCase(),
+                                    style: GoogleFonts.roboto(
+                                      color: cs.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
+                                  trailing: selected
+                                      ? Icon(Icons.check, color: cs.primary)
+                                      : null,
+                                  onTap: () {
+                                    setState(() => _selectedDocType = item);
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    searchController.dispose();
+  }
+
+  InputDecoration _fieldDecoration(BuildContext context, {String? hint}) {
+    final cs = Theme.of(context).colorScheme;
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      hintText: hint,
+      hintStyle: GoogleFonts.roboto(
+        color: cs.onSurface.withOpacity(0.5),
+        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+    );
+  }
+
+  Future<void> _upload() async {
+    if (_uploading) return;
+    final title = _titleController.text.trim();
+    if (_selectedDocType == null) {
+      _snack('Please select a document type.');
+      return;
+    }
+    if (title.isEmpty) {
+      _snack('Please enter a title.');
+      return;
+    }
+    if (_selectedFile == null) {
+      _snack('Please upload a file.');
+      return;
+    }
+    setState(() => _uploading = true);
+    final err = await widget.onSubmit(
+      title: title,
+      docTypeId: _selectedDocType!.id,
+      file: _selectedFile!,
+      tags: _tagsController.text.trim(),
+      description: _descriptionController.text.trim(),
+      expiryAt: _selectedExpiryAt,
+      isVisible: _isVisible,
+    );
+    if (!mounted) return;
+    setState(() => _uploading = false);
+    if (err == null) {
+      Navigator.pop(context, true);
+      return;
+    }
+    _snack(err);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
+    final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+    return Scaffold(
+      backgroundColor: cs.background,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Add Document',
+                    style: GoogleFonts.roboto(
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                      color: cs.onSurface.withOpacity(0.9),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close, size: 28, color: cs.onSurface.withOpacity(0.8)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Upload a new document',
+                style: GoogleFonts.roboto(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.87),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                        ),
+                        child: Text(
+                          widget.vehicleLabel,
+                          style: GoogleFonts.roboto(
+                            fontSize: labelSize,
+                            fontWeight: FontWeight.w500,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Document Type *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _openDocumentTypePicker,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _selectedDocType?.name ?? 'Select document type',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: labelSize,
+                                    color: _selectedDocType == null
+                                        ? cs.onSurface.withOpacity(0.5)
+                                        : cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                              widget.loadingDocTypes
+                                  ? const AppShimmer(width: 16, height: 16, radius: 8)
+                                  : Icon(Icons.expand_more, color: cs.onSurface.withOpacity(0.6)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Title *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      TextField(controller: _titleController, decoration: _fieldDecoration(context, hint: 'e.g., Registration Certificate')),
+                      const SizedBox(height: 24),
+                      Text('Expiry Date (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _pickExpiryDate,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(child: Text(_selectedExpiryLabel ?? 'Select date', style: GoogleFonts.roboto(fontSize: labelSize, color: _selectedExpiryLabel == null ? cs.onSurface.withOpacity(0.5) : cs.onSurface))),
+                              Icon(Icons.calendar_month_outlined, color: cs.primary),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Visible To Admin', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                          Switch.adaptive(value: _isVisible, onChanged: (v) => setState(() => _isVisible = v)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text('Tags (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      TextField(controller: _tagsController, decoration: _fieldDecoration(context, hint: 'Type and press Enter…')),
+                      const SizedBox(height: 24),
+                      Text('Description (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      TextField(controller: _descriptionController, minLines: 3, maxLines: 4, decoration: _fieldDecoration(context, hint: 'Additional description…')),
+                      const SizedBox(height: 24),
+                      Text('File Selection *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: _pickFile,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                            color: cs.surface,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedFile?.name ?? 'Click to upload',
+                                style: GoogleFonts.roboto(
+                                  fontSize: labelSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: _selectedFile == null ? cs.onSurface.withOpacity(0.6) : cs.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'JPG, JPEG, PNG, PDF, DOC, DOCX, WEBP (max 5.0 MB per file)',
+                                style: GoogleFonts.roboto(fontSize: labelSize - 4, color: cs.onSurface.withOpacity(0.55)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _uploading ? null : () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                decoration: BoxDecoration(
+                                  color: cs.surfaceVariant,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Cancel',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: labelSize,
+                                      color: cs.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _uploading ? null : _upload,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                decoration: BoxDecoration(
+                                  color: cs.primary,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: _uploading
+                                      ? SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                                          ),
+                                        )
+                                      : Text(
+                                          'Upload',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: labelSize,
+                                            color: cs.onPrimary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

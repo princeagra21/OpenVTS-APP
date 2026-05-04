@@ -609,8 +609,6 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
     final double scale = fs / 14;
     final double labelFs = 11 * scale;
     final double valueFs = 14 * scale;
-    final double detailValueFs = 12 * scale;
-    final addressData = _addressData(details);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -652,43 +650,6 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: _keyValueColumn(
-                  "City",
-                  addressData.city,
-                  labelFs,
-                  detailValueFs,
-                  colorScheme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _keyValueColumn(
-                  "State",
-                  addressData.state,
-                  labelFs,
-                  detailValueFs,
-                  colorScheme,
-                  align: TextAlign.center,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _keyValueColumn(
-                  "Country",
-                  addressData.country,
-                  labelFs,
-                  detailValueFs,
-                  colorScheme,
-                  align: TextAlign.right,
-                ),
-              ),
-            ],
           ),
         ],
       ),

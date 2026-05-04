@@ -16,6 +16,9 @@ class UserHomeRepository {
   }) async {
     final res = await api.get(
       '/user/dashboard/fleet-status',
+      queryParameters: <String, dynamic>{
+        'rk': DateTime.now().millisecondsSinceEpoch,
+      },
       cancelToken: cancelToken,
     );
 

@@ -108,10 +108,11 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     final counts = _counts;
     final connectedCount = counts?.liveConnected ?? 0;
     final runningCount = counts?.liveRunning ?? 0;
+    final idleCount = counts?.liveIdle ?? 0;
     final stopCount = counts?.liveStop ?? 0;
     final inactiveCount = counts?.liveInactive ?? 0;
     final noDataCount = counts?.liveNoData ?? 0;
-    final total = connectedCount + runningCount + stopCount + inactiveCount + noDataCount;
+    final total = connectedCount + runningCount + idleCount + stopCount + inactiveCount + noDataCount;
     double percent(int count) {
       if (total <= 0) return 0;
       return ((count * 10000) / total).roundToDouble() / 100;
@@ -128,6 +129,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
         'count': runningCount,
         'percent': percent(runningCount),
       },
+      {'label': 'IDLE', 'count': idleCount, 'percent': percent(idleCount)},
       {'label': 'STOP', 'count': stopCount, 'percent': percent(stopCount)},
       {
         'label': 'INACTIVE (48H)',
@@ -158,6 +160,9 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     if (key.startsWith('running')) {
       return {'icon': Icons.show_chart_outlined};
     }
+    if (key.startsWith('idle')) {
+      return {'icon': Icons.pause_circle_outline};
+    }
     if (key.startsWith('stop')) {
       return {'icon': Icons.stop_outlined};
     }
@@ -176,13 +181,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final statusData = _statusData;
     final counts = _counts;
-    final totalDevices = counts?.vehicleLiveStatus.isNotEmpty == true
-        ? (counts!.liveConnected +
-            counts.liveRunning +
-            counts.liveStop +
-            counts.liveInactive +
-            counts.liveNoData)
-        : 0;
+    final totalVehicles = counts?.totalVehicles ?? 0;
 
     final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double titleFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth);
@@ -277,7 +276,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
                           radius: 8,
                         )
                       : Text(
-                          _formatCount(totalDevices),
+                          _formatCount(totalVehicles),
                           style: AppUtils.headlineSmallBase.copyWith(
                             fontSize: mainRowFs,
                             height: 20 / 14,
@@ -303,7 +302,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
           if (_loading)
             Column(
               children: List.generate(
-                5,
+                6,
                 (index) => Padding(
                   padding: EdgeInsets.only(bottom: spacing),
                   child: Container(

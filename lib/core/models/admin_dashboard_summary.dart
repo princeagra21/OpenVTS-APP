@@ -61,6 +61,7 @@ class AdminDashboardSummary {
   );
 
   int get running => _int(_liveStatus['running']);
+  int get idle => _int(_liveStatus['idle']);
   int get stop => _int(_liveStatus['stop'] ?? _liveStatus['stopped']);
   int get notWorking48h => _int(
     _liveStatus['notWorking48h'] ??

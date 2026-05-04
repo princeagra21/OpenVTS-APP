@@ -27,6 +27,9 @@ class VehicleStatusBox extends StatelessWidget {
     if (key.startsWith('running')) {
       return {'icon': Icons.show_chart_outlined};
     }
+    if (key.startsWith('idle')) {
+      return {'icon': Icons.pause_circle_outline};
+    }
     if (key.startsWith('stop')) {
       return {'icon': Icons.stop_outlined};
     }
@@ -41,11 +44,12 @@ class VehicleStatusBox extends StatelessWidget {
 
   List<Map<String, dynamic>> _buildStatusData() {
     final running = summary?.running ?? 0;
+    final idle = summary?.idle ?? 0;
     final stop = summary?.stop ?? 0;
     final notWorking = summary?.notWorking48h ?? 0;
     final noData = summary?.noData ?? 0;
-    final total = running + stop + notWorking + noData;
-    final connected = running + stop;
+    final total = running + idle + stop + notWorking + noData;
+    final connected = running + idle + stop;
 
     double percent(int count) {
       if (total <= 0) return 0;
@@ -63,6 +67,7 @@ class VehicleStatusBox extends StatelessWidget {
         'count': running,
         'percent': percent(running),
       },
+      {'label': 'IDLE', 'count': idle, 'percent': percent(idle)},
       {'label': 'STOP', 'count': stop, 'percent': percent(stop)},
       {
         'label': 'INACTIVE (48H)',
@@ -96,10 +101,7 @@ class VehicleStatusBox extends StatelessWidget {
     final double metaFs = 11 * scale;
 
     final statusData = _buildStatusData();
-    final totalDevices = statusData.fold<int>(
-      0,
-      (acc, row) => acc + (row['count'] as int),
-    );
+    final totalVehicles = summary?.totalVehicles ?? 0;
 
     return Container(
       padding: EdgeInsets.all(padding),
@@ -169,7 +171,7 @@ class VehicleStatusBox extends StatelessWidget {
                           radius: 8,
                         )
                       : Text(
-                          _formatCount(totalDevices),
+                          _formatCount(totalVehicles),
                           style: AppUtils.headlineSmallBase.copyWith(
                             fontSize: mainRowFs,
                             height: 20 / 14,
@@ -195,7 +197,7 @@ class VehicleStatusBox extends StatelessWidget {
           if (loading)
             Column(
               children: List.generate(
-                5,
+                6,
                 (index) => Padding(
                   padding: EdgeInsets.only(bottom: spacing),
                   child: Container(

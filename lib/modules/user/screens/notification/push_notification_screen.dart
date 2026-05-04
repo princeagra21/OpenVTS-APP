@@ -35,6 +35,8 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
 
   bool _loading = false;
   bool _errorShown = false;
+  bool _overspeedDirty = false;
+  bool _savingOverspeed = false;
   final Set<String> _updating = <String>{};
 
   ApiClient? _api;
@@ -300,9 +302,16 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
     final nextPrefs = prefs.copyWith(basicRules: updatedRules);
     setState(() => _prefs = nextPrefs);
 
-    final res = await _repoOrCreate().updatePreferencesPayload(
-      nextPrefs.toUpdatePayload(),
-    );
+    final payload = nextPrefs.toUpdatePayload();
+    final existingGeofenceMatrix = prefs.data['geofenceMatrix'];
+    if (existingGeofenceMatrix is List) {
+      payload['geofenceMatrix'] = existingGeofenceMatrix;
+    }
+    final existingGeofences = prefs.data['geofences'];
+    if (existingGeofences is List) {
+      payload['geofences'] = existingGeofences;
+    }
+    final res = await _repoOrCreate().updatePreferencesPayload(payload);
 
     if (!mounted) return;
     res.when(
@@ -336,29 +345,26 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
 
   Future<void> _updateOverspeedRule({
     required UserNotificationVehicle vehicle,
-    required int? speedLimit,
+    int? speedLimit,
+    bool? enabled,
   }) async {
-    final key = 'overspeed:${vehicle.id}';
-    if (_updating.contains(key)) return;
-    setState(() => _updating.add(key));
-
     final prefs = _prefs;
-    if (prefs == null) {
-      setState(() => _updating.remove(key));
-      return;
-    }
+    if (prefs == null) return;
 
     final current = prefs.overspeedRuleFor(vehicle.id.toString());
-    final enabled = speedLimit != null && speedLimit > 0;
+    final nextEnabled = enabled ?? current?.enabled ?? false;
+    final nextSpeedLimit = nextEnabled
+        ? (speedLimit ?? current?.speedLimitKph)
+        : (speedLimit ?? current?.speedLimitKph);
     final nextRule = (current ??
             UserOverspeedRule(<String, dynamic>{
               'vehicleId': vehicle.id,
-              'enabled': enabled,
-              'speedLimitKph': speedLimit,
+              'enabled': nextEnabled,
+              'speedLimitKph': nextSpeedLimit,
             }))
         .copyWith(
-          enabled: enabled,
-          speedLimitKph: speedLimit,
+          enabled: nextEnabled,
+          speedLimitKph: nextSpeedLimit,
         );
 
     final updatedRules = [
@@ -368,40 +374,67 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
     ];
 
     final nextPrefs = prefs.copyWith(overspeedRules: updatedRules);
-    setState(() => _prefs = nextPrefs);
+    setState(() {
+      _prefs = nextPrefs;
+      _overspeedDirty = true;
+    });
+  }
 
-    final res = await _repoOrCreate().updatePreferencesPayload(
-      nextPrefs.toUpdatePayload(),
-    );
+  Future<void> _saveOverspeedChanges() async {
+    if (_savingOverspeed || !_overspeedDirty) return;
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    for (final rule in prefs.overspeedRules) {
+      if (rule.enabled) {
+        final speed = rule.speedLimitKph;
+        if (speed == null || speed <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Set a valid speed limit for all enabled overspeed vehicles.',
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    setState(() => _savingOverspeed = true);
+    final payload = prefs.toUpdatePayload();
+    payload['overspeed'] = prefs.overspeedRules
+        .map(
+          (rule) => <String, dynamic>{
+            'vehicleId': int.tryParse(rule.vehicleId) ?? rule.vehicleId,
+            'enabled': rule.enabled,
+            'speedLimitKph': rule.enabled ? rule.speedLimitKph : null,
+          },
+        )
+        .toList();
+    final existingGeofenceMatrix = prefs.data['geofenceMatrix'];
+    if (existingGeofenceMatrix is List) {
+      payload['geofenceMatrix'] = existingGeofenceMatrix;
+    }
+    final res = await _repoOrCreate().updatePreferencesPayload(payload);
 
     if (!mounted) return;
     res.when(
       success: (_) {
+        setState(() => _overspeedDirty = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${vehicle.name} • Speed limit updated',
-            ),
-          ),
+          const SnackBar(content: Text('Overspeed preferences saved')),
         );
       },
       failure: (error) {
-        setState(() => _prefs = prefs);
-        if (!_errorShown) {
-          _errorShown = true;
-          final msg =
-              error is ApiException && error.message.trim().isNotEmpty
-              ? error.message
-              : "Couldn't update speed limit.";
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
-        }
+        final msg = error is ApiException && error.message.trim().isNotEmpty
+            ? error.message
+            : "Couldn't save overspeed preferences.";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       },
     );
-
     if (!mounted) return;
-    setState(() => _updating.remove(key));
+    setState(() => _savingOverspeed = false);
   }
 
   Future<void> _toggleGeofenceRule({
@@ -632,15 +665,21 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _tabTitle(),
-                                  style: GoogleFonts.roboto(
-                                    fontSize:
-                                        AdaptiveUtils.getSubtitleFontSize(width),
-                                    height: 24 / 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: colorScheme.onSurface,
-                                  ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _tabTitle(),
+                                        style: GoogleFonts.roboto(
+                                          fontSize:
+                                              AdaptiveUtils.getSubtitleFontSize(width),
+                                          height: 24 / 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 12),
                                 _channelRow(
@@ -1342,6 +1381,7 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
                                           final rule = _overspeedRuleFor(
                                             vehicle.id.toString(),
                                           );
+                                          final enabled = rule?.enabled ?? false;
                                           final speed =
                                               rule?.speedLimitKph;
                                           final controller =
@@ -1355,7 +1395,12 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
                                             child: _vehicleSpeedCard(
                                               context,
                                               vehicle: vehicle,
+                                              enabled: enabled,
                                               controller: controller,
+                                              onToggle: () => _updateOverspeedRule(
+                                                vehicle: vehicle,
+                                                enabled: !enabled,
+                                              ),
                                               onSubmit: (value) {
                                                 final parsed =
                                                     int.tryParse(value.trim());
@@ -1997,7 +2042,9 @@ Widget _vehicleAlertCard(
 Widget _vehicleSpeedCard(
   BuildContext context, {
   required UserNotificationVehicle vehicle,
+  required bool enabled,
   required TextEditingController controller,
+  required VoidCallback onToggle,
   required ValueChanged<String> onSubmit,
 }) {
   final cs = Theme.of(context).colorScheme;
@@ -2067,6 +2114,42 @@ Widget _vehicleSpeedCard(
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: enabled ? cs.primary.withOpacity(0.12) : cs.surface,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: enabled ? cs.primary : cs.onSurface.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      enabled ? Icons.check_circle : Icons.circle_outlined,
+                      size: 16,
+                      color: enabled ? cs.primary : cs.onSurface.withOpacity(0.6),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      enabled ? 'Enabled' : 'Enable',
+                      style: GoogleFonts.roboto(
+                        fontSize: fs - 2,
+                        height: 16 / 12,
+                        fontWeight: FontWeight.w600,
+                        color: enabled
+                            ? cs.primary
+                            : cs.onSurface.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -2082,12 +2165,13 @@ Widget _vehicleSpeedCard(
         const SizedBox(height: 8),
         TextField(
           controller: controller,
+          enabled: enabled,
           keyboardType: TextInputType.number,
           onSubmitted: onSubmit,
           style: GoogleFonts.roboto(
             fontSize: fs,
             height: 20 / 14,
-            color: cs.onSurface,
+            color: enabled ? cs.onSurface : cs.onSurface.withOpacity(0.55),
           ),
           decoration: InputDecoration(
             hintText: 'Enter speed limit',
@@ -2098,7 +2182,7 @@ Widget _vehicleSpeedCard(
             ),
             suffixIcon: IconButton(
               icon: Icon(Icons.check_circle, color: cs.primary),
-              onPressed: () => onSubmit(controller.text),
+              onPressed: enabled ? () => onSubmit(controller.text) : null,
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

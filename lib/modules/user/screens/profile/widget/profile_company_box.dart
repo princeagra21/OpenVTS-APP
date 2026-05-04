@@ -275,11 +275,6 @@ class ProfileCompanyBox extends StatelessWidget {
           else
             Column(
               children: [
-                _buildAddressRow('Line', _display(p?.addressLine), subheaderFontSize, colorScheme),
-                _buildAddressRow('City', _display(p?.city), subheaderFontSize, colorScheme),
-                _buildAddressRow('State', _display(p?.state), subheaderFontSize, colorScheme),
-                _buildAddressRow('Postal', _display(p?.pincode), subheaderFontSize, colorScheme),
-                _buildAddressRow('Country', _display(p?.country), subheaderFontSize, colorScheme),
                 _buildAddressRow('Full', address, subheaderFontSize, colorScheme),
               ],
             ),

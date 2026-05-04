@@ -11,8 +11,14 @@ import 'package:google_fonts/google_fonts.dart';
 class VehicleDocumentsTab extends StatefulWidget {
   final List<VehicleDocumentItem>? documents;
   final bool loading;
+  final VoidCallback? onAddDocument;
 
-  const VehicleDocumentsTab({super.key, this.documents, this.loading = false});
+  const VehicleDocumentsTab({
+    super.key,
+    this.documents,
+    this.loading = false,
+    this.onAddDocument,
+  });
 
   @override
   State<VehicleDocumentsTab> createState() => _VehicleDocumentsTabState();
@@ -150,12 +156,13 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                     ],
                   ),
                   InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddDocumentScreen(),
-                      ),
-                    ),
+                    onTap: widget.onAddDocument ??
+                        () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AddDocumentScreen(),
+                              ),
+                            ),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       width: 36,
