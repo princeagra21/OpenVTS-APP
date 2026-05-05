@@ -118,9 +118,11 @@ class _SupportScreenState extends State<SupportScreen> {
   // - POST /admin/tickets/:id/messages  (body keys: message)
   // - PATCH /admin/tickets/:id/status   (body keys: status)
   List<AdminTicketListItem>? _tickets;
+  List<AdminTicketListItem>? _myTickets;
   bool _loading = false;
   bool _loadErrorShown = false;
   final TextEditingController _searchController = TextEditingController();
+  String _ticketScope = 'user';
   String _selectedTab = 'All';
 
   CancelToken? _loadToken;
@@ -150,7 +152,7 @@ class _SupportScreenState extends State<SupportScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _loadTickets() async {
+  Future<void> _loadTickets({bool forMyTickets = false}) async {
     _loadToken?.cancel('Reload tickets');
     final token = CancelToken();
     _loadToken = token;
@@ -158,25 +160,38 @@ class _SupportScreenState extends State<SupportScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    final result = await _repoOrCreate().getTickets(
-      rk: 1,
-      limit: 100,
-      cancelToken: token,
-    );
+    final result = forMyTickets
+        ? await _repoOrCreate().getMyTickets(
+            limit: 100,
+            cancelToken: token,
+          )
+        : await _repoOrCreate().getTickets(
+            rk: 1,
+            limit: 100,
+            cancelToken: token,
+          );
 
     if (!mounted) return;
 
     result.when(
       success: (items) {
         setState(() {
-          _tickets = items;
+          if (forMyTickets) {
+            _myTickets = items;
+          } else {
+            _tickets = items;
+          }
           _loading = false;
           _loadErrorShown = false;
         });
       },
       failure: (err) {
         setState(() {
-          _tickets = const <AdminTicketListItem>[];
+          if (forMyTickets) {
+            _myTickets = const <AdminTicketListItem>[];
+          } else {
+            _tickets = const <AdminTicketListItem>[];
+          }
           _loading = false;
         });
         if (_isCancelled(err)) return;
@@ -191,7 +206,7 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTickets();
+    _loadTickets(forMyTickets: false);
   }
 
   @override
@@ -214,7 +229,9 @@ class _SupportScreenState extends State<SupportScreen> {
     final double searchFs = 14 + scale;
     final double secondaryFs = 12 + scale;
 
-    final tickets = _tickets ?? const <AdminTicketListItem>[];
+    final showingMyTickets = _ticketScope == 'my';
+    final tickets = (showingMyTickets ? _myTickets : _tickets) ??
+        const <AdminTicketListItem>[];
     final showListSkeleton = _loading && tickets.isEmpty;
     final query = _searchController.text.trim().toLowerCase();
     final filteredTickets = tickets.where((t) {
@@ -222,6 +239,9 @@ class _SupportScreenState extends State<SupportScreen> {
           t.subject.toLowerCase().contains(query) ||
           t.ticketNumber.toLowerCase().contains(query) ||
           t.ownerName.toLowerCase().contains(query) ||
+          t.category.toLowerCase().contains(query) ||
+          t.priority.toLowerCase().contains(query) ||
+          t.statusLabel.toLowerCase().contains(query) ||
           t.id.toLowerCase().contains(query);
       final matchesTab = _selectedTab == 'All' ||
           AdminTicketListItem.normalizeStatus(t.statusLabel) ==
@@ -260,7 +280,7 @@ class _SupportScreenState extends State<SupportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Support Inbox',
+                              showingMyTickets ? 'My Tickets' : 'Support Inbox',
                               style: GoogleFonts.roboto(
                                 fontSize: sectionTitleFs,
                                 height: 24 / 18,
@@ -293,10 +313,14 @@ class _SupportScreenState extends State<SupportScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const NewTicketScreen(),
+                                builder: (_) => NewTicketScreen(
+                                  forMyTickets: showingMyTickets,
+                                ),
                               ),
                             ).then((value) {
-                              if (value == true) _loadTickets();
+                              if (value == true) {
+                                _loadTickets(forMyTickets: showingMyTickets);
+                              }
                             });
                           },
                           borderRadius: BorderRadius.circular(12),
@@ -335,6 +359,55 @@ class _SupportScreenState extends State<SupportScreen> {
                     ),
                     const SizedBox(height: 16),
                     Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _scopeTab(
+                              context,
+                              label: 'User Tickets',
+                              selected: !showingMyTickets,
+                              onTap: () {
+                                if (_ticketScope == 'user') return;
+                                setState(() {
+                                  _ticketScope = 'user';
+                                  _selectedTab = 'All';
+                                  _searchController.clear();
+                                });
+                                _loadTickets(forMyTickets: false);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _scopeTab(
+                              context,
+                              label: 'My Tickets',
+                              selected: showingMyTickets,
+                              onTap: () {
+                                if (_ticketScope == 'my') return;
+                                setState(() {
+                                  _ticketScope = 'my';
+                                  _selectedTab = 'All';
+                                  _searchController.clear();
+                                });
+                                _loadTickets(forMyTickets: true);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
                       height: hp * 3.8,
                       decoration: BoxDecoration(
                         color: Colors.transparent,
@@ -345,13 +418,16 @@ class _SupportScreenState extends State<SupportScreen> {
                       ),
                       child: TextField(
                         controller: _searchController,
+                        onChanged: (_) => setState(() {}),
                         style: GoogleFonts.roboto(
                           fontSize: searchFs,
                           height: 20 / 14,
                           color: colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Search tickets',
+                          hintText: showingMyTickets
+                              ? 'Search tickets (title, number)...'
+                              : 'Search tickets',
                           hintStyle: GoogleFonts.roboto(
                             color: colorScheme.onSurface.withOpacity(0.5),
                             fontSize: searchFs - 2,
@@ -425,14 +501,70 @@ class _SupportScreenState extends State<SupportScreen> {
                             color: colorScheme.outline.withOpacity(0.1),
                           ),
                         ),
-                        child: Text(
-                          'No tickets found',
-                          style: GoogleFonts.roboto(
-                            fontSize: secondaryFs,
-                            height: 16 / 12,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colorScheme.onSurface.withValues(alpha: 0.06),
+                              ),
+                              child: Icon(
+                                Icons.support_agent_outlined,
+                                size: 22,
+                                color: colorScheme.onSurface.withValues(alpha: 0.75),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'No tickets found',
+                              style: GoogleFonts.roboto(
+                                fontSize: secondaryFs,
+                                height: 16 / 12,
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (showingMyTickets) ...[
+                              const SizedBox(height: 12),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NewTicketScreen(forMyTickets: true),
+                                    ),
+                                  ).then((value) {
+                                    if (value == true) {
+                                      _loadTickets(forMyTickets: true);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '+ Create Ticket',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: buttonFs - 1,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                     else
@@ -444,11 +576,14 @@ class _SupportScreenState extends State<SupportScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    TicketDetailsScreen(ticket: ticket),
+                                    TicketDetailsScreen(
+                                  ticket: ticket,
+                                  isMyTicket: showingMyTickets,
+                                ),
                               ),
                             );
                             if (changed == true && mounted) {
-                              _loadTickets();
+                              _loadTickets(forMyTickets: showingMyTickets);
                             }
                           },
                         ),
@@ -476,7 +611,12 @@ class _SupportScreenState extends State<SupportScreen> {
 
 class TicketDetailsScreen extends StatefulWidget {
   final AdminTicketListItem ticket;
-  const TicketDetailsScreen({super.key, required this.ticket});
+  final bool isMyTicket;
+  const TicketDetailsScreen({
+    super.key,
+    required this.ticket,
+    this.isMyTicket = false,
+  });
 
   @override
   State<TicketDetailsScreen> createState() => _TicketDetailsScreenState();
@@ -1228,6 +1368,37 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (!mounted) return;
     setState(() => _loadingMessages = true);
 
+    if (widget.isMyTicket) {
+      final myResult = await _repoOrCreate().getMyTicketMessages(
+        widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
+        cancelToken: token,
+      );
+
+      if (!mounted) return;
+      myResult.when(
+        success: (items) {
+          setState(() {
+            _ticketDetail = <String, dynamic>{'status': widget.ticket.status};
+            _messages = items;
+            _loadingMessages = false;
+            _messagesErrorShown = false;
+          });
+          _scrollToLatest();
+        },
+        failure: (err) {
+          setState(() {
+            _messages = const <AdminTicketMessageItem>[];
+            _loadingMessages = false;
+          });
+          if (_isCancelled(err) || _messagesErrorShown) return;
+          _messagesErrorShown = true;
+          final message = err is ApiException ? err.message : "Couldn't load conversation.";
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+      return;
+    }
+
     final detailResult = await _repoOrCreate().getTicketDetail(
       widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
       rk: 1,
@@ -1333,12 +1504,22 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final token = CancelToken();
     _statusToken = token;
 
-    final result = await _repoOrCreate().updateTicketStatus(
-      widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
-      _toApiStatus(value),
-      rk: 1,
-      cancelToken: token,
-    );
+    final result = widget.isMyTicket
+        ? await _repoOrCreate().updateMyTicketStatus(
+            widget.ticket.id.isNotEmpty
+                ? widget.ticket.id
+                : widget.ticket.ticketNumber,
+            _toApiStatus(value),
+            cancelToken: token,
+          )
+        : await _repoOrCreate().updateTicketStatus(
+            widget.ticket.id.isNotEmpty
+                ? widget.ticket.id
+                : widget.ticket.ticketNumber,
+            _toApiStatus(value),
+            rk: 1,
+            cancelToken: token,
+          );
 
     if (!mounted) return;
 
@@ -1377,14 +1558,25 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     _sendToken = token;
     final isInternal = selectedLocalTab == 'Internal Note';
 
-    final result = await _repoOrCreate().sendTicketMessage(
-      widget.ticket.id.isNotEmpty ? widget.ticket.id : widget.ticket.ticketNumber,
-      text,
-      internal: isInternal,
-      attachment: _attachment,
-      rk: 1,
-      cancelToken: token,
-    );
+    final result = widget.isMyTicket
+        ? await _repoOrCreate().sendMyTicketMessage(
+            widget.ticket.id.isNotEmpty
+                ? widget.ticket.id
+                : widget.ticket.ticketNumber,
+            text,
+            internal: false,
+            cancelToken: token,
+          )
+        : await _repoOrCreate().sendTicketMessage(
+            widget.ticket.id.isNotEmpty
+                ? widget.ticket.id
+                : widget.ticket.ticketNumber,
+            text,
+            internal: isInternal,
+            attachment: _attachment,
+            rk: 1,
+            cancelToken: token,
+          );
 
     if (!mounted) return;
 
@@ -1875,6 +2067,44 @@ Widget _tabPill(BuildContext context, {required String label, required bool sele
           height: 20 / 14,
           fontWeight: FontWeight.w600,
           color: selected ? cs.surface : cs.onSurface,
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _scopeTab(
+  BuildContext context, {
+  required String label,
+  required bool selected,
+  required VoidCallback onTap,
+}) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(10),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: selected
+            ? colorScheme.primary
+            : colorScheme.onSurface.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.onSurface.withValues(alpha: 0.12),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.roboto(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
         ),
       ),
     ),

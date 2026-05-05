@@ -415,6 +415,58 @@ class AdminSupportRepository {
     );
   }
 
+  Future<Result<void>> createMyTicket({
+    required String title,
+    required String category,
+    required String priority,
+    required String message,
+    List<PickedFilePayload> attachments = const <PickedFilePayload>[],
+    CancelToken? cancelToken,
+  }) async {
+    Result<dynamic> res;
+    if (attachments.isNotEmpty) {
+      final form = FormData.fromMap({
+        'title': title,
+        'category': category,
+        'priority': priority,
+        'message': message,
+        'attachments': attachments
+            .map(
+              (file) => MultipartFile.fromBytes(
+                file.bytes,
+                filename: file.filename,
+              ),
+            )
+            .toList(),
+      });
+      res = await api.post(
+        '/admin/mytickets',
+        data: form,
+        cancelToken: cancelToken,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: const {'Accept': 'application/json'},
+        ),
+      );
+    } else {
+      res = await api.post(
+        '/admin/mytickets',
+        data: <String, dynamic>{
+          'title': title,
+          'category': category,
+          'priority': priority,
+          'message': message,
+        },
+        cancelToken: cancelToken,
+      );
+    }
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   bool _messageLike(Map<String, dynamic> map) {
     final keys = map.keys.map((e) => e.toString().toLowerCase()).toSet();
     return keys.contains('message') ||

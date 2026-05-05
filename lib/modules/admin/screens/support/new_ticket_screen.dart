@@ -6,6 +6,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_support_repository.dart';
 import 'package:fleet_stack/core/repositories/admin_users_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:fleet_stack/core/utils/file_picker_helper.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
@@ -15,7 +16,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 class NewTicketScreen extends StatefulWidget {
   final AdminUserListItem? preSelectedUser;
-  const NewTicketScreen({super.key, this.preSelectedUser});
+  final bool forMyTickets;
+  const NewTicketScreen({
+    super.key,
+    this.preSelectedUser,
+    this.forMyTickets = false,
+  });
 
   @override
   State<NewTicketScreen> createState() => _NewTicketScreenState();
@@ -32,16 +38,20 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
 
   List<AdminUserListItem> _users = <AdminUserListItem>[];
   AdminUserListItem? _selectedUser;
+  final List<PickedFilePayload> _attachments = <PickedFilePayload>[];
 
   final List<String> _categories = [
     'INSTALLATION',
     'SERVER',
     'BILLING',
-    'OTHER'
+    'MAPS',
+    'TECHNICAL',
+    'GENERAL',
+    'OTHER',
   ];
   String? _selectedCategory = 'SERVER';
 
-  final List<String> _priorities = ['LOW', 'MEDIUM', 'HIGH'];
+  final List<String> _priorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
   String? _selectedPriority = 'MEDIUM';
 
   ApiClient? _api;
@@ -51,7 +61,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.preSelectedUser != null) {
+    if (widget.forMyTickets) {
+      _selectedUser = null;
+    } else if (widget.preSelectedUser != null) {
       _selectedUser = widget.preSelectedUser;
     } else {
       _loadUsers();
@@ -127,16 +139,19 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   }
 
   Future<void> _submit() async {
-    final user = _selectedUser;
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
     final category = _selectedCategory;
     final priority = _selectedPriority;
 
-    if (user == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Select a user first.')));
-      return;
+    if (!widget.forMyTickets) {
+      final user = _selectedUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select a user first.')),
+        );
+        return;
+      }
     }
     if (subject.isEmpty || message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -154,14 +169,23 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     if (!mounted) return;
     setState(() => _submitting = true);
 
-    final res = await _supportRepoOrCreate().createTicket(
-      userId: user.id,
-      subject: subject,
-      message: message,
-      category: category,
-      priority: priority,
-      cancelToken: _loadToken,
-    );
+    final res = widget.forMyTickets
+        ? await _supportRepoOrCreate().createMyTicket(
+            title: subject,
+            message: message,
+            category: category,
+            priority: priority,
+            attachments: _attachments,
+            cancelToken: _loadToken,
+          )
+        : await _supportRepoOrCreate().createTicket(
+            userId: _selectedUser!.id,
+            subject: subject,
+            message: message,
+            category: category,
+            priority: priority,
+            cancelToken: _loadToken,
+          );
 
     if (!mounted) return;
 
@@ -228,7 +252,9 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create Ticket (on behalf of User)',
+                            widget.forMyTickets
+                                ? 'My Tickets'
+                                : 'Create Ticket (on behalf of User)',
                             style: GoogleFonts.roboto(
                               fontSize: 16 * scale,
                               height: 20 / 16,
@@ -237,30 +263,31 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          RichText(
-                            text: TextSpan(
-                              style: labelStyle,
-                              children: [
-                                const TextSpan(text: 'User'),
-                                TextSpan(
-                                  text: ' *',
-                                  style: labelStyle.copyWith(
-                                    color: cs.primary,
-                                    fontWeight: FontWeight.w700,
+                          if (!widget.forMyTickets) ...[
+                            RichText(
+                              text: TextSpan(
+                                style: labelStyle,
+                                children: [
+                                  const TextSpan(text: 'User'),
+                                  TextSpan(
+                                    text: ' *',
+                                    style: labelStyle.copyWith(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (_loadingUsers)
-                            const AppShimmer(
-                              width: double.infinity,
-                              height: 52,
-                              radius: 12,
-                            )
-                          else
-                            InkWell(
+                            const SizedBox(height: 8),
+                            if (_loadingUsers)
+                              const AppShimmer(
+                                width: double.infinity,
+                                height: 52,
+                                radius: 12,
+                              )
+                            else
+                              InkWell(
                               borderRadius: BorderRadius.circular(12),
                               onTap: widget.preSelectedUser != null
                                   ? null
@@ -381,7 +408,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
+                          ],
                           Row(
                             children: [
                               Expanded(
@@ -585,6 +613,105 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                               ),
                             ),
                           ),
+                          if (widget.forMyTickets) ...[
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Text(
+                                  'Attachments (optional)',
+                                  style: labelStyle,
+                                ),
+                                const Spacer(),
+                                InkWell(
+                                  onTap: _submitting
+                                      ? null
+                                      : () async {
+                                          final picked = await pickSingleFilePayload();
+                                          if (picked == null || !mounted) return;
+                                          setState(() => _attachments.add(picked));
+                                        },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.attach_file,
+                                          size: 14,
+                                          color: cs.onPrimary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Add',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 12 * scale,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_attachments.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _attachments.map((file) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: cs.onSurface.withOpacity(0.12),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 140),
+                                          child: Text(
+                                            file.filename,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.roboto(
+                                              fontSize: 12 * scale,
+                                              color: cs.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        InkWell(
+                                          onTap: _submitting
+                                              ? null
+                                              : () => setState(() => _attachments.remove(file)),
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: cs.onSurface.withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ],
                           const SizedBox(height: 16),
                           Align(
                             alignment: Alignment.centerRight,
@@ -647,8 +774,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
               color: Theme.of(context).brightness == Brightness.dark
                   ? const Color(0xFF0A0A0A)
                   : const Color(0xFFF5F5F7),
-              child: const AdminHomeAppBar(
-                title: 'Create Ticket',
+              child: AdminHomeAppBar(
+                title: widget.forMyTickets ? 'My Ticket' : 'Create Ticket',
                 leadingIcon: Icons.support_agent_outlined,
               ),
             ),
