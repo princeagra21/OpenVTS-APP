@@ -53,6 +53,8 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   CancelToken? _submitToken;
   bool _submitting = false;
   bool _submitErrorShown = false;
+  String? _emailError;
+  String? _passwordError;
 
   double _scaleForWidth(double width) =>
       (width / 420).clamp(0.9, 1.0); // keep spec size on larger screens
@@ -171,7 +173,8 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
 
               Expanded(
                 child: SingleChildScrollView(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.manual,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,13 +193,18 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter full name",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter full name",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.person_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 24),
@@ -209,6 +217,11 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _emailController,
+                        onChanged: (_) {
+                          if (_emailError != null) {
+                            setState(() => _emailError = null);
+                          }
+                        },
                         keyboardType: TextInputType.emailAddress,
                         style: GoogleFonts.roboto(
                           fontSize: inputSize,
@@ -216,13 +229,19 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter email",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.email_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter email",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              errorText: _emailError,
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 24),
@@ -245,33 +264,56 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                   setState(() => _selectedCountry = country);
                                 },
                                 countryListTheme: CountryListThemeData(
-                                  backgroundColor: Theme.of(context).colorScheme.surface,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surface,
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(20),
+                                  ),
                                   inputDecoration: InputDecoration(
                                     hintText: 'Search',
                                     filled: true,
-                                    fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                                    fillColor: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant
+                                        .withOpacity(0.3),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide.none,
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               );
                             },
                             child: Container(
                               height: 54, // Match field height approx
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface.withOpacity(0.05),
-                                border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surface.withOpacity(0.05),
+                                border: Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.1),
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (_selectedCountry != null) Text(_selectedCountry!.flagEmoji, style: const TextStyle(fontSize: 20)),
+                                  if (_selectedCountry != null)
+                                    Text(
+                                      _selectedCountry!.flagEmoji,
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
                                   const SizedBox(width: 6),
                                   Text(
                                     "+${_selectedCountry?.phoneCode ?? '91'}",
@@ -279,11 +321,19 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                       fontSize: inputSize,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w500,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(Icons.arrow_drop_down, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    size: 20,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.6),
+                                  ),
                                 ],
                               ),
                             ),
@@ -300,13 +350,20 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 fontWeight: FontWeight.w500,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
-                              decoration: _minimalDecoration(
-                                context,
-                                hint: "Enter phone number",
-                                fontSize: inputSize,
-                              ).copyWith(
-                                prefixIcon: Icon(Icons.phone_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                              ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "Enter phone number",
+                                    fontSize: inputSize,
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.phone_outlined,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],
@@ -328,13 +385,18 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter username",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.account_circle_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter username",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.account_circle_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 24),
@@ -347,6 +409,11 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _passwordController,
+                        onChanged: (_) {
+                          if (_passwordError != null) {
+                            setState(() => _passwordError = null);
+                          }
+                        },
                         obscureText: !_showPassword,
                         style: GoogleFonts.roboto(
                           fontSize: inputSize,
@@ -354,26 +421,32 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter password",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.primary, size: 22),
-                          suffixIcon: IconButton(
-                            onPressed: () =>
-                                setState(() => _showPassword = !_showPassword),
-                            icon: Icon(
-                              _showPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.6),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter password",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              errorText: _passwordError,
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(
+                                  () => _showPassword = !_showPassword,
+                                ),
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -392,13 +465,18 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter company name",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.business_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter company name",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.business_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 24),
@@ -417,13 +495,18 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter address",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.location_on_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter address",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.location_on_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 24),
@@ -447,20 +530,29 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                               fontWeight: FontWeight.w500,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
-                            decoration: _minimalDecoration(
-                              context,
-                              hint: "Enter country code",
-                              fontSize: inputSize,
-                            ).copyWith(
-                              prefixIcon: Icon(Icons.public, color: Theme.of(context).colorScheme.primary, size: 22),
-                              suffixIcon: IconButton(
-                                onPressed: _pickCountry,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            decoration:
+                                _minimalDecoration(
+                                  context,
+                                  hint: "Enter country code",
+                                  fontSize: inputSize,
+                                ).copyWith(
+                                  prefixIcon: Icon(
+                                    Icons.public,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    size: 22,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    onPressed: _pickCountry,
+                                    icon: Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -485,20 +577,29 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                               fontWeight: FontWeight.w500,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
-                            decoration: _minimalDecoration(
-                              context,
-                              hint: "Enter state",
-                              fontSize: inputSize,
-                            ).copyWith(
-                              prefixIcon: Icon(Icons.flag_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                              suffixIcon: IconButton(
-                                onPressed: _pickState,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            decoration:
+                                _minimalDecoration(
+                                  context,
+                                  hint: "Enter state",
+                                  fontSize: inputSize,
+                                ).copyWith(
+                                  prefixIcon: Icon(
+                                    Icons.flag_outlined,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    size: 22,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    onPressed: _pickState,
+                                    icon: Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -514,7 +615,10 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                               children: [
                                 Text(
                                   "City",
-                                  style: _labelStyle(context, fontSize: labelSize),
+                                  style: _labelStyle(
+                                    context,
+                                    fontSize: labelSize,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 TextField(
@@ -524,22 +628,34 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
-                                  decoration: _minimalDecoration(
-                                    context,
-                                    hint: "Enter city",
-                                    fontSize: inputSize,
-                                  ).copyWith(
-                                    prefixIcon: Icon(Icons.location_city_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickCity,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  decoration:
+                                      _minimalDecoration(
+                                        context,
+                                        hint: "Enter city",
+                                        fontSize: inputSize,
+                                      ).copyWith(
+                                        prefixIcon: Icon(
+                                          Icons.location_city_outlined,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          size: 22,
+                                        ),
+                                        suffixIcon: IconButton(
+                                          onPressed: _pickCity,
+                                          icon: Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withOpacity(0.6),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -551,7 +667,10 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                               children: [
                                 Text(
                                   "Pincode",
-                                  style: _labelStyle(context, fontSize: labelSize),
+                                  style: _labelStyle(
+                                    context,
+                                    fontSize: labelSize,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 TextField(
@@ -561,15 +680,24 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
-                                  decoration: _minimalDecoration(
-                                    context,
-                                    hint: "Enter pincode",
-                                    fontSize: inputSize,
-                                  ).copyWith(
-                                    prefixIcon: Icon(Icons.pin_drop_outlined, color: Theme.of(context).colorScheme.primary, size: 22),
-                                  ),
+                                  decoration:
+                                      _minimalDecoration(
+                                        context,
+                                        hint: "Enter pincode",
+                                        fontSize: inputSize,
+                                      ).copyWith(
+                                        prefixIcon: Icon(
+                                          Icons.pin_drop_outlined,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          size: 22,
+                                        ),
+                                      ),
                                 ),
                               ],
                             ),
@@ -594,13 +722,18 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Enter credits",
-                          fontSize: inputSize,
-                        ).copyWith(
-                          prefixIcon: Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary, size: 22),
-                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Enter credits",
+                              fontSize: inputSize,
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.star_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
 
                       const SizedBox(height: 80),
@@ -741,6 +874,10 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     return '+91';
   }
 
+  bool _isValidEmail(String value) {
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     _submitErrorShown = false;
@@ -752,6 +889,11 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     final password = _passwordController.text;
     final company = _companyController.text.trim();
 
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+    });
+
     if (name.isEmpty ||
         email.isEmpty ||
         phone.isEmpty ||
@@ -759,6 +901,20 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
         password.isEmpty ||
         company.isEmpty) {
       _snackOnce('Please fill all required fields.');
+      return;
+    }
+
+    var hasFieldError = false;
+    if (!_isValidEmail(email)) {
+      _emailError = 'Please enter a valid email address';
+      hasFieldError = true;
+    }
+    if (password.length < 6) {
+      _passwordError = 'Password must be at least 6 characters';
+      hasFieldError = true;
+    }
+    if (hasFieldError) {
+      setState(() {});
       return;
     }
 
@@ -798,9 +954,9 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     res.when(
       success: (_) {
         setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Admin created')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Admin created')));
         Navigator.pop(context, true);
       },
       failure: (err) {
@@ -836,7 +992,8 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                 orElse: () => items.first,
               )
             : null;
-        final shouldSelectDefault = _selectedCountryOption == null && india != null;
+        final shouldSelectDefault =
+            _selectedCountryOption == null && india != null;
 
         setState(() {
           _countries = items;
@@ -989,8 +1146,9 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor:
-                              colorScheme.surfaceVariant.withOpacity(0.3),
+                          fillColor: colorScheme.surfaceVariant.withOpacity(
+                            0.3,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -1013,8 +1171,9 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                               const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
-                            final trailing =
-                                trailingFor != null ? trailingFor(item) : null;
+                            final trailing = trailingFor != null
+                                ? trailingFor(item)
+                                : null;
                             return ListTile(
                               title: Text(
                                 labelFor(item),
@@ -1056,9 +1215,9 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   Future<void> _pickCountry() async {
     if (_loadingCountries) return;
     if (_countries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No countries available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No countries available.')));
       return;
     }
 
@@ -1085,16 +1244,16 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
 
   Future<void> _pickState() async {
     if (_selectedCountryOption == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a country first.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select a country first.')));
       return;
     }
     if (_loadingStates) return;
     if (_states.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No states available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No states available.')));
       return;
     }
 
@@ -1125,9 +1284,9 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     }
     if (_loadingCities) return;
     if (_cities.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No cities available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No cities available.')));
       return;
     }
 

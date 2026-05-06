@@ -111,7 +111,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   void _showOnce(String message) {
     if (!mounted || _errorShown) return;
     _errorShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _countryCodeValue() {
@@ -134,11 +136,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   Future<void> _loadReferenceData() async {
     _ensureRepos();
-    await Future.wait([
-      _loadCountries(),
-      _loadPrefixes(),
-      _loadUsers(),
-    ]);
+    await Future.wait([_loadCountries(), _loadPrefixes(), _loadUsers()]);
   }
 
   Future<void> _loadUsers() async {
@@ -149,10 +147,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     if (!mounted) return;
     setState(() => _loadingUsers = true);
 
-    final res = await _usersRepo!.getUsers(
-      limit: 200,
-      cancelToken: token,
-    );
+    final res = await _usersRepo!.getUsers(limit: 200, cancelToken: token);
     if (!mounted || token.isCancelled) return;
 
     res.when(
@@ -372,7 +367,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: searchController,
-                        onChanged: (value) => setSheetState(() => query = value),
+                        onChanged: (value) =>
+                            setSheetState(() => query = value),
                         decoration: InputDecoration(
                           hintText: searchHint,
                           filled: true,
@@ -395,11 +391,13 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                       Expanded(
                         child: ListView.separated(
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 4),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
-                            final trailing =
-                                trailingFor == null ? null : trailingFor(item);
+                            final trailing = trailingFor == null
+                                ? null
+                                : trailingFor(item);
                             return ListTile(
                               title: Text(
                                 labelFor(item),
@@ -417,8 +415,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                       trailing,
                                       style: GoogleFonts.roboto(
                                         fontSize: fs - 2,
-                                        color:
-                                            cs.onSurface.withOpacity(0.6),
+                                        color: cs.onSurface.withOpacity(0.6),
                                       ),
                                     ),
                               onTap: () => Navigator.pop(ctx, item),
@@ -463,9 +460,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   Future<void> _pickCountry() async {
     if (_loadingCountries) return;
     if (_countries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No countries available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No countries available.')));
       return;
     }
 
@@ -502,16 +499,16 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   Future<void> _pickState() async {
     if (_selectedCountry == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a country first.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select a country first.')));
       return;
     }
     if (_loadingStates) return;
     if (_states.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No states available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No states available.')));
       return;
     }
 
@@ -542,9 +539,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     }
     if (_loadingCities) return;
     if (_cities.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No cities available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No cities available.')));
       return;
     }
 
@@ -577,7 +574,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     }
 
     final payload = <String, dynamic>{
-      if (_selectedPrimaryUser != null) 'primaryUserId': _selectedPrimaryUser!.id,
+      if (_selectedPrimaryUser != null)
+        'primaryUserId': _selectedPrimaryUser!.id,
       'name': _nameController.text.trim(),
       'mobilePrefix': _mobilePrefixValue(),
       'mobile': _mobileController.text.replaceAll(RegExp(r'[^0-9]'), ''),
@@ -615,9 +613,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
         success: (_) {
           if (!mounted) return;
           setState(() => _saving = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Driver created')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Driver created')));
           Navigator.pop(context, true);
         },
         failure: (err) {
@@ -882,9 +880,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                             final value = (v ?? '').trim();
                             if (value.isEmpty) return null;
                             if (!RegExp(
-                              r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$',
+                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
                             ).hasMatch(value)) {
-                              return 'Invalid email';
+                              return 'Please enter a valid email address';
                             }
                             return null;
                           },
@@ -899,8 +897,10 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 children: [
                                   Text(
                                     'Code',
-                                    style:
-                                        _labelStyle(context, fontSize: labelSize),
+                                    style: _labelStyle(
+                                      context,
+                                      fontSize: labelSize,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   _loadingPrefixes
@@ -923,8 +923,10 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 children: [
                                   Text(
                                     'Mobile',
-                                    style:
-                                        _labelStyle(context, fontSize: labelSize),
+                                    style: _labelStyle(
+                                      context,
+                                      fontSize: labelSize,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   _buildTextField(
@@ -933,7 +935,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                     icon: Icons.phone_outlined,
                                     fontSize: inputSize,
                                     keyboardType: TextInputType.phone,
-                                    validator: (v) => v == null || v.trim().isEmpty
+                                    validator: (v) =>
+                                        v == null || v.trim().isEmpty
                                         ? 'Required'
                                         : null,
                                   ),
@@ -965,8 +968,11 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: !_showPassword,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Required' : null,
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'Required'
+                              : v.length < 6
+                              ? 'Password must be at least 6 characters'
+                              : null,
                           style: GoogleFonts.roboto(
                             fontSize: inputSize,
                             fontWeight: FontWeight.w500,
@@ -1141,9 +1147,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   Future<void> _pickPrimaryUser() async {
     if (_loadingUsers) return;
     if (_users.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No users available.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No users available.')));
       return;
     }
 

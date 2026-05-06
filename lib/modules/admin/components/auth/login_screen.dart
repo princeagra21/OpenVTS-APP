@@ -9,6 +9,7 @@ import 'package:fleet_stack/core/repositories/auth_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/core/config/server_configuration_sheet.dart';
+import 'package:fleet_stack/modules/admin/components/auth/widgets/animated_orbit_login_background.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -225,34 +226,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'Login',
-                style: GoogleFonts.inter(
-                  fontSize: labelSize + 4,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Material(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              shape: const CircleBorder(),
-              child: IconButton(
-                onPressed: _openServerConfiguration,
-                tooltip: 'Server configuration',
-                icon: Icon(
-                  Icons.settings_rounded,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          'Login',
+          style: GoogleFonts.inter(
+            fontSize: labelSize + 4,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -407,16 +387,14 @@ class _LoginScreenState extends State<LoginScreen> {
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
-          decoration: _minimalDecoration(
-            context,
-            hint: "Email or username",
-          ).copyWith(
-            prefixIcon: Icon(
-              Icons.email_outlined,
-              color: colorScheme.primary,
-              size: 22,
-            ),
-          ),
+          decoration: _minimalDecoration(context, hint: "Email or username")
+              .copyWith(
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: colorScheme.primary,
+                  size: 22,
+                ),
+              ),
         ),
         const SizedBox(height: 32),
 
@@ -594,44 +572,63 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final double w = MediaQuery.of(context).size.width;
+    final double h = MediaQuery.of(context).size.height;
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+    final bool isSmallHeight = h < 700;
+    final double topSpacing = isSmallHeight ? h * 0.23 : h * 0.30;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-        child: Align(
-          alignment: Alignment.topCenter, // push toward top
-          child: Padding(
-            padding: const EdgeInsets.only(
-              top: 80,
-            ), // adjust this value higher/lower
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: PageTransitionSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation, secondaryAnimation) {
-                    return SharedAxisTransition(
-                      animation: animation,
-                      secondaryAnimation: secondaryAnimation,
-                      transitionType: SharedAxisTransitionType.horizontal,
-                      child: child,
-                    );
-                  },
-                  child: _isForgot
-                      ? _buildForgotForm(colorScheme, labelSize)
-                      : _buildLoginForm(colorScheme, labelSize),
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: IgnorePointer(child: AnimatedOrbitLoginBackground()),
+          ),
+          Positioned(
+            top: 18,
+            right: 22,
+            child: SafeArea(
+              child: Material(
+                color: Colors.white.withOpacity(0.74),
+                borderRadius: BorderRadius.circular(14),
+                child: IconButton(
+                  onPressed: _openServerConfiguration,
+                  tooltip: 'Server configuration',
+                  icon: Icon(
+                    Icons.settings_rounded,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+          SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+              padding: EdgeInsets.fromLTRB(24, topSpacing, 24, 24),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: PageTransitionSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    transitionBuilder: (child, animation, secondaryAnimation) {
+                      return SharedAxisTransition(
+                        animation: animation,
+                        secondaryAnimation: secondaryAnimation,
+                        transitionType: SharedAxisTransitionType.horizontal,
+                        child: child,
+                      );
+                    },
+                    child: _isForgot
+                        ? _buildForgotForm(colorScheme, labelSize)
+                        : _buildLoginForm(colorScheme, labelSize),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

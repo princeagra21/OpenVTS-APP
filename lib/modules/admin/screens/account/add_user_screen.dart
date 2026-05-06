@@ -112,7 +112,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadCountries() async {
@@ -144,7 +146,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
     _prefixesToken = token;
     setState(() => _loadingPrefixes = true);
 
-    final res = await _commonRepoOrCreate().getMobilePrefixes(cancelToken: token);
+    final res = await _commonRepoOrCreate().getMobilePrefixes(
+      cancelToken: token,
+    );
     if (!mounted) return;
     res.when(
       success: (items) {
@@ -155,10 +159,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
         // Select first matching default.
         final match = items.firstWhere(
           (p) => p.countryCode.toUpperCase() == 'IN',
-          orElse: () => items.isNotEmpty ? items.first : const MobilePrefixOption(countryCode: 'IN', code: '+91'),
+          orElse: () => items.isNotEmpty
+              ? items.first
+              : const MobilePrefixOption(countryCode: 'IN', code: '+91'),
         );
         _selectedPrefix = items.isNotEmpty ? match : null;
-        _mobilePrefixController.text = _selectedPrefix?.code ?? _mobilePrefixController.text;
+        _mobilePrefixController.text =
+            _selectedPrefix?.code ?? _mobilePrefixController.text;
       },
       failure: (err) {
         setState(() => _loadingPrefixes = false);
@@ -174,7 +181,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
     _statesToken = token;
     setState(() => _loadingStates = true);
 
-    final res = await _commonRepoOrCreate().getStates(countryCode, cancelToken: token);
+    final res = await _commonRepoOrCreate().getStates(
+      countryCode,
+      cancelToken: token,
+    );
     if (!mounted) return;
     res.when(
       success: (items) {
@@ -291,8 +301,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor:
-                              colorScheme.surfaceVariant.withOpacity(0.3),
+                          fillColor: colorScheme.surfaceVariant.withOpacity(
+                            0.3,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -311,7 +322,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       Expanded(
                         child: ListView.separated(
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 4),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
                             final trailing = trailingFor?.call(item);
@@ -513,7 +525,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
       backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding + 6, vertical: padding),
+          padding: EdgeInsets.symmetric(
+            horizontal: padding + 6,
+            vertical: padding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -584,8 +599,11 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           hint: "Enter full name",
                           controller: _nameController,
                           prefixIcon: Icons.person_outline_rounded,
-                          validator: (v) =>
-                              v == null || v.isEmpty ? "Required" : null,
+                          validator: (v) => v == null || v.isEmpty
+                              ? "Required"
+                              : v.length < 6
+                              ? "Password must be at least 6 characters"
+                              : null,
                           width: w,
                         ),
 
@@ -678,8 +696,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           prefixIcon: Icons.email_outlined,
                           validator: (v) {
                             if (v == null || v.isEmpty) return "Required";
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
-                              return "Invalid email";
+                            if (!RegExp(
+                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                            ).hasMatch(v)) {
+                              return "Please enter a valid email address";
                             }
                             return null;
                           },
@@ -695,7 +715,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               width: w * 0.4,
                               child: StylishTextField(
                                 label: "Mobile Prefix",
-                                hint: _loadingPrefixes ? "Loading..." : "Select",
+                                hint: _loadingPrefixes
+                                    ? "Loading..."
+                                    : "Select",
                                 controller: _mobilePrefixController,
                                 prefixIcon: Icons.flag_outlined,
                                 readOnly: true,
@@ -751,8 +773,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 suffixIcon: const Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                 ),
-                                validator: (_) =>
-                                    _selectedCountry == null ? "Required" : null,
+                                validator: (_) => _selectedCountry == null
+                                    ? "Required"
+                                    : null,
                                 width: w,
                               ),
                             ),
@@ -762,7 +785,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 label: "State",
                                 hint: _selectedCountry == null
                                     ? "Select country first"
-                                    : (_loadingStates ? "Loading..." : "Select state"),
+                                    : (_loadingStates
+                                          ? "Loading..."
+                                          : "Select state"),
                                 controller: _stateCodeController,
                                 prefixIcon: Icons.map_outlined,
                                 readOnly: true,
@@ -831,7 +856,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 child: SizedBox(
                   height: 56,
                   child: OutlinedButton(
-                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
                       shape: RoundedRectangleBorder(
@@ -870,8 +897,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                cs.onPrimary,
+                              ),
                             ),
                           )
                         : Text(
@@ -938,8 +966,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -967,8 +994,7 @@ class StylishTextField extends StatelessWidget {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide:
-                    BorderSide(color: cs.outline.withOpacity(0.3)),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -1015,15 +1041,14 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
           height: 55,
           child: DropdownButtonFormField<String>(
-            iconEnabledColor: cs.primary,      
-            iconDisabledColor: cs.primary,     
+            iconEnabledColor: cs.primary,
+            iconDisabledColor: cs.primary,
             focusColor: cs.surface,
             value: value,
             hint: Text(
@@ -1041,10 +1066,7 @@ class StylishDropdown extends StatelessWidget {
               ),
             ),
             items: items
-                .map((e) => DropdownMenuItem(
-                      value: e,
-                      child: Text(e),
-                    ))
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
             onChanged: enabled ? onChanged : null,
           ),

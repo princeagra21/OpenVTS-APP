@@ -13,6 +13,7 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/config/server_configuration_sheet.dart';
 import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/widgets/animated_orbit_login_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -318,7 +319,9 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               color: isDark ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.2),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
@@ -342,8 +345,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: labelSize,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                prefixIcon: Icon(icon, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 18,
+                ),
+                prefixIcon: Icon(
+                  icon,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
                 suffixIcon: password
                     ? IconButton(
                         onPressed: () {
@@ -367,15 +376,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: Alignment.topRight,
-          child: IconButton(
-            onPressed: _openServerConfiguration,
-            tooltip: 'Server configuration',
-            icon: Icon(Icons.settings_rounded, color: colorScheme.onSurface),
-          ),
-        ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 0),
         Center(
           child: Image.asset(
             logoAsset,
@@ -388,20 +389,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   : 'assets/images/logos/open_vts_logo_light.png';
               return Image.asset(
                 alt,
-                width: (MediaQuery.of(context).size.width * 0.5).clamp(160, 230),
+                width: (MediaQuery.of(context).size.width * 0.5).clamp(
+                  160,
+                  230,
+                ),
                 fit: BoxFit.contain,
                 gaplessPlayback: true,
                 errorBuilder: (_, __, ___) => Image.asset(
                   'assets/image/logo.png',
-                  width: (MediaQuery.of(context).size.width * 0.42).clamp(120, 180),
+                  width: (MediaQuery.of(context).size.width * 0.42).clamp(
+                    120,
+                    180,
+                  ),
                   fit: BoxFit.contain,
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 30),
-        const SizedBox(height: 10),
+        const SizedBox(height: 28),
         inputField(
           label: 'Email or Username',
           controller: _emailController,
@@ -418,7 +424,7 @@ class _LoginScreenState extends State<LoginScreen> {
           obscure: _obscurePassword,
           password: true,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerRight,
           child: GestureDetector(
@@ -437,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: GestureDetector(
@@ -462,7 +468,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       ),
                     )
@@ -515,12 +523,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             GestureDetector(
-          onTap: () {
-            setState(() {
-              _isForgot = false;
-              _forgotPasswordMessage = null;
-            });
-          },
+              onTap: () {
+                setState(() {
+                  _isForgot = false;
+                  _forgotPasswordMessage = null;
+                });
+              },
               child: Icon(
                 Icons.close,
                 size: 28,
@@ -547,16 +555,14 @@ class _LoginScreenState extends State<LoginScreen> {
             fontSize: labelSize,
             color: colorScheme.onSurface,
           ),
-          decoration: _minimalDecoration(
-            context,
-            hint: "Email or username",
-          ).copyWith(
-            prefixIcon: Icon(
-              Icons.email_outlined,
-              color: colorScheme.primary,
-              size: 22,
-            ),
-          ),
+          decoration: _minimalDecoration(context, hint: "Email or username")
+              .copyWith(
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: colorScheme.primary,
+                  size: 22,
+                ),
+              ),
         ),
         const SizedBox(height: 32),
 
@@ -736,56 +742,89 @@ class _LoginScreenState extends State<LoginScreen> {
     final double w = MediaQuery.of(context).size.width;
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: isDark ? colorScheme.background : Colors.white,
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 460),
-                      child: PageTransitionSwitcher(
-                        duration: const Duration(milliseconds: 500),
-                        transitionBuilder: (child, animation, secondaryAnimation) {
-                          return SharedAxisTransition(
-                            animation: animation,
-                            secondaryAnimation: secondaryAnimation,
-                            transitionType: SharedAxisTransitionType.horizontal,
-                            child: child,
-                          );
-                        },
-                        child: _isForgot
-                            ? Container(
-                                key: const ValueKey('forgot'),
-                                margin: const EdgeInsets.only(top: 60),
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: _buildForgotForm(colorScheme, labelSize),
-                              )
-                            : Container(
-                                key: const ValueKey('login'),
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: _buildLoginForm(colorScheme, labelSize),
-                              ),
-                      ),
-                    ),
+        resizeToAvoidBottomInset: false,
+        backgroundColor: const Color(0xFFF4F6F8),
+        body: Stack(
+          children: [
+            const Positioned.fill(
+              child: IgnorePointer(child: AnimatedOrbitLoginBackground()),
+            ),
+            Positioned(
+              top: 18,
+              right: 22,
+              child: SafeArea(
+                child: IconButton(
+                  onPressed: _openServerConfiguration,
+                  tooltip: 'Server configuration',
+                  icon: Icon(
+                    Icons.settings_rounded,
+                    color: colorScheme.onSurface,
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final h = constraints.maxHeight;
+                  final isSmallHeight = h < 700;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: AnimatedSlide(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          offset: keyboardOpen
+                              ? const Offset(0, -0.10)
+                              : Offset.zero,
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: isSmallHeight ? h * 0.12 : h * 0.16,
+                              ),
+                              PageTransitionSwitcher(
+                                duration: const Duration(milliseconds: 500),
+                                transitionBuilder:
+                                    (child, animation, secondaryAnimation) {
+                                      return SharedAxisTransition(
+                                        animation: animation,
+                                        secondaryAnimation: secondaryAnimation,
+                                        transitionType:
+                                            SharedAxisTransitionType.horizontal,
+                                        fillColor: Colors.transparent,
+                                        child: child,
+                                      );
+                                    },
+                                child: _isForgot
+                                    ? _buildForgotForm(colorScheme, labelSize)
+                                    : Container(
+                                        key: const ValueKey('login'),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 16,
+                                        ),
+                                        child: _buildLoginForm(
+                                          colorScheme,
+                                          labelSize,
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

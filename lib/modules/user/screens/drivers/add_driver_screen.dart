@@ -37,8 +37,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _mobilePrefixController =
-      TextEditingController();
+  final TextEditingController _mobilePrefixController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
@@ -127,7 +126,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadReferences() async {
@@ -210,7 +211,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       failure: (err) {
         setState(() => _loadingStates = false);
         final msg = err is ApiException ? err.message : err.toString();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       },
     );
   }
@@ -230,7 +233,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       failure: (err) {
         setState(() => _loadingCities = false);
         final msg = err is ApiException ? err.message : err.toString();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       },
     );
   }
@@ -529,11 +534,11 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 SizedBox(
                                   width: w * 0.4,
                                   child: _loadingRefs
-                                    ? const AppShimmer(
-                                        width: double.infinity,
-                                        height: 55,
-                                        radius: 16,
-                                      )
+                                      ? const AppShimmer(
+                                          width: double.infinity,
+                                          height: 55,
+                                          radius: 16,
+                                        )
                                       : StylishTextField(
                                           label: '',
                                           hint: 'Select',
@@ -543,8 +548,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                           onTap: _pickPrefix,
                                           validator: (_) =>
                                               _selectedPrefix == null
-                                                  ? 'Required'
-                                                  : null,
+                                              ? 'Required'
+                                              : null,
                                           suffixIcon: const Icon(
                                             Icons.keyboard_arrow_down_rounded,
                                           ),
@@ -581,9 +586,9 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Required';
                             if (!RegExp(
-                              r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$',
+                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
                             ).hasMatch(v)) {
-                              return 'Invalid email';
+                              return 'Please enter a valid email address';
                             }
                             return null;
                           },
@@ -616,8 +621,11 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                               child: TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                validator: (v) =>
-                                    v == null || v.isEmpty ? 'Required' : null,
+                                validator: (v) => v == null || v.isEmpty
+                                    ? 'Required'
+                                    : v.length < 6
+                                    ? 'Password must be at least 6 characters'
+                                    : null,
                                 decoration: InputDecoration(
                                   fillColor: cs.surface,
                                   filled: true,
@@ -716,8 +724,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                   _SelectionField(
                                     value: _stateController.text.isEmpty
                                         ? (_selectedCountry == null
-                                            ? 'Select country first'
-                                            : 'Select state')
+                                              ? 'Select country first'
+                                              : 'Select state')
                                         : _stateController.text,
                                     icon: Icons.location_on,
                                     width: double.infinity,
@@ -748,8 +756,8 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                   _SelectionField(
                                     value: _cityController.text.isEmpty
                                         ? (_selectedState == null
-                                            ? 'Select state first'
-                                            : 'Select city')
+                                              ? 'Select state first'
+                                              : 'Select city')
                                         : _cityController.text,
                                     icon: Icons.location_city,
                                     width: double.infinity,
@@ -817,11 +825,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                     ),
                   ),
                   child: _saving
-                      ? const AppShimmer(
-                          width: 62,
-                          height: 18,
-                          radius: 7,
-                        )
+                      ? const AppShimmer(width: 62, height: 18, radius: 7)
                       : Text(
                           'Add Driver',
                           style: GoogleFonts.inter(
