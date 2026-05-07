@@ -60,3 +60,11 @@ X-Fleet.postman_collection.json
 /*.webp
 /*.jpeg
 /*.jpg
+
+# Ignore superadmin route backup folders
+**/superadmin_route_backups/
+**/superadmin_route_backups/**
+
+# Ignore superadmin route backup folders
+**/superadmin_route_backups/
+**/superadmin_route_backups/**
