@@ -31,9 +31,16 @@ class _ServerConfigurationSheetState extends State<ServerConfigurationSheet> {
   }
 
   String? _validateUrl(String? value) {
-    final normalized = _config.normalizeInput(value);
+    final raw = (value ?? '').trim();
+    if (raw.isEmpty) {
+      return 'API Base URL is required';
+    }
+    if (!(raw.startsWith('http://') || raw.startsWith('https://'))) {
+      return 'URL must start with http:// or https://';
+    }
+    final normalized = _config.normalizeInput(raw);
     if (normalized == null) {
-      return 'Enter a valid http(s) URL';
+      return 'Please enter a valid URL';
     }
     return null;
   }
@@ -87,16 +94,18 @@ class _ServerConfigurationSheetState extends State<ServerConfigurationSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return SafeArea(
-      child: Padding(
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
         padding: EdgeInsets.only(bottom: bottomInset),
         child: Container(
           decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 22),
             child: Form(
               key: _formKey,
               child: Column(
@@ -105,79 +114,184 @@ class _ServerConfigurationSheetState extends State<ServerConfigurationSheet> {
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 4,
+                      width: 44,
+                      height: 5,
                       decoration: BoxDecoration(
-                        color: scheme.onSurface.withValues(alpha: 0.2),
+                        color: scheme.onSurface.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(100),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: const Icon(Icons.dns_rounded, size: 20),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Server Configuration',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Server Configuration',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Configure your company server URL',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 13,
+                                color: scheme.onSurface.withValues(alpha: 0.66),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      IconButton(
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          foregroundColor: scheme.onSurface,
+                        ),
+                        icon: const Icon(Icons.close_rounded, size: 20),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 18),
                   Text(
-                    'Configure your company server URL',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.7),
+                    'API Base URL',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _urlController,
                     validator: _validateUrl,
                     keyboardType: TextInputType.url,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
-                      labelText: 'API Base URL',
                       hintText: 'https://yourcompany.com/api',
                       helperText: 'Example: https://yourcompany.com/api',
+                      prefixIcon: const Icon(Icons.link_rounded),
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: scheme.onSurface,
+                          width: 1.2,
+                        ),
                       ),
                     ),
                     onFieldSubmitted: (_) => _save(),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Current default: ${_config.defaultBaseUrl}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.65),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current default',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _config.defaultBaseUrl,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.74,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   if (_feedbackMessage != null) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      _feedbackMessage!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _feedbackMessage == 'Connection successful'
-                            ? scheme.primary
-                            : scheme.error,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          _feedbackMessage == 'Connection successful'
+                              ? Icons.check_circle_rounded
+                              : Icons.error_rounded,
+                          size: 16,
+                          color: _feedbackMessage == 'Connection successful'
+                              ? Colors.green.shade700
+                              : scheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _feedbackMessage!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: _feedbackMessage == 'Connection successful'
+                                  ? Colors.green.shade700
+                                  : scheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _testing ? null : _testConnection,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            side: const BorderSide(color: Color(0xFF111827)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
                           child: _testing
                               ? const SizedBox(
                                   width: 18,
@@ -190,11 +304,13 @@ class _ServerConfigurationSheetState extends State<ServerConfigurationSheet> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: TextButton(
-                          onPressed: _reset,
-                          child: const Text('Reset to Default'),
+                      TextButton(
+                        onPressed: _reset,
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 46),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                         ),
+                        child: const Text('Reset to Default'),
                       ),
                     ],
                   ),
@@ -203,6 +319,14 @@ class _ServerConfigurationSheetState extends State<ServerConfigurationSheet> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _save,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                       child: const Text('Save'),
                     ),
                   ),

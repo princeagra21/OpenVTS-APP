@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
       fillColor: Colors.transparent,
       hintText: hint,
       hintStyle: GoogleFonts.inter(
-        color: colorScheme.onSurface.withOpacity(0.5),
+        color: colorScheme.onSurface.withValues(alpha: 0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
         ),
@@ -264,11 +264,15 @@ class _LoginScreenState extends State<LoginScreen> {
       prefixIconConstraints: const BoxConstraints(minWidth: 48),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+        borderSide: BorderSide(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+        borderSide: BorderSide(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -532,7 +536,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Icon(
                 Icons.close,
                 size: 28,
-                color: colorScheme.onSurface.withOpacity(0.8),
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -542,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Enter your email to reset',
           style: GoogleFonts.inter(
             fontSize: labelSize - 2,
-            color: colorScheme.onSurface.withOpacity(0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 32),
@@ -580,7 +584,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
@@ -664,7 +668,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Icon(
                 Icons.close,
                 size: 28,
-                color: colorScheme.onSurface.withOpacity(0.8),
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -674,7 +678,7 @@ class _LoginScreenState extends State<LoginScreen> {
           message,
           style: GoogleFonts.inter(
             fontSize: labelSize - 1,
-            color: colorScheme.onSurface.withOpacity(0.75),
+            color: colorScheme.onSurface.withValues(alpha: 0.75),
             height: 1.4,
           ),
         ),
