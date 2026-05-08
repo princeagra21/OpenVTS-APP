@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = fleek_stack_mobile
+PRODUCT_NAME = open_vts
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.fleekStackMobile
+PRODUCT_BUNDLE_IDENTIFIER = com.openvts.app
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 OpenVTS. All rights reserved.

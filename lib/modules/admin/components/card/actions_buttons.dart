@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class ActionsButtons extends StatelessWidget {
   const ActionsButtons({super.key});

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;

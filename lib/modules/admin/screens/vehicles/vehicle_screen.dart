@@ -148,7 +148,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
           }
 
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Admin Vehicles] GET /admin/vehicles + /admin/map-telemetry '
               'status=2xx count=${merged.length}',
             );

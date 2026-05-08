@@ -4,7 +4,7 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class CustomBox extends StatelessWidget {
   final Widget child;

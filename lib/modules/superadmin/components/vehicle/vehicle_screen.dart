@@ -238,7 +238,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
       if (kDebugMode) {
         final url =
             '${_api!.dio.options.baseUrl}/superadmin/vehicles?page=1&limit=50';
-        debugPrint('[Vehicles] endpoint=$url');
+        AppLogger.debug('[Vehicles] endpoint=$url');
       }
 
       final res = await _repo!.getVehicles(
@@ -251,7 +251,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
       res.when(
         success: (items) {
           if (kDebugMode) {
-            debugPrint('[Vehicles] status=200 vehicles=${items.length}');
+            AppLogger.debug('[Vehicles] status=200 vehicles=${items.length}');
           }
           if (!mounted) return;
           final List<Map<String, dynamic>> mapped =
@@ -268,7 +268,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint('[Vehicles] status=${status ?? 'error'} vehicles=0');
+            AppLogger.debug('[Vehicles] status=${status ?? 'error'} vehicles=0');
           }
           if (!mounted) return;
           setState(() {
@@ -299,7 +299,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint('[Vehicles] status=error vehicles=0');
+        AppLogger.debug('[Vehicles] status=error vehicles=0');
       }
       if (!mounted) return;
       setState(() {

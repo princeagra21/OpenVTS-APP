@@ -11,7 +11,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class CustomBox extends StatelessWidget {
   final Widget child;
@@ -105,7 +105,7 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
       res.when(
         success: (counts) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/totalcounts status=2xx '
               'vehicles=${counts.totalVehicles} active=${counts.activeVehicles} '
               'users=${counts.totalUsers} admins=${counts.totalAdmins} '
@@ -122,7 +122,7 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/totalcounts status=${status ?? 'error'}',
             );
           }

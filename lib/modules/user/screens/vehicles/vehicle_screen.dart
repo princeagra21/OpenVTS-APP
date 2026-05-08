@@ -120,7 +120,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               .map((item) => AdminVehicleListItem.fromRaw(item.raw))
               .toList();
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[User Vehicles] GET /user/vehicles status=2xx '
               'count=${merged.length}',
             );

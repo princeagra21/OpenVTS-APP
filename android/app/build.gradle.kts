@@ -1,3 +1,4 @@
+import org.gradle.api.GradleException
 import java.util.Properties
 
 plugins {
@@ -10,6 +11,16 @@ plugins {
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.exists()
+val isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("Release", ignoreCase = true)
+}
+
+if (isReleaseBuildRequested && !hasReleaseKeystore) {
+    throw GradleException(
+        "Release signing requires android/key.properties with keyAlias, keyPassword, storeFile, and storePassword. " +
+            "Debug builds can run without this file.",
+    )
+}
 
 if (hasReleaseKeystore) {
     keystorePropertiesFile.inputStream().use { stream ->
@@ -31,15 +42,12 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            if (hasReleaseKeystore) {
+        if (hasReleaseKeystore) {
+            create("release") {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
                 storeFile = file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
-            } else {
-                // Fallback keeps release runs functional until a real keystore is provided.
-                initWith(getByName("debug"))
             }
         }
     }
@@ -56,7 +64,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

@@ -220,7 +220,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           res.when(
             success: (vehicles) {
               if (kDebugMode) {
-                debugPrint(
+                AppLogger.debug(
                   '[Home] GET /superadmin/vehicles status=2xx items=${vehicles.length}',
                 );
               }
@@ -259,7 +259,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           res.when(
             success: (transactions) {
               if (kDebugMode) {
-                debugPrint(
+                AppLogger.debug(
                   '[Home] GET /superadmin/transactions status=2xx items=${transactions.length}',
                 );
               }
@@ -295,7 +295,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           res.when(
             success: (users) {
               if (kDebugMode) {
-                debugPrint(
+                AppLogger.debug(
                   '[Home] GET /superadmin/dashboard/recentusers status=2xx items=${users.length}',
                 );
               }

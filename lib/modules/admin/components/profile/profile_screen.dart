@@ -74,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       res.when(
         success: (profile) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Admin Profile] GET /admin/profile status=2xx '
               'name=${profile.fullName} username=${profile.username}',
             );
@@ -89,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         failure: (error) {
           if (kDebugMode) {
             final status = error is ApiException ? error.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Admin Profile] GET /admin/profile status=${status ?? 'error'}',
             );
           }

@@ -10,8 +10,8 @@ import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:go_router/go_router.dart';
-import '../../utils/app_utils.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;

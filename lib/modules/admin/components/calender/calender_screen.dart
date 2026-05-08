@@ -554,7 +554,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
       context.push(route);
     } catch (err) {
       if (kDebugMode) {
-        debugPrint('Calendar open route failed: $err');
+        AppLogger.debug('Calendar open route failed: $err');
       }
     }
   }

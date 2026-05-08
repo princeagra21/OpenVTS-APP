@@ -86,7 +86,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
   Future<void> _loadBranding() async {
     if (!_hasGetBrandingEndpoint) {
       if (kDebugMode) {
-        debugPrint('Branding GET endpoint not available');
+        AppLogger.debug('Branding GET endpoint not available');
       }
       return;
     }

@@ -34,7 +34,7 @@ class RouteGuard {
       case 'driver':
         return '/user/home';
       default:
-        return '/user/home';
+        return '/login';
     }
   }
 

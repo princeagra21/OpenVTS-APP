@@ -46,6 +46,9 @@ app.*.map.json
 
 # Local env and personal local media artifacts
 .fleetstack.env
+.env
+.env.*
+!.env.example
 .codex
 .codex/
 juwai.mp4

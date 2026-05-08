@@ -945,7 +945,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                                       }
                                                     }
                                                     // Debug log to surface server payload.
-                                                    debugPrint(
+                                                    AppLogger.debug(
                                                       'Unassign error details: ${error.details}',
                                                     );
                                                   }

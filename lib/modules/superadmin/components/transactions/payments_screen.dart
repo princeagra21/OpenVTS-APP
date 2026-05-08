@@ -114,7 +114,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
   Future<void> _loadTransactions() async {
     if (!mounted) return;
-    debugPrint('[Payments] Loading transactions');
+    AppLogger.debug('[Payments] Loading transactions');
     setState(() => _loadingTransactions = true);
 
     try {

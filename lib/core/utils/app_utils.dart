@@ -21,6 +21,8 @@
 //         weight: 900
 // (Add other weights or italics as needed).
 
+export 'package:open_vts/core/debug/app_logger.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

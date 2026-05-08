@@ -1067,7 +1067,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
                         flags: InteractiveFlag.all,
                       ),
                       onTap: (tapPos, latlng) {
-                        debugPrint("Tapped: $latlng");
+                        AppLogger.debug("Tapped: $latlng");
                       },
                       onPositionChanged: (camera, hasGesture) {
                         _currentCenter = camera.center;
@@ -1488,7 +1488,7 @@ class VehicleMapMarker extends StatelessWidget {
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
                 errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Vehicle asset failed: $markerAssetPath => $error');
+                  AppLogger.debug('Vehicle asset failed: $markerAssetPath => $error');
                   return Image.asset(
                     markerBaseAssetPath,
                     width: isSelected ? 60 : 56,
@@ -1496,7 +1496,7 @@ class VehicleMapMarker extends StatelessWidget {
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.high,
                     errorBuilder: (context, baseError, baseStackTrace) {
-                      debugPrint('Base vehicle asset failed: $markerBaseAssetPath => $baseError');
+                      AppLogger.debug('Base vehicle asset failed: $markerBaseAssetPath => $baseError');
                       return Icon(
                         Icons.local_shipping_rounded,
                         size: isSelected ? 32 : 28,

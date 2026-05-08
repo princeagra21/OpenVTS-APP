@@ -85,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       res.when(
         success: (data) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Admin Dashboard] GET /admin/dashboard/summary status=2xx '
               'vehicles=${data.totalVehicles} users=${data.totalUsers} '
               'expiring30d=${data.expiring30d} expired=${data.expired} '
@@ -104,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         failure: (error) {
           if (kDebugMode) {
             final status = error is ApiException ? error.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Admin Dashboard] GET /admin/dashboard/summary '
               'status=${status ?? 'error'}',
             );
@@ -191,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
 
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Admin Dashboard] GET /admin/vehicles + /admin/map-telemetry '
               'status=2xx count=${merged.length}',
             );
@@ -207,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         failure: (error) async {
           if (kDebugMode) {
             final status = error is ApiException ? error.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Admin Dashboard] GET /admin/vehicles status=${status ?? 'error'}',
             );
           }

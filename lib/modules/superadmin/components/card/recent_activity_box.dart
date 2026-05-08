@@ -12,7 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class RecentActivityBox extends StatefulWidget {
   const RecentActivityBox({super.key});
@@ -245,7 +245,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       res.when(
         success: (vehicles) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/recentvehicles status=2xx items=${vehicles.length}',
             );
           }
@@ -272,7 +272,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/recentvehicles status=${status ?? 'error'}',
             );
           }
@@ -289,7 +289,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint(
+        AppLogger.debug(
           '[Home] GET /superadmin/dashboard/recentvehicles status=error',
         );
       }
@@ -327,7 +327,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       res.when(
         success: (transactions) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/transactions status=2xx items=${transactions.length}',
             );
           }
@@ -353,7 +353,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/transactions status=${status ?? 'error'}',
             );
           }
@@ -369,7 +369,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint('[Home] GET /superadmin/transactions status=error');
+        AppLogger.debug('[Home] GET /superadmin/transactions status=error');
       }
       if (!mounted) return;
       setState(() => _loadingRecentTransactions = false);
@@ -402,7 +402,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       res.when(
         success: (users) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/recentusers status=2xx items=${users.length}',
             );
           }
@@ -426,7 +426,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/recentusers status=${status ?? 'error'}',
             );
           }
@@ -443,7 +443,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint('[Home] GET /superadmin/dashboard/recentusers status=error');
+        AppLogger.debug('[Home] GET /superadmin/dashboard/recentusers status=error');
       }
       if (!mounted) return;
       setState(() => _loadingRecentUsers = false);

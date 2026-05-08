@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/user_notification_preferences.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_paths.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 import 'package:flutter/foundation.dart';
 
 class UserNotificationPreferencesRepository {
@@ -54,7 +55,7 @@ class UserNotificationPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     if (kDebugMode) {
-      debugPrint('PUT ${ApiPaths.userNotificationsPreferences} payload: $payload');
+      AppLogger.debug('PUT ${ApiPaths.userNotificationsPreferences} payload: $payload');
     }
     final res = await api.put(
       ApiPaths.userNotificationsPreferences,
@@ -65,7 +66,7 @@ class UserNotificationPreferencesRepository {
     return res.when(
       success: (data) {
         if (kDebugMode) {
-          debugPrint('PUT ${ApiPaths.userNotificationsPreferences} response: $data');
+          AppLogger.debug('PUT ${ApiPaths.userNotificationsPreferences} response: $data');
         }
         return Result.ok(null);
       },

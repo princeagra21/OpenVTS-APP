@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../utils/app_utils.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class CustomBottomBar extends StatelessWidget {
   const CustomBottomBar({super.key});

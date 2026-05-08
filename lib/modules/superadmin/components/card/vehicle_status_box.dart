@@ -9,7 +9,7 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class VehicleStatusBox extends StatefulWidget {
   const VehicleStatusBox({super.key});
@@ -59,7 +59,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
       res.when(
         success: (counts) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/totalcounts status=2xx '
               'connected=${counts.liveConnected} running=${counts.liveRunning} '
               'stop=${counts.liveStop} inactive=${counts.liveInactive} '
@@ -77,7 +77,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/totalcounts status=${status ?? 'error'}',
             );
           }
@@ -92,7 +92,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint('[Home] GET /superadmin/vehicles status=error');
+        AppLogger.debug('[Home] GET /superadmin/vehicles status=error');
       }
       if (!mounted) return;
       setState(() => _loading = false);

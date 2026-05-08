@@ -10,7 +10,7 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class AddNewAdminScreen extends StatefulWidget {
   const AddNewAdminScreen({super.key});

@@ -12,8 +12,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../utils/adaptive_utils.dart';
-import '../../utils/app_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdminScreen extends StatefulWidget {

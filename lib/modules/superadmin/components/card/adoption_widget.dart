@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -117,7 +117,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       res.when(
         success: (graph) {
           if (kDebugMode) {
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/adoptiongraph status=2xx '
               'vehicles=${graph.vehicles().length} users=${graph.users().length} '
               'licenses=${graph.licenses().length}',
@@ -133,7 +133,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         failure: (err) {
           if (kDebugMode) {
             final status = err is ApiException ? err.statusCode : null;
-            debugPrint(
+            AppLogger.debug(
               '[Home] GET /superadmin/dashboard/adoptiongraph status=${status ?? 'error'}',
             );
           }
@@ -154,7 +154,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
       );
     } catch (_) {
       if (kDebugMode) {
-        debugPrint(
+        AppLogger.debug(
           '[Home] GET /superadmin/dashboard/adoptiongraph status=error',
         );
       }

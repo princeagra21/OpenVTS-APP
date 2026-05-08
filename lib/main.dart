@@ -5,6 +5,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:open_vts/core/auth/route_guard.dart';
 import 'package:open_vts/core/auth/session_expired_bus.dart';
 import 'package:open_vts/core/config/api_base_url_config.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/login_screen.dart';
 import 'package:open_vts/modules/user/router/user_routes.dart';
@@ -129,7 +130,11 @@ Future<String> _resolveInitialLocation() async {
   }
 
   final role = _extractRoleFromToken(token);
-  return _targetPathForRole(role);
+  final targetPath = _targetPathForRole(role);
+  if (targetPath == '/login') {
+    await storage.clear();
+  }
+  return targetPath;
 }
 
 Future<String?> _routeRedirect(BuildContext context, GoRouterState state) async {
@@ -150,13 +155,19 @@ Future<String?> _routeRedirect(BuildContext context, GoRouterState state) async 
   }
 
   final role = _extractRoleFromToken(trimmedToken);
+  final targetPath = _targetPathForRole(role);
+
+  if (targetPath == '/login') {
+    await storage.clear();
+    return '/login';
+  }
 
   if (RouteGuard.isPublicRoute(path)) {
-    return _targetPathForRole(role);
+    return targetPath;
   }
 
   if (!RouteGuard.isRouteAllowedForRole(path, role)) {
-    return _targetPathForRole(role);
+    return targetPath;
   }
 
   return null;
@@ -345,11 +356,11 @@ void main() async {
   if (kDebugMode) {
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
-      debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+      AppLogger.debug('FLUTTER_ERROR: ${details.exceptionAsString()}');
       debugPrintStack(stackTrace: details.stack);
     };
     PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('PLATFORM_ERROR: $error');
+      AppLogger.debug('PLATFORM_ERROR: $error');
       debugPrintStack(stackTrace: stack);
       return false;
     };
@@ -363,8 +374,8 @@ void main() async {
   );
   final enableDevicePreview = forceDevicePreview && !kReleaseMode;
   if (kDebugMode) {
-    debugPrint('[AuthBootstrap] initialLocation=$initialLocation');
-    debugPrint('[Bootstrap] devicePreview=$enableDevicePreview');
+    AppLogger.debug('[AuthBootstrap] initialLocation=$initialLocation');
+    AppLogger.debug('[Bootstrap] devicePreview=$enableDevicePreview');
   }
   final appRouter = buildRouter(initialLocation);
 
@@ -402,7 +413,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // unawaited(PushNotificationsService.instance.syncOnAppStart());
     _sessionExpiredSub = SessionExpiredBus.stream.listen((_) async {
       await TokenStorage.defaultInstance().clear();
       if (!mounted) return;
@@ -470,7 +480,7 @@ class _MyAppState extends State<MyApp> {
                     color: backgroundColor,
                     child: Directionality(
                       textDirection: direction,
-                      child: SafeArea(child: child ?? const SizedBox.shrink()),
+                      child: child ?? const SizedBox.shrink(),
                     ),
                   ),
                 );

@@ -1,5 +1,7 @@
 // utils/adaptive_utils.dart
 
+export 'package:open_vts/core/debug/app_logger.dart';
+
 class AdaptiveUtils {
   // Private checkers
   static bool _isVerySmallScreen(double screenWidth) => screenWidth < 360;

@@ -262,7 +262,7 @@ class _AppLayoutState extends State<AppLayout> {
                             ),
                             style: TextStyle(color: cs.onSurface),
                             onSubmitted: (q) {
-                              debugPrint("Searching: $q");
+                              AppLogger.debug("Searching: $q");
                               widget.onSearchSubmitted?.call(q);
                               _closeSearch();
                             },
