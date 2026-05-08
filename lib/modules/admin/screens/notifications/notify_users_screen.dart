@@ -2,15 +2,15 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_user_recipient.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_notification_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/card/search_bar.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/admin_user_recipient.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/admin_notification_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/admin/components/card/search_bar.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +27,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
-  /// FleetStack-API-Reference.md (Admin section) confirmed endpoints:
+  /// API reference documentation (Admin section) confirmed endpoints:
   /// - GET /admin/users (query: search)
   /// - GET /admin/shortusers (alternative list endpoint)
   /// - No ADMIN send-notification POST endpoint documented.

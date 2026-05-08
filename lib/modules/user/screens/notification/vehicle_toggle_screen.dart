@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/user_notification_preferences.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_notification_preferences_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
-import 'package:fleet_stack/modules/user/screens/notification/notification_toggle_tile.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/user_notification_preferences.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/user_notification_preferences_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/modules/user/layout/app_layout.dart';
+import 'package:open_vts/modules/user/screens/notification/notification_toggle_tile.dart';
 import 'package:flutter/material.dart';
 
 class VehicleToggleScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class VehicleToggleScreen extends StatefulWidget {
 }
 
 class _VehicleToggleScreenState extends State<VehicleToggleScreen> {
-  // FleetStack-API-Reference.md confirmed endpoints:
+  // API reference documentation confirmed endpoints:
   // - GET /user/notifications/preferences
   // - PUT /user/notifications/preferences
   // Live curl verification also confirmed the same PUT persists:

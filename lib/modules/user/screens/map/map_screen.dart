@@ -1,8 +1,8 @@
-import 'package:fleet_stack/core/repositories/user_vehicles_repository.dart';
-import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_repository.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_screen.dart';
+import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
+import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:open_vts/modules/user/layout/app_layout.dart';
+import 'package:open_vts/shared/map/open_vts_map_repository.dart';
+import 'package:open_vts/shared/map/open_vts_map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 

@@ -1,17 +1,17 @@
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/repositories/user_landmarks_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
-import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
-import 'package:fleet_stack/modules/user/screens/landmark/add_buffer_screen.dart';
-import 'package:fleet_stack/modules/user/screens/map/widgets/glass_map_control_button.dart';
-import 'package:fleet_stack/modules/user/screens/map/widgets/map_layers_sheet.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/repositories/user_landmarks_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:open_vts/modules/user/screens/landmark/add_buffer_screen.dart';
+import 'package:open_vts/shared/map/widgets/glass_map_control_button.dart';
+import 'package:open_vts/shared/map/widgets/map_layers_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -247,7 +247,7 @@ class GeofenceScreen extends StatefulWidget {
 }
 
 class _GeofenceScreenState extends State<GeofenceScreen> {
-  // FleetStack-API-Reference.md + Postman confirmed:
+  // API reference documentation + Postman confirmed:
   // - GET  /user/geofences
   // - POST /user/geofences
   // - GET  /user/routes
@@ -1716,7 +1716,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
         TileLayer(
           urlTemplate: _tileUrlTemplate(),
           subdomains: _tileSubdomains(),
-          userAgentPackageName: 'com.example.fleek_stack_mobile',
+          userAgentPackageName: 'com.openvts.app',
           tileProvider: NetworkTileProvider(
             cachingProvider: const DisabledMapCachingProvider(),
           ),

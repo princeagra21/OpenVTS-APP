@@ -1,19 +1,19 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
-import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_support_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/utils/file_picker_helper.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/modules/admin/screens/support/new_ticket_screen.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/admin_ticket_list_item.dart';
+import 'package:open_vts/core/models/admin_ticket_message_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/admin_support_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/utils/file_picker_helper.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:open_vts/modules/admin/screens/support/new_ticket_screen.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -111,7 +111,7 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  // Endpoint truth table (FleetStack-API-Reference.md + Postman):
+  // Endpoint truth table (API reference documentation + Postman):
   // - GET /admin/tickets
   // - GET /admin/tickets/:id
   // - POST /admin/tickets/:id/messages  (body keys: message)

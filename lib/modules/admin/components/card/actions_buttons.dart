@@ -73,7 +73,7 @@ class ActionsButtons extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(btnRadius),
                 onTap: () {
-                  // TODO: buy credit logic
+                  context.push('/admin/payments');
                 },
                 splashColor: colorScheme.primary.withOpacity(0.08),
                 child: Container(

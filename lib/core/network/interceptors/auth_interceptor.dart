@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
   final TokenStorageBase tokenStorage;
@@ -38,7 +38,7 @@ class AuthInterceptor extends Interceptor {
 
   bool _shouldConsiderAuthForRequest(RequestOptions options) {
     // Never attach auth to requests that go to a different host than the API baseUrl.
-    // This prevents leaking tokens to absolute URLs (e.g. agent.fleetstack.in webhooks).
+    // This prevents leaking tokens to absolute URLs (e.g. external webhook URL webhooks).
     final reqUri = options.uri;
     if (reqUri.hasAuthority) {
       final baseUrl = options.baseUrl;

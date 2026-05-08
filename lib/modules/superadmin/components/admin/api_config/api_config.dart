@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/api_config_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/api_config_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -1660,7 +1660,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "3. Add authorized redirect URI: https://app.fleetstack.com/auth/google/callback",
+                          "3. Add authorized redirect URI: https://app.openvts.io/auth/google/callback",
                           style: GoogleFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,

@@ -1,6 +1,6 @@
 // components/profile/profile_company_box.dart
-import 'package:fleet_stack/shared/widgets/small_box.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/shared/widgets/small_box.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -63,7 +63,7 @@ class ProfileCompanyBox extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            "fleetstackglobal.com",
+            "openvts.io",
             style: GoogleFonts.inter(
               fontSize: subheaderFontSize,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -136,7 +136,7 @@ class ProfileCompanyBox extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "aarav.sharma@fleetstackglobal.com",
+                "aarav.sharma@openvts.io",
                 style: GoogleFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -152,7 +152,7 @@ class ProfileCompanyBox extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "fleetstackglobal.com",
+                "openvts.io",
                 style: GoogleFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.7),

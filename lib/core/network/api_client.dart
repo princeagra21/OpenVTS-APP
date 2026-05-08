@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/auth/session_expired_bus.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/interceptors/auth_interceptor.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:open_vts/core/auth/session_expired_bus.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/interceptors/auth_interceptor.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiClient {

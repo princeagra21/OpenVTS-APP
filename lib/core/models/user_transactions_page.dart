@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/admin_transaction_item.dart';
+import 'package:open_vts/core/models/admin_transaction_item.dart';
 
 class UserTransactionsPage {
   final List<AdminTransactionItem> items;

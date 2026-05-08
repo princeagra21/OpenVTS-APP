@@ -1,12 +1,12 @@
 // screens/transactions/transaction_details_screen.dart
-import 'package:fleet_stack/core/models/admin_transaction_item.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/models/admin_transaction_item.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
-  // FleetStack-API-Reference.md confirms:
+  // API reference documentation confirms:
   // - GET /user/transactions
   //
   // No User transaction-details or receipt endpoint is confirmed in MD/Postman.

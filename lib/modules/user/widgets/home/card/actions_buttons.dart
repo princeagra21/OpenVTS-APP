@@ -1,5 +1,5 @@
 // components/fleet/actions_buttons.dart
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -31,7 +31,7 @@ class ActionsButtons extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(btnRadius),
                 onTap: () {
-                  context.push('/admin/notify-user');
+                  context.push('/user/notifications');
                 },
                 splashColor: colorScheme.onPrimary.withOpacity(0.12),
                 child: Padding(
@@ -72,7 +72,7 @@ class ActionsButtons extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(btnRadius),
                 onTap: () {
-                  // TODO: buy credit logic
+                  context.push('/user/transactions');
                 },
                 splashColor: colorScheme.primary.withOpacity(0.08),
                 child: Container(

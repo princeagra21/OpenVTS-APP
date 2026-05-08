@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_ticket_list_item.dart';
-import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/utils/file_picker_helper.dart';
+import 'package:open_vts/core/models/admin_ticket_list_item.dart';
+import 'package:open_vts/core/models/admin_ticket_message_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/utils/file_picker_helper.dart';
 
 class AdminSupportRepository {
   final ApiClient api;

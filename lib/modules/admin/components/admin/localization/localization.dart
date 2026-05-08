@@ -1,16 +1,15 @@
 // screens/settings/localization_settings_screen.dart
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/common_repository.dart';
-import 'package:fleet_stack/core/repositories/admin_localization_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
-import 'package:fleet_stack/main.dart' show themeController;
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/common_repository.dart';
+import 'package:open_vts/core/repositories/admin_localization_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/admin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/main.dart' show themeController;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -213,19 +212,14 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   Future<void> _setThemeMode(String mode) async {
     if (!mounted) return;
     if (mode == 'dark') {
-      themeController.setThemeMode(ThemeMode.dark);
-      await AppTheme.setDarkMode(true);
+      await themeController.setThemeMode(ThemeMode.dark);
       return;
     }
     if (mode == 'light') {
-      themeController.setThemeMode(ThemeMode.light);
-      await AppTheme.setDarkMode(false);
+      await themeController.setThemeMode(ThemeMode.light);
       return;
     }
-    themeController.setThemeMode(ThemeMode.system);
-    final isDark =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
-    await AppTheme.setDarkMode(isDark);
+    await themeController.setThemeMode(ThemeMode.system);
   }
 
   void _showLoadErrorOnce(String message) {

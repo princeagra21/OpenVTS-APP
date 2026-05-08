@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:open_vts/core/network/api_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

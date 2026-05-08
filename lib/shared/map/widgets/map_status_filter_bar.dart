@@ -1,4 +1,4 @@
-import 'package:fleet_stack/shared/map/models/map_vehicle_status_filter.dart';
+import 'package:open_vts/shared/map/models/map_vehicle_status_filter.dart';
 import 'package:flutter/material.dart';
 
 class MapStatusFilterBar extends StatelessWidget {

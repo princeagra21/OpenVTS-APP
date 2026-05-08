@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/models/vehicle_details.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/repositories/admin_vehicles_repository.dart';
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/core/repositories/user_vehicles_repository.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/vehicle_details.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
 
 abstract class OpenVtsMapRepository {
   Future<Result<List<MapVehiclePoint>>> getMapTelemetry({

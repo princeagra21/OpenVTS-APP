@@ -1,1 +1,1 @@
-export 'package:fleet_stack/shared/widgets/small_box.dart';
+export 'package:open_vts/shared/widgets/small_box.dart';

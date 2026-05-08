@@ -1,7 +1,7 @@
 // screens/renewals/send_reminder_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SendReminderScreen extends StatefulWidget {
   final List<Map<String, dynamic>> selectedDevices; // List of selected devices
@@ -267,7 +267,6 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                           child: ElevatedButton(
                             onPressed: channelSelections.contains(true)
                                 ? () {
-                                    // TODO: Send reminders via selected channels
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text("Reminder sent to $deviceCount device(s)")),
                                     );

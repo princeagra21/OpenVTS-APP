@@ -1,6 +1,6 @@
 // components/notifications/notification_preferences_screen.dart
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 import 'widget/notification_general_box.dart';

@@ -1,7 +1,7 @@
-import 'package:fleet_stack/core/services/push_notifications_service.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/services/push_notifications_service.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

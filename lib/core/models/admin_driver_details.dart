@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
+import 'package:open_vts/core/models/admin_driver_list_item.dart';
 
 class AdminDriverDetails extends AdminDriverListItem {
   const AdminDriverDetails(super.raw);

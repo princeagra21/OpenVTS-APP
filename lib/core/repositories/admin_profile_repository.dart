@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_profile.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class AdminProfileRepository {
   final ApiClient api;
@@ -63,7 +63,7 @@ class AdminProfileRepository {
     );
   }
 
-  // FleetStack-API-Reference.md confirmed endpoints:
+  // API reference documentation confirmed endpoints:
   // POST /admin/profile/verify/email/request
   // POST /admin/profile/verify/email/confirm  body: { "otp": "123456" }
   // POST /admin/profile/verify/whatsapp/request

@@ -1,16 +1,16 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_notification_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/role_notifications_repository.dart';
-import 'package:fleet_stack/core/services/push_notifications_service.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/widgets/push_notification_banner.dart';
-import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/admin_notification_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/role_notifications_repository.dart';
+import 'package:open_vts/core/services/push_notifications_service.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/widgets/push_notification_banner.dart';
+import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -24,7 +24,7 @@ class SuperadminNotificationsScreen extends StatefulWidget {
 
 class _SuperadminNotificationsScreenState
     extends State<SuperadminNotificationsScreen> {
-  // FleetStack-API-Reference.md confirmed endpoints:
+  // API reference documentation confirmed endpoints:
   // - GET   /superadmin/notifications
   // - PATCH /superadmin/notifications/read-all
   // - PATCH /superadmin/notifications/:id/read

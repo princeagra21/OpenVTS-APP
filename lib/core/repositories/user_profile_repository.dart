@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_profile.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class UserProfileRepository {
   final ApiClient api;

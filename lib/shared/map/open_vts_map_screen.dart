@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_controller.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_repository.dart';
+import 'package:open_vts/shared/map/open_vts_map_controller.dart';
+import 'package:open_vts/shared/map/open_vts_map_repository.dart';
 import 'models/map_vehicle_status_filter.dart';
 import 'widgets/glass_map_control_button.dart';
 import 'widgets/map_layers_sheet.dart';
@@ -66,7 +66,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
   static const bool _liveRefreshEnabled = true;
   final Map<String, _AnimatedVehicleMarker> _vehicleMarkers = {};
   bool _showVehicleLabels = false;
-  bool _enableCluster = false; // TODO: integrate a clustering package when available.
+  bool _enableCluster = false; // Clustering stays off until a package is integrated.
   bool _enableRippleEffect = true;
   bool _showGeofence = false;
   bool _showPoi = false;
@@ -1050,7 +1050,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
                   final tileLayer = TileLayer(
                     urlTemplate: _tileUrlTemplate(),
                     subdomains: _tileSubdomains(),
-                    userAgentPackageName: 'com.example.fleek_stack_mobile',
+                    userAgentPackageName: 'com.openvts.app',
                     tileProvider: NetworkTileProvider(
                       cachingProvider: const DisabledMapCachingProvider(),
                     ),

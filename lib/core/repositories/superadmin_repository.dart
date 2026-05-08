@@ -1,41 +1,41 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:fleet_stack/core/models/calendar_event_item.dart';
-import 'package:fleet_stack/core/models/admin_list_item.dart';
-import 'package:fleet_stack/core/models/admin_document_item.dart';
-import 'package:fleet_stack/core/models/admin_profile.dart';
-import 'package:fleet_stack/core/models/admin_settings.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_item.dart';
-import 'package:fleet_stack/core/models/command_option.dart';
-import 'package:fleet_stack/core/models/credit_log_item.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/models/localization_settings.dart';
-import 'package:fleet_stack/core/models/superadmin_document_type.dart';
-import 'package:fleet_stack/core/models/pricing_plan.dart';
-import 'package:fleet_stack/core/models/sent_command_item.dart';
-import 'package:fleet_stack/core/models/ssl_certificate_item.dart';
-import 'package:fleet_stack/core/models/server_overall_status.dart';
-import 'package:fleet_stack/core/models/server_postgres_status.dart';
-import 'package:fleet_stack/core/models/server_service_item.dart';
-import 'package:fleet_stack/core/models/superadmin_adoption_graph.dart';
-import 'package:fleet_stack/core/models/superadmin_profile.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_transaction.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_vehicle.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_user.dart';
-import 'package:fleet_stack/core/models/superadmin_total_counts.dart';
-import 'package:fleet_stack/core/models/ticket_list_item.dart';
-import 'package:fleet_stack/core/models/ticket_message_item.dart';
-import 'package:fleet_stack/core/utils/file_picker_helper.dart';
-import 'package:fleet_stack/core/models/vehicle_config.dart';
-import 'package:fleet_stack/core/models/vehicle_details.dart';
-import 'package:fleet_stack/core/models/vehicle_log_item.dart';
-import 'package:fleet_stack/core/models/vehicle_location.dart';
-import 'package:fleet_stack/core/models/vehicle_list_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/repositories/auth_repository.dart';
+import 'package:open_vts/core/models/calendar_event_item.dart';
+import 'package:open_vts/core/models/admin_list_item.dart';
+import 'package:open_vts/core/models/admin_document_item.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
+import 'package:open_vts/core/models/admin_settings.dart';
+import 'package:open_vts/core/models/admin_vehicle_item.dart';
+import 'package:open_vts/core/models/command_option.dart';
+import 'package:open_vts/core/models/credit_log_item.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/localization_settings.dart';
+import 'package:open_vts/core/models/superadmin_document_type.dart';
+import 'package:open_vts/core/models/pricing_plan.dart';
+import 'package:open_vts/core/models/sent_command_item.dart';
+import 'package:open_vts/core/models/ssl_certificate_item.dart';
+import 'package:open_vts/core/models/server_overall_status.dart';
+import 'package:open_vts/core/models/server_postgres_status.dart';
+import 'package:open_vts/core/models/server_service_item.dart';
+import 'package:open_vts/core/models/superadmin_adoption_graph.dart';
+import 'package:open_vts/core/models/superadmin_profile.dart';
+import 'package:open_vts/core/models/superadmin_recent_transaction.dart';
+import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
+import 'package:open_vts/core/models/superadmin_recent_user.dart';
+import 'package:open_vts/core/models/superadmin_total_counts.dart';
+import 'package:open_vts/core/models/ticket_list_item.dart';
+import 'package:open_vts/core/models/ticket_message_item.dart';
+import 'package:open_vts/core/utils/file_picker_helper.dart';
+import 'package:open_vts/core/models/vehicle_config.dart';
+import 'package:open_vts/core/models/vehicle_details.dart';
+import 'package:open_vts/core/models/vehicle_log_item.dart';
+import 'package:open_vts/core/models/vehicle_location.dart';
+import 'package:open_vts/core/models/vehicle_list_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/repositories/auth_repository.dart';
 
 class SuperadminRepository {
   final ApiClient api;
@@ -566,7 +566,10 @@ class SuperadminRepository {
             final name = (it['name'] ?? it['dbName'] ?? '')
                 .toString()
                 .toLowerCase();
-            if (name.contains('primary') || name.contains('fleetstack')) {
+            if (name.contains('primary') ||
+                name.contains('openvts') ||
+                name.contains('open_vts') ||
+                name.contains('fleetstack')) {
               candidate = it;
               break;
             }

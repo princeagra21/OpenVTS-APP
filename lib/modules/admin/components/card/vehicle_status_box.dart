@@ -1,7 +1,7 @@
 // components/charts/vehicle_status_box.dart
-import 'package:fleet_stack/core/models/admin_dashboard_summary.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/core/models/admin_dashboard_summary.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import '../../utils/adaptive_utils.dart';
 

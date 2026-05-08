@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_user_recipient.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_user_recipient.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class AdminNotificationRepository {
   final ApiClient api;
@@ -57,7 +57,7 @@ class AdminNotificationRepository {
     return Result.fail(
       const ApiException(
         message:
-            'Send notification API is not available in FleetStack-API-Reference.md for ADMIN.',
+            'Send notification API is not available in API reference documentation for ADMIN.',
       ),
     );
   }

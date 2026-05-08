@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/admin_ticket_message_item.dart';
+import 'package:open_vts/core/models/admin_ticket_message_item.dart';
 
 class UserTicketDetails {
   final Map<String, dynamic> raw;

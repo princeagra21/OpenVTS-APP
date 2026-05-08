@@ -4,12 +4,12 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/result.dart';
-import 'package:fleet_stack/core/repositories/push_token_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/repositories/push_token_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -151,7 +151,7 @@ class PushNotificationsService {
         token: token.trim(),
         platform: _platformLabel,
         deviceId: await _deviceId(),
-        userAgent: 'fleet_stack_flutter',
+        userAgent: 'openvts_flutter',
         cancelToken: cancelToken,
       );
 
@@ -241,7 +241,7 @@ class PushNotificationsService {
         token: token.trim(),
         platform: _platformLabel,
         deviceId: await _deviceId(),
-        userAgent: 'fleet_stack_flutter',
+        userAgent: 'openvts_flutter',
       );
       if (res is Success<void>) {
         await prefs.setString(_kRegisteredToken, token.trim());
@@ -330,7 +330,7 @@ class PushNotificationsService {
         token: token.trim(),
         platform: _platformLabel,
         deviceId: await _deviceId(),
-        userAgent: 'fleet_stack_flutter',
+        userAgent: 'openvts_flutter',
       );
       if (res is Success<void>) {
         await prefs.setString(_kRegisteredToken, token.trim());

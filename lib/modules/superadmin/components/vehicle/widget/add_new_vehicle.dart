@@ -1,12 +1,12 @@
 // screens/vehicle/add_vehicle_screen.dart
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -195,6 +195,58 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     }
   }
 
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _submitVehicleForm() {
+    final user = _userController.text.trim();
+    final vehicleNo = _vehicleNoController.text.trim();
+    final imei = _imeiController.text.trim();
+    final sim = _simController.text.trim();
+
+    if (user.isEmpty) {
+      _showMessage('Please provide a user.');
+      return;
+    }
+    if (vehicleNo.isEmpty) {
+      _showMessage('Please provide a vehicle number.');
+      return;
+    }
+    if (imei.isEmpty) {
+      _showMessage('Please provide an IMEI.');
+      return;
+    }
+    if (_selectedPricingPlan == null ||
+        _selectedPricingPlan!.trim().isEmpty ||
+        _selectedPricingPlan == 'No data') {
+      _showMessage('Please select a pricing plan.');
+      return;
+    }
+    if (_selectedDeviceType == null || _selectedDeviceType!.trim().isEmpty) {
+      _showMessage('Please select a device type.');
+      return;
+    }
+    if (_selectedVehicleType == null || _selectedVehicleType!.trim().isEmpty) {
+      _showMessage('Please select a vehicle type.');
+      return;
+    }
+
+    final payload = <String, dynamic>{
+      'user': user,
+      'vehicleNumber': vehicleNo,
+      'imei': imei,
+      'simNumber': sim,
+      'pricingPlan': _selectedPricingPlan,
+      'deviceType': _selectedDeviceType,
+      'vehicleType': _selectedVehicleType,
+    };
+
+    _showMessage('Vehicle details captured.');
+    Navigator.pop(context, payload);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -323,9 +375,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Add vehicle logic
-                          },
+                          onPressed: _submitVehicleForm,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
                             elevation: 0,

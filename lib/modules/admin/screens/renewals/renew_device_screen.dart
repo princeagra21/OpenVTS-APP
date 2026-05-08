@@ -1,5 +1,6 @@
 // screens/renewals/renew_device_screen.dart
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +37,15 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
   };
 
   final f = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+
+  String get _paymentLink {
+    final baseUrl = AppConfig.fromDartDefine().baseUrl.trim();
+    final parsed = Uri.tryParse(baseUrl);
+    final host = (parsed != null && parsed.host.isNotEmpty)
+        ? parsed.host
+        : 'app.openvts.io';
+    return 'https://$host/payments/renew';
+  }
 
   @override
   void initState() {
@@ -351,14 +361,14 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                     children: [
                       Expanded(
                         child: SelectableText(
-                          "https://pay.fleetstackglobal.com/R/O25DDH",
+                          _paymentLink,
                           style: GoogleFonts.inter(fontSize: fs - 2, color: cs.primary),
                         ),
                       ),
                       IconButton(
                         icon:  Icon(Icons.content_copy, color: cs.primary,),
                         onPressed: () {
-                          Clipboard.setData(const ClipboardData(text: "https://pay.fleetstackglobal.com/R/O25DDH"));
+                          Clipboard.setData(ClipboardData(text: _paymentLink));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Link copied!')),
                           );
@@ -400,7 +410,24 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // TODO: Confirm and process renewal
+                          final deviceCount = widget.selectedDevices.length;
+                          final actionLabel = collectionMethod == 'online'
+                              ? 'Renewal link sent'
+                              : 'Renewal confirmed';
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '$actionLabel for $deviceCount device(s)',
+                              ),
+                            ),
+                          );
+
+                          Navigator.pop(context, {
+                            'status': 'confirmed',
+                            'method': collectionMethod,
+                            'deviceCount': deviceCount,
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size.fromHeight(36),

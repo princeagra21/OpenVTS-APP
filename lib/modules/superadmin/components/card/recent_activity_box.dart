@@ -1,14 +1,13 @@
 // UPDATED: components/activity/recent_activity_box.dart
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/debug/superadmin_recent_vehicles_smoke_test.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_vehicle.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_transaction.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
+import 'package:open_vts/core/models/superadmin_recent_transaction.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -143,7 +142,6 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
   CancelToken? _recentVehiclesCancelToken;
   CancelToken? _recentTransactionsCancelToken;
   CancelToken? _recentUsersCancelToken;
-  final CancelToken _smokeCancelToken = CancelToken();
   bool _loadingRecentVehicles = false;
   bool _loadingRecentTransactions = false;
   bool _loadingRecentUsers = false;
@@ -223,7 +221,6 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     _recentVehiclesCancelToken?.cancel('RecentActivityBox disposed');
     _recentTransactionsCancelToken?.cancel('RecentActivityBox disposed');
     _recentUsersCancelToken?.cancel('RecentActivityBox disposed');
-    _smokeCancelToken.cancel('RecentActivityBox disposed');
     super.dispose();
   }
 

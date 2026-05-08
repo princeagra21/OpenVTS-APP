@@ -1,4 +1,4 @@
-package com.example.fleek_stack_mobile
+package com.openvts.app
 
 import io.flutter.embedding.android.FlutterActivity
 

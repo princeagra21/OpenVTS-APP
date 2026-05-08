@@ -1,5 +1,5 @@
-import 'package:fleet_stack/core/services/push_notifications_service.dart';
-import 'package:fleet_stack/core/theme/open_vts_spacing.dart';
+import 'package:open_vts/core/services/push_notifications_service.dart';
+import 'package:open_vts/core/theme/open_vts_spacing.dart';
 import 'package:flutter/material.dart';
 
 import 'open_vts_button.dart';

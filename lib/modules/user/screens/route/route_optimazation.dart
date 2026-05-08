@@ -1,19 +1,19 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/user_route_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_routes_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
-import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
-import 'package:fleet_stack/modules/user/screens/route/add_landmark_screen.dart';
-import 'package:fleet_stack/modules/user/screens/route/add_lat_lng_screen.dart';
-import 'package:fleet_stack/modules/user/screens/route/add_map_location_screen.dart';
-import 'package:fleet_stack/modules/user/screens/route/assign_driver_screen.dart';
-import 'package:fleet_stack/modules/user/screens/map/widgets/glass_map_control_button.dart';
-import 'package:fleet_stack/modules/user/screens/map/widgets/map_layers_sheet.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/user_route_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/user_routes_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:open_vts/modules/user/screens/route/add_landmark_screen.dart';
+import 'package:open_vts/modules/user/screens/route/add_lat_lng_screen.dart';
+import 'package:open_vts/modules/user/screens/route/add_map_location_screen.dart';
+import 'package:open_vts/modules/user/screens/route/assign_driver_screen.dart';
+import 'package:open_vts/shared/map/widgets/glass_map_control_button.dart';
+import 'package:open_vts/shared/map/widgets/map_layers_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
@@ -62,7 +62,7 @@ class TopActionButton extends StatelessWidget {
 }
 
 class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
-  // FleetStack-API-Reference.md + Postman confirmed:
+  // API reference documentation + Postman confirmed:
   // - GET    /user/routes
   // - GET    /user/routes/:id
   // - POST   /user/routes
@@ -926,7 +926,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                     urlTemplate:
                         _selectedTileOption.urlTemplate,
                     subdomains: _selectedTileOption.subdomains,
-                    userAgentPackageName: 'com.example.fleek_stack_mobile',
+                    userAgentPackageName: 'com.openvts.app',
                   ),
                   if (_route.isNotEmpty)
                     PolylineLayer(

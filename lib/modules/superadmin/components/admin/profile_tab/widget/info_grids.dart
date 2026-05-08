@@ -1,9 +1,9 @@
 // components/admin/admin_info_boxes.dart
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/models/admin_profile.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
 
 class AdminInfoBoxes extends StatelessWidget {
   final AdminProfile? profile;

@@ -1,5 +1,5 @@
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/shared/map/models/map_vehicle_status_filter.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/shared/map/models/map_vehicle_status_filter.dart';
 import 'package:flutter/material.dart';
 
 class StatusVehicleBottomSheet extends StatelessWidget {

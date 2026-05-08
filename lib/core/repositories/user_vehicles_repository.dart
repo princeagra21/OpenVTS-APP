@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/models/superadmin_document_type.dart';
-import 'package:fleet_stack/core/models/user_vehicle_details.dart';
-import 'package:fleet_stack/core/models/vehicle_document_item.dart';
-import 'package:fleet_stack/core/models/vehicle_list_item.dart';
-import 'package:fleet_stack/core/models/vehicle_details.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/superadmin_document_type.dart';
+import 'package:open_vts/core/models/user_vehicle_details.dart';
+import 'package:open_vts/core/models/vehicle_document_item.dart';
+import 'package:open_vts/core/models/vehicle_list_item.dart';
+import 'package:open_vts/core/models/vehicle_details.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 import 'package:http_parser/http_parser.dart';
 import 'dart:typed_data';
 

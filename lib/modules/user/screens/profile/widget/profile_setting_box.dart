@@ -1,9 +1,9 @@
 // components/profile/profile_box.dart
-import 'package:fleet_stack/core/models/admin_profile.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/user/screens/profile/widget/edit_admin_profile_screen.dart';
-import 'package:fleet_stack/modules/user/screens/profile/widget/update_password_screen.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/user/screens/profile/widget/edit_admin_profile_screen.dart';
+import 'package:open_vts/modules/user/screens/profile/widget/update_password_screen.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

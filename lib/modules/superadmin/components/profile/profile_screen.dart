@@ -1,20 +1,20 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/superadmin_profile.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_user.dart';
-import 'package:fleet_stack/core/models/superadmin_recent_vehicle.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/auth_repository.dart';
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_company_box.dart';
-import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_delete_box.dart';
-import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_info_boxes.dart';
-import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_recent_activity_box.dart';
-import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_setting_box.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/superadmin_profile.dart';
+import 'package:open_vts/core/models/superadmin_recent_user.dart';
+import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/auth_repository.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/modules/superadmin/components/profile/widget/profile_company_box.dart';
+import 'package:open_vts/modules/superadmin/components/profile/widget/profile_delete_box.dart';
+import 'package:open_vts/modules/superadmin/components/profile/widget/profile_info_boxes.dart';
+import 'package:open_vts/modules/superadmin/components/profile/widget/profile_recent_activity_box.dart';
+import 'package:open_vts/modules/superadmin/components/profile/widget/profile_setting_box.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {

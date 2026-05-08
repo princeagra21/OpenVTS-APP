@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class UserMapRepository {
   final ApiClient api;

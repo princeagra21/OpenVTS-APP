@@ -1,6 +1,6 @@
 // components/notifications/notification_preferences_screen.dart
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/modules/admin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +19,7 @@ class NotificationPreferencesScreen extends StatefulWidget {
 
 class _NotificationPreferencesScreenState
     extends State<NotificationPreferencesScreen> {
-  /// Endpoint scan result (FleetStack-API-Reference.md first, Postman second):
+  /// Endpoint scan result (API reference documentation first, Postman second):
   /// - /admin/notifications* endpoints are inbox/read APIs (separate screen),
   ///   not preferences persistence.
   /// - Postman has only superadmin app notification template endpoints

@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/user_notification_preferences.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_paths.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/user_notification_preferences.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_paths.dart';
+import 'package:open_vts/core/network/result.dart';
 import 'package:flutter/foundation.dart';
 
 class UserNotificationPreferencesRepository {

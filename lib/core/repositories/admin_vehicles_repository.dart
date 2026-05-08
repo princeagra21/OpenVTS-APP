@@ -1,16 +1,16 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_details.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_list_item.dart';
-import 'package:fleet_stack/core/models/admin_user_list_item.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/models/vehicle_config.dart';
-import 'package:fleet_stack/core/models/vehicle_details.dart';
-import 'package:fleet_stack/core/models/admin_quick_device.dart';
-import 'package:fleet_stack/core/models/device_type.dart';
-import 'package:fleet_stack/core/models/vehicle_type.dart';
-import 'package:fleet_stack/core/models/pricing_plan.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_vehicle_details.dart';
+import 'package:open_vts/core/models/admin_vehicle_list_item.dart';
+import 'package:open_vts/core/models/admin_user_list_item.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/vehicle_config.dart';
+import 'package:open_vts/core/models/vehicle_details.dart';
+import 'package:open_vts/core/models/admin_quick_device.dart';
+import 'package:open_vts/core/models/device_type.dart';
+import 'package:open_vts/core/models/vehicle_type.dart';
+import 'package:open_vts/core/models/pricing_plan.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class AdminVehiclesRepository {
   final ApiClient api;

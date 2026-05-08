@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/vehicle_user_item.dart';
+import 'package:open_vts/core/models/vehicle_user_item.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

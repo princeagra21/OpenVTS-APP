@@ -1,16 +1,16 @@
 // components/admin/credit_history_tab.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/add_deduct_credit_screen.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/credit_history_details_screen.dart';
-import 'package:fleet_stack/modules/superadmin/components/admin/credit_history/email_screen.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/superadmin/components/admin/credit_history/add_deduct_credit_screen.dart';
+import 'package:open_vts/modules/superadmin/components/admin/credit_history/credit_history_details_screen.dart';
+import 'package:open_vts/modules/superadmin/components/admin/credit_history/email_screen.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -244,7 +244,13 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
               // DOWNLOAD
               GestureDetector(
                 onTap: () {
-                  // TODO: implement download logic
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Download export is available from the admin credit history report.',
+                      ),
+                    ),
+                  );
                 },
                 child: Row(
                   children: [

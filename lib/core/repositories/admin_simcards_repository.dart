@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_sim_card_item.dart';
-import 'package:fleet_stack/core/models/sim_provider_option.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_sim_card_item.dart';
+import 'package:open_vts/core/models/sim_provider_option.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class AdminSimCardsRepository {
   final ApiClient api;

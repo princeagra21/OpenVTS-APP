@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:fleet_stack/core/models/admin_log_item.dart';
-import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/core/models/admin_log_item.dart';
+import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';

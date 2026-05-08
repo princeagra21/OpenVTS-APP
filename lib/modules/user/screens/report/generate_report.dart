@@ -1,11 +1,11 @@
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 
 class GenerateReportScreen extends StatelessWidget {
   const GenerateReportScreen({super.key});
 
-  // FleetStack-API-Reference.md / Postman:
+  // API reference documentation / Postman:
   // - no User report-generation endpoint was found for this screen
   // - keep UI honest until backend confirms report APIs
 

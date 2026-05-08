@@ -1,6 +1,6 @@
 // screens/settings/smtp_config_settings_screen.dart
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/modules/admin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -229,7 +229,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               children: [
                 _buildInputField(context, label: "FROM EMAIL ADDRESS", hint: "This email address will appear as the sender for all system emails"),
                 const SizedBox(height: 16),
-                _buildInputField(context, label: "FROM NAME", hint: "Display name that will appear alongside the email address", initialValue: "FleetStack"),
+                _buildInputField(context, label: "FROM NAME", hint: "Display name that will appear alongside the email address", initialValue: "Open VTS"),
                 const SizedBox(height: 16),
                 _buildInputField(context, label: "REPLY-TO EMAIL (Optional)", hint: "Email address where replies should be sent (if different from sender)"),
               ],

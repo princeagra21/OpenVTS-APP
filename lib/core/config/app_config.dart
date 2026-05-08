@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/config/api_base_url_config.dart';
+import 'package:open_vts/core/config/api_base_url_config.dart';
 
 class AppConfig {
   final AppEnvironment environment;

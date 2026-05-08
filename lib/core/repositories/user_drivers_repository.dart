@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_driver_list_item.dart';
-import 'package:fleet_stack/core/models/user_driver_details.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_driver_list_item.dart';
+import 'package:open_vts/core/models/user_driver_details.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class UserDriversRepository {
   final ApiClient api;

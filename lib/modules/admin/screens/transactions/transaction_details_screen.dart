@@ -1,10 +1,10 @@
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
-  // Endpoint truth (FleetStack-API-Reference.md + Postman):
+  // Endpoint truth (API reference documentation + Postman):
   // - Details endpoint: NOT FOUND for Admin transactions
   // - Receipt endpoint: NOT FOUND for Admin transactions
   //

@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_transaction_item.dart';
-import 'package:fleet_stack/core/models/admin_transactions_summary.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_transactions_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/admin_transaction_item.dart';
+import 'package:open_vts/core/models/admin_transactions_summary.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/admin_transactions_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +30,7 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  // Endpoint truth table (FleetStack-API-Reference.md + Postman):
+  // Endpoint truth table (API reference documentation + Postman):
   // - GET /admin/transactions (query: search, status, page, limit, from, to)
   //   Response keys used: data.data.items | data.items | items
   // - GET /admin/transactions/analytics

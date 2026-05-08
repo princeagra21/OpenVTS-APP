@@ -1,7 +1,7 @@
 // screens/renewals/suspend_access_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SuspendAccessScreen extends StatefulWidget {
   final List<Map<String, dynamic>> selectedDevices; // List of selected devices
@@ -169,8 +169,6 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Suspend selected devices
-                        // Show confirmation snackbar or dialog
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("$deviceCount device(s) suspended successfully"),

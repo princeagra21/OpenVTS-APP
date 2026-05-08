@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
-import 'package:fleet_stack/core/models/user_recent_alert_item.dart';
-import 'package:fleet_stack/core/models/user_top_asset_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_home_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
-import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
-import 'package:fleet_stack/modules/user/widgets/home/card/vehicle_status_box.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/user_fleet_status_summary.dart';
+import 'package:open_vts/core/models/user_recent_alert_item.dart';
+import 'package:open_vts/core/models/user_top_asset_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/user_home_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:open_vts/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,7 +25,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // FleetStack-API-Reference.md confirmed User Home endpoints:
+  // API reference documentation confirmed User Home endpoints:
   // - GET /user/dashboard/fleet-status
   // - GET /user/dashboard/recent-alerts
   // - GET /user/dashboard/top-performing-assets

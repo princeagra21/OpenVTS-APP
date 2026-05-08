@@ -1,5 +1,5 @@
-import 'package:fleet_stack/core/models/vehicle_document_item.dart';
-import 'package:fleet_stack/core/models/vehicle_user_item.dart';
+import 'package:open_vts/core/models/vehicle_document_item.dart';
+import 'package:open_vts/core/models/vehicle_user_item.dart';
 
 class VehicleDetails {
   final Map<String, dynamic> raw;

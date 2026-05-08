@@ -1,25 +1,25 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/admin_dashboard_summary.dart';
-import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/admin_dashboard_repository.dart';
-import 'package:fleet_stack/core/repositories/admin_vehicle_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/components/card/adoption_widget.dart';
-import 'package:fleet_stack/modules/admin/components/card/fleet_card.dart';
-import 'package:fleet_stack/modules/admin/components/card/vehicle_status_box.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/admin_dashboard_summary.dart';
+import 'package:open_vts/core/models/admin_vehicle_preview_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/admin_dashboard_repository.dart';
+import 'package:open_vts/core/repositories/admin_vehicle_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/modules/admin/components/card/adoption_widget.dart';
+import 'package:open_vts/modules/admin/components/card/fleet_card.dart';
+import 'package:open_vts/modules/admin/components/card/vehicle_status_box.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -56,7 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-  /// Confirmed API source (FleetStack-API-Reference.md):
+  /// Confirmed API source (API reference documentation):
   /// - GET /admin/dashboard/summary?rk=0[&currency=INR]
   /// Keys used:
   /// - totals.totalVehicles

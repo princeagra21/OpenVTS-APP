@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/admin_user_list_item.dart';
+import 'package:open_vts/core/models/admin_user_list_item.dart';
 
 class AdminUserDetails {
   final Map<String, dynamic> raw;

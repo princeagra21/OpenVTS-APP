@@ -1,5 +1,5 @@
-import 'package:fleet_stack/core/models/admin_vehicle_preview_item.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/models/admin_vehicle_preview_item.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -55,7 +55,7 @@ class SmallTab extends StatelessWidget {
 }
 
 class RecentActivityBox extends StatefulWidget {
-  /// Endpoints used for vehicles preview (FleetStack-API-Reference.md):
+  /// Endpoints used for vehicles preview (API reference documentation):
   /// - GET /admin/vehicles (limit=5)
   ///   keys: vehicles[].id, plateNumber/name, status/motion, updatedAt/lastSeen
   /// - GET /admin/map-telemetry

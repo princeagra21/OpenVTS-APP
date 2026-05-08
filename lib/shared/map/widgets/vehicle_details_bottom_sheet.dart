@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
-import 'package:fleet_stack/core/models/vehicle_details.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_repository.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/vehicle_details.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/shared/map/open_vts_map_repository.dart';
 import 'package:flutter/material.dart';
 
 class VehicleDetailsBottomSheet extends StatefulWidget {

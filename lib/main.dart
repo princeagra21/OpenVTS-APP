@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'dart:async';
 
 import 'package:device_preview/device_preview.dart';
-import 'package:fleet_stack/core/auth/session_expired_bus.dart';
-import 'package:fleet_stack/core/config/api_base_url_config.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/login_screen.dart';
-import 'package:fleet_stack/modules/user/router/user_routes.dart';
-import 'package:fleet_stack/onboarding_screen.dart';
-import 'package:fleet_stack/modules/superadmin/router/superadmin_routes.dart';
-import 'package:fleet_stack/modules/admin/router/admin_routes.dart';
-import 'package:fleet_stack/core/theme/open_vts_theme.dart';
+import 'package:open_vts/core/auth/route_guard.dart';
+import 'package:open_vts/core/auth/session_expired_bus.dart';
+import 'package:open_vts/core/config/api_base_url_config.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/login_screen.dart';
+import 'package:open_vts/modules/user/router/user_routes.dart';
+import 'package:open_vts/onboarding_screen.dart';
+import 'package:open_vts/modules/superadmin/router/superadmin_routes.dart';
+import 'package:open_vts/modules/admin/router/admin_routes.dart';
+import 'package:open_vts/core/theme/open_vts_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -18,13 +19,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-String? _targetPathForRole(String? backendRole) {
-  final normalized = (backendRole ?? '').trim().toLowerCase();
-  if (normalized.contains('super')) return '/superadmin/home';
-  if (normalized.contains('admin')) return '/admin/home';
-  if (normalized.contains('user')) return '/user/home';
-  if (normalized.contains('driver')) return null;
-  return '/user/home';
+String _targetPathForRole(String? backendRole) {
+  return RouteGuard.defaultRouteForRole(backendRole);
 }
 
 Map<String, dynamic>? _decodeJwtPayload(String token) {
@@ -133,17 +129,43 @@ Future<String> _resolveInitialLocation() async {
   }
 
   final role = _extractRoleFromToken(token);
-  final target = _targetPathForRole(role);
-  if (target == null) {
-    await storage.clear();
-    return '/onboarding';
+  return _targetPathForRole(role);
+}
+
+Future<String?> _routeRedirect(BuildContext context, GoRouterState state) async {
+  final path = state.matchedLocation;
+  final storage = TokenStorage.defaultInstance();
+  final token = await storage.readAccessToken();
+  final hasToken = token != null && token.trim().isNotEmpty;
+
+  if (!hasToken) {
+    return RouteGuard.isPublicRoute(path) ? null : '/login';
   }
-  return target;
+
+  final trimmedToken = token!.trim();
+
+  if (_isTokenExpired(trimmedToken)) {
+    await storage.clear();
+    return path == '/onboarding' ? '/onboarding' : '/login';
+  }
+
+  final role = _extractRoleFromToken(trimmedToken);
+
+  if (RouteGuard.isPublicRoute(path)) {
+    return _targetPathForRole(role);
+  }
+
+  if (!RouteGuard.isRouteAllowedForRole(path, role)) {
+    return _targetPathForRole(role);
+  }
+
+  return null;
 }
 
 /// ROUTER
 GoRouter buildRouter(String initialLocation) => GoRouter(
   initialLocation: initialLocation,
+  redirect: _routeRedirect,
   routes: [
     /// ======================
     /// 🌍 GLOBAL ROUTES

@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/config/app_config.dart';
-import 'package:fleet_stack/core/models/user_share_track_link_item.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/api_exception.dart';
-import 'package:fleet_stack/core/repositories/user_share_track_links_repository.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
-import 'package:fleet_stack/core/utils/app_utils.dart';
-import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/models/user_share_track_link_item.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/user_share_track_links_repository.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,7 +24,7 @@ class ShareTrackScreen extends StatefulWidget {
 }
 
 class _ShareTrackScreenState extends State<ShareTrackScreen> {
-  // FleetStack-API-Reference.md confirmed:
+  // API reference documentation confirmed:
   // - GET    /user/sharetracklinks
   // - POST   /user/sharetracklinks
   // - GET    /user/sharetracklinks/:id

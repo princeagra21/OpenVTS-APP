@@ -1,7 +1,7 @@
 // screens/settings/branding_settings_screen.dart
-import 'package:fleet_stack/shared/widgets/small_box.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/shared/widgets/small_box.dart';
+import 'package:open_vts/modules/admin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -114,7 +114,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 Text("Base URL", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
                 const SizedBox(height: 8),
                 TextFormField(
-                  initialValue: "app.fleetstack.com",
+                  initialValue: "app.openvts.io",
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.transparent,

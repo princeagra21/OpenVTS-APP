@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/models/admin_transaction_item.dart';
-import 'package:fleet_stack/core/models/admin_transactions_summary.dart';
-import 'package:fleet_stack/core/network/api_client.dart';
-import 'package:fleet_stack/core/network/result.dart';
+import 'package:open_vts/core/models/admin_transaction_item.dart';
+import 'package:open_vts/core/models/admin_transactions_summary.dart';
+import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/result.dart';
 
 class AdminTransactionsRepository {
   final ApiClient api;

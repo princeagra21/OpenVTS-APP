@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:fleet_stack/core/network/interceptors/auth_interceptor.dart';
-import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:open_vts/core/network/interceptors/auth_interceptor.dart';
+import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/capturing_adapter.dart';

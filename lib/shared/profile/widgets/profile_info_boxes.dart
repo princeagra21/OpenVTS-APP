@@ -1,7 +1,6 @@
-// components/profile/profile_info_boxes.dart
-import 'package:fleet_stack/core/models/admin_profile.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart' show AdaptiveUtils;
+import 'package:open_vts/core/models/admin_profile.dart';
+import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart' show AdaptiveUtils;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

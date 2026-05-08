@@ -1,7 +1,7 @@
-import 'package:fleet_stack/main.dart';
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
-import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/main.dart' show themeController;
+import 'package:open_vts/modules/admin/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,14 +17,14 @@ class _BrandingScreenState extends State<BrandingScreen> {
   bool isDarkMode = false;
 
   final Map<String, Color> themeColors = {
-    "Default": AppTheme.defaultBrand,
-    "Corporate": AppTheme.corporate,
-    "Modern": AppTheme.modern,
-    "Luxury": AppTheme.luxury,
-    "Futuristic": AppTheme.futuristic,
+    "Default": OpenVtsTheme.defaultBrand,
+    "Corporate": const Color(0xFF0055FF),
+    "Modern": const Color(0xFF6A00FF),
+    "Luxury": const Color(0xFFB8933D),
+    "Futuristic": const Color(0xFF00FFFF),
   };
 
-  Color get currentBrand => AppTheme.brandColor;
+  Color get currentBrand => themeController.brandColor.value;
 
 
   @override
@@ -34,24 +34,24 @@ class _BrandingScreenState extends State<BrandingScreen> {
   }
 
   Future<void> _loadSavedPreferences() async {
-    await AppTheme.loadTheme();
+    final savedBrand = themeController.brandColor.value;
 
     final matchEntry = themeColors.entries.firstWhere(
-      (e) => e.value.value == AppTheme.brandColor.value,
-      orElse: () => const MapEntry("Default", AppTheme.defaultBrand),
+      (e) => e.value.value == savedBrand.value,
+      orElse: () => const MapEntry("Default", OpenVtsTheme.defaultBrand),
     );
 
     setState(() {
       selectedTheme = matchEntry.key;
-      isDarkMode = AppTheme.isDarkMode;
+      isDarkMode = themeController.themeMode.value == ThemeMode.dark;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = isDarkMode
-        ? AppTheme.dark(currentBrand)
-        : AppTheme.light(currentBrand);
+        ? OpenVtsTheme.dark(currentBrand)
+        : OpenVtsTheme.light(currentBrand);
 
     final width = MediaQuery.of(context).size.width;
     final hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
@@ -83,11 +83,10 @@ class _BrandingScreenState extends State<BrandingScreen> {
 
                     // Auto-fix for Default in dark mode
                     final brandToSet = (isDarkMode && themeName == "Default")
-                        ? AppTheme.defaultDarkBrand
+                        ? OpenVtsTheme.defaultDarkBrand
                         : color;
 
-                    themeController.setBrand(brandToSet);
-                    await AppTheme.setBrand(brandToSet);
+                    await themeController.setBrand(brandToSet);
                   },
                   child: Container(
                     padding:
@@ -99,7 +98,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                       border: Border.all(
                         color: isSelected
                             ? currentBrand
-                            : theme.tabBarTheme.unselectedLabelColor!,
+                            : theme.colorScheme.outline,
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -108,7 +107,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: (themeName == "Default" && isDarkMode)
-                              ? AppTheme.defaultDarkBrand
+                              ? OpenVtsTheme.defaultDarkBrand
                               : themeColors[themeName],
                           radius: 6,
                         ),
@@ -162,10 +161,11 @@ class _BrandingScreenState extends State<BrandingScreen> {
                     // If Default theme is selected, force the correct brand color
                     if (selectedTheme == "Default") {
                       final forcedBrand =
-                          newDark ? AppTheme.defaultDarkBrand : AppTheme.defaultBrand;
+                          newDark
+                              ? OpenVtsTheme.defaultDarkBrand
+                              : OpenVtsTheme.defaultBrand;
 
-                      themeController.setBrand(forcedBrand);
-                      await AppTheme.setBrand(forcedBrand);
+                      await themeController.setBrand(forcedBrand);
 
                       setState(() {
                         // Ensure UI buttons (circle + tick) use currentBrand immediately
@@ -173,13 +173,15 @@ class _BrandingScreenState extends State<BrandingScreen> {
                       });
                     } else {
                       // Reapply existing brand color for other themes
-                      themeController.setBrand(AppTheme.brandColor);
-                      await AppTheme.setBrand(AppTheme.brandColor);
+                      final selectedColor =
+                          themeColors[selectedTheme] ?? themeController.brandColor.value;
+                      await themeController.setBrand(selectedColor);
                     }
 
                     // Save dark mode
-                    themeController.setDarkMode(newDark);
-                    await AppTheme.setDarkMode(newDark);
+                    await themeController.setThemeMode(
+                      newDark ? ThemeMode.dark : ThemeMode.light,
+                    );
                   },
 
                   children: const [

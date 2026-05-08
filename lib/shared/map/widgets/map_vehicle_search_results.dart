@@ -1,4 +1,4 @@
-import 'package:fleet_stack/core/models/map_vehicle_point.dart';
+import 'package:open_vts/core/models/map_vehicle_point.dart';
 import 'package:flutter/material.dart';
 
 class MapVehicleSearchResultsPanel extends StatelessWidget {

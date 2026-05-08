@@ -1,8 +1,8 @@
-import 'package:fleet_stack/core/repositories/superadmin_repository.dart';
-import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
-import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_repository.dart';
-import 'package:fleet_stack/shared/map/open_vts_map_screen.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
+import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
+import 'package:open_vts/shared/map/open_vts_map_repository.dart';
+import 'package:open_vts/shared/map/open_vts_map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 

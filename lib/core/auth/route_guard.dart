@@ -1,62 +1,62 @@
-import 'package:fleet_stack/core/repositories/auth_repository.dart';
+import 'package:open_vts/core/repositories/auth_repository.dart';
 
 class RouteGuard {
-  /// Determines if a route is public (does not require authentication).
-  static bool isPublicRoute(String path) {
-    // Public routes that don't require authentication
-    final publicRoutes = [
-      '/auth/login',
-      '/auth/forgot-password',
-      '/auth/register', // if exists
-      // Add other public routes as needed
-    ];
+  static const Set<String> _publicRoutes = {
+    '/',
+    '/login',
+    '/onboarding',
+  };
 
-    return publicRoutes.any((route) => path.startsWith(route)) ||
-           path == '/' ||
-           path.startsWith('/public');
-  }
+  static bool isPublicRoute(String path) => _publicRoutes.contains(path);
 
   /// Extracts the role from a JWT token.
   static String? roleForToken(String token) {
     return AuthRepository.extractRole(null, token: token);
   }
 
+  static String normalizeRole(String? role) {
+    final normalized = (role ?? '').trim().toLowerCase();
+    if (normalized.contains('super')) return 'superadmin';
+    if (normalized.contains('admin')) return 'admin';
+    if (normalized.contains('user')) return 'user';
+    if (normalized.contains('driver')) return 'driver';
+    return '';
+  }
+
   /// Returns the default route for a given role.
   static String defaultRouteForRole(String? role) {
-    if (role == null) return '/auth/login';
-
-    switch (role.toLowerCase()) {
-      case 'admin':
+    switch (normalizeRole(role)) {
       case 'superadmin':
-        return '/admin/dashboard';
+        return '/superadmin/home';
+      case 'admin':
+        return '/admin/home';
       case 'user':
-        return '/user/dashboard';
+      case 'driver':
+        return '/user/home';
       default:
-        return '/user/dashboard'; // fallback
+        return '/user/home';
     }
   }
 
   /// Checks if a route is allowed for a given role.
   static bool isRouteAllowedForRole(String path, String? role) {
-    if (role == null) return isPublicRoute(path);
-
-    final roleLower = role.toLowerCase();
-
-    // Admin and superadmin can access everything
-    if (roleLower == 'admin' || roleLower == 'superadmin') {
+    if (isPublicRoute(path)) {
       return true;
     }
 
-    // User role restrictions
-    if (roleLower == 'user') {
-      // Users cannot access admin routes
-      if (path.startsWith('/admin') || path.startsWith('/superadmin')) {
-        return false;
-      }
-      return true;
+    final normalizedRole = normalizeRole(role);
+
+    if (normalizedRole == 'superadmin') return true;
+
+    if (normalizedRole == 'admin') {
+      // Admins cannot access superadmin routes unless impersonation is added.
+      return !path.startsWith('/superadmin');
     }
 
-    // Default: allow if not restricted
-    return true;
+    if (normalizedRole == 'user' || normalizedRole == 'driver') {
+      return !path.startsWith('/admin') && !path.startsWith('/superadmin');
+    }
+
+    return false;
   }
 }

@@ -1,5 +1,5 @@
-name: fleet_stack
-description: "A new Flutter project."
+name: open_vts
+description: "Open VTS Flutter application."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -16,10 +16,8 @@ dependencies:
   device_preview: ^1.2.0
   fl_chart: ^1.1.1
   go_router: ^17.0.0
-  http: ^1.6.0
   dio: ^5.8.0+1
   cached_network_image: ^3.4.1
-  flutter_riverpod: ^3.0.3
   flutter_svg: ^2.2.3
   url_launcher: ^6.3.2
   shared_preferences: ^2.5.3
@@ -30,14 +28,11 @@ dependencies:
   calendar_date_picker2: ^2.0.1
   country_picker: ^2.0.27
   file_picker: ^10.3.7
-  data_table_2: ^2.7.2
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
-  font_awesome_flutter: ^10.12.0
   material_symbols_icons: ^4.2892.0
   time_range_picker: ^2.3.1
   flutter_map_marker_popup: ^8.1.0
-  open_route_service: ^1.2.7
   shimmer: ^3.0.0
   firebase_core: ^4.5.0
   firebase_messaging: ^16.1.2
@@ -79,12 +74,12 @@ flutter_icons:
   ios: true
   image_path_android: "assets/images/logo.png"
   image_path_ios: "assets/images/logo.png"
-  adaptive_icon_background: "#194EE5"
+  adaptive_icon_background: "#141118"
   adaptive_icon_foreground: "assets/images/logo.png"
 
 # Native splash screen - top-level
 flutter_native_splash:
-  color: "#194EE5"
+  color: "#141118"
   image: assets/images/logo.png
   android: true
   ios: true
