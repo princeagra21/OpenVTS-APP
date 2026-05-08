@@ -1,7 +1,7 @@
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 String safeText(String? value, {String fallback = '—'}) {
   final trimmed = (value ?? '').trim();
@@ -113,7 +113,7 @@ Widget statusChip(BuildContext context, String status, double fontSize) {
     ),
     child: Text(
       status,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: fontSize,
         fontWeight: FontWeight.w600,
         color: fg(),
@@ -126,7 +126,7 @@ Widget sectionTitle(BuildContext context, String title, double fontSize) {
   final cs = Theme.of(context).colorScheme;
   return Text(
     title,
-    style: GoogleFonts.inter(
+    style: AppFonts.inter(
       fontSize: fontSize + 1,
       fontWeight: FontWeight.w700,
       color: cs.onSurface,
@@ -149,7 +149,7 @@ Widget infoRow(
         width: labelWidth,
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: bodyFontSize,
             fontWeight: FontWeight.w600,
             color: cs.onSurface.withValues(alpha: 0.7),
@@ -162,7 +162,7 @@ Widget infoRow(
           value,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(fontSize: bodyFontSize, color: cs.onSurface),
+          style: AppFonts.inter(fontSize: bodyFontSize, color: cs.onSurface),
         ),
       ),
     ],
@@ -194,7 +194,7 @@ Widget emptyStateCard(
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w700,
             color: cs.onSurface,
@@ -203,7 +203,7 @@ Widget emptyStateCard(
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize - 2,
             color: cs.onSurface.withValues(alpha: 0.72),
           ),

@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/settings/application_settings_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -10,7 +12,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ApplicationSettingsScreen extends StatelessWidget {
   const ApplicationSettingsScreen({super.key});
@@ -71,10 +72,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
   _ApplicationSnapshot? _loadedSnapshot;
 
   AppPreferencesRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AppPreferencesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -327,7 +325,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 ),
                 label: Text(
                   "Reset",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -353,7 +351,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 ),
                 label: Text(
                   "Save",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -367,7 +365,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           // TITLE
           Text(
             "Application Settings",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
               fontWeight: FontWeight.w800,
               color: colorScheme.onSurface.withOpacity(0.87),
@@ -376,7 +374,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           const SizedBox(height: 4),
           Text(
             "Configure system-wide settings for your application.",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               color: colorScheme.onSurface.withOpacity(0.9),
             ),
@@ -391,7 +389,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             title: "Current Configuration",
             child: Text(
               "Demo: $demoStatus • Geocoding: $geocodingPrecision • Signup: $signupStatus",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -427,7 +425,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   label: const Text("2 Digits\nCity/Region"),
                   selected: geocodingPrecision == "2 Digits",
                   selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.roboto(
+                  labelStyle: AppFonts.roboto(
                     color: geocodingPrecision == "2 Digits"
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface,
@@ -442,7 +440,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   label: const Text("3 Digits\nStreet Level"),
                   selected: geocodingPrecision == "3 Digits",
                   selectedColor: colorScheme.primary,
-                  labelStyle: GoogleFonts.roboto(
+                  labelStyle: AppFonts.roboto(
                     color: geocodingPrecision == "3 Digits"
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface,
@@ -480,7 +478,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 const SizedBox(height: 12),
                 Text(
                   "Backups will be retained for the selected period",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
@@ -503,7 +501,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   children: [
                     Text(
                       "Allow New Signups",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface.withOpacity(0.87),
                       ),
@@ -530,14 +528,14 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   signupAllowed
                       ? "New users can register"
                       : "New user registration is disabled",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   "Free Signup Credits",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface.withOpacity(0.87),
@@ -553,7 +551,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                       () => freeCredits = int.tryParse(v) ?? freeCredits,
                     );
                   },
-                  style: GoogleFonts.roboto(color: colorScheme.onSurface),
+                  style: AppFonts.roboto(color: colorScheme.onSurface),
                   decoration: _inputDecoration(
                     context,
                     hint:
@@ -659,7 +657,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -671,7 +669,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
             const SizedBox(height: 12),
             Text(
               subtitle,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
@@ -721,7 +719,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -736,7 +734,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               Expanded(
                 child: Text(
                   subtitle,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
@@ -763,7 +761,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
     final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.6),
       ),
       filled: true,

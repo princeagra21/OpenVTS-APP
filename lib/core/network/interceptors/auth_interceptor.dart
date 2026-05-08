@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -57,9 +58,9 @@ class AuthInterceptor extends Interceptor {
 
   static bool isRolePath(String path) {
     final p = _normalizePathStatic(path).toLowerCase();
-    return p.startsWith('/admin') ||
-        p.startsWith('/user') ||
-        p.startsWith('/superadmin');
+    return p.startsWith(ApiPaths.adminPrefix) ||
+      p.startsWith(ApiPaths.userPrefix) ||
+      p.startsWith(ApiPaths.superadminPrefix);
   }
 
   static bool isPublicPath(String path) {

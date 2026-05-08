@@ -1,3 +1,4 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
 // components/profile/profile_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -62,10 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminProfileRepository(api: _api!);
 
       final res = await _repo!.getMyProfile(cancelToken: token);

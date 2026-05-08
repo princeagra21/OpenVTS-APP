@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_team_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminTeamsRepository {
   final ApiClient api;
@@ -22,7 +23,7 @@ class AdminTeamsRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/teams',
+      ApiPaths.path('/admin/teams'),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -52,7 +53,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/teams/$teamId',
+      ApiPaths.path('/admin/teams/$teamId'),
       data: <String, dynamic>{'isActive': isActive},
       cancelToken: cancelToken,
     );
@@ -68,7 +69,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/teams/$teamId',
+      ApiPaths.path('/admin/teams/$teamId'),
       cancelToken: cancelToken,
     );
 
@@ -87,7 +88,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/teams/$teamId',
+      ApiPaths.path('/admin/teams/$teamId'),
       data: <String, dynamic>{'password': password},
       cancelToken: cancelToken,
     );
@@ -108,7 +109,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/teams/$teamId',
+      ApiPaths.path('/admin/teams/$teamId'),
       data: <String, dynamic>{
         'name': name.trim(),
         'email': email.trim(),
@@ -135,7 +136,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/teams',
+      ApiPaths.path('/admin/teams'),
       data: <String, dynamic>{
         'name': name,
         'email': email,

@@ -10,7 +10,8 @@ import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class SSLManagementScreen extends StatefulWidget {
   const SSLManagementScreen({super.key});
@@ -32,10 +33,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
   SuperadminRepository? _repo;
 
   SuperadminRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= SuperadminRepository(api: _apiClient!);
     return _repo!;
   }
@@ -190,7 +188,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
         "$label: $meaningful",
         maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.roboto(
+        style: AppFonts.roboto(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
           color: color ?? cs.onSurface.withOpacity(0.65),
         ),
@@ -273,7 +271,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                 children: [
                   Text.rich(
                     TextSpan(
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                         fontWeight: FontWeight.w800,
                         color: cs.onSurface,
@@ -298,7 +296,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                   const SizedBox(height: 4),
                   Text(
                     "Manage SSL certificates for your domains",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w200,
                       color: cs.onSurface.withOpacity(0.8),
@@ -322,7 +320,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                       ),
                       child: Text(
                         "No domains found.",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           color: cs.onSurface.withOpacity(0.7),
                           fontWeight: FontWeight.w500,
@@ -376,7 +374,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                     domainName,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         width,
                                       ),
@@ -440,7 +438,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
                                     ),
                                     child: Text(
                                       statusText,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize:
                                             AdaptiveUtils.getSubtitleFontSize(
                                               width,

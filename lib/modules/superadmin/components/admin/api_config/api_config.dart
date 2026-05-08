@@ -8,9 +8,10 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ApiConfigSettingsScreen extends StatelessWidget {
   const ApiConfigSettingsScreen({super.key});
@@ -133,10 +134,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
   }
 
   ApiConfigRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= ApiConfigRepository(api: _api!);
     return _repo!;
   }
@@ -518,7 +516,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                 children: [
                   Text(
                     "API Configuration",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface.withOpacity(0.87),
@@ -527,7 +525,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                   const SizedBox(height: 4),
                   Text(
                     "Third-Party Integrations",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -575,7 +573,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                 ),
                 label: Text(
                   "Save All Changes",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
@@ -624,7 +622,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(width: 8),
                           Text(
                             "Firebase Configuration",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -690,7 +688,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             const SizedBox(width: 8),
                             Text(
                               "Setup Instructions",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     3,
@@ -703,7 +701,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 12),
                         Text(
                           "Go to",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -725,7 +723,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           },
                           child: Text(
                             "Firebase Console",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight
@@ -739,7 +737,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "→ Project Settings → General → Your apps → SDK setup and configuration",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -757,7 +755,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // API KEY
                       Text(
                         "API KEY",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -765,7 +763,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -777,7 +775,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // AUTH DOMAIN
                       Text(
                         "AUTH DOMAIN",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -785,7 +783,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -797,7 +795,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // PROJECT ID
                       Text(
                         "PROJECT ID",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -805,7 +803,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -817,7 +815,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // STORAGE BUCKET
                       Text(
                         "STORAGE BUCKET",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -825,7 +823,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -837,7 +835,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // MESSAGING SENDER ID
                       Text(
                         "MESSAGING SENDER ID",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -845,7 +843,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -857,7 +855,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // APP ID
                       Text(
                         "APP ID",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -865,7 +863,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -877,7 +875,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // MEASUREMENT ID (Optional)
                       Text(
                         "MEASUREMENT ID (Optional)",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -885,7 +883,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -995,7 +993,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(width: 8),
                           Text(
                             "Reverse Geocoding Service",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1062,7 +1060,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                               "Configure Your Geocoding Provider",
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) + 1,
                                 fontWeight: FontWeight.w600,
@@ -1074,7 +1072,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 12),
                         Text(
                           "Select a provider, enter credentials, and activate it to start using reverse geocoding services.",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1092,7 +1090,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // SELECT PROVIDER
                       Text(
                         "SELECT PROVIDER",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -1115,7 +1113,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             vertical: 12,
                           ),
                           underline: const SizedBox(),
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
                             fontSize: AdaptiveUtils.getTitleFontSize(width),
                           ),
@@ -1143,7 +1141,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       const SizedBox(height: 12),
                       Text(
                         "Selected: $selectedProvider",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 5,
                           fontWeight: FontWeight.w400,
@@ -1179,7 +1177,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                               children: [
                                 Text(
                                   "Activate Provider",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(
                                           width,
@@ -1217,7 +1215,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                               providerActive
                                   ? "This provider is now active and handling all reverse geocoding requests."
                                   : "Activate this provider to begin using it for reverse geocoding.",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     5,
@@ -1264,7 +1262,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 const SizedBox(width: 8),
                                 Text(
                                   "Provider Documentation & Setup",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(
                                           width,
@@ -1326,7 +1324,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           children: [
                             Text(
                               "${selectedProvider.split('(')[0].trim()} API KEY",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface.withOpacity(0.87),
@@ -1334,7 +1332,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             ),
                             const SizedBox(height: 8),
                             TextField(
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 color: colorScheme.onSurface,
                                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                               ),
@@ -1371,7 +1369,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                 children: [
                                   Text(
                                     "OpenStreetMap Nominatim - Free Service",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize:
                                           AdaptiveUtils.getSubtitleFontSize(
                                             width,
@@ -1386,7 +1384,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                   const SizedBox(height: 8),
                                   Text(
                                     "No API key required. Only User-Agent string needed.",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize:
                                           AdaptiveUtils.getSubtitleFontSize(
                                             width,
@@ -1404,7 +1402,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             const SizedBox(height: 12),
                             Text(
                               "USER AGENT STRING",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface.withOpacity(0.87),
@@ -1412,7 +1410,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             ),
                             const SizedBox(height: 8),
                             TextField(
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 color: colorScheme.onSurface,
                                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                               ),
@@ -1422,7 +1420,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             const SizedBox(height: 8),
                             Text(
                               "Required by OSM usage policy",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     5,
@@ -1535,7 +1533,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(width: 8),
                           Text(
                             "SSO - Google OAuth 2.0",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1600,7 +1598,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             const SizedBox(width: 8),
                             Text(
                               "Setup Instructions",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     3,
@@ -1615,7 +1613,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           children: [
                             Text(
                               "1. Go to ",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     5,
@@ -1637,7 +1635,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                               },
                               child: Text(
                                 "Google Cloud Console",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(width) -
                                       5,
@@ -1651,7 +1649,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "2. Create OAuth 2.0 Client ID (Application type: Web application)",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1661,7 +1659,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "3. Add authorized redirect URI: https://app.openvts.io/auth/google/callback",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1671,7 +1669,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "4. Copy Client ID and Client Secret",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1689,7 +1687,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // GOOGLE CLIENT ID
                       Text(
                         "GOOGLE CLIENT ID",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -1697,7 +1695,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -1709,7 +1707,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // GOOGLE CLIENT SECRET
                       Text(
                         "GOOGLE CLIENT SECRET",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -1717,7 +1715,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -1729,7 +1727,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // REDIRECT URL
                       Text(
                         "REDIRECT URL",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -1737,7 +1735,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -1747,7 +1745,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       const SizedBox(height: 8),
                       Text(
                         "Add this URL to authorized redirect URIs in Google Console",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 5,
                           fontWeight: FontWeight.w400,
@@ -1857,7 +1855,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(width: 8),
                           Text(
                             "OpenAI Integration",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1923,7 +1921,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             const SizedBox(width: 8),
                             Text(
                               "Setup Instructions",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     3,
@@ -1938,7 +1936,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           children: [
                             Text(
                               "1. Go to ",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     5,
@@ -1960,7 +1958,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                               },
                               child: Text(
                                 "OpenAI API Keys",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(width) -
                                       5,
@@ -1974,7 +1972,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "2. Create new secret key (starts with sk-proj-...)",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1984,7 +1982,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "3. Optional: Get Organization ID from Settings",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -1994,7 +1992,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         const SizedBox(height: 8),
                         Text(
                           "4. Set usage limits in Billing",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 5,
                             fontWeight: FontWeight.w400,
@@ -2012,7 +2010,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // API KEY
                       Text(
                         "API KEY",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -2020,7 +2018,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -2032,7 +2030,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // ORGANIZATION ID (Optional)
                       Text(
                         "ORGANIZATION ID (Optional)",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -2040,7 +2038,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       const SizedBox(height: 8),
                       TextField(
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onSurface,
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                         ),
@@ -2052,7 +2050,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // MODEL
                       Text(
                         "MODEL",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -2074,7 +2072,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                             vertical: 12,
                           ),
                           underline: const SizedBox(),
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
                             fontSize: AdaptiveUtils.getTitleFontSize(width),
                           ),
@@ -2098,7 +2096,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       // MAX-TOKEN
                       Text(
                         "MAX-TOKEN",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.87),
@@ -2120,7 +2118,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                       ),
                       Text(
                         "Range: 1–4096 tokens",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 5,
                           fontWeight: FontWeight.w400,
@@ -2219,7 +2217,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                   // ==================== Useful Documentation Header ====================
                   Text(
                     "Useful Documentation",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.87),
@@ -2262,7 +2260,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "Firebase setup",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2272,7 +2270,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Web SDK Documentation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2318,7 +2316,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "Google geocoding",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2328,7 +2326,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "API Documentation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2374,7 +2372,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "Google OAuth 2.0",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2384,7 +2382,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "SSO implementation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2430,7 +2428,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "Twilio Whatsapp",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2440,7 +2438,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "API Documentation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2486,7 +2484,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "Whatsapp Business",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2496,7 +2494,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Meta Documentation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2542,7 +2540,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         children: [
                           Text(
                             "OpenAI API",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w800,
@@ -2552,7 +2550,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Platform documentation",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 5,
                               fontWeight: FontWeight.w400,
@@ -2664,7 +2662,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
       },
       child: Text(
         label,
-        style: GoogleFonts.roboto(
+        style: AppFonts.roboto(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
           fontWeight: FontWeight.w400,
           color: colorScheme.primary,

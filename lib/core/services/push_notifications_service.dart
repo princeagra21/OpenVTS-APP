@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/result.dart';
@@ -43,8 +42,9 @@ class PushNotificationsService {
   static const String _kRegisteredToken = 'push_registered_token';
   static const String _kPushDeviceId = 'push_device_id';
 
-  ApiClient? _api;
+  TokenStorageBase? _tokenStorage;
   PushTokenRepository? _repo;
+  bool _configured = false;
   StreamSubscription<String>? _tokenRefreshSub;
   String? _webVapidKey;
   bool _firebaseReady = false;
@@ -67,13 +67,34 @@ class PushNotificationsService {
     }
   }
 
+  void configure({
+    required ApiClient api,
+    required TokenStorageBase tokenStorage,
+    PushTokenRepository? pushTokenRepository,
+  }) {
+    _tokenStorage = tokenStorage;
+    _repo = pushTokenRepository ?? PushTokenRepository(api: api);
+    _configured = true;
+  }
+
+  TokenStorageBase get _requiredTokenStorage {
+    final tokenStorage = _tokenStorage;
+    if (!_configured || tokenStorage == null) {
+      throw StateError(
+        'PushNotificationsService is not configured. Initialize AppContainer first.',
+      );
+    }
+    return tokenStorage;
+  }
+
   PushTokenRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= PushTokenRepository(api: _api!);
-    return _repo!;
+    final repo = _repo;
+    if (!_configured || repo == null) {
+      throw StateError(
+        'PushNotificationsService is not configured. Initialize AppContainer first.',
+      );
+    }
+    return repo;
   }
 
   Future<bool> shouldPromptAfterLogin() async {
@@ -201,7 +222,7 @@ class PushNotificationsService {
       await _stopTokenRefreshListener();
       return;
     }
-    final sessionToken = await TokenStorage.defaultInstance().readAccessToken();
+    final sessionToken = await _requiredTokenStorage.readAccessToken();
     if (sessionToken == null || sessionToken.trim().isEmpty) {
       await _stopTokenRefreshListener();
       return;
@@ -219,7 +240,7 @@ class PushNotificationsService {
         !(prefs.getBool(_kPushEnabledByUser) ?? false)) {
       return;
     }
-    final sessionToken = await TokenStorage.defaultInstance().readAccessToken();
+    final sessionToken = await _requiredTokenStorage.readAccessToken();
     if (sessionToken == null || sessionToken.trim().isEmpty) return;
 
     final init = await _ensureFirebaseReady();
@@ -323,8 +344,7 @@ class PushNotificationsService {
       if (token.trim().isEmpty) return;
       final prefs = await SharedPreferences.getInstance();
       if (!(prefs.getBool(_kPushEnabledByUser) ?? false)) return;
-      final sessionToken = await TokenStorage.defaultInstance()
-          .readAccessToken();
+      final sessionToken = await _requiredTokenStorage.readAccessToken();
       if (sessionToken == null || sessionToken.trim().isEmpty) return;
       final res = await _repoOrCreate().registerToken(
         token: token.trim(),

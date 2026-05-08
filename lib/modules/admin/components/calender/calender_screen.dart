@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME
 // EventCalendarScreen (Drop-in Replacement)
 
@@ -10,6 +12,7 @@ import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_calendar_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -17,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 
@@ -283,10 +285,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
     setState(() => _loadingDay = true);
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarDayDetails(date: key);
       if (!mounted) return;
@@ -401,7 +400,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsChip,
                 height: 20 / 14,
                 fontWeight: FontWeight.w600,
@@ -438,10 +437,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarEvents(
         from: _fmtDate(_monthStart(anyDateInMonth)),
@@ -544,9 +540,9 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     final adminId = e.adminId.trim();
     String? route;
     if (vehicleId.isNotEmpty) {
-      route = '/superadmin/vehicles/details/$vehicleId';
+      route = AppRoutes.superadminVehiclesDetails(vehicleId);
     } else if (adminId.isNotEmpty) {
-      route = '/superadmin/admins/details/$adminId';
+      route = AppRoutes.superadminAdminsDetails(adminId);
     }
     if (route == null) return;
 
@@ -605,7 +601,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     Expanded(
                       child: Text(
                         'Event',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface,
@@ -661,7 +657,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                               children: [
                                 Text(
                                   _eventDisplayTitle(e),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: cs.onSurface,
@@ -670,7 +666,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   subtitle,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: cs.onSurface.withOpacity(0.7),
@@ -679,7 +675,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   _eventTime(e),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: cs.primary,
@@ -799,7 +795,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                 onTap: _pickMonth,
                                 child: Text(
                                   _monthTitle(currentMonth),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMonth,
                                     height: 24 / 18,
                                     fontWeight: FontWeight.w700,
@@ -827,7 +823,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                 ),
                                 child: Text(
                                   _dayLabel(_selectedDate),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsButton,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -926,7 +922,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                       children: [
                         Text(
                           'Month Snapshot',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMonth,
                             height: 24 / 18,
                             fontWeight: FontWeight.w700,
@@ -955,31 +951,31 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                               calendarType: CalendarDatePicker2Type.single,
                               currentDate: _selectedDate,
                               selectedDayHighlightColor: cs.primary,
-                              weekdayLabelTextStyle: GoogleFonts.roboto(
+                              weekdayLabelTextStyle: AppFonts.roboto(
                                 fontSize: fsWeekday,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w500,
                                 color: cs.onSurface,
                               ),
-                              dayTextStyle: GoogleFonts.roboto(
+                              dayTextStyle: AppFonts.roboto(
                                 fontSize: fsDate,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w500,
                                 color: cs.onSurface,
                               ),
-                              selectedDayTextStyle: GoogleFonts.roboto(
+                              selectedDayTextStyle: AppFonts.roboto(
                                 color: cs.onPrimary,
                                 fontSize: fsDateSelected,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
                               ),
-                              todayTextStyle: GoogleFonts.roboto(
+                              todayTextStyle: AppFonts.roboto(
                                 color: cs.primary,
                                 fontSize: fsDate,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
                               ),
-                              controlsTextStyle: GoogleFonts.roboto(
+                              controlsTextStyle: AppFonts.roboto(
                                 fontSize: fsButton,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -1011,7 +1007,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                                       children: [
                                         Text(
                                           '${date.day}',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsDate,
                                             height: 20 / 14,
                                             fontWeight: isSelected == true
@@ -1137,7 +1133,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
           child: Center(
             child: Text(
               "No events for this date.",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 12 * (width / 420).clamp(0.9, 1.0),
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1188,7 +1184,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                   children: [
                     Text(
                       event['title'],
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 14 * (width / 420).clamp(0.9, 1.0),
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -1198,7 +1194,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
                     const SizedBox(height: 4),
                     Text(
                       "at ${event['time']}",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12 * (width / 420).clamp(0.9, 1.0),
                         height: 16 / 12,
                         color: cs.onSurface.withOpacity(0.7),
@@ -1238,7 +1234,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 11 * (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0),
               height: 14 / 11,
               color: selected ? cs.primary : cs.onSurface,

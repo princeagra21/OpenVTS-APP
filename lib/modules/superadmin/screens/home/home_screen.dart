@@ -14,8 +14,11 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,13 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   RoleNotificationsRepository _notificationsRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _notificationsRepo ??= RoleNotificationsRepository(
       api: _apiClient!,
-      pathPrefix: '/superadmin/notifications',
+      pathPrefix: AppRoutes.superadminNotifications,
     );
     return _notificationsRepo!;
   }
@@ -71,10 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _ensureRepo() {
     if (_apiClient != null) return;
     final config = AppConfig.fromDartDefine();
-    _apiClient = ApiClient(
-      config: config,
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient = ApiClientProvider.create(config: config);
     _repo = SuperadminRepository(api: _apiClient!);
     _baseUrl = _apiClient!.dio.options.baseUrl.trim();
   }
@@ -176,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await PushNotificationsService.instance.unregisterForLogout();
     await TokenStorage.defaultInstance().clear();
     if (!mounted) return;
-    context.go('/login');
+    context.go(AppRoutes.login);
   }
 
   Future<void> _showProfileMenu({
@@ -191,8 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (box == null || overlay == null) return;
     final media = MediaQuery.of(context);
-    final topOffset =
-        media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
+    final topOffset = media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
     final rightEdge = overlay.size.width - 12;
     final menuWidth = 200.0;
     final position = RelativeRect.fromLTRB(
@@ -232,22 +228,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         displayName.isNotEmpty ? displayName : '—',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppFonts.roboto(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         roleLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -257,7 +250,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
         PopupMenuItem<String>(
           value: 'profile',
           height: 36,
@@ -268,7 +263,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        PopupMenuDivider(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+        PopupMenuDivider(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+        ),
         PopupMenuItem<String>(
           value: 'logout',
           height: 36,
@@ -277,10 +274,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   'Logout',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: OpenVtsColors.danger),
                 ),
               ),
-              Icon(Icons.logout, size: 18, color: Colors.red),
+              Icon(Icons.logout, size: 18, color: OpenVtsColors.danger),
             ],
           ),
         ),
@@ -289,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
-      context.push('/superadmin/settings');
+      context.push(AppRoutes.superadminSettings);
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -317,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return value;
     }
     if (_baseUrl.isEmpty) return '';
-    if (value.startsWith('/')) return '$_baseUrl$value';
+    if (value.startsWith(AppRoutes.root)) return '$_baseUrl$value';
     return '$_baseUrl/$value';
   }
 
@@ -389,8 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
         AdaptiveUtils.getBellNotificationFontSize(screenWidth);
 
     final double gridGap = hp * 1.3;
-    final double tileSize =
-        (screenWidth - (hp * 2) - (gridGap * 2)) / 3;
+    final double tileSize = (screenWidth - (hp * 2) - (gridGap * 2)) / 3;
     final double labelFontSize = titleFontSize + 1;
     final double labelHeight = labelFontSize + AppUtils.spacingSmall;
     final double gridAspectRatio = tileSize / (tileSize + labelHeight);
@@ -411,62 +407,61 @@ class _HomeScreenState extends State<HomeScreen> {
       _HomeShortcut(
         label: 'Dashboard',
         icon: Symbols.finance,
-        route: '/superadmin/dashboard',
+        route: AppRoutes.superadminDashboard,
       ),
       _HomeShortcut(
         label: 'Administrators',
         icon: Symbols.verified_user,
-        route: '/superadmin/admins',
+        route: AppRoutes.superadminAdmins,
       ),
       _HomeShortcut(
         label: 'Vehicles',
         icon: Symbols.sync_alt,
-        route: '/superadmin/vehicles',
+        route: AppRoutes.superadminVehicles,
       ),
       _HomeShortcut(
         label: 'Map',
         icon: Symbols.map,
-        route: '/superadmin/map',
+        route: AppRoutes.superadminMap,
       ),
       _HomeShortcut(
         label: 'Calendar',
         icon: Symbols.date_range,
-        route: '/superadmin/calendar',
+        route: AppRoutes.superadminCalendar,
       ),
       _HomeShortcut(
         label: 'Server',
         icon: Symbols.dns,
-        route: '/superadmin/server',
+        route: AppRoutes.superadminServer,
       ),
       _HomeShortcut(
         label: 'Support',
         icon: Symbols.help,
-        route: '/superadmin/support',
+        route: AppRoutes.superadminSupport,
       ),
       _HomeShortcut(
         label: 'Payments',
         icon: Symbols.credit_card,
-        route: '/superadmin/payments',
+        route: AppRoutes.superadminPayments,
       ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.brightness_5,
-        route: '/superadmin/settings',
+        route: AppRoutes.superadminSettings,
       ),
     ];
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      backgroundColor: isDark
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: cs.surface,
         toolbarHeight: AppUtils.appBarHeightCustom + 12,
         titleSpacing: 0,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(24),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -481,7 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: AppUtils.spacingExtraSmall),
                     Text(
                       'Fleet OS',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subtitleFontSize,
                         fontWeight: FontWeight.w900,
                         color: cs.onSurface,
@@ -501,7 +496,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     badgeText: _badgeText,
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
-                    onTap: () => context.push('/superadmin/notifications'),
+                    onTap: () =>
+                        context.push(AppRoutes.superadminNotifications),
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
                   Row(
@@ -513,8 +509,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           onTap: () => _showProfileMenu(
                             anchorContext: avatarContext,
-                            displayName:
-                                displayName.isNotEmpty ? displayName : username,
+                            displayName: displayName.isNotEmpty
+                                ? displayName
+                                : username,
                             roleLabel: roleLabel,
                             imageUrl: profileImageUrl,
                             initials: initials,
@@ -653,11 +650,7 @@ class _HeaderIconButton extends StatelessWidget {
               ),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: colorScheme.primary,
-            ),
+            child: Icon(icon, size: iconSize, color: colorScheme.primary),
           ),
           if (showBadge)
             Positioned(
@@ -665,10 +658,7 @@ class _HeaderIconButton extends StatelessWidget {
               right: -size * 0.15,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   shape: BoxShape.circle,
@@ -728,8 +718,8 @@ class _HomeShortcutTile extends StatelessWidget {
     final double iconSize = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 20
         : AdaptiveUtils.isSmallScreen(screenWidth)
-            ? 22
-            : 24;
+        ? 22
+        : 24;
     return InkWell(
       onTap: onTap,
       borderRadius: AppUtils.borderRadiusMedium,
@@ -751,11 +741,7 @@ class _HomeShortcutTile extends StatelessWidget {
               ),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              item.icon,
-              size: iconSize,
-              color: cs.primary,
-            ),
+            child: Icon(item.icon, size: iconSize, color: cs.primary),
           ),
           SizedBox(height: AppUtils.spacingSmall),
           Text(
@@ -763,7 +749,7 @@ class _HomeShortcutTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               color: neutralColor,
@@ -803,7 +789,7 @@ class _ProfileAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.light
-              ? Colors.grey.shade50
+              ? colorScheme.surface
               : colorScheme.surfaceContainerHighest,
           shape: BoxShape.circle,
         ),
@@ -863,7 +849,7 @@ class _InitialsAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.light
-            ? Colors.grey.shade50
+            ? colorScheme.surface
             : colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
       ),

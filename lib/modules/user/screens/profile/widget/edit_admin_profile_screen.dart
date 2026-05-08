@@ -9,8 +9,9 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class EditAdminProfileScreen extends StatefulWidget {
   final AdminProfile? initialProfile;
@@ -96,7 +97,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: AppFonts.inter(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -120,19 +121,13 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
   }
 
   UserProfileRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= UserProfileRepository(api: _api!);
     return _repo!;
   }
 
   CommonRepository _commonRepoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }
@@ -313,7 +308,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                                 color: colorScheme.onSurface,
@@ -376,7 +371,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface,
@@ -386,7 +381,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
@@ -555,7 +550,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 children: [
                   Text(
                     "Edit Profile",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -574,7 +569,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 "Update your profile details",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -587,7 +582,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -606,7 +601,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _emailController,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -677,7 +672,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                     const SizedBox(width: 6),
                                   Text(
                                     _selectedPhoneCode,
-                                    style: GoogleFonts.inter(fontSize: 16),
+                                    style: AppFonts.inter(fontSize: 16),
                                   ),
                                   const Icon(Icons.arrow_drop_down, size: 20),
                                 ],
@@ -689,7 +684,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -711,7 +706,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -729,7 +724,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                         controller: _countryController,
                         readOnly: true,
                         onTap: _pickCountry,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -758,7 +753,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                               controller: _stateController,
                               readOnly: true,
                               onTap: _pickState,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -786,7 +781,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                               controller: _cityController,
                               readOnly: true,
                               onTap: _pickCity,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -814,7 +809,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       TextField(
                         controller: _pincodeController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -848,7 +843,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   )
                                 : Text(
                                     "Save Changes",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,

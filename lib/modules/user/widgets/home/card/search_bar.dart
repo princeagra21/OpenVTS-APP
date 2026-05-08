@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/fleet/search_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class AppSearchBar extends StatefulWidget {
@@ -46,10 +46,10 @@ class _AppSearchBarState extends State<AppSearchBar> {
       ),
       child: TextField(
         controller: _searchController,
-        style: GoogleFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
+        style: AppFonts.inter(fontSize: bodyFs, color: colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: "Search vehicles, users, devices...",
-          hintStyle: GoogleFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
+          hintStyle: AppFonts.inter(color: colorScheme.onSurface.withOpacity(0.6), fontSize: bodyFs),
           prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.primary.withOpacity(0.7)),
           border: InputBorder.none,
           focusColor: colorScheme.primary,

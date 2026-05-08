@@ -1,17 +1,16 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_document_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_drivers_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/modules/admin/screens/account/widget/documents/add_document.dart';
+import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/documents/file_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminDriverDocumentsTab extends StatefulWidget {
   final String driverId;
@@ -104,10 +103,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminDriversRepository(api: _api!);
 
       final res = await _repo!.getDriverDocuments(
@@ -225,7 +221,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
             children: [
               Text(
                 'Browse Documents',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsSection,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -243,14 +239,14 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: (_) => setState(() {}),
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMain,
                     height: 20 / 14,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: "Search title, type, status, tag...",
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: colorScheme.onSurface.withOpacity(0.5),
                       fontSize: fsSecondary,
                       height: 16 / 12,
@@ -334,7 +330,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
           final updated = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (context) => AddDocumentScreen(
+              builder: (context) => AdminAddDocumentScreen(
                 associateId: widget.driverId,
                 associateType: 'DRIVER',
               ),
@@ -361,7 +357,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
         children: [
           Icon(icon, size: iconSize, color: cs.onSurface),
           SizedBox(width: spacing / 2),
-          Text(label, style: GoogleFonts.roboto(fontSize: fs, fontWeight: FontWeight.w600, color: cs.onSurface)),
+          Text(label, style: AppFonts.roboto(fontSize: fs, fontWeight: FontWeight.w600, color: cs.onSurface)),
         ],
       ),
     );
@@ -381,9 +377,9 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('No documents found', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          Text('No documents found', style: AppFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
           const SizedBox(height: 6),
-          Text('Upload a document to see it listed here.', style: GoogleFonts.roboto(fontSize: 12, height: 1.45, color: cs.onSurface.withOpacity(0.68))),
+          Text('Upload a document to see it listed here.', style: AppFonts.roboto(fontSize: 12, height: 1.45, color: cs.onSurface.withOpacity(0.68))),
         ],
       ),
     );
@@ -394,7 +390,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       padding: const EdgeInsets.only(top: 14),
       child: Row(
         children: [
-          Expanded(child: Text("Couldn't load documents.", style: GoogleFonts.roboto(fontSize: 14, color: cs.onSurface.withOpacity(0.75)))),
+          Expanded(child: Text("Couldn't load documents.", style: AppFonts.roboto(fontSize: 14, color: cs.onSurface.withOpacity(0.75)))),
           TextButton(onPressed: _loadDocs, child: const Text('Retry')),
         ],
       ),

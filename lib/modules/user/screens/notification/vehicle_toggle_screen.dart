@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/user_notification_preferences.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_notification_preferences_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
@@ -35,7 +33,6 @@ class _VehicleToggleScreenState extends State<VehicleToggleScreen> {
   bool _saving = false;
   bool _loadErrorShown = false;
 
-  ApiClient? _api;
   UserNotificationPreferencesRepository? _repo;
   CancelToken? _loadToken;
   CancelToken? _saveToken;
@@ -60,11 +57,7 @@ class _VehicleToggleScreenState extends State<VehicleToggleScreen> {
   }
 
   UserNotificationPreferencesRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= UserNotificationPreferencesRepository(api: _api!);
+    _repo ??= AppContainer.instance.userNotificationPreferencesRepository;
     return _repo!;
   }
 

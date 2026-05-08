@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class CustomDropdownField<T> extends StatelessWidget {
   final T? value;
@@ -29,14 +29,14 @@ class CustomDropdownField<T> extends StatelessWidget {
       initialValue: value,
       isExpanded: true,
       icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.primary),
-      style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
+      style: AppFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),
       dropdownColor: colorScheme.surface,
       borderRadius: BorderRadius.circular(16),
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.transparent,
         hintText: hintText,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: AppFonts.inter(
           color: colorScheme.onSurface.withOpacity(0.5),
           fontSize: fontSize,
         ),
@@ -62,7 +62,7 @@ class CustomDropdownField<T> extends StatelessWidget {
           value: item,
           child: Text(
             itemLabelBuilder != null ? itemLabelBuilder!(item) : item.toString(),
-            style: GoogleFonts.inter(fontSize: fontSize),
+            style: AppFonts.inter(fontSize: fontSize),
           ),
         );
       }).toList(),

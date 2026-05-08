@@ -11,8 +11,11 @@ import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -38,22 +41,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
-      pathPrefix: '/admin/notifications',
+      pathPrefix: AppRoutes.adminNotifications,
     );
     return _repo!;
   }
 
   AdminProfileRepository _profileRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _profileRepo ??= AdminProfileRepository(api: _apiClient!);
     return _profileRepo!;
   }
@@ -96,9 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _loadingProfile = true);
 
     try {
-      final res = await _profileRepoOrCreate().getMyProfile(
-        cancelToken: token,
-      );
+      final res = await _profileRepoOrCreate().getMyProfile(cancelToken: token);
       if (!mounted) return;
 
       res.when(
@@ -139,8 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final source = name.isNotEmpty ? name : username;
     final clean = source.replaceAll('@', ' ').trim();
     if (clean.isEmpty) return '--';
-    final parts =
-        clean.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '--';
     return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
@@ -156,12 +153,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (superToken != null && superToken.isNotEmpty) {
       await storage.writeAccessToken(superToken);
       if (!mounted) return;
-      context.go('/superadmin/home');
+      context.go(AppRoutes.superadminHome);
       return;
     }
     await storage.clear();
     if (!mounted) return;
-    context.go('/login');
+    context.go(AppRoutes.login);
   }
 
   Future<void> _showProfileMenu({
@@ -174,8 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (box == null || overlay == null) return;
     final media = MediaQuery.of(context);
-    final topOffset =
-        media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
+    final topOffset = media.padding.top + AppUtils.appBarHeightCustom + 12 + 8;
     final rightEdge = overlay.size.width - 12;
     final menuWidth = 200.0;
     final position = RelativeRect.fromLTRB(
@@ -212,16 +208,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         displayName.isNotEmpty ? displayName : '—',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppFonts.roboto(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       // Text(
                       //   roleLabel,
                       //   maxLines: 1,
                       //   overflow: TextOverflow.ellipsis,
-                      //   style: GoogleFonts.roboto(
+                      //   style: AppFonts.roboto(
                       //     fontSize: 12,
                       //     fontWeight: FontWeight.w500,
                       //     color: Theme.of(context)
@@ -261,10 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   'Logout',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: OpenVtsColors.danger),
                 ),
               ),
-              Icon(Icons.logout, size: 18, color: Colors.red),
+              Icon(Icons.logout, size: 18, color: OpenVtsColors.danger),
             ],
           ),
         ),
@@ -273,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
-      context.push('/admin/settings');
+      context.push(AppRoutes.adminSettings);
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -305,8 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(screenWidth);
     final double iconSize = AdaptiveUtils.getIconSize(screenWidth);
     final double buttonSize = AdaptiveUtils.getButtonSize(screenWidth);
-    final double subtitleFontSize =
-        AdaptiveUtils.getSubtitleFontSize(screenWidth);
+    final double subtitleFontSize = AdaptiveUtils.getSubtitleFontSize(
+      screenWidth,
+    );
     final double bellNotificationFontSize =
         AdaptiveUtils.getBellNotificationFontSize(screenWidth);
 
@@ -323,76 +318,91 @@ class _HomeScreenState extends State<HomeScreen> {
       _HomeShortcut(
         label: 'Dashboard',
         icon: Symbols.finance,
-        route: '/admin/dashboard',
+        route: AppRoutes.adminDashboard,
       ),
-      _HomeShortcut(label: 'Users', icon: Symbols.group, route: '/admin/users'),
+      _HomeShortcut(
+        label: 'Users',
+        icon: Symbols.group,
+        route: AppRoutes.adminUsers,
+      ),
       _HomeShortcut(
         label: 'Vehicles',
         icon: Symbols.sync_alt,
-        route: '/admin/vehicles',
+        route: AppRoutes.adminVehicles,
       ),
       _HomeShortcut(
         label: 'Drivers',
         icon: Symbols.badge,
-        route: '/admin/drivers',
+        route: AppRoutes.adminDrivers,
       ),
-      _HomeShortcut(label: 'Team', icon: Symbols.groups, route: '/admin/teams'),
+      _HomeShortcut(
+        label: 'Team',
+        icon: Symbols.groups,
+        route: AppRoutes.adminTeams,
+      ),
       _HomeShortcut(
         label: 'Inventory',
         icon: Symbols.inventory_2,
-        route: '/admin/inventory',
+        route: AppRoutes.adminInventory,
       ),
-      _HomeShortcut(label: 'Maps', icon: Symbols.map, route: '/admin/map'),
+      _HomeShortcut(
+        label: 'Maps',
+        icon: Symbols.map,
+        route: AppRoutes.adminMap,
+      ),
       _HomeShortcut(
         label: 'Transactions',
         icon: Symbols.receipt_long,
-        route: '/admin/transactions',
+        route: AppRoutes.adminTransactions,
       ),
       _HomeShortcut(
         label: 'Payments',
         icon: Symbols.credit_card,
-        route: '/admin/payments',
+        route: AppRoutes.adminPayments,
       ),
       _HomeShortcut(
         label: 'Support',
         icon: Symbols.help,
-        route: '/admin/support',
+        route: AppRoutes.adminSupport,
       ),
       _HomeShortcut(
         label: 'Calendar',
         icon: Symbols.date_range,
-        route: '/admin/calendar',
+        route: AppRoutes.adminCalendar,
       ),
-      _HomeShortcut(label: 'Logs', icon: Symbols.list_alt, route: '/admin/logs'),
+      _HomeShortcut(
+        label: 'Logs',
+        icon: Symbols.list_alt,
+        route: AppRoutes.adminLogs,
+      ),
       _HomeShortcut(
         label: 'Plans',
         icon: Symbols.widgets,
-        route: '/admin/plans',
+        route: AppRoutes.adminPlans,
       ),
       // _HomeShortcut(
       //   label: 'Roles',
       //   icon: Symbols.admin_panel_settings,
-      //   route: '/admin/roles',
+      //   route: AppRoutes.adminRoles,
       // ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.brightness_5,
-        route: '/admin/settings',
+        route: AppRoutes.adminSettings,
       ),
     ];
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0A0A0A) : const Color(0xFFF5F5F7),
+      backgroundColor: isDark
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: cs.surface,
         toolbarHeight: AppUtils.appBarHeightCustom + 12,
         titleSpacing: 0,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(24),
-          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -407,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: AppUtils.spacingExtraSmall),
                     Text(
                       'Fleet OS',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subtitleFontSize,
                         fontWeight: FontWeight.w900,
                         color: cs.onSurface,
@@ -428,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
                     onTap: () async {
-                      await context.push('/admin/notifications');
+                      await context.push(AppRoutes.adminNotifications);
                       if (!mounted) return;
                       _loadUnreadCount();
                     },
@@ -441,8 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final profile = _profile;
                         final name = profile?.fullName.trim() ?? '';
                         final username = profile?.username.trim() ?? '';
-                        final displayName =
-                            name.isNotEmpty ? name : username;
+                        final displayName = name.isNotEmpty ? name : username;
                         _showProfileMenu(
                           anchorContext: avatarContext,
                           displayName: displayName,
@@ -451,8 +460,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: _ProfileAvatar(
                         radius: AdaptiveUtils.getRightAvatarRadius(screenWidth),
-                        fontSize:
-                            AdaptiveUtils.getRightAvatarFontSize(screenWidth),
+                        fontSize: AdaptiveUtils.getRightAvatarFontSize(
+                          screenWidth,
+                        ),
                         colorScheme: cs,
                         initials: _initials(
                           _profile?.fullName ?? '',
@@ -576,11 +586,7 @@ class _HeaderIconButton extends StatelessWidget {
               ),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: colorScheme.primary,
-            ),
+            child: Icon(icon, size: iconSize, color: colorScheme.primary),
           ),
           if (showBadge)
             Positioned(
@@ -588,10 +594,7 @@ class _HeaderIconButton extends StatelessWidget {
               right: -size * 0.15,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   shape: BoxShape.circle,
@@ -651,8 +654,8 @@ class _HomeShortcutTile extends StatelessWidget {
     final double iconSize = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 20
         : AdaptiveUtils.isSmallScreen(screenWidth)
-            ? 22
-            : 24;
+        ? 22
+        : 24;
     return InkWell(
       onTap: onTap,
       borderRadius: AppUtils.borderRadiusMedium,
@@ -674,11 +677,7 @@ class _HomeShortcutTile extends StatelessWidget {
               ),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              item.icon,
-              size: iconSize,
-              color: cs.primary,
-            ),
+            child: Icon(item.icon, size: iconSize, color: cs.primary),
           ),
           SizedBox(height: AppUtils.spacingSmall),
           Text(
@@ -686,7 +685,7 @@ class _HomeShortcutTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               color: neutralColor,
@@ -719,7 +718,7 @@ class _ProfileAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.light
-            ? Colors.grey.shade50
+            ? colorScheme.surface
             : colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
         border: Border.all(
@@ -730,7 +729,7 @@ class _ProfileAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initials,
-        style: GoogleFonts.roboto(
+        style: AppFonts.roboto(
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
           color: colorScheme.onSurface,
@@ -775,7 +774,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Log out?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -787,7 +786,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Your current session will end. You will need to log in again to continue.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -806,7 +805,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -824,7 +823,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Log out',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

@@ -9,7 +9,8 @@ import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -45,10 +46,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    final api = ApiClientProvider.create();
     final repo = AdminVehiclesRepository(api: api);
     
     final usersRes = await AdminUsersRepository(api: api).getUsers(limit: 100);
@@ -88,10 +86,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    final api = ApiClientProvider.create();
     final repo = AdminVehiclesRepository(api: api);
 
     final result = await repo.createVehicle(
@@ -159,7 +154,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: fs,
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,
@@ -221,7 +216,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: fs - 1,
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
@@ -288,7 +283,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: AdaptiveUtils.getTitleFontSize(w))),
+        Text(label, style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: AdaptiveUtils.getTitleFontSize(w))),
         const SizedBox(height: 8),
         _SelectionField(
             value: value.isEmpty ? hint : value,
@@ -322,7 +317,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 children: [
                   Text(
                     "Add Vehicle",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize,
                       height: 20 / 16,
                       fontWeight: FontWeight.w700,
@@ -351,7 +346,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               const SizedBox(height: 8),
               Text(
                 "Register a new vehicle",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: helperSize,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -455,7 +450,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -491,7 +486,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           )
                         : Text(
                             "Add Vehicle",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -537,7 +532,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
               fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
@@ -548,7 +543,7 @@ class StylishTextField extends StatelessWidget {
             validator: validator,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -609,7 +604,7 @@ class _SelectionField extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
                   color: cs.onSurface,
                 ),

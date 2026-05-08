@@ -1,6 +1,6 @@
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class PaymentGatewayDetailsScreen extends StatefulWidget {
   final String gatewayId;
@@ -87,7 +87,7 @@ class _PaymentGatewayDetailsScreenState
                   children: [
                     Text(
                       widget.gatewayId,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleFontSize,
                         fontWeight: FontWeight.bold,
                       ),
@@ -180,7 +180,7 @@ class _PaymentGatewayDetailsScreenState
                   const SizedBox(width: 8),
                   Text(
                     "Sandbox (Test)",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
@@ -191,7 +191,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 24),
               Text(
                 "PUBLIC KEY",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -199,7 +199,7 @@ class _PaymentGatewayDetailsScreenState
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -209,7 +209,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "SECRET KEY",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -218,7 +218,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 8),
               TextField(
                 obscureText: true,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -228,7 +228,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "WEBHOOK TOKEN",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -236,7 +236,7 @@ class _PaymentGatewayDetailsScreenState
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -276,7 +276,7 @@ class _PaymentGatewayDetailsScreenState
                   const SizedBox(width: 8),
                   Text(
                     "Production (Live)",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
@@ -287,7 +287,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 24),
               Text(
                 "PUBLIC KEY",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -295,7 +295,7 @@ class _PaymentGatewayDetailsScreenState
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -305,7 +305,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "SECRET KEY",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -314,7 +314,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 8),
               TextField(
                 obscureText: true,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -324,7 +324,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "WEBHOOK TOKEN",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -332,7 +332,7 @@ class _PaymentGatewayDetailsScreenState
               ),
               const SizedBox(height: 8),
               TextField(
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: Colors.black,
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                 ),
@@ -374,7 +374,7 @@ class _PaymentGatewayDetailsScreenState
                 children: [
                   Text(
                     "Set as Primary Gateway",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
@@ -396,7 +396,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "Make this the default payment processor",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth) - 5,
                   fontWeight: FontWeight.w400,
                   color: Colors.black.withOpacity(0.8),
@@ -427,7 +427,7 @@ class _PaymentGatewayDetailsScreenState
             children: [
               Text(
                 "Currencies",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                   fontWeight: FontWeight.w800,
                   color: Colors.black87,
@@ -457,7 +457,7 @@ class _PaymentGatewayDetailsScreenState
               const SizedBox(height: 12),
               Text(
                 "Selected: ${selectedCurrencies.length} currencies",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth) - 5,
                   fontWeight: FontWeight.w400,
                   color: Colors.black.withOpacity(0.8),
@@ -498,7 +498,7 @@ class _PaymentGatewayDetailsScreenState
         children: [
           Text(
             "Feature Info",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(screenWidth) + 2,
               fontWeight: FontWeight.w800,
               color: Colors.black87,
@@ -507,7 +507,7 @@ class _PaymentGatewayDetailsScreenState
           const SizedBox(height: 12),
           Text(
             "Supported Features and Regions",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth) - 5,
               fontWeight: FontWeight.w400,
               color: Colors.black.withOpacity(0.8),
@@ -577,7 +577,7 @@ class _LocalTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: small ? 11 : 13,
             fontWeight: FontWeight.w600,
             color: selected ? Colors.white : Colors.black,

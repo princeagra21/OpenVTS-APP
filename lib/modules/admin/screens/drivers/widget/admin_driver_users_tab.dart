@@ -5,7 +5,7 @@ import 'package:open_vts/modules/admin/screens/account/widget/admin_user_details
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminDriverUsersTab extends StatefulWidget {
   final List<AdminUserListItem> items;
@@ -94,7 +94,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                   Expanded(
                     child: Text(
                       'Browse Users',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 18 * scale,
                         height: 24 / 18,
                         fontWeight: FontWeight.w700,
@@ -125,7 +125,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                     icon: const Icon(Icons.add, size: 16),
                     label: Text(
                       'Assign User',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12.5 * scale,
                         fontWeight: FontWeight.w700,
                       ),
@@ -144,14 +144,14 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: (_) => setState(() {}),
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: widget.bodyFontSize,
                     height: 20 / 14,
                     color: cs.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: "Search users...",
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: cs.onSurface.withOpacity(0.5),
                       fontSize: widget.smallFontSize,
                       height: 16 / 12,
@@ -180,7 +180,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                       widget.items.isEmpty
                           ? 'No users linked to this driver'
                           : 'No users found',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         color: cs.onSurface.withOpacity(0.6),
                       ),
                     ),
@@ -215,7 +215,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                               alignment: Alignment.center,
                               child: Text(
                                 user.initials,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   color: cs.onSurface,
                                   fontSize: AdaptiveUtils.getFsAvatarFontSize(
                                     width,
@@ -235,7 +235,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                                     Expanded(
                                       child: Text(
                                         name,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: titleFs,
                                           height: 20 / 14,
                                           fontWeight: FontWeight.w600,
@@ -263,7 +263,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                                       ),
                                       child: Text(
                                         safeText(user.statusLabel),
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: statusFs,
                                           height: 14 / 11,
                                           fontWeight: FontWeight.w600,
@@ -330,7 +330,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                                                 )
                                               : Text(
                                                   'Unassign',
-                                                  style: GoogleFonts.roboto(
+                                                  style: AppFonts.roboto(
                                                     fontSize: subtitleFs - 1,
                                                     fontWeight: FontWeight.w700,
                                                     color: cs.error,
@@ -473,7 +473,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                     const SizedBox(height: 14),
                     Text(
                       'Assign User',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,
@@ -482,7 +482,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                     const SizedBox(height: 4),
                     Text(
                       'Select an available user to link to this driver.',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
@@ -512,7 +512,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                           ? Center(
                               child: Text(
                                 'No available users found',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   color: cs.onSurface.withOpacity(0.65),
                                 ),
                               ),
@@ -631,7 +631,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,

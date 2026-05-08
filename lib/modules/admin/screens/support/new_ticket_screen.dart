@@ -12,7 +12,9 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class NewTicketScreen extends StatefulWidget {
   final AdminUserListItem? preSelectedUser;
@@ -79,19 +81,13 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
   }
 
   AdminUsersRepository _usersRepoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _usersRepo ??= AdminUsersRepository(api: _api!);
     return _usersRepo!;
   }
 
   AdminSupportRepository _supportRepoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _supportRepo ??= AdminSupportRepository(api: _api!);
     return _supportRepo!;
   }
@@ -213,7 +209,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     final padding = AdaptiveUtils.getHorizontalPadding(width) + 6;
     final topPadding = MediaQuery.of(context).padding.top;
     final scale = (width / 420).clamp(0.9, 1.0);
-    final labelStyle = GoogleFonts.roboto(
+    final labelStyle = AppFonts.roboto(
       fontSize: 12 * scale,
       height: 16 / 12,
       fontWeight: FontWeight.w600,
@@ -222,8 +218,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -255,7 +251,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             widget.forMyTickets
                                 ? 'My Tickets'
                                 : 'Create Ticket (on behalf of User)',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 16 * scale,
                               height: 20 / 16,
                               fontWeight: FontWeight.w700,
@@ -332,7 +328,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                     title: Text(
                                                       title,
                                                       softWrap: true,
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: 14 * scale,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -342,7 +338,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                     subtitle: Text(
                                                       subtitle,
                                                       softWrap: true,
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: 12 * scale,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -391,7 +387,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                                     : _selectedUser!.id)
                                             : 'Select user',
                                         softWrap: true,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: 14 * scale,
                                           height: 20 / 14,
                                           fontWeight: FontWeight.w500,
@@ -497,7 +493,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                           TextField(
                             controller: _subjectController,
                             maxLength: 60,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 14 * scale,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -506,7 +502,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             decoration: InputDecoration(
                               hintText: 'Brief description of the issue',
                               counterText: '',
-                              hintStyle: GoogleFonts.roboto(
+                              hintStyle: AppFonts.roboto(
                                 fontSize: 14 * scale,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w500,
@@ -544,7 +540,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                               builder: (_, value, __) {
                                 return Text(
                                   '${value.text.length}/60',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 11 * scale,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w500,
@@ -575,7 +571,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             controller: _messageController,
                             minLines: 4,
                             maxLines: 6,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 14 * scale,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -583,7 +579,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                             ),
                             decoration: InputDecoration(
                               hintText: 'Describe the issue in detail',
-                              hintStyle: GoogleFonts.roboto(
+                              hintStyle: AppFonts.roboto(
                                 fontSize: 14 * scale,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w500,
@@ -651,7 +647,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                         const SizedBox(width: 4),
                                         Text(
                                           'Add',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 12 * scale,
                                             fontWeight: FontWeight.w600,
                                             color: cs.onPrimary,
@@ -688,7 +684,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                           child: Text(
                                             file.filename,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: 12 * scale,
                                               color: cs.onSurface,
                                             ),
@@ -745,7 +741,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                       const SizedBox(width: 6),
                                       Text(
                                         'Create Ticket',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: 14 * scale,
                                           height: 20 / 14,
                                           fontWeight: FontWeight.w600,
@@ -772,8 +768,8 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
             top: 0,
             child: Container(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+                  ? OpenVtsColors.panelDark
+                  : OpenVtsColors.panelLight,
               child: AdminHomeAppBar(
                 title: widget.forMyTickets ? 'My Ticket' : 'Create Ticket',
                 leadingIcon: Icons.support_agent_outlined,
@@ -810,7 +806,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
               value: s,
               child: Text(
                 _titleCase(s),
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 14 * scale,
                   fontWeight: FontWeight.w500,
                 ),

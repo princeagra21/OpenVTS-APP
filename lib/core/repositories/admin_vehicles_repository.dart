@@ -10,7 +10,9 @@ import 'package:open_vts/core/models/device_type.dart';
 import 'package:open_vts/core/models/vehicle_type.dart';
 import 'package:open_vts/core/models/pricing_plan.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_envelope.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminVehiclesRepository {
   final ApiClient api;
@@ -20,20 +22,20 @@ class AdminVehiclesRepository {
   Future<Result<List<VehicleType>>> getVehicleTypes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/vehicletypes', cancelToken: cancelToken);
+    final res = await api.get(
+      PublicApiPaths.vehicleTypes,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['types', 'items', 'data']);
+        final list = _extractMapList(
+          data,
+          extraKeys: const ['types', 'items', 'data'],
+        );
         final out = <VehicleType>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(VehicleType.fromRaw(item));
-            } else if (item is Map) {
-              out.add(VehicleType.fromRaw(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(VehicleType.fromRaw(item));
         }
         return Result.ok(out);
       },
@@ -44,20 +46,20 @@ class AdminVehiclesRepository {
   Future<Result<List<DeviceType>>> getDeviceTypes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/devicestypes', cancelToken: cancelToken);
+    final res = await api.get(
+      PublicApiPaths.deviceTypes,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['types', 'items', 'data']);
+        final list = _extractMapList(
+          data,
+          extraKeys: const ['types', 'items', 'data'],
+        );
         final out = <DeviceType>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(DeviceType.fromRaw(item));
-            } else if (item is Map) {
-              out.add(DeviceType.fromRaw(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(DeviceType.fromRaw(item));
         }
         return Result.ok(out);
       },
@@ -68,20 +70,20 @@ class AdminVehiclesRepository {
   Future<Result<List<AdminQuickDevice>>> getQuickDevices({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/quickdevice', cancelToken: cancelToken);
+    final res = await api.get(
+      AdminApiPaths.quickDevice,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['devices', 'items', 'data']);
+        final list = _extractMapList(
+          data,
+          extraKeys: const ['devices', 'items', 'data'],
+        );
         final out = <AdminQuickDevice>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminQuickDevice.fromRaw(item));
-            } else if (item is Map) {
-              out.add(AdminQuickDevice.fromRaw(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(AdminQuickDevice.fromRaw(item));
         }
         return Result.ok(out);
       },
@@ -92,20 +94,20 @@ class AdminVehiclesRepository {
   Future<Result<List<PricingPlan>>> getPricingPlans({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/pricingplans', cancelToken: cancelToken);
+    final res = await api.get(
+      AdminApiPaths.pricingPlans,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['plans', 'items', 'data']);
+        final list = _extractMapList(
+          data,
+          extraKeys: const ['plans', 'items', 'data'],
+        );
         final out = <PricingPlan>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(PricingPlan(item));
-            } else if (item is Map) {
-              out.add(PricingPlan(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(PricingPlan(item));
         }
         return Result.ok(out);
       },
@@ -134,13 +136,14 @@ class AdminVehiclesRepository {
     };
 
     final res = await api.post(
-      '/admin/vehicles',
+      AdminApiPaths.vehicles,
       data: payload,
       cancelToken: cancelToken,
     );
 
     return res.when(
-      success: (data) => Result.ok(AdminVehicleListItem.fromRaw(_extractMap(data))),
+      success: (data) =>
+          Result.ok(AdminVehicleListItem.fromRaw(_extractPayloadMap(data))),
       failure: (err) => Result.fail(err),
     );
   }
@@ -163,27 +166,20 @@ class AdminVehiclesRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/vehicles',
+      AdminApiPaths.vehicles,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(data, extraKeys: const ['vehicles', 'rows']);
+        final list = _extractMapList(
+          data,
+          extraKeys: const ['vehicles', 'rows'],
+        );
         final out = <AdminVehicleListItem>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminVehicleListItem.fromRaw(item));
-            } else if (item is Map) {
-              out.add(
-                AdminVehicleListItem.fromRaw(
-                  Map<String, dynamic>.from(item.cast()),
-                ),
-              );
-            }
-          }
+        for (final item in list) {
+          out.add(AdminVehicleListItem.fromRaw(item));
         }
         return Result.ok(out);
       },
@@ -196,13 +192,13 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/vehicles/$vehicleId',
+      AdminApiPaths.vehicleDetails(vehicleId),
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) =>
-          Result.ok(AdminVehicleDetails.fromRaw(_extractMap(data))),
+          Result.ok(AdminVehicleDetails.fromRaw(_extractPayloadMap(data))),
       failure: (err) => Result.fail(err),
     );
   }
@@ -212,29 +208,19 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/linkusers/$vehicleId',
+      AdminApiPaths.linkUsers(vehicleId),
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['users', 'rows', 'items', 'data'],
         );
         final out = <AdminUserListItem>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminUserListItem.fromRaw(item));
-            } else if (item is Map) {
-              out.add(
-                AdminUserListItem.fromRaw(
-                  Map<String, dynamic>.from(item.cast()),
-                ),
-              );
-            }
-          }
+        for (final item in list) {
+          out.add(AdminUserListItem.fromRaw(item));
         }
         return Result.ok(out);
       },
@@ -245,23 +231,20 @@ class AdminVehiclesRepository {
   Future<Result<List<MapVehiclePoint>>> getTelemetry({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/map-telemetry', cancelToken: cancelToken);
+    final res = await api.get(
+      AdminApiPaths.mapTelemetry,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['telemetry', 'points', 'vehicles', 'rows'],
         );
         final out = <MapVehiclePoint>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(MapVehiclePoint(item));
-            } else if (item is Map) {
-              out.add(MapVehiclePoint(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(MapVehiclePoint(item));
         }
         return Result.ok(out);
       },
@@ -280,44 +263,42 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/vehicles/by-imei/$imei/details',
+      AdminApiPaths.vehicleByImeiDetails(imei),
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final root = _coerceMap(data);
-        final payload = _extractMap(data);
-        final nested = _coerceMap(payload['data']);
-        final nestedFromRoot = _extractMapFromNested(payload);
+        final root = ApiEnvelope.asMap(data);
+        final payload = _extractPayloadMap(
+          data,
+          mapKeys: const ['data', 'item', 'result', 'vehicle', 'payload'],
+        );
+        final nested = ApiEnvelope.nestedMap(
+          payload,
+          mapKeys: const ['data', 'item', 'result', 'vehicle', 'payload'],
+          maxDepth: 6,
+        );
 
-        final vehicle = _coerceMap(
+        final vehicle = ApiEnvelope.asMap(
           payload['vehicle'] ??
               nested['vehicle'] ??
-              nestedFromRoot['vehicle'] ??
-              root['vehicle'],
+              root['vehicle'] ??
+              (nested.isNotEmpty ? nested : payload),
         );
-        final telemetry = _coerceMap(
-          payload['telemetry'] ??
-              nested['telemetry'] ??
-              nestedFromRoot['telemetry'] ??
-              root['telemetry'],
+        final telemetry = ApiEnvelope.asMap(
+          payload['telemetry'] ?? nested['telemetry'] ?? root['telemetry'],
         );
 
         final mergedVehicle = vehicle.isNotEmpty
             ? vehicle
             : (nested.isNotEmpty
                   ? nested
-                  : (nestedFromRoot.isNotEmpty
-                      ? nestedFromRoot
-                      : (payload.isNotEmpty ? payload : root)));
+                  : (payload.isNotEmpty ? payload : root));
 
         return Result.ok(
           VehicleDetails({
-            'data': {
-              'vehicle': mergedVehicle,
-              'telemetry': telemetry,
-            },
+            'data': {'vehicle': mergedVehicle, 'telemetry': telemetry},
           }),
         );
       },
@@ -331,33 +312,26 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/geocoding/reverse',
-      queryParameters: <String, dynamic>{
-        'lat': lat,
-        'lng': lng,
-      },
+      GeocodingApiPaths.reverse,
+      queryParameters: <String, dynamic>{'lat': lat, 'lng': lng},
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final root = _coerceMap(data);
-        final level1 = _extractMap(data);
-        final level2 = _extractMapFromNested(level1);
-        final level3 = _extractMapFromNested(level2);
+        final root = ApiEnvelope.asMap(data);
+        final payload = _extractPayloadMap(data);
+        final nested = ApiEnvelope.nestedMap(payload, maxDepth: 6);
 
-        final address = _firstNonEmpty([
-          level3['address'],
-          level2['address'],
-          level1['address'],
+        final address = ApiEnvelope.firstNonEmpty([
+          nested['address'],
+          payload['address'],
           root['address'],
-          level3['formattedAddress'],
-          level2['formattedAddress'],
-          level1['formattedAddress'],
+          nested['formattedAddress'],
+          payload['formattedAddress'],
           root['formattedAddress'],
-          level3['display_name'],
-          level2['display_name'],
-          level1['display_name'],
+          nested['display_name'],
+          payload['display_name'],
           root['display_name'],
         ]);
 
@@ -377,7 +351,7 @@ class AdminVehiclesRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      '/admin/vehicles/by-imei/$imei/trail',
+      AdminApiPaths.vehicleByImeiTrail(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -402,7 +376,7 @@ class AdminVehiclesRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      '/admin/vehicles/by-imei/$imei/replay',
+      AdminApiPaths.vehicleByImeiReplay(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -431,7 +405,7 @@ class AdminVehiclesRepository {
     if (overspeedKph != null) query['overspeedKph'] = overspeedKph;
 
     final res = await api.get(
-      '/admin/vehicles/by-imei/$imei/history',
+      AdminApiPaths.vehicleByImeiHistory(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -447,12 +421,12 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/vehicles/$vehicleId/config',
+      AdminApiPaths.vehicleConfig(vehicleId),
       cancelToken: cancelToken,
     );
 
     return res.when(
-      success: (data) => Result.ok(VehicleConfig(_extractMap(data))),
+      success: (data) => Result.ok(VehicleConfig(_extractPayloadMap(data))),
       failure: (err) => Result.fail(err),
     );
   }
@@ -463,7 +437,7 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/vehicles/$vehicleId/config',
+      AdminApiPaths.vehicleConfig(vehicleId),
       data: payload.toJson(),
       cancelToken: cancelToken,
     );
@@ -480,28 +454,18 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/vehicles/by-imei/$imei/logs',
+      AdminApiPaths.vehicleByImeiLogs(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['items', 'logs', 'rows', 'data'],
         );
-        final out = <Map<String, dynamic>>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(item);
-            } else if (item is Map) {
-              out.add(Map<String, dynamic>.from(item.cast()));
-            }
-          }
-        }
-        return Result.ok(out);
+        return Result.ok(list);
       },
       failure: (err) => Result.fail(err),
     );
@@ -513,7 +477,7 @@ class AdminVehiclesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/vehicles/$vehicleId',
+      AdminApiPaths.vehicleDetails(vehicleId),
       data: <String, dynamic>{'isActive': isActive},
       cancelToken: cancelToken,
     );
@@ -524,81 +488,31 @@ class AdminVehiclesRepository {
     );
   }
 
-  Map<String, dynamic> _extractMap(Object? data) {
-    if (data is! Map) return const <String, dynamic>{};
-
-    final level0 = data is Map<String, dynamic>
-        ? data
-        : Map<String, dynamic>.from(data.cast());
-
-    final level1Raw = level0['data'];
-    if (level1Raw is Map) {
-      final level1 = Map<String, dynamic>.from(level1Raw.cast());
-      final level2Raw = level1['data'];
-      if (level2Raw is Map) {
-        return Map<String, dynamic>.from(level2Raw.cast());
-      }
-
-      final level1Candidates = [
-        level1['item'],
-        level1['vehicle'],
-        level1['result'],
-      ];
-      for (final candidate in level1Candidates) {
-        if (candidate is Map<String, dynamic>) return candidate;
-        if (candidate is Map) {
-          return Map<String, dynamic>.from(candidate.cast());
-        }
-      }
-
-      return level1;
-    }
-
-    final level0Candidates = [
-      level0['item'],
-      level0['vehicle'],
-      level0['result'],
-      level0['settings'],
-      level0['config'],
-    ];
-    for (final candidate in level0Candidates) {
-      if (candidate is Map<String, dynamic>) return candidate;
-      if (candidate is Map) return Map<String, dynamic>.from(candidate.cast());
-    }
-
-    return level0;
+  Map<String, dynamic> _extractPayloadMap(
+    Object? data, {
+    List<String> mapKeys = const [
+      'data',
+      'result',
+      'item',
+      'payload',
+      'response',
+      'vehicle',
+      'settings',
+      'config',
+    ],
+  }) {
+    return ApiEnvelope.payload(data, mapKeys: mapKeys);
   }
 
-  List? _extractList(Object? data, {List<String> extraKeys = const []}) {
-    if (data is List) return data;
-
-    final keys = <String>['data', 'items', 'result', 'results', ...extraKeys];
-
-    List? walk(Object? node, int depth) {
-      if (depth > 6) return null;
-      if (node is List) return node;
-      if (node is! Map) return null;
-
-      final map = node is Map<String, dynamic>
-          ? node
-          : Map<String, dynamic>.from(node.cast());
-
-      for (final key in keys) {
-        final value = map[key];
-        if (value is List) return value;
-      }
-
-      for (final value in map.values) {
-        if (value is Map || value is List) {
-          final found = walk(value, depth + 1);
-          if (found != null) return found;
-        }
-      }
-
-      return null;
-    }
-
-    return walk(data, 0);
+  List<Map<String, dynamic>> _extractMapList(
+    Object? data, {
+    List<String> extraKeys = const [],
+  }) {
+    return ApiEnvelope.mapList(
+      data,
+      listKeys: <String>['data', 'items', 'result', 'results', ...extraKeys],
+      maxDepth: 6,
+    );
   }
 
   Result<List<MapVehiclePoint>> _mapPointListResult(
@@ -607,7 +521,7 @@ class AdminVehiclesRepository {
   }) {
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: <String>[
             'telemetry',
@@ -618,41 +532,12 @@ class AdminVehiclesRepository {
           ],
         );
         final out = <MapVehiclePoint>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(MapVehiclePoint(item));
-            } else if (item is Map) {
-              out.add(MapVehiclePoint(Map<String, dynamic>.from(item.cast())));
-            }
-          }
+        for (final item in list) {
+          out.add(MapVehiclePoint(item));
         }
         return Result.ok(out);
       },
       failure: (err) => Result.fail(err),
     );
-  }
-
-  Map<String, dynamic> _coerceMap(Object? data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data.cast());
-    return const <String, dynamic>{};
-  }
-
-  Map<String, dynamic> _extractMapFromNested(Map<String, dynamic> data) {
-    final candidates = [data['data'], data['item'], data['result']];
-    for (final c in candidates) {
-      if (c is Map<String, dynamic>) return c;
-      if (c is Map) return Map<String, dynamic>.from(c.cast());
-    }
-    return const <String, dynamic>{};
-  }
-
-  String _firstNonEmpty(List<Object?> values) {
-    for (final value in values) {
-      final text = value?.toString().trim() ?? '';
-      if (text.isNotEmpty) return text;
-    }
-    return '';
   }
 }

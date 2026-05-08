@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/vehicles_tab/vehicle_card.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VehicleCard extends StatelessWidget {
   final String name;
@@ -69,7 +69,7 @@ class VehicleCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   name,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: titleFontSize,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -91,7 +91,7 @@ class VehicleCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     isActive ? "Active" : "Inactive",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: subtitleFontSize,
                       fontWeight: FontWeight.w600,
                       color: isActive ? colorScheme.primary : colorScheme.error,
@@ -114,7 +114,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Vehicle Information",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -142,7 +142,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Activity",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -171,7 +171,7 @@ class VehicleCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "Licence Status",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: subtitleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -201,7 +201,7 @@ class VehicleCard extends StatelessWidget {
             width: 140,
             child: Text(
               title.toUpperCase(),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -212,7 +212,7 @@ class VehicleCard extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize + 2,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,

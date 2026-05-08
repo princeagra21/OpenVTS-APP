@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -12,7 +14,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddDriverScreen extends StatefulWidget {
   const AddDriverScreen({super.key});
@@ -99,10 +100,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   void _ensureRepos() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
     _usersRepo ??= AdminUsersRepository(api: _api!);
     _driversRepo ??= UserDriversRepository(api: _api!);
@@ -338,7 +336,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fs,
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,
@@ -403,7 +401,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fs - 1,
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
@@ -413,7 +411,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fs - 2,
                                         color: cs.onSurface.withOpacity(0.6),
                                       ),
@@ -646,7 +644,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       filled: true,
       fillColor: cs.surface.withOpacity(0.05),
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: cs.onSurface.withOpacity(0.5),
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
@@ -675,7 +673,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   TextStyle _labelStyle(BuildContext context, {required double fontSize}) {
     final cs = Theme.of(context).colorScheme;
-    return GoogleFonts.roboto(
+    return AppFonts.roboto(
       fontSize: fontSize,
       fontWeight: FontWeight.w500,
       color: cs.onSurface.withOpacity(0.8),
@@ -709,7 +707,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                 value.isEmpty ? hint : value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w500,
                   color: value.isEmpty
@@ -749,7 +747,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
       keyboardType: keyboardType,
       obscureText: obscureText,
       maxLines: maxLines,
-      style: GoogleFonts.roboto(
+      style: AppFonts.roboto(
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
         color: Theme.of(context).colorScheme.onSurface,
@@ -788,7 +786,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                 children: [
                   Text(
                     'Add Driver',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize,
                       fontWeight: FontWeight.w700,
                       color: cs.onSurface,
@@ -816,7 +814,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
               const SizedBox(height: 8),
               Text(
                 'Fill driver details and click save.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: helperSize,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.7),
@@ -973,7 +971,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                               : v.length < 6
                               ? 'Password must be at least 6 characters'
                               : null,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: inputSize,
                             fontWeight: FontWeight.w500,
                             color: cs.onSurface,
@@ -1101,7 +1099,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: inputSize,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -1128,7 +1126,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                         ? const AppShimmer(width: 72, height: 14, radius: 7)
                         : Text(
                             'Save',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: inputSize,
                               fontWeight: FontWeight.w600,
                               color: cs.onPrimary,

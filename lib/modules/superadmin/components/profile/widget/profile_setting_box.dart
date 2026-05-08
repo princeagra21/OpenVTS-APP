@@ -3,7 +3,9 @@ import 'package:open_vts/modules/superadmin/components/admin/profile_tab/edit_ad
 import 'package:open_vts/modules/superadmin/components/admin/profile_tab/update_password_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class ProfileSettingBox extends StatelessWidget {
   final String adminId;
@@ -87,19 +89,9 @@ class ProfileSettingBox extends StatelessWidget {
       );
     }
 
-    return Container(
+    return OpenVtsCard(
       padding: EdgeInsets.all(padding + 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      borderRadius: BorderRadius.circular(25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -116,7 +108,7 @@ class ProfileSettingBox extends StatelessWidget {
                       )
                     : Text(
                         _orDash(initials),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -139,7 +131,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 )
                               : Text(
                                   _orDash(displayName),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -165,7 +157,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 ),
                                 child: Text(
                                   _orDash(roleLabel),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -179,7 +171,7 @@ class ProfileSettingBox extends StatelessWidget {
                         ? const AppShimmer(width: 180, height: 16, radius: 8)
                         : Text(
                             _orDash(username),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
@@ -207,29 +199,14 @@ class ProfileSettingBox extends StatelessWidget {
               spacing: spacing + 4,
               runSpacing: 8,
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: spacing + 4,
-                    vertical: spacing - 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (isActive == true)
-                        ? Colors.green.withOpacity(0.2)
-                        : colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isActive == null
-                        ? 'Status: -'
-                        : (isActive! ? 'Active' : 'Inactive'),
-                    style: GoogleFonts.roboto(
-                      fontSize: badgeFontSize,
-                      color: (isActive == true)
-                          ? Colors.green[800]
-                          : colorScheme.onSurface.withOpacity(0.8),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                OpenVtsStatusChip(
+                  label: isActive == null
+                      ? 'Status: -'
+                      : (isActive! ? 'Active' : 'Inactive'),
+                  tone: isActive == true
+                      ? OpenVtsStatusTone.success
+                      : OpenVtsStatusTone.neutral,
+                  compact: true,
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
@@ -242,7 +219,7 @@ class ProfileSettingBox extends StatelessWidget {
                   ),
                   child: Text(
                     _orDash(email) == '-' ? 'Email: -' : _orDash(email),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: badgeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.85),
                       fontWeight: FontWeight.w600,
@@ -256,12 +233,14 @@ class ProfileSettingBox extends StatelessWidget {
                       vertical: spacing - 2,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(
+                        0.7,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       isVerified! ? 'Email Verified' : 'Email Unverified',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: badgeFontSize,
                         color: colorScheme.onSurface.withOpacity(0.85),
                         fontWeight: FontWeight.w600,
@@ -275,101 +254,42 @@ class ProfileSettingBox extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(24),
-                    onTap: loading ? null : openEditProfile,
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.primary,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Center(
-                        child: loading
-                            ? const AppShimmer(width: 92, height: 14, radius: 8)
-                            : Text(
-                                'Edit Profile',
-                                style: GoogleFonts.roboto(
-                                  fontSize: buttonFontSize,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
+                child: OpenVtsButton(
+                  label: 'Edit Profile',
+                  variant: OpenVtsButtonVariant.secondary,
+                  size: OpenVtsButtonSize.small,
+                  loading: loading,
+                  onPressed: loading ? null : openEditProfile,
                 ),
               ),
               SizedBox(width: spacing + 4),
               Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(24),
-                    onTap: loading ? null : openUpdatePassword,
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Center(
-                        child: loading
-                            ? const AppShimmer(width: 122, height: 14, radius: 8)
-                            : Text(
-                                'Update Password',
-                                style: GoogleFonts.roboto(
-                                  fontSize: buttonFontSize,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.onPrimary,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
+                child: OpenVtsButton(
+                  label: 'Update Password',
+                  size: OpenVtsButtonSize.small,
+                  loading: loading,
+                  onPressed: loading ? null : openUpdatePassword,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: loading ? null : () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Change Profile image API not available yet')),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                height: 44,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: colorScheme.onSurface.withOpacity(0.12),
-                    width: 1.5,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Center(
-                  child: loading
-                      ? const AppShimmer(width: 110, height: 14, radius: 8)
-                      : Text(
-                          'Change Profile Picture',
-                          style: GoogleFonts.roboto(
-                            fontSize: buttonFontSize,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withOpacity(0.8),
-                          ),
+          OpenVtsButton(
+            label: 'Change Profile Picture',
+            variant: OpenVtsButtonVariant.ghost,
+            size: OpenVtsButtonSize.small,
+            loading: loading,
+            onPressed: loading
+                ? null
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Change Profile image API not available yet',
                         ),
-                ),
-              ),
-            ),
+                      ),
+                    );
+                  },
           ),
         ],
       ),

@@ -1,3 +1,6 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 // components/admin/edit_admin_profile_screen.dart
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -13,7 +16,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class EditAdminProfileScreen extends StatefulWidget {
   const EditAdminProfileScreen({super.key, this.initialProfile});
@@ -135,7 +137,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     if (text.startsWith('http://') || text.startsWith('https://')) return text;
     final base = AppConfig.fromDartDefine().baseUrl.trim();
     if (base.isEmpty) return text;
-    if (text.startsWith('/')) return '$base$text';
+    if (text.startsWith(AppRoutes.root)) return '$base$text';
     return '$base/$text';
   }
 
@@ -240,7 +242,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -283,10 +285,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _commonRepo = CommonRepository(api: _api!);
     _profileRepo = AdminProfileRepository(api: _api!);
     _adminRepo = AdminRepository(api: _api!);
@@ -537,7 +536,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                                 color: colorScheme.onSurface,
@@ -600,7 +599,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface,
@@ -610,7 +609,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
@@ -813,7 +812,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 children: [
                   Text(
                     'Edit Admin Profile',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -832,7 +831,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 'Update admin details',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -876,7 +875,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                             ? _nameController.text[0]
                                                 .toUpperCase()
                                             : 'A',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: 32,
                                           fontWeight: FontWeight.bold,
                                           color: colorScheme.primary,
@@ -889,7 +888,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                       _nameController.text.isNotEmpty
                                           ? _nameController.text[0].toUpperCase()
                                           : 'A',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: 32,
                                         fontWeight: FontWeight.bold,
                                         color: colorScheme.primary,
@@ -949,7 +948,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -968,7 +967,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _emailController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -1005,7 +1004,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                             .startsWith('+')
                                         ? (_selectedPrefix?.code ?? '+91')
                                         : '+${_selectedPrefix?.code ?? '91'}',
-                                    style: GoogleFonts.roboto(fontSize: 16),
+                                    style: AppFonts.roboto(fontSize: 16),
                                   ),
                                   const SizedBox(width: 4),
                                   const Icon(Icons.arrow_drop_down, size: 20),
@@ -1018,7 +1017,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -1039,7 +1038,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -1059,7 +1058,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       TextField(
                         controller: _countryController,
                         readOnly: true,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -1086,7 +1085,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       TextField(
                         controller: _stateController,
                         readOnly: true,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -1116,7 +1115,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _cityController,
                               readOnly: true,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -1146,7 +1145,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             child: TextField(
                               controller: _pincodeController,
                               keyboardType: TextInputType.number,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
@@ -1184,7 +1183,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   )
                                 : Text(
                                     'Save Changes',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,

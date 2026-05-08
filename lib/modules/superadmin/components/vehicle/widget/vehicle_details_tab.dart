@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/vehicle/vehicle_details_tab.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -10,7 +12,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VehicleDetailsTab extends StatelessWidget {
   final String vehicleId;
@@ -208,7 +209,7 @@ class VehicleDetailsTab extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
             fontWeight: FontWeight.w600,
             color: scheme.onSurface.withOpacity(0.7),
@@ -286,7 +287,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: colorScheme.onSurface.withOpacity(0.6),
             ),
@@ -294,7 +295,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -353,7 +354,7 @@ class VehicleDetailsTab extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -361,7 +362,7 @@ class VehicleDetailsTab extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
@@ -449,7 +450,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -457,7 +458,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: scheme.onSurface,
@@ -525,7 +526,7 @@ class VehicleDetailsTab extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -536,7 +537,7 @@ class VehicleDetailsTab extends StatelessWidget {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
               color: scheme.onSurface,
@@ -599,7 +600,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             ),
           ),
@@ -608,14 +609,14 @@ class VehicleDetailsTab extends StatelessWidget {
             children: [
               Text(
                 date,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 daysLeft,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) - 5,
                   color: scheme.onSurface.withOpacity(0.6),
                 ),
@@ -703,7 +704,7 @@ class VehicleDetailsTab extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
               color: scheme.onSurface.withOpacity(0.6),
             ),
@@ -711,7 +712,7 @@ class VehicleDetailsTab extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             name,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
               fontWeight: FontWeight.bold,
             ),
@@ -720,7 +721,7 @@ class VehicleDetailsTab extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               email,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                 color: scheme.onSurface.withOpacity(0.7),
               ),
@@ -730,7 +731,7 @@ class VehicleDetailsTab extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               [phone, username].where((v) => v != '-').join(' • '),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 3,
                 color: scheme.onSurface.withOpacity(0.7),
               ),
@@ -785,14 +786,14 @@ class VehicleDetailsTab extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
             color: scheme.onSurface,
           ),
         ),
         Text(
           time,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             color: scheme.onSurface.withOpacity(0.6),
           ),
@@ -851,10 +852,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
     setState(() => _submitting = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.deleteVehicle(
@@ -909,7 +907,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
         children: [
           Text(
             "Danger Zone",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize + 1,
               fontWeight: FontWeight.bold,
               color: colorScheme.error,
@@ -923,7 +921,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
               Expanded(
                 child: Text(
                   "This action cannot be undone. It will permanently delete this vehicle and remove all associated data.",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fontSize - 2,
                     color: colorScheme.error,
                   ),
@@ -955,7 +953,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
                     if (_submitting) const SizedBox(width: 8),
                     Text(
                       "Delete Vehicle",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize - 2,
                         color: colorScheme.error,
                         fontWeight: FontWeight.w600,

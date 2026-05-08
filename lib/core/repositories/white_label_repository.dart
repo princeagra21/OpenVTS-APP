@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/white_label_branding.dart';
@@ -20,7 +21,7 @@ class WhiteLabelRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/whitelabel',
+      ApiPaths.path('/superadmin/whitelabel'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -53,7 +54,7 @@ class WhiteLabelRepository {
     };
 
     final res = await api.patch(
-      '/superadmin/whitelabel',
+      ApiPaths.path('/superadmin/whitelabel'),
       data: FormData.fromMap(fields),
       cancelToken: cancelToken,
       options: Options(contentType: 'multipart/form-data'),
@@ -76,7 +77,7 @@ class WhiteLabelRepository {
     });
 
     final res = await api.post(
-      '/superadmin/upload/2',
+      ApiPaths.path('/superadmin/upload/2'),
       data: form,
       cancelToken: cancelToken,
       options: Options(contentType: 'multipart/form-data'),

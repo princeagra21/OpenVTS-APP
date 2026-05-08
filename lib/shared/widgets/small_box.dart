@@ -1,6 +1,6 @@
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -43,7 +43,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize ?? defaultFontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,

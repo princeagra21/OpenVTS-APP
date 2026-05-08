@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class ApiConfigRepository {
   final ApiClient api;
@@ -17,7 +18,7 @@ class ApiConfigRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/softwareconfig',
+      ApiPaths.path('/superadmin/softwareconfig'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -31,7 +32,7 @@ class ApiConfigRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/softwareconfig',
+      ApiPaths.path('/superadmin/softwareconfig'),
       data: payload,
       cancelToken: cancelToken,
     );

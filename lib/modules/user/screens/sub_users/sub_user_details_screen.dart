@@ -13,7 +13,10 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SubUserDetailsScreen extends StatefulWidget {
   final String userId;
@@ -60,19 +63,13 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }
 
   UserVehiclesRepository _vehiclesRepo() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return UserVehiclesRepository(api: _apiClient!);
   }
 
@@ -239,8 +236,8 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -346,7 +343,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                   Expanded(
                     child: Text(
                       'Limited access\n\nYou can view this sub-user, but editing is restricted because it was created by admin.',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12 * (fs / 14),
                         height: 17 / 12,
                         fontWeight: FontWeight.w500,
@@ -364,7 +361,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             children: [
               Text(
                 'Sub-user Overview',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 18 * (fs / 14),
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -376,7 +373,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                     ? null
                     : () async {
                         final result = await context.push(
-                          '/user/sub-users/edit/${widget.userId}',
+                          AppRoutes.userSubUsersEdit(widget.userId),
                           extra: details,
                         );
                         if (result == true) {
@@ -397,7 +394,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 ),
                 label: Text(
                   'Edit Profile',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 13 * (fs / 14),
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -475,7 +472,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             alignment: Alignment.center,
             child: Text(
               _initials(name),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -492,7 +489,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFs,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -516,7 +513,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: statusFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -529,7 +526,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   username,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -541,7 +538,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   phone,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -553,7 +550,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   email,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -667,7 +664,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -684,7 +681,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
           const SizedBox(height: 6),
           Text(
             pair.date,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -697,7 +694,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             const SizedBox(height: 4),
             Text(
               pair.time,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subValueFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -744,7 +741,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             children: [
               Text(
                 'Assigned Vehicles',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsMain + 2,
                   fontWeight: FontWeight.w600,
                   color: cs.onSurface,
@@ -767,7 +764,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 ),
                 child: Text(
                   'Assign Vehicles',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsSecondary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -780,7 +777,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             _vehicles.isEmpty
                 ? 'No vehicles assigned to this sub-user.'
                 : 'Vehicle list for this sub-user',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSecondary,
               color: cs.onSurface.withOpacity(0.7),
             ),
@@ -800,7 +797,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 children: [
                   Text(
                     'No vehicles assigned',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsMain + 2,
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface,
@@ -809,7 +806,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                   SizedBox(height: spacing / 2),
                   Text(
                     'Assign vehicles to this sub-user to see them here.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSecondary,
                       color: cs.onSurface.withOpacity(0.7),
                     ),
@@ -887,7 +884,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                     Expanded(
                                       child: Text(
                                         name,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fsMain,
                                           height: 20 / 14,
                                           fontWeight: FontWeight.w600,
@@ -969,7 +966,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                       ),
                                       child: Text(
                                         'Unassign',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fsSecondary,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -992,7 +989,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   ),
                                   child: Text(
                                     plate,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMeta,
                                       height: 14 / 11,
                                       fontWeight: FontWeight.w600,
@@ -1005,7 +1002,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                 SizedBox(height: spacing * 0.4),
                                 Text(
                                   vin,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -1048,7 +1045,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                       const SizedBox(width: 6),
                                       Text(
                                         'IMEI',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fsMeta,
                                           height: 14 / 11,
                                           fontWeight: FontWeight.w500,
@@ -1060,7 +1057,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   SizedBox(height: spacing),
                                   Text(
                                     imei,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -1072,7 +1069,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     ' ',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -1110,7 +1107,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                       const SizedBox(width: 6),
                                       Text(
                                         'SIM',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fsMeta,
                                           height: 14 / 11,
                                           fontWeight: FontWeight.w500,
@@ -1122,7 +1119,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   SizedBox(height: spacing + 2),
                                   Text(
                                     sim,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -1134,7 +1131,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     ' ',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -1192,7 +1189,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                           Expanded(
                             child: Text(
                               'Assign Vehicles',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1223,7 +1220,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                             ? Center(
                                 child: Text(
                                   'No available vehicles to assign.',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     color: cs.onSurface.withOpacity(0.7),
                                   ),
@@ -1246,7 +1243,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                     ),
                                     title: Text(
                                       '$name • $plate',
-                                      style: GoogleFonts.roboto(fontSize: 14),
+                                      style: AppFonts.roboto(fontSize: 14),
                                     ),
                                     value: checked,
                                     onChanged: (bool? checked) {
@@ -1346,7 +1343,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
         children: [
           Text(
             'Danger Zone',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMain + 2,
               fontWeight: FontWeight.w600,
               color: dangerColor,
@@ -1357,7 +1354,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             limitedAccess
                 ? 'This sub-user was created by admin. Deletion is restricted.'
                 : 'This action cannot be undone. It will permanently delete the sub-user and remove all associated data.',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMain,
               color: dangerColor,
             ),
@@ -1397,7 +1394,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                   ? const AppShimmer(width: 18, height: 18, radius: 9)
                   : Text(
                       limitedAccess ? 'Locked' : 'Delete',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsMain,
                         color: dangerColor,
                         fontWeight: FontWeight.w600,
@@ -1454,7 +1451,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1466,7 +1463,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1485,7 +1482,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1503,7 +1500,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Delete',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -1560,7 +1557,7 @@ class _NavigateBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1570,7 +1567,7 @@ class _NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1641,7 +1638,7 @@ class _SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize ?? defaultFontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,

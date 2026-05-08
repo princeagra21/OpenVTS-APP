@@ -6,7 +6,9 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UpdateUserPasswordScreen extends StatefulWidget {
   final String userId;
@@ -76,13 +78,10 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
     _submitToken = token;
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
 
       final res = await _api!.post(
-        '/admin/updateuserpassword/${widget.userId}',
+        ApiPaths.path('/admin/updateuserpassword/${widget.userId}'),
         data: <String, dynamic>{'newPassword': newPassword},
         cancelToken: token,
       );
@@ -175,7 +174,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
                 children: [
                   Text(
                     'Update Password',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                     ),
@@ -193,7 +192,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
               const SizedBox(height: 12),
               Text(
                 'Set a new password for this user',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                 ),
@@ -201,7 +200,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
               const SizedBox(height: 24),
               Text(
                 'New Password',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w600,
                 ),
@@ -225,7 +224,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
               const SizedBox(height: 16),
               Text(
                 'Confirm Password',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w600,
                 ),
@@ -268,7 +267,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
                     ),
                     child: Text(
                       'Update Password',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: labelSize - 1,
                         fontWeight: FontWeight.w700,
                       ),

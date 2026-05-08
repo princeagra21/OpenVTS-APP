@@ -1,10 +1,11 @@
 import 'package:open_vts/core/repositories/auth_repository.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class RouteGuard {
   static const Set<String> _publicRoutes = {
-    '/',
-    '/login',
-    '/onboarding',
+    AppRoutes.root,
+    AppRoutes.login,
+    AppRoutes.onboarding,
   };
 
   static bool isPublicRoute(String path) => _publicRoutes.contains(path);
@@ -27,14 +28,14 @@ class RouteGuard {
   static String defaultRouteForRole(String? role) {
     switch (normalizeRole(role)) {
       case 'superadmin':
-        return '/superadmin/home';
+        return AppRoutes.superadminHome;
       case 'admin':
-        return '/admin/home';
+        return AppRoutes.adminHome;
       case 'user':
       case 'driver':
-        return '/user/home';
+        return AppRoutes.userHome;
       default:
-        return '/login';
+        return AppRoutes.login;
     }
   }
 
@@ -50,11 +51,11 @@ class RouteGuard {
 
     if (normalizedRole == 'admin') {
       // Admins cannot access superadmin routes unless impersonation is added.
-      return !path.startsWith('/superadmin');
+      return !path.startsWith(AppRoutes.superadmin);
     }
 
     if (normalizedRole == 'user' || normalizedRole == 'driver') {
-      return !path.startsWith('/admin') && !path.startsWith('/superadmin');
+      return !path.startsWith(AppRoutes.admin) && !path.startsWith(AppRoutes.superadmin);
     }
 
     return false;

@@ -2,8 +2,8 @@ import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class FileCard extends StatelessWidget {
   final Map<String, dynamic>? document;
@@ -228,7 +228,7 @@ class FileCard extends StatelessWidget {
                     children: [
                       Text(
                         displayName,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -239,7 +239,7 @@ class FileCard extends StatelessWidget {
                       SizedBox(height: spacing * 0.4),
                       Text(
                         '$displayType · $createdAt',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -277,7 +277,7 @@ class FileCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         isVisible ? 'Visible' : 'Hidden',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -330,7 +330,7 @@ class FileCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         'Title',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -342,7 +342,7 @@ class FileCard extends StatelessWidget {
                   SizedBox(height: spacing),
                   Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsMain,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -455,7 +455,7 @@ class FileCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMeta,
                     height: 14 / 11,
                     fontWeight: FontWeight.w500,
@@ -470,7 +470,7 @@ class FileCard extends StatelessWidget {
           SizedBox(height: spacing),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMeta + 1,
               height: 20 / 14,
               fontWeight: FontWeight.w600,

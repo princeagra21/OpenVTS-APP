@@ -13,7 +13,9 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class PlansScreen extends StatefulWidget {
   const PlansScreen({super.key});
@@ -38,10 +40,7 @@ class _PlansScreenState extends State<PlansScreen> {
   List<PricingPlan> _plans = const <PricingPlan>[];
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }
@@ -69,7 +68,8 @@ class _PlansScreenState extends State<PlansScreen> {
   }
 
   bool _isActive(PricingPlan plan) {
-    final raw = plan.raw['isActive'] ??
+    final raw =
+        plan.raw['isActive'] ??
         plan.raw['active'] ??
         plan.raw['enabled'] ??
         plan.status;
@@ -118,8 +118,9 @@ class _PlansScreenState extends State<PlansScreen> {
         final message = err is ApiException
             ? err.message
             : "Couldn't load plans.";
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
@@ -159,10 +160,9 @@ class _PlansScreenState extends State<PlansScreen> {
       return fields.any((v) => v.toLowerCase().contains(searchQuery));
     }
 
-    final filteredPlans = _plans
-        .where((plan) => matchesTab(plan) && matchesSearch(plan))
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final filteredPlans =
+        _plans.where((plan) => matchesTab(plan) && matchesSearch(plan)).toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
     return AppLayout(
       title: 'ADMIN',
@@ -171,7 +171,7 @@ class _PlansScreenState extends State<PlansScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Plans',
         leadingIcon: Icons.widgets,
-        onClose: () => context.go('/admin/home'),
+        onClose: () => context.go(AppRoutes.adminHome),
       ),
       actionIcons: const [],
       showLeftAvatar: false,
@@ -203,7 +203,7 @@ class _PlansScreenState extends State<PlansScreen> {
                 children: [
                   Text(
                     'All Plans',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -215,7 +215,7 @@ class _PlansScreenState extends State<PlansScreen> {
                     _plans.isEmpty
                         ? 'No plans registered.'
                         : '${_plans.length} plan(s) registered',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSecondary,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.7),
@@ -250,7 +250,7 @@ class _PlansScreenState extends State<PlansScreen> {
                     children: [
                       Text(
                         'Browse Plans',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSection,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -271,14 +271,14 @@ class _PlansScreenState extends State<PlansScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsMain,
                         height: 20 / 14,
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search plan name, price, duration...',
-                        hintStyle: GoogleFonts.roboto(
+                        hintStyle: AppFonts.roboto(
                           color: colorScheme.onSurface.withOpacity(0.5),
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -328,18 +328,19 @@ class _PlansScreenState extends State<PlansScreen> {
                                       setState(() => selectedTab = tab);
                                       WidgetsBinding.instance
                                           .addPostFrameCallback((_) {
-                                        final ctx =
-                                            _tabKeys[index].currentContext;
-                                        if (ctx != null) {
-                                          Scrollable.ensureVisible(
-                                            ctx,
-                                            duration:
-                                                const Duration(milliseconds: 300),
-                                            alignment: 0.5,
-                                            curve: Curves.easeInOut,
-                                          );
-                                        }
-                                      });
+                                            final ctx =
+                                                _tabKeys[index].currentContext;
+                                            if (ctx != null) {
+                                              Scrollable.ensureVisible(
+                                                ctx,
+                                                duration: const Duration(
+                                                  milliseconds: 300,
+                                                ),
+                                                alignment: 0.5,
+                                                curve: Curves.easeInOut,
+                                              );
+                                            }
+                                          });
                                     },
                                   ),
                                 ),
@@ -356,7 +357,7 @@ class _PlansScreenState extends State<PlansScreen> {
                     children: [
                       Text(
                         'Showing ${filteredPlans.length} of ${_plans.length} plans',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSecondary,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -364,7 +365,9 @@ class _PlansScreenState extends State<PlansScreen> {
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () async {
-                          final res = await context.push('/admin/plans/add');
+                          final res = await context.push(
+                            AppRoutes.adminPlansAdd,
+                          );
                           if (res == true && mounted) {
                             _loadPlans();
                           }
@@ -388,7 +391,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               SizedBox(width: spacing / 2),
                               Text(
                                 'New',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMeta,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.surface,
@@ -430,11 +433,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  AppShimmer(
-                                    width: 180,
-                                    height: 14,
-                                    radius: 7,
-                                  ),
+                                  AppShimmer(width: 180, height: 14, radius: 7),
                                   SizedBox(height: 8),
                                   AppShimmer(
                                     width: double.infinity,
@@ -442,11 +441,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                     radius: 7,
                                   ),
                                   SizedBox(height: 8),
-                                  AppShimmer(
-                                    width: 120,
-                                    height: 13,
-                                    radius: 7,
-                                  ),
+                                  AppShimmer(width: 120, height: 13, radius: 7),
                                 ],
                               ),
                             ),
@@ -482,7 +477,7 @@ class _PlansScreenState extends State<PlansScreen> {
                               'No plans found',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsSecondary,
                                 color: colorScheme.onSurface.withOpacity(0.7),
                               ),
@@ -538,13 +533,15 @@ class _PlansScreenState extends State<PlansScreen> {
                                       height: 40 * (fsMain / 14),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(12),
-                                        color: Theme.of(context).brightness ==
+                                        color:
+                                            Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? colorScheme.surfaceContainerHighest
+                                            ? colorScheme
+                                                  .surfaceContainerHighest
                                             : Colors.grey.shade50,
                                         border: Border.all(
-                                          color:
-                                              colorScheme.outline.withOpacity(0.3),
+                                          color: colorScheme.outline
+                                              .withOpacity(0.3),
                                         ),
                                       ),
                                       alignment: Alignment.center,
@@ -569,11 +566,12 @@ class _PlansScreenState extends State<PlansScreen> {
                                                   plan.name.isNotEmpty
                                                       ? plan.name
                                                       : 'Plan',
-                                                  style: GoogleFonts.roboto(
+                                                  style: AppFonts.roboto(
                                                     fontSize: fsMain,
                                                     height: 20 / 14,
                                                     fontWeight: FontWeight.w600,
-                                                    color: colorScheme.onSurface,
+                                                    color:
+                                                        colorScheme.onSurface,
                                                   ),
                                                   softWrap: true,
                                                 ),
@@ -581,15 +579,17 @@ class _PlansScreenState extends State<PlansScreen> {
                                               const SizedBox(width: 8),
                                               PopupMenuButton<String>(
                                                 icon: Icon(
-                                                  CupertinoIcons.ellipsis_vertical,
+                                                  CupertinoIcons
+                                                      .ellipsis_vertical,
                                                   color: colorScheme.primary
                                                       .withOpacity(0.6),
                                                 ),
-                                                onSelected:
-                                                    (String value) async {
+                                                onSelected: (String value) async {
                                                   if (value == 'edit') {
                                                     final res = await context.push(
-                                                      '/admin/plans/edit/${plan.id}',
+                                                      AppRoutes.adminPlansEdit(
+                                                        plan.id.toString(),
+                                                      ),
                                                       extra: plan.raw,
                                                     );
                                                     if (res == true &&
@@ -599,17 +599,21 @@ class _PlansScreenState extends State<PlansScreen> {
                                                   }
                                                 },
                                                 itemBuilder:
-                                                    (BuildContext context) =>
-                                                        <PopupMenuEntry<String>>[
-                                                  const PopupMenuItem<String>(
-                                                    value: 'edit',
-                                                    child: ListTile(
-                                                      leading:
-                                                          Icon(Icons.edit_outlined),
-                                                      title: Text('Edit'),
-                                                    ),
-                                                  ),
-                                                ],
+                                                    (
+                                                      BuildContext context,
+                                                    ) => <PopupMenuEntry<String>>[
+                                                      const PopupMenuItem<
+                                                        String
+                                                      >(
+                                                        value: 'edit',
+                                                        child: ListTile(
+                                                          leading: Icon(
+                                                            Icons.edit_outlined,
+                                                          ),
+                                                          title: Text('Edit'),
+                                                        ),
+                                                      ),
+                                                    ],
                                               ),
                                             ],
                                           ),
@@ -620,20 +624,28 @@ class _PlansScreenState extends State<PlansScreen> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Theme.of(context).brightness ==
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
                                                       Brightness.dark
-                                                  ? statusColor.withOpacity(0.15)
+                                                  ? statusColor.withOpacity(
+                                                      0.15,
+                                                    )
                                                   : Colors.grey.shade50,
                                               borderRadius:
                                                   BorderRadius.circular(16),
                                             ),
                                             child: Text(
                                               statusLabel,
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: fsMeta,
                                                 height: 14 / 11,
                                                 fontWeight: FontWeight.w600,
-                                                color: Theme.of(context).brightness ==
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
                                                         Brightness.dark
                                                     ? statusColor
                                                     : colorScheme.onSurface,
@@ -646,7 +658,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                           SizedBox(height: spacing * 0.4),
                                           Text(
                                             'Price: ${currency.isNotEmpty ? '$currency ' : ''}$priceText',
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -656,7 +668,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                           SizedBox(height: spacing * 0.4),
                                           Text(
                                             'Duration: $durationText',
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,

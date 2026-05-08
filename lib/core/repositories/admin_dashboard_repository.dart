@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_dashboard_summary.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminDashboardRepository {
   final ApiClient api;
@@ -19,7 +20,7 @@ class AdminDashboardRepository {
     }
 
     final res = await api.get(
-      '/admin/dashboard/summary',
+      ApiPaths.path('/admin/dashboard/summary'),
       queryParameters: query,
       cancelToken: cancelToken,
     );

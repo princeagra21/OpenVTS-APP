@@ -8,7 +8,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddDriverScreen extends StatefulWidget {
   const AddDriverScreen({super.key});
@@ -93,19 +94,13 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
 
   CommonRepository _commonRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }
@@ -489,7 +484,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                 children: [
                   Text(
                     'Add New Driver',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -523,7 +518,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                           children: [
                             Text(
                               'Enter mobile number *',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: AdaptiveUtils.getTitleFontSize(w),
                               ),
@@ -610,7 +605,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                           children: [
                             Text(
                               'Enter password *',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: AdaptiveUtils.getTitleFontSize(w),
                               ),
@@ -630,7 +625,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                   fillColor: cs.surface,
                                   filled: true,
                                   hintText: 'Password',
-                                  hintStyle: GoogleFonts.inter(
+                                  hintStyle: AppFonts.inter(
                                     color: cs.onSurface.withOpacity(0.6),
                                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                                   ),
@@ -683,7 +678,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 children: [
                                   Text(
                                     'Country',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         w,
@@ -713,7 +708,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 children: [
                                   Text(
                                     'State',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         w,
@@ -745,7 +740,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                                 children: [
                                   Text(
                                     'City',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       fontSize: AdaptiveUtils.getTitleFontSize(
                                         w,
@@ -803,7 +798,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                   ),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontWeight: FontWeight.w600,
                       fontSize: AdaptiveUtils.getTitleFontSize(w),
                       height: 20 / 14,
@@ -828,7 +823,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                       ? const AppShimmer(width: 62, height: 18, radius: 7)
                       : Text(
                           'Add Driver',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontWeight: FontWeight.w600,
                             fontSize: AdaptiveUtils.getTitleFontSize(w),
                             height: 20 / 14,
@@ -886,7 +881,7 @@ class StylishTextField extends StatelessWidget {
         if (!hideLabel) ...[
           Text(
             label,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+            style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
           ),
           const SizedBox(height: 8),
         ],
@@ -903,7 +898,7 @@ class StylishTextField extends StatelessWidget {
               fillColor: cs.surface,
               filled: true,
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -965,7 +960,7 @@ class _SelectionField extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   color: cs.onSurface,
                 ),

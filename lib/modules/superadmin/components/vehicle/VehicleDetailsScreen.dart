@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/vehicle/vehicle_details_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -18,7 +20,6 @@ import 'package:open_vts/modules/superadmin/components/vehicle/widget/vehicle_us
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
 class VehicleDetailsScreen extends StatefulWidget {
@@ -113,10 +114,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     setState(() => _loadingDetails = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getVehicleDetails(widget.id, cancelToken: token);
@@ -231,7 +229,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                             ),
                             child: Text(
                               plate,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fs + 6,
                                 fontWeight: FontWeight.w900,
                                 color: colorScheme.onSurface,
@@ -260,7 +258,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                               ),
                               child: Text(
                                 status,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fs - 2,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -559,14 +557,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         const SizedBox(height: 6),
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs - 4,
             color: scheme.onSurface.withOpacity(0.6),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs - 1,
             fontWeight: FontWeight.bold,
             color: scheme.onSurface,
@@ -597,7 +595,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         children: [
           Text(
             '$label: ',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs - 3,
               fontWeight: FontWeight.w600,
               color: scheme.onSurface.withOpacity(0.65),
@@ -610,7 +608,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Text(
               value,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fs - 3,
                 fontWeight: FontWeight.w600,
                 color: scheme.onSurface,
@@ -642,7 +640,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: Text(
             safe(value),
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs + 1,
               fontWeight: FontWeight.w600,
             ),

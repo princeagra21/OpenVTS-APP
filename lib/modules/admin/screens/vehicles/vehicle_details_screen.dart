@@ -15,7 +15,9 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class VehicleDetailsScreen extends StatefulWidget {
   final String vehicleId;
@@ -74,10 +76,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   ];
 
   AdminVehiclesRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminVehiclesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -430,8 +429,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -617,7 +616,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                             children: [
                               Text(
                                 name,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMain,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -640,7 +639,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                 ),
                                 child: Text(
                                   plate,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMeta,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w600,
@@ -652,7 +651,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                               SizedBox(height: spacing * 0.4),
                               Text(
                                 type.isEmpty ? '—' : type,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsSecondary,
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
@@ -762,7 +761,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           ),
                           child: Text(
                             deviceStatus.isEmpty ? '—' : deviceStatus,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMeta,
                               fontWeight: FontWeight.w600,
                               color: cs.onSurface,
@@ -930,7 +929,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             children: [
               Text(
                 'Vehicle Config',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsSection,
                   fontWeight: FontWeight.w700,
                   color: cs.onSurface,
@@ -957,7 +956,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                     ),
                     label: Text(
                       'Reset',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         color: cs.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: fsAction,
@@ -991,7 +990,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                     ),
                     label: Text(
                       'Save',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         color: cs.onPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: fsAction,
@@ -1073,7 +1072,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
+      style: AppFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.transparent,
@@ -1091,7 +1090,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         suffixText: unit,
-        suffixStyle: GoogleFonts.roboto(
+        suffixStyle: AppFonts.roboto(
           fontSize: fs,
           fontWeight: FontWeight.w600,
           color: colorScheme.onSurface.withOpacity(0.87),
@@ -1144,7 +1143,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs + 2,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -1153,7 +1152,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -1213,7 +1212,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                     const SizedBox(width: 6),
                     Text(
                       'Ignition Wire',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: chipFs,
                         color: _ignitionSource == 'Ignition Wire'
                             ? colorScheme.onPrimary
@@ -1257,7 +1256,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                     const SizedBox(width: 6),
                     Text(
                       'Motion-Based',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: chipFs,
                         color: _ignitionSource == 'Motion-Based'
                             ? colorScheme.onPrimary
@@ -1331,7 +1330,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleFs,
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface.withOpacity(0.87),
@@ -1341,7 +1340,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: subtitleFs,
                           color: colorScheme.onSurface.withOpacity(0.8),
                         ),
@@ -1390,7 +1389,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           else if (_linkedUsers.isEmpty)
             Text(
               'No linked users.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsSecondary,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -1433,7 +1432,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       alignment: Alignment.center,
                       child: Text(
                         initials.isNotEmpty ? initials : '--',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface,
@@ -1447,7 +1446,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                         children: [
                           Text(
                             name,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -1457,7 +1456,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           SizedBox(height: spacing * 0.4),
                           Text(
                             email,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSecondary,
                               height: 16 / 12,
                               color: cs.onSurface.withOpacity(0.7),
@@ -1466,7 +1465,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           SizedBox(height: spacing * 0.4),
                           Text(
                             phone,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSecondary,
                               height: 16 / 12,
                               color: cs.onSurface.withOpacity(0.7),
@@ -1521,7 +1520,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               Expanded(
                 child: Text(
                   'Vehicle Logs',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: headerSize,
                     height: 24 / 18,
                     fontWeight: FontWeight.w700,
@@ -1545,7 +1544,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             onChanged: (v) => setState(() => _logQuery = v),
             decoration: InputDecoration(
               hintText: 'Search logs...',
-              hintStyle: GoogleFonts.roboto(
+              hintStyle: AppFonts.roboto(
                 fontSize: labelSize,
                 color: cs.onSurface.withOpacity(0.5),
               ),
@@ -1575,7 +1574,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 ),
               ),
             ),
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: cs.onSurface,
@@ -1619,7 +1618,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                         const SizedBox(width: 6),
                         Text(
                           _logFilter,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelSize,
                             fontWeight: FontWeight.w600,
                             color: cs.onSurface,
@@ -1711,7 +1710,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                             rangeLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize,
                               fontWeight: FontWeight.w600,
                               color: cs.onSurface,
@@ -1739,7 +1738,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             child: items.isEmpty
                 ? Text(
                     'No logs found.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       fontWeight: FontWeight.w500,
                       color: cs.onSurface.withOpacity(0.7),
@@ -1791,7 +1790,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                         'Event type: ${log.packetType.isNotEmpty ? log.packetType : '—'}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: headerSize - 1,
                                           fontWeight: FontWeight.w700,
                                           color: cs.onSurface,
@@ -1813,7 +1812,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                         ),
                                         child: Text(
                                           'Event time: ${_formatDateTime(log.deviceTime)}',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                             color: cs.onSurface,
@@ -1931,7 +1930,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -1941,7 +1940,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           Text(
             value.isEmpty ? '—' : value,
             softWrap: true,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
@@ -2047,7 +2046,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               const SizedBox(width: 6),
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsMeta,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -2065,7 +2064,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 Text(
                   line,
                   softWrap: true,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMain,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,

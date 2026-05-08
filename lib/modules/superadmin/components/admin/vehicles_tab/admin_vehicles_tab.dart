@@ -9,8 +9,9 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class AdminVehiclesTab extends StatefulWidget {
@@ -61,10 +62,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminVehicles(
@@ -139,7 +137,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
         children: [
           Text(
             'Admin Vehicles',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: headerSize,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -152,7 +150,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
           else
             Text(
               '${_vehicles.length} vehicle(s) registered',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2,
                 fontWeight: FontWeight.w500,
                 color: cs.onSurface.withOpacity(0.7),
@@ -173,7 +171,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search vehicles...',
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       fontSize:
                           AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2,
                       color: cs.onSurface.withOpacity(0.5),
@@ -252,7 +250,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Filter',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -297,7 +295,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Refresh',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -342,7 +340,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Export',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -366,7 +364,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
           else if (filtered.isEmpty)
             Text(
               'No vehicles found.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsMain,
                 fontWeight: FontWeight.w500,
                 color: cs.onSurface.withOpacity(0.7),
@@ -481,7 +479,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
               children: [
                 Text(
                   'Export Vehicles',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(
                           MediaQuery.of(context).size.width,
                         ) +
@@ -845,7 +843,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                   children: [
                     Text(
                       name,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,
@@ -854,7 +852,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                     const SizedBox(height: 4),
                     Text(
                       type,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelSize,
                         fontWeight: FontWeight.w500,
                         color: cs.onSurface.withOpacity(0.7),
@@ -934,7 +932,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
               color: cs.onSurface.withOpacity(0.7),
@@ -946,7 +944,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
                 line,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: valueSize,
                   fontWeight: FontWeight.w600,
                   color: cs.onSurface,

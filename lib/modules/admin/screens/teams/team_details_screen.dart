@@ -12,8 +12,10 @@ import 'package:open_vts/modules/admin/screens/teams/edit_team_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class TeamDetailsScreen extends StatefulWidget {
   final String id;
@@ -40,10 +42,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
   AdminTeamsRepository? _repo;
 
   AdminTeamsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminTeamsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -375,8 +374,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -479,7 +478,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                 children: [
                   Text(
                     'Team Overview',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: sectionFs,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -573,7 +572,7 @@ class _ActionRow extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(
                 isActive ? 'Set Inactive' : 'Set Active',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFs,
                   height: 20 / 14,
                   fontWeight: FontWeight.w600,
@@ -603,7 +602,7 @@ class _ActionRow extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(
                 'Password',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFs,
                   height: 20 / 14,
                   fontWeight: FontWeight.w600,
@@ -635,7 +634,7 @@ class _ActionRow extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(
                 'Edit',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFs,
                   height: 20 / 14,
                   fontWeight: FontWeight.w700,
@@ -703,7 +702,7 @@ class _ProfileCard extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               initials,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -722,7 +721,7 @@ class _ProfileCard extends StatelessWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFs,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -743,7 +742,7 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: statusFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -758,7 +757,7 @@ class _ProfileCard extends StatelessWidget {
                   username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -770,7 +769,7 @@ class _ProfileCard extends StatelessWidget {
                   email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -782,7 +781,7 @@ class _ProfileCard extends StatelessWidget {
                   phone,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -888,7 +887,7 @@ class _MetricCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -907,7 +906,7 @@ class _MetricCard extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -920,7 +919,7 @@ class _MetricCard extends StatelessWidget {
               subValue,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subValueFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,

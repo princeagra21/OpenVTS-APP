@@ -3,9 +3,11 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/modules/user/screens/drivers/driver_screen.dart';
 import 'package:open_vts/modules/user/screens/sub_users/sub_user_screen.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
@@ -38,8 +40,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -74,7 +76,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             child: UserHomeAppBar(
               title: 'Accounts',
               leadingIcon: Icons.group_outlined,
-              onClose: () => context.go('/user/home'),
+              onClose: () => context.go(AppRoutes.userHome),
             ),
           ),
         ],
@@ -127,7 +129,7 @@ class _NavigateBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -137,7 +139,7 @@ class _NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -208,7 +210,7 @@ class _SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize ?? defaultFontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,

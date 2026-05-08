@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/policy/policy_edit_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -10,7 +12,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class PolicyEditScreen extends StatefulWidget {
   const PolicyEditScreen({super.key});
@@ -65,10 +66,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
   }
 
   UserPolicyRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserPolicyRepository(api: _apiClient!);
     return _repo!;
   }
@@ -335,7 +333,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           ),
                           label: Text(
                             "Clear All",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
                             ),
@@ -370,7 +368,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           ),
                           label: Text(
                             "Save All",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onPrimary,
                             ),
@@ -385,7 +383,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                       children: [
                         Text(
                           "User Policy Management",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fs + 6,
                             fontWeight: FontWeight.w900,
                             color: colorScheme.onSurface.withOpacity(0.9),
@@ -400,7 +398,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                     const SizedBox(height: 8),
                     Text(
                       "Create and manage legal agreements for your users",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fs - 1,
                         color: colorScheme.onSurface.withOpacity(0.7),
                       ),
@@ -426,7 +424,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                         children: [
                           Text(
                             "Select Policy to Edit",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs + 2,
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface.withOpacity(0.9),
@@ -459,7 +457,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                 ),
                               ),
                             ),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs,
                               color: colorScheme.onSurface,
                             ),
@@ -514,7 +512,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                               const SizedBox(width: 12),
                               Text(
                                 selectedPolicy,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fs + 4,
                                   fontWeight: FontWeight.w800,
                                   color: colorScheme.onSurface.withOpacity(0.9),
@@ -525,7 +523,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           const SizedBox(height: 12),
                           Text(
                             "Configure the policy content and settings",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs - 2,
                               color: colorScheme.onSurface.withOpacity(0.7),
                             ),
@@ -538,7 +536,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                             children: [
                               Text(
                                 "${policyController.text.trim().split(' ').where((e) => e.isNotEmpty).length} words",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fs - 2,
                                   fontWeight: FontWeight.w500,
                                   color: colorScheme.onSurface.withOpacity(0.8),
@@ -550,7 +548,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                     : _resetSelectedToTemplate,
                                 child: Text(
                                   "Clear Text",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fs - 2,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.primary,
@@ -571,14 +569,14 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                                 : (value) => setState(
                                     () => policies[selectedPolicy] = value,
                                   ),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs,
                               color: colorScheme.onSurface,
                               height: 1.7,
                             ),
                             decoration: InputDecoration(
                               hintText: "Enter policy content here...",
-                              hintStyle: GoogleFonts.roboto(
+                              hintStyle: AppFonts.roboto(
                                 fontSize: fs,
                                 color: colorScheme.onSurface.withOpacity(0.5),
                               ),
@@ -606,7 +604,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           const SizedBox(height: 16),
                           Text(
                             "Plain text format. Updates will be reflected immediately for users.",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs - 4,
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),

@@ -3,8 +3,9 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -92,49 +93,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'title': 'Profile',
         'subtitle': 'Manage profile',
         'icon': CupertinoIcons.person,
-        'route': '/superadmin/profile',
+        'route': AppRoutes.superadminProfile,
       },
       {
         'title': 'White Label',
         'subtitle': 'Brand customization',
         'icon': CupertinoIcons.paintbrush,
-        'route': '/superadmin/white-label',
+        'route': AppRoutes.superadminWhiteLabel,
       },
       // {
       //   'title': 'Branding',
       //   'subtitle': 'Company branding',
       //   'icon': CupertinoIcons.briefcase,
-      //   'route': '/superadmin/branding',
+      //   'route': AppRoutes.superadminBranding,
       // },
       {
         'title': 'API Config',
         'subtitle': 'Configure APIs',
         'icon': CupertinoIcons.cloud,
-        'route': '/superadmin/api-config',
+        'route': AppRoutes.superadminApiConfig,
       },
       {
         'title': 'SMTP Settings',
         'subtitle': 'Email settings',
         'icon': CupertinoIcons.mail,
-        'route': '/superadmin/smtp-settings',
+        'route': AppRoutes.superadminSmtpSettings,
       },
       {
         'title': 'Localization',
         'subtitle': 'Language & region',
         'icon': CupertinoIcons.globe,
-        'route': '/superadmin/localization',
+        'route': AppRoutes.superadminLocalization,
       },
       {
         'title': 'App Preferences',
         'subtitle': 'App preferences',
         'icon': CupertinoIcons.settings,
-        'route': '/superadmin/application-settings',
+        'route': AppRoutes.superadminApplicationSettings,
       },
       {
         'title': 'Update User Policy',
         'subtitle': 'User policy',
         'icon': CupertinoIcons.doc_text,
-        'route': '/superadmin/user-policy',
+        'route': AppRoutes.superadminUserPolicy,
       },
     ];
 
@@ -147,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       actionIcons: [toggleIcon, CupertinoIcons.bell],
       onActionTaps: [
         _toggleViewMode,
-        () => context.push('/superadmin/notifications'),
+        () => context.push(AppRoutes.superadminNotifications),
       ],
       leftAvatarText: 'FS',
       showLeftAvatar: false,
@@ -159,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 "Settings",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface.withOpacity(0.85),
@@ -257,7 +258,7 @@ class _SettingsMenuCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -265,7 +266,7 @@ class _SettingsMenuCard extends StatelessWidget {
                           ),
                           Text(
                             subtitle,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               color:
                                   colorScheme.onSurface.withOpacity(0.65),
@@ -295,7 +296,7 @@ class _SettingsMenuCard extends StatelessWidget {
                     SizedBox(height: hp),
                     Text(
                       title,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -303,7 +304,7 @@ class _SettingsMenuCard extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         color: colorScheme.onSurface.withOpacity(0.65),
                       ),

@@ -2,8 +2,9 @@ import 'package:open_vts/core/models/admin_vehicle_preview_item.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -43,7 +44,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -157,7 +158,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: mainFontSize,
                     fontWeight: FontWeight.w600,
                   ),
@@ -166,7 +167,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                   time,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: subFontSize,
                     color: colorScheme.onSurface.withOpacity(0.54),
                   ),
@@ -186,7 +187,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             ),
             child: Text(
               status,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: colorScheme.onPrimary,
                 fontSize: badgeFontSize,
               ),
@@ -241,13 +242,13 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               InkWell(
                 onTap: () {
                   context.push(
-                    '/admin/all-activities',
+                    AppRoutes.adminAllActivities,
                     extra: {'type': activityTab},
                   );
                 },
                 child: Text(
                   'View all',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: linkFontSize,
                     color: colorScheme.primary,
                   ),
@@ -265,7 +266,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                       children: [
                         Text(
                           'No vehicles found',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(screenWidth) -
                                 1,
@@ -277,7 +278,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                         Text(
                           'Ask superadmin to assign vehicles.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getTitleFontSize(
                               screenWidth,
                             ),

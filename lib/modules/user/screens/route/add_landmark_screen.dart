@@ -8,8 +8,9 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/shared/components/custom_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class RouteLocationPreset {
   final String id;
@@ -78,10 +79,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     return _api!;
   }
 
@@ -452,7 +450,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                 children: [
                   Text(
                     'Add Landmark',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -513,7 +511,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                           children: [
                             Text(
                               'Select Icon',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                              style: AppFonts.inter(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
                             Wrap(

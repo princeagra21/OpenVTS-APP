@@ -1,22 +1,22 @@
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/app_container.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // login_screen.dart
 import 'dart:async';
 
 import 'package:animations/animations.dart';
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/api_base_url_config.dart';
-import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
-import 'package:open_vts/core/services/push_notifications_service.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/config/server_configuration_sheet.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,15 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _forgotPasswordMessage;
 
   CancelToken? _loginToken;
-  ApiClient? _api;
   AuthRepository? _authRepo;
 
   Future<void> _syncApiClientBaseUrl() async {
     final effectiveBaseUrl = ApiBaseUrlConfig.instance.effectiveBaseUrl;
-    if (_api != null) {
-      _api!.updateBaseUrl(effectiveBaseUrl);
-      return;
-    }
+    AppContainer.instance.apiClient.updateBaseUrl(effectiveBaseUrl);
   }
 
   Future<void> _openServerConfiguration() async {
@@ -52,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: OpenVtsColors.transparent,
       builder: (_) => const ServerConfigurationSheet(),
     );
 
@@ -71,22 +67,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   AuthRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _authRepo ??= AuthRepository(
-      api: _api!,
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _authRepo ??= AppContainer.instance.authRepository;
     return _authRepo!;
   }
 
   String? _targetPathForRole(String? backendRole) {
     final normalized = (backendRole ?? '').trim().toLowerCase();
-    if (normalized.contains('super')) return '/superadmin/home';
-    if (normalized.contains('admin')) return '/admin/home';
-    if (normalized.contains('user')) return '/user/home';
+    if (normalized.contains('super')) return AppRoutes.superadminHome;
+    if (normalized.contains('admin')) return AppRoutes.adminHome;
+    if (normalized.contains('user')) return AppRoutes.userHome;
     if (normalized.contains('driver')) return null;
     return null;
   }
@@ -138,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handlePushAfterLogin() async {
-    final service = PushNotificationsService.instance;
+    final service = AppContainer.instance.pushNotificationsService;
     final shouldPrompt = await service.shouldPromptAfterLogin();
     if (!mounted) return;
 
@@ -203,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
         success: (ctx) async {
           final target = _targetPathForRole(ctx.role);
           if (target == null) {
-            await TokenStorage.defaultInstance().clear();
+            await AppContainer.instance.tokenStorage.clear();
             if (!mounted) return;
             setState(() => _isLoggingIn = false);
             _showSnack('This account role is not supported in this app.');
@@ -248,13 +237,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Hero-style title
         Text(
           'Track Without Limits',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
           textAlign: TextAlign.center,
@@ -262,32 +250,22 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Powered by You',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.7),
+            color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        // Glassmorphism container for form
-        Container(
-          width: double.infinity,
+        OpenVtsCard(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+          backgroundColor: colorScheme.surface,
+          borderColor: colorScheme.outline.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          shadowLevel: OpenVtsCardShadowLevel.strong,
           child: Column(
             children: [
-              // Logo
               Image.asset(
                 logoAsset,
                 width: 380,
@@ -295,115 +273,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 24),
-              // Email field
-              TextField(
+              OpenVtsTextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Email or Username',
-                  labelStyle: GoogleFonts.roboto(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black.withOpacity(0.6),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.withOpacity(0.1),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
-                    color: Colors.black.withOpacity(0.5),
-                    size: 20,
-                  ),
+                labelText: 'Email or Username',
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
                 ),
               ),
               const SizedBox(height: 16),
-              // Password field
-              TextField(
+              OpenVtsTextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                labelText: 'Password',
+                prefixIcon: Icon(
+                  Icons.lock_outline,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
                 ),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: GoogleFonts.roboto(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black.withOpacity(0.6),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.withOpacity(0.1),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.lock_outline,
-                    color: Colors.black.withOpacity(0.5),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() => _obscurePassword = !_obscurePassword);
+                  },
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: colorScheme.onSurface.withOpacity(0.5),
                     size: 20,
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: Colors.black.withOpacity(0.5),
-                      size: 20,
-                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              // Forgot password
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
@@ -414,46 +317,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: Text(
                     'Forgot Password?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black.withOpacity(0.7),
+                      color: colorScheme.primary,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              // Login button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoggingIn ? null : _submitLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoggingIn
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Login',
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
+              OpenVtsButton(
+                label: 'Login',
+                loading: _isLoggingIn,
+                onPressed: _isLoggingIn ? null : _submitLogin,
               ),
             ],
           ),
@@ -472,10 +348,10 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           'Reset Password',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
           textAlign: TextAlign.center,
@@ -483,140 +359,55 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Enter your email to receive reset instructions',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.7),
+            color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        Container(
-          width: double.infinity,
+        OpenVtsCard(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+          backgroundColor: colorScheme.surface,
+          borderColor: colorScheme.outline.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          shadowLevel: OpenVtsCardShadowLevel.strong,
           child: Column(
             children: [
-              TextField(
+              OpenVtsTextField(
                 controller: _emailController,
                 keyboardType: TextInputType.text,
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Email or Username',
-                  labelStyle: GoogleFonts.roboto(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black.withOpacity(0.6),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.withOpacity(0.1),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
-                    color: Colors.black.withOpacity(0.5),
-                    size: 20,
-                  ),
+                labelText: 'Email or Username',
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  size: 20,
                 ),
               ),
               const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _isForgot = false;
-                            _forgotPasswordMessage = null;
-                          });
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: Colors.grey.withOpacity(0.3),
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
+                    child: OpenVtsButton(
+                      label: 'Cancel',
+                      variant: OpenVtsButtonVariant.secondary,
+                      onPressed: () {
+                        setState(() {
+                          _isForgot = false;
+                          _forgotPasswordMessage = null;
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isForgotSubmitting ? null : _submitForgotPassword,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isForgotSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Text(
-                                'Proceed',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
+                    child: OpenVtsButton(
+                      label: 'Proceed',
+                      loading: _isForgotSubmitting,
+                      onPressed: _isForgotSubmitting
+                          ? null
+                          : _submitForgotPassword,
                     ),
                   ),
                 ],
@@ -638,10 +429,10 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           'Check Your Email',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: colorScheme.onSurface,
             letterSpacing: -0.5,
           ),
           textAlign: TextAlign.center,
@@ -649,36 +440,28 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'We\'ve sent reset instructions to your email',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.black.withOpacity(0.7),
+            color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        Container(
-          width: double.infinity,
+        OpenVtsCard(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+          backgroundColor: colorScheme.surface,
+          borderColor: colorScheme.outline.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          shadowLevel: OpenVtsCardShadowLevel.strong,
           child: Column(
             children: [
               Text(
                 message,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withOpacity(0.8),
+                  color: colorScheme.onSurface.withOpacity(0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -687,27 +470,27 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.45),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: colorScheme.outline.withOpacity(0.25),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.mark_email_read_outlined,
-                      color: Colors.black.withOpacity(0.6),
+                      color: colorScheme.onSurface.withOpacity(0.6),
                       size: 24,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Check your inbox and spam folder',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -715,32 +498,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isForgot = false;
-                      _forgotPasswordMessage = null;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Back to Sign In',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              OpenVtsButton(
+                label: 'Back to Sign In',
+                onPressed: () {
+                  setState(() {
+                    _isForgot = false;
+                    _forgotPasswordMessage = null;
+                  });
+                },
               ),
             ],
           ),
@@ -750,6 +515,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildEarthFooter() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       height: 150,
       child: Stack(
@@ -763,7 +530,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 300,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.8),
+                  color: OpenVtsColors.white.withOpacity(0.8),
                   width: 4,
                 ),
                 shape: BoxShape.circle,
@@ -786,7 +553,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blue.withOpacity(0.4),
+                  color: colorScheme.primary.withOpacity(0.28),
                 ),
               ),
             ),
@@ -808,7 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: const Color(0xFFF3F4F6),
+        backgroundColor: OpenVtsColors.background,
         body: Stack(
           children: [
             // Full background image
@@ -820,9 +587,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             // Semi-transparent white overlay for premium depth
             Positioned.fill(
-              child: Container(
-                color: Colors.white.withOpacity(0.75),
-              ),
+              child: Container(color: OpenVtsColors.white.withOpacity(0.75)),
             ),
             // Settings icon
             Positioned(
@@ -832,9 +597,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: IconButton(
                   onPressed: _openServerConfiguration,
                   tooltip: 'Server configuration',
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.settings_rounded,
-                    color: Colors.black,
+                    color: colorScheme.onSurface,
                     size: 24,
                   ),
                 ),
@@ -872,7 +637,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         secondaryAnimation: secondaryAnimation,
                                         transitionType:
                                             SharedAxisTransitionType.horizontal,
-                                        fillColor: Colors.transparent,
+                                        fillColor: OpenVtsColors.transparent,
                                         child: child,
                                       );
                                     },
@@ -962,7 +727,7 @@ class _EnableNotificationsDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Enable notifications?',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -974,7 +739,7 @@ class _EnableNotificationsDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'You can turn this on now and change it later from Notifications.',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 height: 1.5,
                 color: colorScheme.onSurface.withValues(alpha: 0.72),
@@ -998,7 +763,7 @@ class _EnableNotificationsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Not now',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: AppFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1016,7 +781,7 @@ class _EnableNotificationsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Enable',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: AppFonts.inter(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

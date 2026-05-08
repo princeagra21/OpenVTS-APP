@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -14,7 +18,6 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class TeamScreen extends StatefulWidget {
   const TeamScreen({super.key});
@@ -42,10 +45,7 @@ class _TeamScreenState extends State<TeamScreen> {
   AdminTeamsRepository? _repo;
 
   AdminTeamsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminTeamsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -291,8 +291,8 @@ class _TeamScreenState extends State<TeamScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -320,7 +320,7 @@ class _TeamScreenState extends State<TeamScreen> {
                         children: [
                           Text(
                             "Team",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSection,
                               height: 24 / 18,
                               fontWeight: FontWeight.w700,
@@ -329,7 +329,7 @@ class _TeamScreenState extends State<TeamScreen> {
                           ),
                           InkWell(
                             onTap: () async {
-                              final created = await context.push('/admin/teams/add');
+                              final created = await context.push(AppRoutes.adminTeamsAdd);
                               if (created == true && mounted) {
                                 _loadTeams();
                               }
@@ -357,7 +357,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                   SizedBox(width: spacing / 2),
                                   Text(
                                     "New",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -382,14 +382,14 @@ class _TeamScreenState extends State<TeamScreen> {
                         ),
                         child: TextField(
                           controller: _searchController,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             color: colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             hintText: "Search name, email, status...",
-                            hintStyle: GoogleFonts.roboto(
+                            hintStyle: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.5),
                               fontSize: fsSecondary,
                               height: 16 / 12,
@@ -465,7 +465,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Filter",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -522,7 +522,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                           children: [
                                             Text(
                                               "Records",
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: fsMain - 3,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -577,7 +577,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Refresh",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -618,7 +618,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                     _errorShown
                                         ? "Couldn't load team members."
                                         : "No team members found",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       color: colorScheme.onSurface
@@ -684,7 +684,7 @@ class _TeamScreenState extends State<TeamScreen> {
             child: AdminHomeAppBar(
               title: 'Team',
               leadingIcon: Icons.groups,
-              onClose: () => context.go('/admin/home'),
+              onClose: () => context.go(AppRoutes.adminHome),
             ),
           ),
         ],
@@ -849,7 +849,7 @@ class _TeamScreenState extends State<TeamScreen> {
           hoverColor: Colors.transparent,
           onTap: teamId.isEmpty
               ? null
-              : () => context.push('/admin/teams/details/$teamId'),
+              : () => context.push(AppRoutes.adminTeamsDetails(teamId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(
@@ -875,7 +875,7 @@ class _TeamScreenState extends State<TeamScreen> {
                         alignment: Alignment.center,
                         child: Text(
                           initials,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
                             fontSize:
                                 AdaptiveUtils.getFsAvatarFontSize(screenWidth),
@@ -894,7 +894,7 @@ class _TeamScreenState extends State<TeamScreen> {
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -932,7 +932,7 @@ class _TeamScreenState extends State<TeamScreen> {
                               Expanded(
                                 child: Text(
                                   username,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -957,7 +957,7 @@ class _TeamScreenState extends State<TeamScreen> {
                               Expanded(
                                 child: Text(
                                   email,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -982,7 +982,7 @@ class _TeamScreenState extends State<TeamScreen> {
                               Expanded(
                                 child: Text(
                                   phone,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -1028,7 +1028,7 @@ class _TeamScreenState extends State<TeamScreen> {
                           Expanded(
                             child: Text(
                               "Joined",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsMeta,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w500,
@@ -1043,7 +1043,7 @@ class _TeamScreenState extends State<TeamScreen> {
                       SizedBox(height: spacing),
                       Text(
                         joined,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -1060,7 +1060,7 @@ class _TeamScreenState extends State<TeamScreen> {
                   borderRadius: BorderRadius.circular(12),
                   onTap: teamId.isEmpty
                       ? null
-                      : () => context.push('/admin/teams/details/$teamId'),
+                      : () => context.push(AppRoutes.adminTeamsDetails(teamId)),
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
@@ -1082,7 +1082,7 @@ class _TeamScreenState extends State<TeamScreen> {
                         SizedBox(width: spacing),
                         Text(
                           "View",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,

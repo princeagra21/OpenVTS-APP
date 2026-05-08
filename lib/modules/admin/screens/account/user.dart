@@ -1,18 +1,18 @@
 import 'dart:async';
+import 'package:open_vts/app/app_container.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -48,15 +48,10 @@ class _UserScreenState extends State<UserScreen> {
 
   Timer? _searchDebounce;
 
-  ApiClient? _apiClient;
   AdminUsersRepository? _repo;
 
   AdminUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= AdminUsersRepository(api: _apiClient!);
+    _repo ??= AppContainer.instance.adminUsersRepository;
     return _repo!;
   }
 
@@ -321,20 +316,19 @@ class _UserScreenState extends State<UserScreen> {
 
       result.when(
         success: (newToken) async {
-          final storage = TokenStorage.defaultInstance();
+          final storage = AppContainer.instance.tokenStorage;
           final currentToken = await storage.readAccessToken();
           if (currentToken != null && currentToken.isNotEmpty) {
             await storage.writeImpersonatorToken(currentToken);
           }
           await storage.writeAccessToken(newToken);
           if (!mounted) return;
-          context.go('/user/home');
+          context.go(AppRoutes.userHome);
         },
         failure: (err) {
-          final message =
-              err is ApiException
-                  ? (err.message.isNotEmpty ? err.message : 'Login failed.')
-                  : 'Login failed.';
+          final message = err is ApiException
+              ? (err.message.isNotEmpty ? err.message : 'Login failed.')
+              : 'Login failed.';
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(message)));
@@ -396,7 +390,6 @@ class _UserScreenState extends State<UserScreen> {
     return DateFormat('dd MMM yyyy').format(parsed.toLocal());
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -423,8 +416,8 @@ class _UserScreenState extends State<UserScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -443,7 +436,9 @@ class _UserScreenState extends State<UserScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceContainerHighest),
+                    border: Border.all(
+                      color: colorScheme.surfaceContainerHighest,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -452,7 +447,7 @@ class _UserScreenState extends State<UserScreen> {
                         children: [
                           Text(
                             "Users",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSection,
                               height: 24 / 18,
                               fontWeight: FontWeight.w700,
@@ -461,8 +456,9 @@ class _UserScreenState extends State<UserScreen> {
                           ),
                           InkWell(
                             onTap: () async {
-                              final created =
-                                  await context.push<bool>('/admin/users/add');
+                              final created = await context.push<bool>(
+                                AppRoutes.adminUsersAdd,
+                              );
                               if (created == true) {
                                 _loadUsers();
                               }
@@ -490,7 +486,7 @@ class _UserScreenState extends State<UserScreen> {
                                   SizedBox(width: spacing / 2),
                                   Text(
                                     "New",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -515,14 +511,14 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                         child: TextField(
                           controller: _searchController,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             color: colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             hintText: "Search name, email, role, department...",
-                            hintStyle: GoogleFonts.roboto(
+                            hintStyle: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.5),
                               fontSize: fsSecondary,
                               height: 16 / 12,
@@ -602,7 +598,7 @@ class _UserScreenState extends State<UserScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Filter",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -622,18 +618,9 @@ class _UserScreenState extends State<UserScreen> {
                                     setState(() => _pageSize = value);
                                   },
                                   itemBuilder: (context) => const [
-                                    PopupMenuItem(
-                                      value: 10,
-                                      child: Text('10'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 25,
-                                      child: Text('25'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 50,
-                                      child: Text('50'),
-                                    ),
+                                    PopupMenuItem(value: 10, child: Text('10')),
+                                    PopupMenuItem(value: 25, child: Text('25')),
+                                    PopupMenuItem(value: 50, child: Text('50')),
                                   ],
                                   child: Container(
                                     padding: EdgeInsets.symmetric(
@@ -659,7 +646,7 @@ class _UserScreenState extends State<UserScreen> {
                                           children: [
                                             Text(
                                               "Records",
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: fsMain - 3,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -714,7 +701,7 @@ class _UserScreenState extends State<UserScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Refresh",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -755,11 +742,12 @@ class _UserScreenState extends State<UserScreen> {
                                     _errorShown
                                         ? "Couldn't load users."
                                         : "No users found",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.8),
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.8,
+                                      ),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -821,7 +809,7 @@ class _UserScreenState extends State<UserScreen> {
             child: AdminHomeAppBar(
               title: 'Users',
               leadingIcon: Icons.group,
-              onClose: () => context.go('/admin/home'),
+              onClose: () => context.go(AppRoutes.adminHome),
             ),
           ),
         ],
@@ -963,13 +951,13 @@ class _UserScreenState extends State<UserScreen> {
     final address = _safe(
       raw['address'] is Map
           ? ((raw['address']['addressLine'] ??
-                  raw['address']['fullAddress'] ??
-                  raw['address']['line1'])
-              ?.toString() ??
-              '')
+                        raw['address']['fullAddress'] ??
+                        raw['address']['line1'])
+                    ?.toString() ??
+                '')
           : (raw['addressLine'] ?? raw['fullAddress'] ?? raw['address'])
-                  ?.toString() ??
-              '',
+                    ?.toString() ??
+                '',
     );
     final location = _safe(user.location);
     final joined = _formatDateOnly(user.joinedAt);
@@ -1000,7 +988,7 @@ class _UserScreenState extends State<UserScreen> {
           hoverColor: Colors.transparent,
           onTap: userId.isEmpty
               ? null
-              : () => context.push('/admin/users/details/$userId'),
+              : () => context.push(AppRoutes.adminUsersDetails(userId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(
@@ -1026,10 +1014,11 @@ class _UserScreenState extends State<UserScreen> {
                         alignment: Alignment.center,
                         child: Text(
                           initials,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
-                            fontSize:
-                                AdaptiveUtils.getFsAvatarFontSize(screenWidth),
+                            fontSize: AdaptiveUtils.getFsAvatarFontSize(
+                              screenWidth,
+                            ),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1044,11 +1033,11 @@ class _UserScreenState extends State<UserScreen> {
                             onTap: userId.isEmpty
                                 ? null
                                 : () => context.push(
-                                      '/admin/users/details/$userId',
-                                    ),
+                                    AppRoutes.adminUsersDetails(userId),
+                                  ),
                             child: Text(
                               name,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsMain,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -1070,12 +1059,13 @@ class _UserScreenState extends State<UserScreen> {
                               Expanded(
                                 child: Text(
                                   username,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                   maxLines: 3,
                                   softWrap: true,
@@ -1095,12 +1085,13 @@ class _UserScreenState extends State<UserScreen> {
                               Expanded(
                                 child: Text(
                                   email,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                   maxLines: 3,
                                   softWrap: true,
@@ -1120,12 +1111,13 @@ class _UserScreenState extends State<UserScreen> {
                               Expanded(
                                 child: Text(
                                   phone,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -1145,12 +1137,13 @@ class _UserScreenState extends State<UserScreen> {
                               Expanded(
                                 child: Text(
                                   address,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
                                   ),
                                   maxLines: 3,
                                   softWrap: true,
@@ -1174,8 +1167,9 @@ class _UserScreenState extends State<UserScreen> {
                           activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
-                          inactiveTrackColor:
-                              colorScheme.primary.withOpacity(0.3),
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
+                          ),
                         ),
                       ),
                     ),
@@ -1200,7 +1194,7 @@ class _UserScreenState extends State<UserScreen> {
                     children: [
                       Text(
                         "Location",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -1212,7 +1206,7 @@ class _UserScreenState extends State<UserScreen> {
                         location,
                         maxLines: 6,
                         softWrap: true,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSecondary,
                           height: 16 / 12,
                           color: colorScheme.onSurface,
@@ -1249,7 +1243,7 @@ class _UserScreenState extends State<UserScreen> {
                           Expanded(
                             child: Text(
                               "Joined",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsMeta,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w500,
@@ -1264,7 +1258,7 @@ class _UserScreenState extends State<UserScreen> {
                       SizedBox(height: spacing),
                       Text(
                         joined,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -1299,14 +1293,10 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                         SizedBox(width: spacing),
                         isLoggingIn
-                            ? const AppShimmer(
-                                width: 16,
-                                height: 16,
-                                radius: 8,
-                              )
+                            ? const AppShimmer(width: 16, height: 16, radius: 8)
                             : Text(
                                 "Login as User",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMain,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -1365,7 +1355,7 @@ class _UserLoginConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Login as user?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1377,7 +1367,7 @@ class _UserLoginConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'You are about to enter the user module as $userName. You can return to admin at any time.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1396,7 +1386,7 @@ class _UserLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1414,7 +1404,7 @@ class _UserLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Login',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

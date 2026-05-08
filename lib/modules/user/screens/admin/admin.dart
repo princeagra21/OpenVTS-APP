@@ -3,8 +3,9 @@ import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -94,43 +95,43 @@ class _AdminScreenState extends State<AdminScreen> {
         'title': 'Share Track Link',
         'subtitle': 'Generate & share live link',
         'icon': CupertinoIcons.link,
-        'route': '/user/share-track',
+        'route': AppRoutes.userShareTrack,
       },
       {
         'title': 'Route Optimization',
         'subtitle': 'Optimize routes & stops',
         'icon': Icons.alt_route,
-        'route': '/user/route-optimization',
+        'route': AppRoutes.userRouteOptimization,
       },
       {
         'title': 'Vehicles',
         'subtitle': 'Manage fleet vehicles',
         'icon': CupertinoIcons.bus,
-        'route': '/user/vehicles',
+        'route': AppRoutes.userVehicles,
       },
       {
         'title': 'Drivers',
         'subtitle': 'Driver profiles & licenses',
         'icon': CupertinoIcons.person_crop_square,
-        'route': '/user/drivers',
+        'route': AppRoutes.userDrivers,
       },
       {
         'title': 'Sub-users',
         'subtitle': 'Create & manage sub users',
         'icon': CupertinoIcons.person_2,
-        'route': '/user/sub-users',
+        'route': AppRoutes.userSubUsers,
       },
       {
         'title': 'Support',
         'subtitle': 'Help center & tickets',
         'icon': CupertinoIcons.question_circle,
-        'route': '/user/support',
+        'route': AppRoutes.userSupport,
       },
       {
         'title': 'Transactions',
         'subtitle': 'Payment & billing history',
         'icon': CupertinoIcons.doc_text,
-        'route': '/user/transactions',
+        'route': AppRoutes.userTransactions,
       },
     ];
 
@@ -252,7 +253,7 @@ class _MoreMenuCard extends StatelessWidget {
                           children: [
                             Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onSurface,
@@ -261,7 +262,7 @@ class _MoreMenuCard extends StatelessWidget {
                             const SizedBox(height: 6),
                             Text(
                               subtitle,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
                               ),
@@ -300,7 +301,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -311,7 +312,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),

@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/fleet/search_bar.dart
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class AppSearchBar extends StatefulWidget {
@@ -75,13 +75,13 @@ class AdminSearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: bodyFs,
           color: colorScheme.onSurface,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.inter(
+          hintStyle: AppFonts.inter(
             color: colorScheme.onSurface.withOpacity(0.6),
             fontSize: bodyFs,
           ),

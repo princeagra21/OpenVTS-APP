@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/profile_tab.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -13,7 +15,6 @@ import 'package:open_vts/modules/superadmin/components/admin/profile_tab/update_
 import 'package:open_vts/modules/superadmin/components/admin/profile_tab/edit_admin_profile_screen.dart';
 import 'package:open_vts/modules/superadmin/components/admin/profile_tab/widget/delete_account_box.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -270,10 +271,7 @@ class _ProfileTabState extends State<ProfileTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminProfile(
@@ -342,10 +340,7 @@ class _ProfileTabState extends State<ProfileTab> {
     setState(() => _statusSubmitting = true);
     final currentActive = _activeOverride ?? profile.isActive;
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.updateAdminStatus(
         widget.adminId,
@@ -503,7 +498,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 children: [
                   Text(
                     "Admin Overview",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -538,7 +533,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     label: Text(
                       "Edit",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsAction,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -570,7 +565,7 @@ class _ProfileTabState extends State<ProfileTab> {
                       _isActive
                           ? "Set Inactive"
                           : "Set Active",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsAction,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -603,7 +598,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     label: Text(
                       "Password",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsAction,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -750,7 +745,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ? const AppShimmer(width: 24, height: 24, radius: 12)
                     : Text(
                         name.isNotEmpty ? name.trim()[0].toUpperCase() : 'A',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 16 * scale,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
@@ -773,7 +768,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                 )
                               : Text(
                                   name,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: titleFs,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -804,7 +799,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                   _isActive
                                       ? "Active"
                                       : "Inactive",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: statusFs,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w600,
@@ -820,7 +815,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         ? const AppShimmer(width: 120, height: 14, radius: 8)
                         : Text(
                             username,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: subtitleFs,
                               height: 16 / 12,
                               fontWeight: FontWeight.w500,
@@ -832,7 +827,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         ? const AppShimmer(width: 140, height: 14, radius: 8)
                         : Text(
                             phone,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: subtitleFs,
                               height: 16 / 12,
                               fontWeight: FontWeight.w500,
@@ -844,7 +839,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         ? const AppShimmer(width: 160, height: 14, radius: 8)
                         : Text(
                             email,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: subtitleFs,
                               height: 16 / 12,
                               fontWeight: FontWeight.w500,
@@ -960,7 +955,7 @@ class _ProfileTabState extends State<ProfileTab> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelFs,
                     height: 14 / 11,
                     fontWeight: FontWeight.w500,
@@ -980,7 +975,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ? const AppShimmer(width: 120, height: 18, radius: 8)
               : Text(
                   pair.date,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: valueFs + 2,
                     height: 22 / 16,
                     fontWeight: FontWeight.w700,
@@ -993,7 +988,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ? const AppShimmer(width: 90, height: 14, radius: 8)
                 : Text(
                     pair.time,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: subValueFs,
                       height: 16 / 12,
                       fontWeight: FontWeight.w500,
@@ -1029,7 +1024,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1039,7 +1034,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -1109,7 +1104,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   children: [
                     Text(
                       "Company",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -1121,7 +1116,7 @@ class _ProfileTabState extends State<ProfileTab> {
                       companyName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -1134,7 +1129,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         onTap: () => _openExternalLink(websiteUrl),
                         child: Text(
                           websiteUrl,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -1201,7 +1196,7 @@ class _ProfileTabState extends State<ProfileTab> {
                           ),
                           child: Text(
                             link.label,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelFs,
                               height: 14 / 11,
                               fontWeight: FontWeight.w500,
@@ -1274,7 +1269,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   children: [
                     Text(
                       "Address",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -1290,7 +1285,7 @@ class _ProfileTabState extends State<ProfileTab> {
                           )
                         : Text(
                             address,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -1358,7 +1353,7 @@ class _ProfileTabState extends State<ProfileTab> {
         Text(
           title,
           textAlign: align,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFs,
             height: 16 / 12,
             color: colorScheme.onSurface.withOpacity(0.65),
@@ -1374,7 +1369,7 @@ class _ProfileTabState extends State<ProfileTab> {
             textAlign: align,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 18 / 13,
               fontWeight: FontWeight.w600,
@@ -1476,7 +1471,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             "Push Diagnostics",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: headingFs,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1486,7 +1481,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 4),
           Text(
             "Notification permission and push state",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: subtitleFs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1546,7 +1541,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   Expanded(
                     child: Text(
                       "Notifications are blocked. Open your device settings and allow notifications, then click 'Re-register push'.",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: alertFs,
                         height: 17 / 12,
                         fontWeight: FontWeight.w500,
@@ -1582,7 +1577,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     (_pushState?.registered ?? false)
                         ? "Unregister push"
                         : "Re-register push",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1610,7 +1605,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                   label: Text(
                     "Send push test",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 14 * scale,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -1647,7 +1642,7 @@ class _ProfileTabState extends State<ProfileTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1657,7 +1652,7 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -1684,7 +1679,7 @@ class _ProfileTabState extends State<ProfileTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFs,
             height: 14 / 11,
             fontWeight: FontWeight.w500,
@@ -1699,7 +1694,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 )
               : Text(
                   value,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: valueFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -1905,7 +1900,7 @@ class _PushRegisterDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1917,7 +1912,7 @@ class _PushRegisterDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1936,7 +1931,7 @@ class _PushRegisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1954,7 +1949,7 @@ class _PushRegisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       confirmLabel,
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -2002,7 +1997,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Unregister push?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -2014,7 +2009,7 @@ class _PushUnregisterDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               "You're already registered. If you turn it off, this device will stop receiving notifications.",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -2033,7 +2028,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -2051,7 +2046,7 @@ class _PushUnregisterDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Unregister',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -2099,7 +2094,7 @@ class _PushSettingsDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Allow notifications',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -2111,7 +2106,7 @@ class _PushSettingsDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               "Notifications are blocked for this device. Open settings to allow notifications and try again.",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -2130,7 +2125,7 @@ class _PushSettingsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Later',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -2148,7 +2143,7 @@ class _PushSettingsDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Open settings',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -2196,7 +2191,7 @@ class _PushTestDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Send test push?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -2208,7 +2203,7 @@ class _PushTestDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'We will send a sample notification to this device to confirm delivery.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -2227,7 +2222,7 @@ class _PushTestDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -2245,7 +2240,7 @@ class _PushTestDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Send',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

@@ -13,8 +13,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class ShareTrackScreen extends StatefulWidget {
   const ShareTrackScreen({super.key});
@@ -74,10 +77,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
   }
 
   UserShareTrackLinksRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserShareTrackLinksRepository(api: _apiClient!);
     return _repo!;
   }
@@ -174,7 +174,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
     if (segments.isNotEmpty && segments.last.toLowerCase() == 'api') {
       segments.removeLast();
     }
-    final path = segments.isEmpty ? '' : '/${segments.join('/')}';
+    final path = segments.isEmpty ? '' : '/${segments.join(AppRoutes.root)}';
     return '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}$path';
   }
 
@@ -449,7 +449,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
           children: [
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -458,7 +458,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs - 1,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -513,8 +513,8 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -542,7 +542,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                         children: [
                           Text(
                             "Share Track",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSection,
                               height: 24 / 18,
                               fontWeight: FontWeight.w700,
@@ -552,7 +552,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                           InkWell(
                             onTap: () async {
                               final result =
-                                  await context.push('/user/share-track/add');
+                                  await context.push(AppRoutes.userShareTrackAdd);
                               if (result == true) {
                                 _loadLinks();
                               }
@@ -580,7 +580,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                   SizedBox(width: spacing / 2),
                                   Text(
                                     "New",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -605,14 +605,14 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                         ),
                         child: TextField(
                           controller: _searchController,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             color: colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             hintText: "Search name, link, status...",
-                            hintStyle: GoogleFonts.roboto(
+                            hintStyle: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.5),
                               fontSize: fsSecondary,
                               height: 16 / 12,
@@ -688,7 +688,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Filter",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -745,7 +745,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                           children: [
                                             Text(
                                               "Records",
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: fsMain - 3,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -798,7 +798,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Refresh",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -839,7 +839,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                     _errorShown
                                         ? "Couldn't load share links."
                                         : "No share links found",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       color: colorScheme.onSurface
@@ -905,7 +905,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
             child: UserHomeAppBar(
               title: 'Share Track',
               leadingIcon: Icons.share_outlined,
-              onClose: () => context.go('/user/home'),
+              onClose: () => context.go(AppRoutes.userHome),
             ),
           ),
         ],
@@ -1073,7 +1073,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                         alignment: Alignment.center,
                         child: Text(
                           initials,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
                             fontSize:
                                 AdaptiveUtils.getFsAvatarFontSize(screenWidth),
@@ -1092,7 +1092,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -1130,7 +1130,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                               Expanded(
                                 child: Text(
                                   url,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -1168,7 +1168,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                               Expanded(
                                 child: Text(
                                   vehicles,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsSecondary,
                                     height: 16 / 12,
                                     fontWeight: FontWeight.w500,
@@ -1214,7 +1214,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                           Expanded(
                             child: Text(
                               "Expires",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsMeta,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w500,
@@ -1229,7 +1229,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                       SizedBox(height: spacing),
                       Text(
                         expiry,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -1263,7 +1263,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                       SizedBox(width: spacing),
                       Text(
                         "View",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,

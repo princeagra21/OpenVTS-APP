@@ -1,8 +1,8 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/profile/profile_company_box.dart
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ProfileCompanyBox extends StatelessWidget {
   const ProfileCompanyBox({super.key});
@@ -34,7 +34,7 @@ class ProfileCompanyBox extends StatelessWidget {
           // Company Section
           Text(
             "Company",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -47,7 +47,7 @@ class ProfileCompanyBox extends StatelessWidget {
             children: [
               Text(
                 "Open VTS Global Pvt. Ltd.",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
@@ -64,7 +64,7 @@ class ProfileCompanyBox extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             "openvts.io",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: subheaderFontSize,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -75,7 +75,7 @@ class ProfileCompanyBox extends StatelessWidget {
           // Social Media Section
           Text(
             "Social Media",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -101,7 +101,7 @@ class ProfileCompanyBox extends StatelessWidget {
           // Address Section
           Text(
             "Address",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -124,7 +124,7 @@ class ProfileCompanyBox extends StatelessWidget {
           // Contact Section
           Text(
             "Contacts",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -137,7 +137,7 @@ class ProfileCompanyBox extends StatelessWidget {
             children: [
               Text(
                 "aarav.sharma@openvts.io",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.87),
                 ),
@@ -145,7 +145,7 @@ class ProfileCompanyBox extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 "+91 8987675654",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.87),
                 ),
@@ -153,7 +153,7 @@ class ProfileCompanyBox extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 "openvts.io",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: subheaderFontSize,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -173,14 +173,14 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),
           ),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),

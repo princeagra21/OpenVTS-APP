@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_calendar_event_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminCalendarRepository {
   final ApiClient api;
@@ -14,7 +15,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/calendar/events',
+      ApiPaths.path('/admin/calendar/events'),
       queryParameters: <String, dynamic>{'from': from, 'to': to},
       cancelToken: cancelToken,
     );
@@ -82,7 +83,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/calendar/user/$userId',
+      ApiPaths.path('/admin/calendar/user/$userId'),
       cancelToken: cancelToken,
     );
 
@@ -97,7 +98,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/calendar/day',
+      ApiPaths.path('/admin/calendar/day'),
       queryParameters: {'date': date},
       cancelToken: cancelToken,
     );

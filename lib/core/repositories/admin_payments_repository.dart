@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminPaymentsRepository {
   final ApiClient api;
@@ -22,7 +23,7 @@ class AdminPaymentsRepository {
     };
 
     final res = await api.post(
-      '/admin/payments/renew',
+      ApiPaths.path('/admin/payments/renew'),
       data: payload,
       cancelToken: cancelToken,
     );

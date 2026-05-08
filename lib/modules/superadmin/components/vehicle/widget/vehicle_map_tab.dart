@@ -1,3 +1,4 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
 // components/vehicle/widget/vehicle_map_tab.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -77,10 +78,7 @@ class _VehicleMapTabState extends State<VehicleMapTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getVehicleLocation(imei, cancelToken: token);
 

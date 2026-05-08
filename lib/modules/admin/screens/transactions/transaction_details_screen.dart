@@ -1,7 +1,7 @@
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   // Endpoint truth (API reference documentation + Postman):
@@ -82,7 +82,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Transaction Details',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -97,14 +97,14 @@ class TransactionDetailsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Status',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 2,
                   color: cs.onSurface.withOpacity(0.6),
                 ),
               ),
               Text(
                 status,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs + 4,
                   fontWeight: FontWeight.bold,
                   color: statusColor,
@@ -113,14 +113,14 @@ class TransactionDetailsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Method',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 2,
                   color: cs.onSurface.withOpacity(0.6),
                 ),
               ),
               Text(
                 method,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.bold,
                 ),
@@ -128,7 +128,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Amount & Credits',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.bold,
                 ),
@@ -141,7 +141,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Gateway',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.bold,
                 ),
@@ -154,7 +154,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                       'Reference: $reference',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: fs - 2),
+                      style: AppFonts.inter(fontSize: fs - 2),
                     ),
                   ),
                   IconButton(
@@ -169,7 +169,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               ),
               Text(
                 'Invoice: $invoice',
-                style: GoogleFonts.inter(fontSize: fs - 2),
+                style: AppFonts.inter(fontSize: fs - 2),
               ),
             ],
           ),
@@ -186,14 +186,14 @@ class TransactionDetailsScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: fs - 2,
               color: cs.onSurface.withOpacity(0.8),
             ),
           ),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: fs - 2,
               fontWeight: FontWeight.bold,
               color: cs.onSurface,

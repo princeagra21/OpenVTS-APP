@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -44,14 +44,14 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
-      style: GoogleFonts.inter(fontSize: widget.fontSize, color: colorScheme.onSurface),
+      style: AppFonts.inter(fontSize: widget.fontSize, color: colorScheme.onSurface),
       focusNode: widget.focusNode,
       validator: widget.validator,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.transparent,
         hintText: widget.hintText,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: AppFonts.inter(
           color: colorScheme.onSurface.withOpacity(0.5),
           fontSize: widget.fontSize,
         ),
@@ -87,7 +87,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: colorScheme.error, width: 1.5),
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: AppFonts.inter(
           color: colorScheme.error,
           fontSize: widget.fontSize * 0.8,
         ),

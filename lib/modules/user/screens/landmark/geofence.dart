@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -295,10 +297,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
   }
 
   UserLandmarksRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserLandmarksRepository(api: _apiClient!);
     return _repo!;
   }
@@ -1922,7 +1921,7 @@ class _GeofenceScreenState extends State<GeofenceScreen> {
                   title: 'Geofence Management',
                   leadingIcon: Icons.location_on_outlined,
                   borderRadius: 0,
-                  onClose: () => context.go('/user/home'),
+                  onClose: () => context.go(AppRoutes.userHome),
                 ),
               ),
               // ================= TOOL CHIPS =================

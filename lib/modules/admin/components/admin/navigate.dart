@@ -1,7 +1,7 @@
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class NavigateBox extends StatelessWidget {
   final String selectedTab;
@@ -48,7 +48,7 @@ class NavigateBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -58,7 +58,7 @@ class NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,

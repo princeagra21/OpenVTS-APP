@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/vehicles_tab/vehicles_tab.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -10,7 +12,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/vehicles_tab/vehicle_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class VehiclesTab extends StatefulWidget {
@@ -158,10 +159,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminVehicles(
@@ -260,7 +258,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
               children: [
                 Text(
                   _loadFailed ? "Couldn't load vehicles." : 'No vehicles found',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface.withOpacity(0.8),
@@ -270,7 +268,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
                   const SizedBox(height: 6),
                   Text(
                     'Try adjusting search or ask superadmin to assign vehicles.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 13,
                       color: colorScheme.onSurface.withOpacity(0.72),
                     ),
@@ -352,7 +350,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
             children: [
               Text(
                 'Total Vehicles',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -367,7 +365,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
                     )
                   : Text(
                       '$total',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueFontSize,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -378,7 +376,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
           const SizedBox(height: 4),
           Text(
             'currently tracked',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: subtitleFontSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -429,7 +427,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -445,7 +443,7 @@ class _VehiclesTabState extends State<VehiclesTab> {
             const SizedBox(width: 10),
             Text(
               value,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: valueFontSize,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,

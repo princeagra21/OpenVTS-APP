@@ -7,7 +7,8 @@ import 'package:open_vts/core/repositories/admin_teams_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddTeamScreen extends StatefulWidget {
   const AddTeamScreen({super.key});
@@ -54,10 +55,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -153,7 +151,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: fs,
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,
@@ -215,7 +213,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: fs - 1,
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
@@ -225,7 +223,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: fs - 2,
                                         color: cs.onSurface.withOpacity(0.6),
                                       ),
@@ -300,7 +298,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                 children: [
                   Text(
                     'Add New Team Member',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -328,7 +326,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
               const SizedBox(height: 8),
               Text(
                 'Fill the details and click save.',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: helperSize,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.7),
@@ -409,7 +407,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                                                 Expanded(
                                                   child: Text(
                                                     _selectedCode,
-                                                    style: GoogleFonts.inter(
+                                                    style: AppFonts.inter(
                                                       fontSize: inputSize,
                                                       fontWeight:
                                                           FontWeight.w500,
@@ -473,7 +471,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                           obscureText: !_showPassword,
                           validator: (v) =>
                               v == null || v.isEmpty ? 'Required' : null,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: inputSize,
                             fontWeight: FontWeight.w500,
                             color: cs.onSurface,
@@ -526,7 +524,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -561,7 +559,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                           )
                         : Text(
                             'Save',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               fontWeight: FontWeight.w600,
                               color: cs.onPrimary,
@@ -601,7 +599,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
     final cs = Theme.of(context).colorScheme;
     return Text(
       label,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: fontSize,
         fontWeight: FontWeight.w600,
         color: cs.onSurface,
@@ -641,7 +639,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
       filled: true,
       fillColor: cs.surface,
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: AppFonts.inter(
         color: cs.onSurface.withOpacity(0.6),
       ),
       prefixIcon: prefixIcon,
@@ -675,7 +673,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
         color: cs.onSurface,

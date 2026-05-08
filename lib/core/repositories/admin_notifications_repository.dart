@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_notification_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminNotificationsRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class AdminNotificationsRepository {
   Future<Result<List<AdminNotificationItem>>> getNotifications({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/notifications', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/notifications'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -38,7 +39,7 @@ class AdminNotificationsRepository {
 
   Future<Result<void>> markRead(String id, {CancelToken? cancelToken}) async {
     final res = await api.patch(
-      '/admin/notifications/$id/read',
+      ApiPaths.path('/admin/notifications/$id/read'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -49,7 +50,7 @@ class AdminNotificationsRepository {
 
   Future<Result<void>> markAllRead({CancelToken? cancelToken}) async {
     final res = await api.patch(
-      '/admin/notifications/read-all',
+      ApiPaths.path('/admin/notifications/read-all'),
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );

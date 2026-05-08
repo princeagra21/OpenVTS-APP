@@ -1,8 +1,8 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/renewals/renew_device_screen.dart
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 
@@ -103,7 +103,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                   children: [
                     Text(
                       _getTitle(),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                         fontWeight: FontWeight.bold,
                         color: cs.onSurface,
@@ -123,7 +123,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                         widget.selectedDevices.length == 1
                             ? "Each device has its own plan. Choose whether to keep per-device plans or override with one plan."
                             : "You have selected ${widget.selectedDevices.length} devices.",
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: fs - 2,
                           color: cs.onSurface.withOpacity(0.7),
                         ),
@@ -136,7 +136,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                 // ─── PLAN STRATEGY ──────────────────────
                 Text(
                   "Plan Strategy",
-                  style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                  style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Card(
@@ -146,9 +146,9 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                   child: Column(
                   children: [
                       RadioListTile<String>(
-                        title: Text("Keep device plan", style: GoogleFonts.inter(fontSize: fs - 2)),
+                        title: Text("Keep device plan", style: AppFonts.inter(fontSize: fs - 2)),
                         subtitle: widget.selectedDevices.length > 1
-                            ? Text("Each device keeps its current plan", style: GoogleFonts.inter(fontSize: fs - 4))
+                            ? Text("Each device keeps its current plan", style: AppFonts.inter(fontSize: fs - 4))
                             : null,
                         value: 'keep',
                         groupValue: planStrategy,
@@ -160,8 +160,8 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                         },
                       ),
                       RadioListTile<String>(
-                        title: Text("Override with one plan", style: GoogleFonts.inter(fontSize: fs - 2)),
-                        subtitle: Text("Apply same plan to all selected devices", style: GoogleFonts.inter(fontSize: fs - 4)),
+                        title: Text("Override with one plan", style: AppFonts.inter(fontSize: fs - 2)),
+                        subtitle: Text("Apply same plan to all selected devices", style: AppFonts.inter(fontSize: fs - 4)),
                         value: 'override',
                         groupValue: planStrategy,
                         onChanged: (v) {
@@ -212,11 +212,11 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                 SwitchListTile(
                   title: Text(
                     "Align Expiries to a single date (co-term)",
-                    style: GoogleFonts.inter(fontSize: fs - 2, fontWeight: FontWeight.bold),
+                    style: AppFonts.inter(fontSize: fs - 2, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     "Co-term will prorate shorter/longer cycles so all selected devices share one renewal date.",
-                    style: GoogleFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
+                    style: AppFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
                   ),
                   value: alignExpiries,
                   onChanged: widget.selectedDevices.length > 1 ? (v) => setState(() => alignExpiries = v) : null,
@@ -242,7 +242,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
             children: [
               Text(
                 "Amount",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -250,7 +250,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(amount),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                 ),
@@ -266,7 +266,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
             children: [
               Text(
                 "GST (18%)",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -274,7 +274,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(gst),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                 ),
@@ -290,7 +290,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
             children: [
               Text(
                 "Total",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -298,7 +298,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(total),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.bold,
                 ),
@@ -319,7 +319,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                 // ─── COLLECTION METHOD ──────────────────
                 Text(
                   "Collection Method",
-                  style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                  style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Card(
@@ -329,19 +329,19 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                   child: Column(
                     children: [
                       RadioListTile<String>(
-                        title: Text("Online Link", style: GoogleFonts.inter(fontSize: fs - 2)),
+                        title: Text("Online Link", style: AppFonts.inter(fontSize: fs - 2)),
                         value: 'online',
                         groupValue: collectionMethod,
                         onChanged: (v) => setState(() => collectionMethod = v!),
                       ),
                       RadioListTile<String>(
-                        title: Text("Manual Receipt", style: GoogleFonts.inter(fontSize: fs - 2)),
+                        title: Text("Manual Receipt", style: AppFonts.inter(fontSize: fs - 2)),
                         value: 'manual',
                         groupValue: collectionMethod,
                         onChanged: (v) => setState(() => collectionMethod = v!),
                       ),
                       RadioListTile<String>(
-                        title: Text("UPI", style: GoogleFonts.inter(fontSize: fs - 2)),
+                        title: Text("UPI", style: AppFonts.inter(fontSize: fs - 2)),
                         value: 'upi',
                         groupValue: collectionMethod,
                         onChanged: (v) => setState(() => collectionMethod = v!),
@@ -354,7 +354,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                   const SizedBox(height: 16),
                   Text(
                     "Payment Link",
-                    style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                    style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -362,7 +362,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                       Expanded(
                         child: SelectableText(
                           _paymentLink,
-                          style: GoogleFonts.inter(fontSize: fs - 2, color: cs.primary),
+                          style: AppFonts.inter(fontSize: fs - 2, color: cs.primary),
                         ),
                       ),
                       IconButton(
@@ -382,7 +382,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
           
                 Text(
                   "In production, this creates invoices per device (or one consolidated invoice), updates each device's term, and reconciles payment.",
-                  style: GoogleFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
+                  style: AppFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
                 ),
           
                 const SizedBox(height: 32),
@@ -402,7 +402,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                          style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -438,7 +438,7 @@ class _RenewDeviceScreenState extends State<RenewDeviceScreen> {
                         ),
                         child: Text(
                           collectionMethod == 'online' ? "Confirm & Send Link" : "Confirm",
-                          style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                          style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -482,7 +482,7 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         Container(
@@ -499,7 +499,7 @@ class StylishDropdown extends StatelessWidget {
             initialValue: value,
             hint: Text(
               hint,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),

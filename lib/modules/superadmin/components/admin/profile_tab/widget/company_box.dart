@@ -3,8 +3,8 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/profile_tab/edit_company_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class CompanyBox extends StatelessWidget {
   final AdminProfile? profile;
@@ -84,7 +84,7 @@ class CompanyBox extends StatelessWidget {
                   children: [
                     Text(
                       'Company',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -98,7 +98,7 @@ class CompanyBox extends StatelessWidget {
                             companyName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -111,7 +111,7 @@ class CompanyBox extends StatelessWidget {
                         onTap: () => _openExternalLink(websiteUrl),
                         child: Text(
                           websiteUrl,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -187,7 +187,7 @@ class CompanyBox extends StatelessWidget {
                           ),
                           child: Text(
                             link.label,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelFs,
                               height: 14 / 11,
                               fontWeight: FontWeight.w500,

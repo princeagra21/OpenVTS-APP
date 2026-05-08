@@ -2,7 +2,7 @@ import 'package:open_vts/core/models/admin_driver_list_item.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/admin_user_details_ui.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminUserDriversTab extends StatelessWidget {
   final List<AdminDriverListItem> items;
@@ -76,7 +76,7 @@ class AdminUserDriversTab extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           driver.initials,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: cs.onSurface,
                             fontSize: AdaptiveUtils.getFsAvatarFontSize(width),
                             fontWeight: FontWeight.bold,
@@ -94,7 +94,7 @@ class AdminUserDriversTab extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   name.isEmpty ? 'Unknown Driver' : name,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: titleFs,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -119,7 +119,7 @@ class AdminUserDriversTab extends StatelessWidget {
                                   ),
                                   child: Text(
                                     status,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: statusFs,
                                       height: 14 / 11,
                                       fontWeight: FontWeight.w600,
@@ -179,7 +179,7 @@ class AdminUserDriversTab extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 "Joined",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: subtitleFs,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w500,
@@ -194,7 +194,7 @@ class AdminUserDriversTab extends StatelessWidget {
                         SizedBox(height: spacing),
                         Text(
                           joined,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: titleFs,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -228,7 +228,7 @@ class AdminUserDriversTab extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,

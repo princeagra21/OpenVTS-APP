@@ -12,8 +12,9 @@ import 'package:open_vts/modules/admin/components/admin/update_user_password_scr
 import 'package:open_vts/modules/admin/screens/account/widget/edit_company_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminUserProfileTab extends StatefulWidget {
   final AdminUserDetails? details;
@@ -196,7 +197,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             children: [
               Text(
                 "User Overview",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsSection,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -235,7 +236,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                       ),
                 label: Text(
                   isActive ? "Set Inactive" : "Set Active",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 13 * scale,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -267,7 +268,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 ),
                 label: Text(
                   "Password",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 13 * scale,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -361,7 +362,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             alignment: Alignment.center,
             child: Text(
               _initials(name),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -378,7 +379,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFs,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -402,7 +403,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: statusFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -415,7 +416,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 const SizedBox(height: 4),
                 Text(
                   username,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -427,7 +428,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 const SizedBox(height: 6),
                 Text(
                   phone,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -439,7 +440,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 const SizedBox(height: 6),
                 Text(
                   email,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -554,7 +555,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -571,7 +572,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
           const SizedBox(height: 6),
           Text(
             pair.date,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -584,7 +585,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             const SizedBox(height: 4),
             Text(
               pair.time,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subValueFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -630,7 +631,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
               const SizedBox(width: 6),
               Text(
                 "Address",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -644,7 +645,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             address,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -701,7 +702,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                         const SizedBox(width: 6),
                         Text(
                           "Email",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -713,7 +714,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                     const SizedBox(height: 6),
                     Text(
                       email,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueFs,
                         height: 16 / 12,
                         fontWeight: FontWeight.w500,
@@ -753,7 +754,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                         const SizedBox(width: 6),
                         Text(
                           "Phone",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -765,7 +766,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                     const SizedBox(height: 6),
                     Text(
                       phone,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueFs,
                         height: 16 / 12,
                         fontWeight: FontWeight.w500,
@@ -834,7 +835,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                   children: [
                     Text(
                       "Company",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -846,7 +847,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                       company.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -859,7 +860,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                         onTap: () => _openExternalLink(company.websiteUrl),
                         child: Text(
                           company.websiteUrl,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -925,7 +926,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                           ),
                           child: Text(
                             link.label,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelFs,
                               height: 14 / 11,
                               fontWeight: FontWeight.w500,
@@ -962,7 +963,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         Text(
           label,
           textAlign: align,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFs,
             height: 14 / 11,
             fontWeight: FontWeight.w500,
@@ -973,7 +974,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         Text(
           value,
           textAlign: align,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: valueFs,
             height: 16 / 12,
             fontWeight: FontWeight.w600,
@@ -1000,7 +1001,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -1013,7 +1014,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 16 / 12,
               fontWeight: FontWeight.w600,
@@ -1222,10 +1223,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= AdminUsersRepository(api: _api!);
     return _repo!;
   }

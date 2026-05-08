@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/charts/adoption_growth_box.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -9,7 +11,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
@@ -54,7 +55,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -105,10 +106,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     setState(() => _loadingGraph = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdoptionGraph(cancelToken: token);
@@ -195,7 +193,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: cs.onSurface.withOpacity(0.8),
@@ -297,7 +295,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4-5
     final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
-    final titleStyle = GoogleFonts.roboto(
+    final titleStyle = AppFonts.roboto(
       fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
       color: colorScheme.onSurface,
@@ -527,7 +525,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                           meta: meta, // pass the required argument
                           child: Text(
                             _formatYAxisValue(value),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: leftTitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.87),
                             ),
@@ -548,7 +546,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               labels[index],
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: bottomTitleFontSize,
                                 color: colorScheme.onSurface.withOpacity(0.54),
                               ),

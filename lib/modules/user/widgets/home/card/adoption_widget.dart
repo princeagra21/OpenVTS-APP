@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/charts/adoption_growth_box.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class SmallTab extends StatelessWidget {
@@ -42,7 +42,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -122,7 +122,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4; // ~4-5
     final double spacing = AdaptiveUtils.getIconPaddingLeft(screenWidth) - 4;
 
-    final titleStyle = GoogleFonts.inter(
+    final titleStyle = AppFonts.inter(
       fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
       color: colorScheme.onSurface,
@@ -197,7 +197,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
           SizedBox(height: padding),
           Text(
             "Last $monthTab months",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: subheaderFontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
               fontWeight: FontWeight.w500,
@@ -249,7 +249,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
   meta: meta, // pass the required argument
   child: Text(
     "${value.toInt()}K",
-    style: GoogleFonts.inter(
+    style: AppFonts.inter(
       fontSize: leftTitleFontSize,
       color: colorScheme.onSurface.withOpacity(0.87),
     ),
@@ -269,7 +269,7 @@ class _AdoptionGrowthBoxState extends State<AdoptionGrowthBox> {
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             "M${index + 1}",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: bottomTitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.54),
                             ),

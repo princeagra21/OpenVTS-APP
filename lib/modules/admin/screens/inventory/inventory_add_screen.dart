@@ -13,8 +13,11 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class InventoryAddScreen extends StatefulWidget {
   const InventoryAddScreen({super.key});
@@ -51,10 +54,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
   bool _errorShown = false;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -228,7 +228,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 14,
                           height: 20 / 14,
                           fontWeight: FontWeight.w700,
@@ -240,14 +240,14 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                         controller: searchController,
                         onChanged: (value) =>
                             setSheetState(() => query = value.trim()),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize,
                           fontWeight: FontWeight.w500,
                           color: cs.onSurface,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search',
-                          hintStyle: GoogleFonts.roboto(
+                          hintStyle: AppFonts.roboto(
                             fontSize: fontSize,
                             fontWeight: FontWeight.w500,
                             color: cs.onSurface.withOpacity(0.6),
@@ -293,7 +293,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: 14,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -471,8 +471,8 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -492,7 +492,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                   subtitle: 'Create Device or SIM card.',
                   onTabSelected: (tab) {
                     if (tab == 'Sim') {
-                      context.go('/admin/sims/add');
+                      context.go(AppRoutes.adminSimsAdd);
                       return;
                     }
                     setState(() => _selectedTab = tab);
@@ -543,7 +543,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
           children: [
             Text(
               'Create Device',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                 fontWeight: FontWeight.w700,
                 color: cs.onSurface,
@@ -552,7 +552,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
             const SizedBox(height: 8),
             Text(
               'IMEI + Device Type.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -604,7 +604,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                       )
                     : Text(
                         'Create Device',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(w),
                           fontWeight: FontWeight.w600,
                           color: cs.onPrimary,
@@ -639,7 +639,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
           children: [
             Text(
               'Create Sim Card',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                 fontWeight: FontWeight.w700,
                 color: cs.onSurface,
@@ -648,7 +648,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
             const SizedBox(height: 8),
             Text(
               'SIM No. plus optional identifiers.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -712,7 +712,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                       )
                     : Text(
                         'Create Sim Card',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(w),
                           fontWeight: FontWeight.w600,
                           color: cs.onPrimary,
@@ -755,7 +755,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
               children: [
                 Text(
                   'Create Device',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
@@ -764,7 +764,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'IMEI + Device Type.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                     color: cs.onSurface.withOpacity(0.7),
                   ),
@@ -805,7 +805,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
               children: [
                 Text(
                   'Create Sim Card',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
@@ -814,7 +814,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'SIM No. plus optional identifiers.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                     color: cs.onSurface.withOpacity(0.7),
                   ),
@@ -859,7 +859,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Linking',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,
@@ -868,7 +868,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                 const SizedBox(height: 6),
                 Text(
                   'In "Device & Sim", the SIM will be linked to the Device IMEI you enter above.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                     color: cs.onSurface.withOpacity(0.7),
                   ),
@@ -899,7 +899,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                     )
                   : Text(
                       'Create Device & Sim',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         fontWeight: FontWeight.w600,
                         color: cs.onPrimary,
@@ -937,7 +937,7 @@ class _InputField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -947,14 +947,14 @@ class _InputField extends StatelessWidget {
         TextFormField(
           controller: controller,
           validator: validator,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w500,
             color: cs.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.roboto(
+            hintStyle: AppFonts.roboto(
               fontSize: fontSize,
               fontWeight: FontWeight.w500,
               color: cs.onSurface.withOpacity(0.6),
@@ -1018,7 +1018,7 @@ class _SelectField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -1044,7 +1044,7 @@ class _SelectField extends StatelessWidget {
                     value.isEmpty ? hint : value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fontSize,
                       fontWeight: FontWeight.w500,
                       color: value.isEmpty

@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/renewals/extend_license_screen.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class ExtendLicenseScreen extends StatefulWidget {
@@ -84,7 +84,7 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                       children: [
                         Text(
                           "Extend License",
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
@@ -146,7 +146,7 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                     // ─── PREVIEW SECTION ────────────────────
                     Text(
                       "New Expiry Dates",
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: fs,
                         fontWeight: FontWeight.bold,
                       ),
@@ -174,13 +174,13 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                                   Expanded(
                                     child: Text(
                                       "${device['vehicle']} (${device['imei']})",
-                                      style: GoogleFonts.inter(fontSize: fs - 2),
+                                      style: AppFonts.inter(fontSize: fs - 2),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   Text(
                                     dateFormat.format(newDate),
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: fs - 2,
                                       fontWeight: FontWeight.bold,
                                       color: cs.primary,
@@ -213,7 +213,7 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                         side: BorderSide(color: cs.primary.withOpacity(0.3)),
                         foregroundColor: cs.primary,
                       ),
-                      child: Text("Cancel", style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600)),
+                      child: Text("Cancel", style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -228,7 +228,7 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 4,
                       ),
-                      child: Text("Extend", style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600)),
+                      child: Text("Extend", style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -272,7 +272,7 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         Container(
@@ -285,7 +285,7 @@ class StylishDropdown extends StatelessWidget {
             iconEnabledColor: cs.primary,
             iconDisabledColor: cs.primary,
             initialValue: value,
-            hint: Text(hint, style: GoogleFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs)),
+            hint: Text(hint, style: AppFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs)),
             decoration: InputDecoration(
               fillColor: cs.surface,
               filled: true,
@@ -332,7 +332,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         Container(
@@ -349,7 +349,7 @@ class StylishTextField extends StatelessWidget {
               fillColor: cs.surface,
               filled: true,
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs),
+              hintStyle: AppFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs),
               prefixIcon: Icon(prefixIcon, color: cs.primary),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
               focusedBorder: OutlineInputBorder(

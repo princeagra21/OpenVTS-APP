@@ -8,7 +8,8 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class EditTeamScreen extends StatefulWidget {
   final AdminTeamListItem team;
@@ -62,10 +63,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -152,7 +150,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: fs,
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,
@@ -210,7 +208,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: fs - 1,
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface,
@@ -220,7 +218,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.inter(
                                         fontSize: fs - 2,
                                         color: cs.onSurface.withOpacity(0.6),
                                       ),
@@ -295,7 +293,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                 children: [
                   Text(
                     'Edit Team Member',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize,
                       height: 20 / 16,
                       fontWeight: FontWeight.w700,
@@ -320,7 +318,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
               const SizedBox(height: 8),
               Text(
                 'Update team member details and click save.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: helperSize,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -430,7 +428,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -462,7 +460,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
                           )
                         : Text(
                             'Save',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               fontWeight: FontWeight.w600,
                               color: cs.onPrimary,
@@ -489,7 +487,7 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: GoogleFonts.inter(fontSize: size, fontWeight: FontWeight.w600),
+      style: AppFonts.inter(fontSize: size, fontWeight: FontWeight.w600),
     );
   }
 }
@@ -519,7 +517,7 @@ class _Field extends StatelessWidget {
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.inter(
+          hintStyle: AppFonts.inter(
             color: cs.onSurface.withOpacity(0.6),
             fontSize: size,
           ),
@@ -577,7 +575,7 @@ class _Select extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: size, color: cs.onSurface),
+                style: AppFonts.inter(fontSize: size, color: cs.onSurface),
               ),
             ),
             if (loading)

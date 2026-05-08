@@ -11,8 +11,9 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/credit_history/add_deduct_credit_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class AdminCreditHistoryTab extends StatefulWidget {
@@ -96,10 +97,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     }
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getCreditLogs(
@@ -164,10 +162,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     final token = CancelToken();
     _profileToken = token;
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminProfile(
@@ -244,7 +239,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                 children: [
                   Text(
                     'History',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: headerSize,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -259,7 +254,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                           _startDate == null || _endDate == null
                               ? "Select Date Range"
                               : "${_startDate!.toIso8601String().substring(0, 10)} - ${_endDate!.toIso8601String().substring(0, 10)}",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: descFontSize,
                             color: colorScheme.primary,
                           ),
@@ -298,7 +293,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                       ),
                       label: Text(
                         "Download",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize - 1,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -338,7 +333,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                       ),
                       label: Text(
                         "Assign",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize - 1,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -380,7 +375,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                       ),
                       label: Text(
                         "Deduct",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize - 1,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -393,7 +388,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               const SizedBox(height: 24),
               Text(
                 'CREDITS',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize - 2,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -402,7 +397,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               const SizedBox(height: 2),
               Text(
                 'Credit History',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize + 1,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -466,7 +461,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
             children: [
               Text(
                 'TRANSACTIONS',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize - 2,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -475,7 +470,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               const SizedBox(height: 2),
               Text(
                 'Credit Logs',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize + 1,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -486,7 +481,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search history...',
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: AppFonts.roboto(
                     fontSize: descFontSize,
                     color: colorScheme.onSurface.withOpacity(0.5),
                   ),
@@ -531,7 +526,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                   children: [
                     Text(
                       'STATEMENT #',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize - 2,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -540,7 +535,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 2),
                     Text(
                       statementId,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize + 1,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -549,7 +544,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 12),
                     Text(
                       'BILL TO',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize - 2,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -558,7 +553,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 4),
                     Text(
                       billToName,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface,
@@ -567,7 +562,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 4),
                     Text(
                       billToUser,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface,
@@ -576,7 +571,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                     const SizedBox(height: 2),
                     Text(
                       billToEmail,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: descFontSize,
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface.withOpacity(0.8),
@@ -598,7 +593,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
                         children: [
                     Text(
                       'STATEMENT DETAILS',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -634,7 +629,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               else if (filteredLogs.isEmpty)
                 Text(
                   'No credit logs found.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: descFontSize,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -675,7 +670,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               children: [
                 Text(
                   'Download Statement',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(
                           MediaQuery.of(context).size.width,
                         ) +
@@ -1191,7 +1186,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -1201,7 +1196,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
         const SizedBox(width: 8),
         Text(
           value,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: valueSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -1288,7 +1283,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -1297,7 +1292,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueSize,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
@@ -1307,7 +1302,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           SizedBox(
             child: Text(
               subValue ?? '',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subSize,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface.withOpacity(0.65),
@@ -1347,7 +1342,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
         children: [
           Text(
             dateText,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -1356,7 +1351,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           const SizedBox(height: 6),
           Text(
             desc,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueSize,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
@@ -1365,7 +1360,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
           const SizedBox(height: 4),
           Text(
             logId,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.6),
@@ -1381,7 +1376,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
               const Spacer(),
               Text(
                 balance.toString(),
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: valueSize,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -1429,7 +1424,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
       ),
       child: Text(
         text,
-        style: GoogleFonts.roboto(
+        style: AppFonts.roboto(
           fontSize: AdaptiveUtils.getSubtitleFontSize(
                 MediaQuery.of(context).size.width,
               ) -

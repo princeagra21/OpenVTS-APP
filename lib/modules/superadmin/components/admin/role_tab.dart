@@ -10,7 +10,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class RolesTab extends StatefulWidget {
   final String adminId;
@@ -57,10 +58,7 @@ class _RolesTabState extends State<RolesTab> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -278,7 +276,7 @@ class _RolesTabState extends State<RolesTab> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -315,7 +313,7 @@ class _RolesTabState extends State<RolesTab> {
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
           ),
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
@@ -323,7 +321,7 @@ class _RolesTabState extends State<RolesTab> {
           dropdownColor: colorScheme.surface,
           hint: Text(
             hint,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.6),
@@ -352,7 +350,7 @@ class _RolesTabState extends State<RolesTab> {
       children: [
         Text(
           module,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -368,7 +366,7 @@ class _RolesTabState extends State<RolesTab> {
               showCheckmark: false,
               label: Text(
                 level,
-                style: GoogleFonts.roboto(fontSize: fontSize - 1),
+                style: AppFonts.roboto(fontSize: fontSize - 1),
               ),
               selected: _permissions[module] == level,
               selectedColor: colorScheme.primary.withOpacity(0.18),
@@ -448,7 +446,7 @@ class _RolesTabState extends State<RolesTab> {
                 const SizedBox(width: 8),
                 Text(
                   'Roles',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -478,7 +476,7 @@ class _RolesTabState extends State<RolesTab> {
             const SizedBox(height: 20),
             Text(
               'Permissions overview for this role',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.7),
@@ -501,7 +499,7 @@ class _RolesTabState extends State<RolesTab> {
                 ),
                 child: Text(
                   'No permissions data from API.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fontSize - 1,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),

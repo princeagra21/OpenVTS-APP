@@ -1,8 +1,8 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class EmailTemplateSettingsScreen extends StatelessWidget {
   const EmailTemplateSettingsScreen({super.key});
@@ -88,7 +88,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
                     ),
                     label: Text(
                       "Save Changes",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -105,7 +105,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
               // -----------------------------------------
               Text(
                 "Email Template Settings",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -114,7 +114,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
               const SizedBox(height: 4),
               Text(
                 "Configure and customize email templates for various system notifications.",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width),
                   fontWeight: FontWeight.w200,
                   color: Colors.black.withOpacity(0.9),
@@ -146,7 +146,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
               children: [
                 Text(
                   "Select Language",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                     fontWeight: FontWeight.w800,
                     color: Colors.black87,
@@ -164,7 +164,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
                     isExpanded: true,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     underline: const SizedBox(),
-                    style: GoogleFonts.roboto(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
+                    style: AppFonts.roboto(color: Colors.black, fontSize: AdaptiveUtils.getTitleFontSize(width)),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() => selectedLanguage = newValue);
@@ -266,7 +266,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: Colors.black87,
@@ -277,7 +277,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
           const SizedBox(height: 24),
           Text(
             "SUBJECT",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -285,7 +285,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
           ),
           const SizedBox(height: 8),
           TextFormField(
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
@@ -295,7 +295,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
           const SizedBox(height: 24),
           Text(
             "BODY",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -303,7 +303,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
           ),
           const SizedBox(height: 8),
           TextFormField(
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               color: Colors.black,
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),
@@ -319,7 +319,7 @@ class _EmailTemplateHeaderState extends State<EmailTemplateHeader> {
   InputDecoration _inputDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: Colors.black.withOpacity(0.6),
         fontSize: 14,
       ),

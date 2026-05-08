@@ -1,3 +1,6 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 // components/admin/credit_history/add_deduct_credit_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -6,7 +9,6 @@ import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddDeductCreditScreen extends StatefulWidget {
   final String adminId;
@@ -51,7 +53,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
       ),
@@ -104,7 +106,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                 children: [
                   Text(
                     "Add/Deduct Credits",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -121,7 +123,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
 
               Text(
                 "Manage credits",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -138,7 +140,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                       TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
+                        style: AppFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
                         decoration: _minimalDecoration(context, hint: "Credit Amount").copyWith(
                           prefixIcon: Icon(Icons.monetization_on_outlined, color: colorScheme.primary, size: 22),
                         ),
@@ -160,7 +162,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                                 child: Center(
                                   child: Text(
                                     "Cancel",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
@@ -185,7 +187,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                                 child: Center(
                                   child: Text(
                                     _confirmButtonText,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,
@@ -231,13 +233,10 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
     _token = token;
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       final creditsValue = action == 'deduct' ? -amount : amount;
       final res = await _api!.post(
-        '/superadmin/assigncredits/${widget.adminId}',
+        ApiPaths.path('/superadmin/assigncredits/${widget.adminId}'),
         data: {
           'credits': creditsValue.toString(),
           'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',

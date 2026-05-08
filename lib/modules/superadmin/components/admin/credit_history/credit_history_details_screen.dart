@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/credit_history/credit_history_details_screen.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class CreditHistoryDetailsScreen extends StatelessWidget {
   final String date;
@@ -53,7 +53,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                     child: Center(
                       child: Text(
                         "FS",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: largeFontSize + 3,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onPrimary,
@@ -78,7 +78,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                 children: [
                   Text(
                     amount,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: amountColor,
@@ -87,7 +87,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     "Successful",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: largeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -95,7 +95,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     date,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: nmlFontSize,
                       color: colorScheme.onSurface.withOpacity(0.45),
                     ),
@@ -115,7 +115,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       description,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: contentSize,
                         color: colorScheme.onSurface.withOpacity(0.8),
                       ),
@@ -124,7 +124,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     balance,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: contentSize,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -170,7 +170,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
           child: Center(
             child: Text(
               text,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 color: colorScheme.onPrimary,
                 fontWeight: FontWeight.w600,

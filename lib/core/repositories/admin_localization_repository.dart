@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_localization_settings.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminLocalizationRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class AdminLocalizationRepository {
   Future<Result<AdminLocalizationSettings>> getLocalization({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/localization', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/localization'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -30,7 +31,7 @@ class AdminLocalizationRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/localization',
+      ApiPaths.path('/admin/localization'),
       data: payload,
       cancelToken: cancelToken,
     );

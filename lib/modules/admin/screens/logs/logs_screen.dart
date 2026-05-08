@@ -12,9 +12,11 @@ import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/modules/admin/screens/logs/log_details_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -37,10 +39,7 @@ class _LogsScreenState extends State<LogsScreen> {
   DateTimeRange? _dateRange;
 
   AdminLogsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminLogsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -121,7 +120,7 @@ class _LogsScreenState extends State<LogsScreen> {
 
     final commaParts = value.split(',');
     if (commaParts.isNotEmpty) {
-      final dateParts = commaParts.first.trim().split('/');
+      final dateParts = commaParts.first.trim().split(AppRoutes.root);
       if (dateParts.length == 3) {
         final d = int.tryParse(dateParts[0]);
         final m = int.tryParse(dateParts[1]);
@@ -317,7 +316,7 @@ class _LogsScreenState extends State<LogsScreen> {
                   children: [
                     Text(
                       'Select Date Range',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -399,7 +398,7 @@ class _LogsScreenState extends State<LogsScreen> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.6),
@@ -409,7 +408,7 @@ class _LogsScreenState extends State<LogsScreen> {
           Text(
             value,
             softWrap: true,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
@@ -440,7 +439,7 @@ class _LogsScreenState extends State<LogsScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Logs & Activity',
         leadingIcon: Icons.list_alt,
-        onClose: () => context.go('/admin/home'),
+        onClose: () => context.go(AppRoutes.adminHome),
       ),
       actionIcons: const [Icons.settings],
       showLeftAvatar: false,
@@ -472,7 +471,7 @@ class _LogsScreenState extends State<LogsScreen> {
                           Expanded(
                             child: Text(
                               'Admin Activity',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: headerSize,
                                 height: 24 / 18,
                                 fontWeight: FontWeight.w700,
@@ -496,7 +495,7 @@ class _LogsScreenState extends State<LogsScreen> {
                         onChanged: (v) => setState(() => _query = v),
                         decoration: InputDecoration(
                           hintText: 'Search activity...',
-                          hintStyle: GoogleFonts.roboto(
+                          hintStyle: AppFonts.roboto(
                             fontSize: labelSize,
                             color: colorScheme.onSurface.withOpacity(0.5),
                           ),
@@ -526,7 +525,7 @@ class _LogsScreenState extends State<LogsScreen> {
                             ),
                           ),
                         ),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface,
@@ -585,7 +584,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       _selectedFilter,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: labelSize,
                                         fontWeight: FontWeight.w600,
                                         color: colorScheme.onSurface,
@@ -626,7 +625,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                     Flexible(
                                       child: Text(
                                         rangeLabel,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: labelSize,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
@@ -645,7 +644,7 @@ class _LogsScreenState extends State<LogsScreen> {
                       items.isEmpty
                           ? Text(
                               'No activity found',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme.onSurface.withOpacity(0.7),
@@ -727,7 +726,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                                       ? action
                                                       : 'Activity',
                                                   softWrap: true,
-                                                  style: GoogleFonts.roboto(
+                                                  style: AppFonts.roboto(
                                                     fontSize: headerSize - 1,
                                                     fontWeight: FontWeight.w700,
                                                     color:
@@ -757,7 +756,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                                     entity.isNotEmpty
                                                         ? entity
                                                         : '—',
-                                                    style: GoogleFonts.roboto(
+                                                    style: AppFonts.roboto(
                                                       fontSize: 11,
                                                       fontWeight:
                                                           FontWeight.w600,

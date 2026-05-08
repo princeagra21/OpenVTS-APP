@@ -13,9 +13,12 @@ import 'package:open_vts/modules/admin/components/card/fleet_card.dart';
 import 'package:open_vts/modules/admin/components/card/vehicle_status_box.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -73,10 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminDashboardRepository(api: _api!);
 
       final res = await _repo!.getAdminDashboardSummary(cancelToken: token);
@@ -146,10 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loadingVehiclesPreview = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _vehicleRepo ??= AdminVehicleRepository(api: _api!);
 
       final listRes = await _vehicleRepo!.getVehiclePreviewList(
@@ -251,8 +248,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -435,7 +432,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 Text(
                   name,
                   maxLines: 2,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: mainRowFs,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -447,7 +444,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                   type,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: secondaryFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -471,7 +468,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 ),
                 child: Text(
                   status,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: metaFs,
                     height: 14 / 11,
                     fontWeight: FontWeight.w600,
@@ -482,7 +479,7 @@ class _RecentVehiclesSection extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 _timeLabel(timeRaw),
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: metaFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -555,13 +552,13 @@ class _RecentVehiclesSection extends StatelessWidget {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push('/admin/vehicles'),
+                onTap: () => context.push(AppRoutes.adminVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 14 * scale,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -591,7 +588,7 @@ class _RecentVehiclesSection extends StatelessWidget {
           else if (vehicles.isEmpty)
             Text(
               'No recent vehicles',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: linkFontSize,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,

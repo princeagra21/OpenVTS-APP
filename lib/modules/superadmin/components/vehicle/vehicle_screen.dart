@@ -1,3 +1,6 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 // screens/vehicles/vehicle_screen.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -16,7 +19,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pdf/pdf.dart';
@@ -229,10 +231,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
     setState(() => _loadingVehicles = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       if (kDebugMode) {
@@ -340,7 +339,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               children: [
                 Text(
                   'Export Vehicles',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(
                           MediaQuery.of(context).size.width,
                         ) +
@@ -777,8 +776,8 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -815,13 +814,13 @@ class _VehicleScreenState extends State<VehicleScreen> {
             //   ),
             //   child: TextField(
             //     controller: _searchController,
-            //     style: GoogleFonts.roboto(
+            //     style: AppFonts.roboto(
             //       fontSize: bodyFs,
             //       color: colorScheme.onSurface,
             //     ),
             //     decoration: InputDecoration(
             //       hintText: "Search plate, type, user, IMEI...",
-            //       hintStyle: GoogleFonts.roboto(
+            //       hintStyle: AppFonts.roboto(
             //         color: colorScheme.onSurface.withOpacity(0.6),
             //         fontSize: bodyFs,
             //       ),
@@ -863,7 +862,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                 children: [
                   Text(
                     "All Vehicles",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -875,7 +874,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     _vehicles.isEmpty
                         ? "No vehicles across your administrators."
                         : "${_vehicles.length} vehicle(s) across all administrators",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSecondary,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.7),
@@ -910,7 +909,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     children: [
                       Text(
                         "Browse Vehicles",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSection,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -931,14 +930,14 @@ class _VehicleScreenState extends State<VehicleScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsMain,
                         height: 20 / 14,
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: "Search plate, type, user, IMEI...",
-                        hintStyle: GoogleFonts.roboto(
+                        hintStyle: AppFonts.roboto(
                           color: colorScheme.onSurface.withOpacity(0.5),
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -1013,7 +1012,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Filter",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -1064,7 +1063,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                   children: [
                                     Text(
                                       "Records",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -1115,7 +1114,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Export",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fsMain,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -1162,7 +1161,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           Expanded(
                             child: Text(
                               'Couldn\'t load vehicles.',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fsSecondary,
                                 height: 16 / 12,
                                 color: colorScheme.onSurface.withOpacity(0.8),
@@ -1185,7 +1184,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                         children: [
                           Text(
                             'No vehicles found',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               color: colorScheme.onSurface.withOpacity(0.8),
@@ -1195,7 +1194,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           const SizedBox(height: 6),
                           Text(
                             'Ask superadmin to assign vehicles.',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSecondary,
                               height: 16 / 12,
                               color: colorScheme.onSurface.withOpacity(0.72),
@@ -1347,7 +1346,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                             children: [
                                               Text(
                                                 displayTitle,
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: fsMain,
                                                   height: 20 / 14,
                                                   fontWeight: FontWeight.w600,
@@ -1382,7 +1381,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 ),
                                                 child: Text(
                                                   plate,
-                                                  style: GoogleFonts.roboto(
+                                                  style: AppFonts.roboto(
                                                     fontSize: fsMeta,
                                                     height: 14 / 11,
                                                     fontWeight:
@@ -1405,7 +1404,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               SizedBox(height: spacing * 0.4),
                                               Text(
                                                                                                 type,
-                                                                                                style: GoogleFonts.roboto(
+                                                                                                style: AppFonts.roboto(
                                                                                                   fontSize: fsSecondary,
                                                                                                   height: 16 / 12,
                                                                                                   fontWeight: FontWeight.w500,
@@ -1455,7 +1454,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 status,
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: fsMeta,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w600,
@@ -1510,7 +1509,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                       const SizedBox(width: 6),
                                                       Text(
                                                         "IMEI",
-                                                        style: GoogleFonts.roboto(
+                                                        style: AppFonts.roboto(
                                                           fontSize: fsMeta,
                                                           height: 14 / 11,
                                                           fontWeight:
@@ -1525,7 +1524,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                   SizedBox(height: spacing),
                                                   Text(
                                                     imei,
-                                                    style: GoogleFonts.roboto(
+                                                    style: AppFonts.roboto(
                                                       fontSize: fsMain,
                                                       height: 20 / 14,
                                                       fontWeight: FontWeight.w600,
@@ -1570,7 +1569,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                       const SizedBox(width: 6),
                                                       Text(
                                                         "SIM",
-                                                        style: GoogleFonts.roboto(
+                                                        style: AppFonts.roboto(
                                                           fontSize: fsMeta,
                                                           height: 14 / 11,
                                                           fontWeight:
@@ -1585,7 +1584,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                   SizedBox(height: spacing),
                                                   Text(
                                                     simNumber,
-                                                    style: GoogleFonts.roboto(
+                                                    style: AppFonts.roboto(
                                                       fontSize: fsMain,
                                                       height: 20 / 14,
                                                       fontWeight: FontWeight.w600,
@@ -1654,7 +1653,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                         Text(
                                                           "Primary",
                                                           style:
-                                                              GoogleFonts.roboto(
+                                                              AppFonts.roboto(
                                                             fontSize: fsMeta,
                                                             height: 14 / 11,
                                                             fontWeight:
@@ -1669,7 +1668,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                     SizedBox(height: spacing),
                                                     Text(
                                                       primaryName,
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsMain,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -1735,7 +1734,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                         Text(
                                                           "Added By",
                                                           style:
-                                                              GoogleFonts.roboto(
+                                                              AppFonts.roboto(
                                                             fontSize: fsMeta,
                                                             height: 14 / 11,
                                                             fontWeight:
@@ -1750,7 +1749,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                   SizedBox(height: spacing),
                                                   Text(
                                                     addedByName,
-                                                    style: GoogleFonts.roboto(
+                                                    style: AppFonts.roboto(
                                                       fontSize: fsMain,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -1799,7 +1798,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 6),
                                               Text(
                                                 "Created",
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: fsMeta,
                                                   height: 14 / 11,
                                                   fontWeight: FontWeight.w500,
@@ -1812,7 +1811,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                           SizedBox(height: spacing),
                                           Text(
                                             createdDate,
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsMain,
                                               height: 20 / 14,
                                               fontWeight: FontWeight.w600,
@@ -1823,7 +1822,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                           SizedBox(height: spacing / 2),
                                           Text(
                                             createdTime,
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1841,7 +1840,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "VIN: $vin",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1856,7 +1855,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Timezone: ${_safeAny(vehicle["timezone"])}",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1875,7 +1874,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Primary license: $licensePri $priStatus",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1890,7 +1889,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                         Expanded(
                                           child: Text(
                                             "Secondary license: $licenseSec $secStatus",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               fontWeight: FontWeight.w500,
@@ -1926,7 +1925,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               children: [
                                                 TextSpan(
                                                   text: "Last seen: ",
-                                                  style: GoogleFonts.roboto(
+                                                  style: AppFonts.roboto(
                                                     fontSize: fsMeta,
                                                     height: 14 / 11,
                                                     fontWeight:
@@ -1937,7 +1936,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                                 ),
                                                 TextSpan(
                                                                                                   text: "$lastSeenDate $lastSeenTime",
-                                                                                                  style: GoogleFonts.roboto(
+                                                                                                  style: AppFonts.roboto(
                                                                                                     fontSize: fsSecondary,
                                                                                                     height: 16 / 12,
                                                                                                     fontWeight: FontWeight.w500,
@@ -1995,7 +1994,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 "More",
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: fsMain,
                                                   height: 20 / 14,
                                                   fontWeight: FontWeight.w700,
@@ -2063,7 +2062,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   color: scheme.onSurface.withOpacity(0.6),
@@ -2074,7 +2073,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               ),
               Text(
                 name,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFs,
                   height: 20 / 14,
                   fontWeight: FontWeight.w600,
@@ -2086,7 +2085,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
               ),
               Text(
                 username,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: subtitleFs,
                   height: 16 / 12,
                   color: scheme.onSurface.withOpacity(0.6),

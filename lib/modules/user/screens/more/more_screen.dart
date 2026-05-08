@@ -5,8 +5,10 @@ import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -49,12 +51,12 @@ class _MoreScreenState extends State<MoreScreen> {
     if (superToken != null && superToken.isNotEmpty) {
       await storage.writeAccessToken(superToken);
       if (!mounted) return;
-      context.go('/admin/home');
+      context.go(AppRoutes.adminHome);
       return;
     }
     await storage.clear();
     if (!mounted) return;
-    context.go('/login');
+    context.go(AppRoutes.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -122,26 +124,26 @@ class _MoreScreenState extends State<MoreScreen> {
         'title': 'Profile',
         'subtitle': 'View & edit your profile',
         'icon': CupertinoIcons.person,
-        'route': '/user/profile',
+        'route': AppRoutes.userProfile,
       },
       {
         'title': 'Notifications',
         'subtitle': 'Manage alerts & pushes',
         'icon': CupertinoIcons.bell,
-        'route': '/user/notification-settings',
+        'route': AppRoutes.userNotificationSettings,
       },
       // Hidden from More until User report-generation APIs are confirmed.
       // {
       //   'title': 'Generate Report',
       //   'subtitle': 'Create custom reports',
       //   'icon': CupertinoIcons.doc_chart,
-      //   'route': '/user/generate-report',
+      //   'route': AppRoutes.userGenerateReport,
       // },
       {
         'title': 'Localization',
         'subtitle': 'Language & regional settings',
         'icon': CupertinoIcons.globe,
-        'route': '/user/localization',
+        'route': AppRoutes.userLocalization,
       },
     ];
 
@@ -217,7 +219,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Log out?',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -229,7 +231,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Your current session will end. You will need to log in again to continue.',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -248,7 +250,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                      style: AppFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -266,7 +268,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Log out',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: AppFonts.inter(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -324,14 +326,14 @@ class _MoreMenuCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: colorScheme.shadow.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: OpenVtsColors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => context.push(route),
@@ -363,7 +365,7 @@ class _MoreMenuCard extends StatelessWidget {
                           children: [
                             Text(
                               title,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     1,
@@ -374,7 +376,7 @@ class _MoreMenuCard extends StatelessWidget {
                             const SizedBox(height: 6),
                             Text(
                               subtitle,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
@@ -414,7 +416,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
@@ -426,7 +428,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),

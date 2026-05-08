@@ -2,8 +2,9 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class RolesScreen extends StatefulWidget {
   const RolesScreen({super.key});
@@ -153,7 +154,7 @@ class _RolesScreenState extends State<RolesScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Role Permissions',
         leadingIcon: Icons.admin_panel_settings,
-        onClose: () => context.go('/admin/home'),
+        onClose: () => context.go(AppRoutes.adminHome),
       ),
       actionIcons: const [],
       leftAvatarText: 'FS',
@@ -199,7 +200,7 @@ class _RolesScreenState extends State<RolesScreen> {
                             icon: Icon(Icons.delete_outline, color: scheme.onError),
                             label: Text(
                               "Delete",
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 color: scheme.onError,
                                 fontWeight: FontWeight.w600,
                                 fontSize: titleFs - 2,
@@ -217,7 +218,7 @@ class _RolesScreenState extends State<RolesScreen> {
                             icon: Icon(Icons.save_outlined, color: scheme.onPrimary),
                             label: Text(
                               "Save",
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 color: scheme.onPrimary,
                                 fontWeight: FontWeight.w600,
                                 fontSize: titleFs - 2,
@@ -232,7 +233,7 @@ class _RolesScreenState extends State<RolesScreen> {
                         children: [
                           Text(
                             "Role Permissions",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: titleFs + 2,
                               fontWeight: FontWeight.w600,
                               color: scheme.onSurface.withOpacity(0.95),
@@ -242,7 +243,7 @@ class _RolesScreenState extends State<RolesScreen> {
                           Text(
                             "Configure access levels for different modules",
                             softWrap: true,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: titleFs - 2,
                               fontWeight: FontWeight.w300,
                               color: scheme.onSurface.withOpacity(0.72),
@@ -264,7 +265,7 @@ class _RolesScreenState extends State<RolesScreen> {
                         children: [
                           Text(
                             "Role Title",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: titleFs,
                               fontWeight: FontWeight.w600,
                               color: scheme.onSurface,
@@ -275,7 +276,7 @@ class _RolesScreenState extends State<RolesScreen> {
                             controller: _roleController,
                             onChanged: (v) => setState(() => selectedRoleTitle = v),
                             decoration: _inputDecoration(context, hint: "Enter role name"),
-                            style: GoogleFonts.inter(color: scheme.onSurface),
+                            style: AppFonts.inter(color: scheme.onSurface),
                           ),
                         ],
                       ),
@@ -287,7 +288,7 @@ class _RolesScreenState extends State<RolesScreen> {
                         children: [
                           Text(
                             "Monthly Cost",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: titleFs,
                               fontWeight: FontWeight.w600,
                               color: scheme.onSurface,
@@ -310,7 +311,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                   child: DropdownButton<String>(
                                     value: selectedCurrency,
                                     isExpanded: true,
-                                    style: GoogleFonts.inter(color: scheme.onSurface),
+                                    style: AppFonts.inter(color: scheme.onSurface),
                                     onChanged: (v) => setState(() => selectedCurrency = v!),
                                     items: currencies
                                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -332,7 +333,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                   child: DropdownButton<int>(
                                     value: selectedAmount,
                                     isExpanded: true,
-                                    style: GoogleFonts.inter(color: scheme.onSurface),
+                                    style: AppFonts.inter(color: scheme.onSurface),
                                     onChanged: (v) => setState(() => selectedAmount = v!),
                                     items: amounts
                                         .map((a) => DropdownMenuItem(
@@ -358,7 +359,7 @@ class _RolesScreenState extends State<RolesScreen> {
                     children: [
                       Text(
                         "Quick Presets",
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                             fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(height: 12),
@@ -389,7 +390,7 @@ class _RolesScreenState extends State<RolesScreen> {
                     children: [
                       Text(
                         "Set all:",
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                             fontSize: titleFs, fontWeight: FontWeight.w800, color: scheme.onSurface),
                       ),
                       const SizedBox(height: 12),
@@ -431,12 +432,12 @@ class _RolesScreenState extends State<RolesScreen> {
                             Expanded(
                                 flex: 3,
                                 child: Text("Module",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                         fontWeight: FontWeight.w800, color: scheme.onSurface))),
                             Expanded(
                                 flex: 5,
                                 child: Text("Access",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                         fontWeight: FontWeight.w800, color: scheme.onSurface))),
                           ],
                         ),
@@ -449,7 +450,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                 Expanded(
                                     flex: 3,
                                     child: Text(module,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                             fontWeight: FontWeight.w600, color: scheme.onSurface))),
                                 Expanded(
                                   flex: 5,
@@ -497,7 +498,7 @@ class _RolesScreenState extends State<RolesScreen> {
     final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: scheme.onSurface.withOpacity(0.6), fontSize: 14),
+      hintStyle: AppFonts.inter(color: scheme.onSurface.withOpacity(0.6), fontSize: 14),
       filled: true,
       fillColor: scheme.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -541,7 +542,7 @@ class _LocalTab extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: small ? 11 : 13,
               fontWeight: FontWeight.w600,
               color: selected ? scheme.onPrimary : scheme.onSurface,

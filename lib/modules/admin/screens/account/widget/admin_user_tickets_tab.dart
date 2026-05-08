@@ -11,7 +11,9 @@ import 'package:open_vts/modules/admin/screens/support/new_ticket_screen.dart';
 import 'package:open_vts/modules/admin/screens/support/support_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminUserTicketsTab extends StatefulWidget {
   final String userId;
@@ -39,10 +41,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
   AdminSupportRepository? _repo;
 
   AdminSupportRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminSupportRepository(api: _apiClient!);
     return _repo!;
   }
@@ -68,7 +67,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
     setState(() => _loading = true);
 
     final result = await _repoOrCreate().api.get(
-      '/admin/tickets',
+      ApiPaths.path('/admin/tickets'),
       queryParameters: <String, dynamic>{
         'userId': widget.userId,
         'rk': DateTime.now().millisecondsSinceEpoch,
@@ -194,7 +193,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                     children: [
                       Text(
                         'User Tickets',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: sectionTitleFs,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -211,7 +210,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                       else
                         Text(
                           '${tickets.length} tickets',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: secondaryFs,
                             height: 16 / 12,
                             color: colorScheme.onSurface.withOpacity(0.54),
@@ -255,7 +254,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                           const SizedBox(width: 6),
                           Text(
                             'New Ticket',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: buttonFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -281,14 +280,14 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: (_) => setState(() {}),
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: searchFs,
                     height: 20 / 14,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search tickets...',
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: colorScheme.onSurface.withOpacity(0.5),
                       fontSize: searchFs - 2,
                       height: 16 / 12,
@@ -356,7 +355,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                   child: Center(
                     child: Text(
                       'No tickets found',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: secondaryFs,
                         height: 16 / 12,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -411,7 +410,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: tabFs,
             height: 20 / 14,
             fontWeight: FontWeight.w600,
@@ -564,7 +563,7 @@ class _TicketCardLocal extends StatelessWidget {
           children: [
             Text(
               _safe(ticket.subject),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -581,7 +580,7 @@ class _TicketCardLocal extends StatelessWidget {
                     _safe(ticket.ticketNumber.isNotEmpty
                         ? ticket.ticketNumber
                         : ticket.id),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -605,7 +604,7 @@ class _TicketCardLocal extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -627,7 +626,7 @@ class _TicketCardLocal extends StatelessWidget {
                       if (category != '—') _titleCase(category),
                       if (priority != '—') '${_titleCase(priority)} Priority',
                     ].join(' · '),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.6),
@@ -641,7 +640,7 @@ class _TicketCardLocal extends StatelessWidget {
                 if (createdText != '—')
                   Text(
                     createdText,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       height: 16 / 12,
                       color: colorScheme.onSurface.withOpacity(0.6),
@@ -663,7 +662,7 @@ class _TicketCardLocal extends StatelessWidget {
                     children: [
                       Text(
                         'View Ticket',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                           height: 16 / 12,
                           fontWeight: FontWeight.w600,

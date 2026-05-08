@@ -1,6 +1,6 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/renewals/suspend_access_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SuspendAccessScreen extends StatefulWidget {
@@ -36,7 +36,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                 children: [
                   Text(
                     "Suspend Access",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -53,7 +53,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
               Center(
                 child: Text(
                   "Temporarily disable tracking access and API per device.",
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: fs - 2,
                     color: cs.onSurface.withOpacity(0.7),
                   ),
@@ -79,7 +79,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                       Text(
                         "Suspended devices will stop data access until renewed.",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: fs,
                           fontWeight: FontWeight.bold,
                           color: Colors.red[700],
@@ -89,7 +89,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                       Text(
                         "You can unsuspend after payment.",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: fs - 2,
                           color: cs.onSurface.withOpacity(0.8),
                         ),
@@ -104,7 +104,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
               // ─── DEVICES LIST ───────────────────────
               Text(
                 "Devices to suspend ($deviceCount)",
-                style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -125,11 +125,11 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                         ),
                         title: Text(
                           device['vehicle'],
-                          style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                          style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
                           "IMEI: ${device['imei']}\nCustomer: ${device['customer']}",
-                          style: GoogleFonts.inter(fontSize: fs - 4),
+                          style: AppFonts.inter(fontSize: fs - 4),
                         ),
                         trailing: Icon(
                           Icons.block,
@@ -161,7 +161,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                        style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -188,7 +188,7 @@ class _SuspendAccessScreenState extends State<SuspendAccessScreen> {
                       ),
                       child: Text(
                         "Suspend",
-                        style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600, color: Colors.white),
+                        style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                     ),
                   ),

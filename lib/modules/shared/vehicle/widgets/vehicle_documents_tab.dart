@@ -1,12 +1,12 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/vehicle/vehicle_documents_tab.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:open_vts/core/models/vehicle_document_item.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/modules/superadmin/components/admin/documents_tab/widget/add_document.dart';
+import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/modules/superadmin/components/admin/documents_tab/widget/file_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VehicleDocumentsTab extends StatefulWidget {
   final List<VehicleDocumentItem>? documents;
@@ -144,7 +144,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       const SizedBox(width: 8),
                       Text(
                         "Vehicle Documents",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface.withOpacity(0.7),
@@ -160,7 +160,8 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                         () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const AddDocumentScreen(),
+                                builder: (_) =>
+                                    const SuperadminAddDocumentScreen(),
                               ),
                             ),
                     borderRadius: BorderRadius.circular(16),
@@ -205,7 +206,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                   children: [
                     Text(
                       "Health Status",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -257,7 +258,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                   children: [
                     Text(
                       "Storage used",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.7),
@@ -269,7 +270,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       children: [
                         Text(
                           "${usedStorage.toStringAsFixed(2)} / ${totalStorage.toStringAsFixed(2)} GB",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 AdaptiveUtils.getSubtitleFontSize(width) - 2,
                             fontWeight: FontWeight.bold,
@@ -314,7 +315,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                       children: [
                         Text(
                           "Total docs: $totalDocs",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),
@@ -353,7 +354,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
               children: [
                 Text(
                   'No documents found',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
@@ -362,7 +363,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                 const SizedBox(height: 6),
                 Text(
                   'This vehicle has no uploaded documents in the current API response.',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -403,7 +404,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
         const SizedBox(height: 6),
         Text(
           "$count",
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
             fontWeight: FontWeight.bold,
           ),
@@ -427,7 +428,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),

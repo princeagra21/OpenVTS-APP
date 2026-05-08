@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // lib/screens/notifications/notify_users_screen.dart
 import 'dart:async';
 
@@ -13,7 +15,6 @@ import 'package:open_vts/modules/admin/components/card/search_bar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class NotifyUsersScreen extends StatefulWidget {
   const NotifyUsersScreen({super.key});
@@ -100,10 +101,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     setState(() => _loadingRecipients = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final res = await _repo!.searchRecipients(
@@ -170,7 +168,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
           titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           title: Text(
             'Select recipients',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+            style: AppFonts.inter(fontWeight: FontWeight.w700),
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -224,7 +222,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                                       ),
                                       child: Text(
                                         'No users found',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           color: Theme.of(context)
                                               .colorScheme
                                               .onSurface
@@ -263,13 +261,13 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                                         visualDensity: VisualDensity.compact,
                                         title: Text(
                                           user.name.isEmpty ? '-' : user.name,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         subtitle: Text(
                                           user.email.isEmpty ? '-' : user.email,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .onSurface
@@ -304,7 +302,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: GoogleFonts.inter()),
+              child: Text('Cancel', style: AppFonts.inter()),
             ),
             ElevatedButton(
               onPressed: () {
@@ -318,7 +316,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
               },
               child: Text(
                 'Done',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                style: AppFonts.inter(fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -362,10 +360,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     });
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final channel = _channels[0] ? 'EMAIL' : 'IN_APP';
@@ -449,7 +444,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                 children: [
                   Text(
                     'Notify Users',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -524,14 +519,14 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                     children: [
                       Text(
                         'Subject (optional)',
-                        style: GoogleFonts.inter(fontSize: fs - 2),
+                        style: AppFonts.inter(fontSize: fs - 2),
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _subjectController,
                         decoration: InputDecoration(
                           hintText: 'Write a short subject',
-                          hintStyle: GoogleFonts.inter(
+                          hintStyle: AppFonts.inter(
                             color: cs.onSurface.withOpacity(0.6),
                           ),
                           border: OutlineInputBorder(
@@ -545,7 +540,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'Message *',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: fs - 2,
                           fontWeight: FontWeight.bold,
                         ),
@@ -566,7 +561,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                           maxLines: 5,
                           decoration: InputDecoration(
                             hintText: 'Write your message here',
-                            hintStyle: GoogleFonts.inter(
+                            hintStyle: AppFonts.inter(
                               color: cs.onSurface.withOpacity(0.6),
                             ),
                             border: OutlineInputBorder(
@@ -598,7 +593,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                       ),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: AppFonts.inter(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -617,7 +612,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
                           ? const AppShimmer(width: 34, height: 14, radius: 6)
                           : Text(
                               'Send',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -660,7 +655,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: value ? cs.primary : cs.onSurface.withOpacity(0.9),
                 fontWeight: FontWeight.w600,
               ),
@@ -709,7 +704,7 @@ class _MultiSelectDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -741,7 +736,7 @@ class _MultiSelectDropdown extends StatelessWidget {
                       Expanded(
                         child: Text(
                           selectedUsers.isEmpty ? hint : _summaryText(),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             color: selectedUsers.isEmpty
                                 ? cs.onSurface.withOpacity(0.6)
                                 : cs.onSurface,

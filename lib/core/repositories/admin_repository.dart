@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -39,7 +40,7 @@ class AdminRepository {
     });
 
     final res = await api.post(
-      '/admin/upload',
+      ApiPaths.path('/admin/upload'),
       data: form,
       cancelToken: cancelToken,
       options: Options(

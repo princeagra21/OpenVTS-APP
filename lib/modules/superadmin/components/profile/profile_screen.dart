@@ -16,6 +16,7 @@ import 'package:open_vts/modules/superadmin/components/profile/widget/profile_se
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -53,10 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 

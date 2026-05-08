@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/settings/localization_settings_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -11,7 +13,6 @@ import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/main.dart' show themeController;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LocalizationSettingsScreen extends StatelessWidget {
   const LocalizationSettingsScreen({super.key});
@@ -108,19 +109,13 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
   _LocalizationSnapshot? _loadedSnapshot;
 
   CommonRepository _commonRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }
 
   SuperadminRepository _superRepoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _superadminRepo ??= SuperadminRepository(api: _apiClient!);
     return _superadminRepo!;
   }
@@ -405,7 +400,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           Expanded(
                             child: Text(
                               'Select Language',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                                 color: colorScheme.onSurface,
@@ -466,7 +461,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 option.label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface,
@@ -868,7 +863,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             children: [
               Text(
                 "Localization",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -890,7 +885,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 label: Text(
                   "Reset",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
@@ -917,7 +912,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 label: Text(
                   "Save",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -938,7 +933,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             title: "Live Preview",
             trailing: Text(
               "Lang: $selectedLanguage • Dir: $textDirection • TZ: $timezone",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.8),
@@ -994,7 +989,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           children: [
                             Text(
                               "Map Center",
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                         3,
@@ -1010,7 +1005,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                   "$lat, $lng",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: AdaptiveUtils
                                             .getSubtitleFontSize(width) -
                                         3,
@@ -1021,7 +1016,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(height: 6),
                                 Text(
                                   "Zoom $zoom",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: AdaptiveUtils
                                             .getSubtitleFontSize(width) -
                                         3,
@@ -1085,7 +1080,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Default Language",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1095,7 +1090,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Primary language",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1134,7 +1129,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                             maxLines: 2,
                             softWrap: true,
                             overflow: TextOverflow.visible,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getSubtitleFontSize(width) - 2,
                               fontWeight: FontWeight.w600,
@@ -1190,7 +1185,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Text Direction",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1200,7 +1195,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "LTR / RTL",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1253,7 +1248,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "LTR",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: textDirection == "LTR"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1297,7 +1292,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "RTL",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: textDirection == "RTL"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1351,7 +1346,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Date Format",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1361,7 +1356,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Display style",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1377,7 +1372,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     _dateFormats.isEmpty
                         ? 'No date format options'
                         : 'Select date format',
-                    style: GoogleFonts.roboto(),
+                    style: AppFonts.roboto(),
                   ),
                   decoration: _dropdownDecoration(context),
                   items: _dateFormats
@@ -1430,7 +1425,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Time Format",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1442,7 +1437,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                             timeFormat == "24-hour"
                                 ? "24-hour clock"
                                 : "12-hour clock",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1492,7 +1487,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "24-hour",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: timeFormat == "24-hour"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1533,7 +1528,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "12-hour",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: timeFormat == "12-hour"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1587,7 +1582,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Timezone",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1597,7 +1592,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "UTC offset",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1613,7 +1608,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     _timezones.isEmpty
                         ? 'No timezone options'
                         : 'Select timezone',
-                    style: GoogleFonts.roboto(),
+                    style: AppFonts.roboto(),
                   ),
                   decoration: _dropdownDecoration(context),
                   items: _timezones
@@ -1666,7 +1661,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Units",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1676,7 +1671,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Distance units",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1729,7 +1724,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "KM",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: units == "KM"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1773,7 +1768,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                 const SizedBox(width: 6),
                                 Text(
                                   "MILES",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: units == "MILES"
                                         ? colorScheme.onPrimary
                                         : colorScheme.onSurface,
@@ -1827,7 +1822,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             "Theme",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -1837,7 +1832,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             "Light / Dark / System",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
@@ -1895,7 +1890,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "Light",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: selected == 'light'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1936,7 +1931,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "Dark",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: selected == 'dark'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1977,7 +1972,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                                     const SizedBox(width: 6),
                                     Text(
                                       "System",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: selected == 'system'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -2012,7 +2007,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 context,
                 "Latitude (N/S)",
                 _latController,
-                labelStyle: GoogleFonts.roboto(
+                labelStyle: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -2021,7 +2016,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Range: -90 to 90",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -2032,7 +2027,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 context,
                 "Longitude (E/W)",
                 _lngController,
-                labelStyle: GoogleFonts.roboto(
+                labelStyle: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -2041,7 +2036,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Range: -180 to 180",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -2052,7 +2047,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 context,
                 "Zoom Level",
                 _zoomController,
-                labelStyle: GoogleFonts.roboto(
+                labelStyle: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -2061,7 +2056,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
               const SizedBox(height: 6),
               Text(
                 "Typical: 1 to 20",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -2111,7 +2106,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         children: [
                           Text(
                             name,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize:
                                   AdaptiveUtils.getTitleFontSize(width) + 2,
                               fontWeight: FontWeight.w800,
@@ -2121,7 +2116,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                           const SizedBox(height: 4),
                           Text(
                             '${latVal.toStringAsFixed(4)}, ${lngVal.toStringAsFixed(4)}',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -2225,7 +2220,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             if (trailing == null)
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -2239,7 +2234,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
@@ -2258,7 +2253,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.65),
@@ -2290,7 +2285,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.8),
@@ -2299,7 +2294,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface,
@@ -2344,7 +2339,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         Text(
           label,
           style: labelStyle ??
-              GoogleFonts.roboto(
+              AppFonts.roboto(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface.withOpacity(0.65),
@@ -2353,7 +2348,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,

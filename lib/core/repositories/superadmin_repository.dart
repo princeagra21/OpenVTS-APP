@@ -33,9 +33,11 @@ import 'package:open_vts/core/models/vehicle_log_item.dart';
 import 'package:open_vts/core/models/vehicle_location.dart';
 import 'package:open_vts/core/models/vehicle_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_envelope.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class SuperadminRepository {
   final ApiClient api;
@@ -54,7 +56,7 @@ class SuperadminRepository {
     if (status != null && status.trim().isNotEmpty) qp['status'] = status;
 
     final res = await api.get(
-      '/superadmin/adminlist',
+      SuperadminApiPaths.adminList,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -83,7 +85,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/admin/$adminId',
+      SuperadminApiPaths.adminDetails(adminId),
       cancelToken: cancelToken,
     );
 
@@ -96,7 +98,10 @@ class SuperadminRepository {
   Future<Result<SuperadminProfile>> getSuperadminProfile({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/superadmin/profile', cancelToken: cancelToken);
+    final res = await api.get(
+      SuperadminApiPaths.profile,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) => Result.ok(SuperadminProfile(_coerceMap(data))),
@@ -110,7 +115,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/superadmin/updateadmin/$adminId',
+      SuperadminApiPaths.updateAdmin(adminId),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -134,7 +139,7 @@ class SuperadminRepository {
     };
 
     final res = await api.post(
-      '/superadmin/adminpasswordupdate',
+      SuperadminApiPaths.adminPasswordUpdate,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -151,7 +156,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final primaryRes = await api.post(
-      '/superadmin/activateadmin/$adminId',
+      SuperadminApiPaths.activateAdmin(adminId),
       data: {'isActive': isActive},
       cancelToken: cancelToken,
     );
@@ -163,7 +168,7 @@ class SuperadminRepository {
     final err = primaryRes.error;
     if (err is ApiException && err.statusCode == 404) {
       final fallbackRes = await api.post(
-        '/superadmin/adminstatusupdate',
+        SuperadminApiPaths.adminStatusUpdate,
         data: {'adminid': adminId, 'status': isActive},
         cancelToken: cancelToken,
       );
@@ -200,7 +205,7 @@ class SuperadminRepository {
     });
 
     final res = await api.post(
-      '/superadmin/upload/$adminId',
+      SuperadminApiPaths.upload(adminId),
       data: form,
       cancelToken: cancelToken,
       options: Options(
@@ -241,7 +246,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/superadmin/uploaddoc/$fileId',
+      SuperadminApiPaths.uploadDocById(fileId),
       cancelToken: cancelToken,
     );
 
@@ -255,7 +260,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/documenttypes/USER',
+      PublicApiPaths.documentTypesForUser,
       cancelToken: cancelToken,
     );
 
@@ -323,7 +328,7 @@ class SuperadminRepository {
     });
 
     final res = await api.post(
-      '/superadmin/uploaddoc',
+      SuperadminApiPaths.uploadDoc,
       data: form,
       cancelToken: cancelToken,
       options: Options(
@@ -372,7 +377,7 @@ class SuperadminRepository {
     };
 
     final res = await api.patch(
-      '/superadmin/uploaddoc/$documentId',
+      SuperadminApiPaths.uploadDocById(documentId),
       data: FormData.fromMap(data),
       cancelToken: cancelToken,
       options: Options(
@@ -393,7 +398,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/companyconfig/$companyId',
+      SuperadminApiPaths.companyConfig(companyId),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -409,7 +414,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/companydetails',
+      SuperadminApiPaths.companyDetails,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -425,7 +430,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/superadmin/deleteadmin/$adminId',
+      SuperadminApiPaths.deleteAdmin(adminId),
       data: <String, dynamic>{'adminId': adminId},
       cancelToken: cancelToken,
     );
@@ -441,7 +446,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/superadmin/vehicles/$vehicleId',
+      SuperadminApiPaths.deleteVehicle(vehicleId),
       cancelToken: cancelToken,
     );
 
@@ -456,7 +461,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/superadmin/createadmin',
+      SuperadminApiPaths.createAdmin,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -472,7 +477,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/map-telemetry',
+      SuperadminApiPaths.mapTelemetry,
       queryParameters: queryParams,
       cancelToken: cancelToken,
     );
@@ -503,7 +508,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/domainlist',
+      SuperadminApiPaths.domainList,
       cancelToken: cancelToken,
     );
 
@@ -529,7 +534,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/server/overview',
+      SuperadminApiPaths.serverOverview,
       queryParameters: <String, dynamic>{
         'rk': DateTime.now().millisecondsSinceEpoch,
       },
@@ -553,7 +558,10 @@ class SuperadminRepository {
   Future<Result<ServerPostgresStatus>> getServerPostgresStatus({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/health/databases', cancelToken: cancelToken);
+    final res = await api.get(
+      PublicApiPaths.healthDatabases,
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (data) {
         final root = _coerceMap(data);
@@ -585,7 +593,10 @@ class SuperadminRepository {
   Future<Result<ServerPostgresStatus>> getLogsDbStatus({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/health/logs-db', cancelToken: cancelToken);
+    final res = await api.get(
+      PublicApiPaths.healthLogsDb,
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (data) {
         final payload = _extractMap(data);
@@ -600,7 +611,10 @@ class SuperadminRepository {
   Future<Result<ServerPostgresStatus>> getAddressDbStatus({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/health/address-db', cancelToken: cancelToken);
+    final res = await api.get(
+      PublicApiPaths.healthAddressDb,
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (data) {
         final payload = _extractMap(data);
@@ -616,7 +630,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/server/overview',
+      SuperadminApiPaths.serverOverview,
       queryParameters: <String, dynamic>{
         'rk': DateTime.now().millisecondsSinceEpoch,
       },
@@ -632,7 +646,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/server/overview',
+      SuperadminApiPaths.serverOverview,
       queryParameters: <String, dynamic>{
         'rk': DateTime.now().millisecondsSinceEpoch,
       },
@@ -656,7 +670,7 @@ class SuperadminRepository {
     }
 
     final res = await api.get(
-      '/superadmin/calendar/events',
+      SuperadminApiPaths.calendarEvents,
       queryParameters: qp,
       cancelToken: cancelToken,
     );
@@ -708,7 +722,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/calendar/day',
+      SuperadminApiPaths.calendarDay,
       queryParameters: {'date': date},
       cancelToken: cancelToken,
     );
@@ -722,7 +736,7 @@ class SuperadminRepository {
   Future<Result<Map<String, dynamic>>> getHealthRaw({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/health', cancelToken: cancelToken);
+    final res = await api.get(PublicApiPaths.health, cancelToken: cancelToken);
     return res.when(
       success: (data) => Result.ok(_coerceMap(data)),
       failure: (err) => Result.fail(err),
@@ -734,7 +748,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/adminvehicles/$adminId',
+      SuperadminApiPaths.adminVehicles(adminId),
       cancelToken: cancelToken,
     );
 
@@ -762,7 +776,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/creditlogs/$adminId',
+      SuperadminApiPaths.creditLogs(adminId),
       cancelToken: cancelToken,
     );
 
@@ -793,7 +807,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/documents/$adminId',
+      SuperadminApiPaths.documents(adminId),
       cancelToken: cancelToken,
     );
 
@@ -824,7 +838,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/settings/$adminId',
+      SuperadminApiPaths.settings(adminId),
       cancelToken: cancelToken,
     );
 
@@ -840,7 +854,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/settings/$adminId',
+      SuperadminApiPaths.settings(adminId),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -855,7 +869,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/localization',
+      SuperadminApiPaths.localization,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -875,7 +889,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/localization',
+      SuperadminApiPaths.localization,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -889,7 +903,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/smtpsettings',
+      SuperadminApiPaths.smtpSettings,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -907,7 +921,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/smtpsettings',
+      SuperadminApiPaths.smtpSettings,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -922,7 +936,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/superadmin/testsmtp',
+      SuperadminApiPaths.testSmtp,
       data: <String, dynamic>{'email': email},
       cancelToken: cancelToken,
     );
@@ -944,7 +958,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/pricingplans',
+      AdminApiPaths.pricingPlans,
       queryParameters: const {'limit': 1},
       cancelToken: cancelToken,
     );
@@ -966,7 +980,10 @@ class SuperadminRepository {
   Future<Result<List<PricingPlan>>> getPricingPlans({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/pricingplans', cancelToken: cancelToken);
+    final res = await api.get(
+      AdminApiPaths.pricingPlans,
+      cancelToken: cancelToken,
+    );
 
     return res.when(
       success: (data) {
@@ -997,7 +1014,7 @@ class SuperadminRepository {
     if (limit != null) qp['limit'] = limit;
 
     final res = await api.get(
-      '/superadmin/vehicles',
+      SuperadminApiPaths.vehicles,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -1037,7 +1054,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final baseRes = await api.get(
-      '/superadmin/vehicles/$vehicleId',
+      SuperadminApiPaths.vehicleDetails(vehicleId),
       cancelToken: cancelToken,
     );
 
@@ -1061,7 +1078,7 @@ class SuperadminRepository {
 
     if (imei.isNotEmpty) {
       final detailRes = await api.get(
-        '/superadmin/vehicles/by-imei/$imei/details',
+        SuperadminApiPaths.vehicleByImeiDetails(imei),
         cancelToken: cancelToken,
       );
 
@@ -1109,7 +1126,7 @@ class SuperadminRepository {
     if (query != null && query.trim().isNotEmpty) qp['search'] = query.trim();
 
     final res = await api.get(
-      '/superadmin/vehicles/by-imei/$imei/logs',
+      SuperadminApiPaths.vehicleByImeiLogs(imei),
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -1141,7 +1158,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/vehicles/by-imei/$imei/details',
+      SuperadminApiPaths.vehicleByImeiDetails(imei),
       cancelToken: cancelToken,
     );
 
@@ -1173,7 +1190,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/vehicles/by-imei/$imei/details',
+      SuperadminApiPaths.vehicleByImeiDetails(imei),
       cancelToken: cancelToken,
     );
 
@@ -1221,7 +1238,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/geocoding/reverse',
+      GeocodingApiPaths.reverse,
       queryParameters: <String, dynamic>{'lat': lat, 'lng': lng},
       cancelToken: cancelToken,
     );
@@ -1259,7 +1276,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/commandtypes',
+      SuperadminApiPaths.commandTypes,
       cancelToken: cancelToken,
     );
 
@@ -1300,7 +1317,7 @@ class SuperadminRepository {
     };
 
     final res = await api.post(
-      '/superadmin/customcommands',
+      SuperadminApiPaths.customCommands,
       data: body,
       cancelToken: cancelToken,
     );
@@ -1316,7 +1333,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/customcommands',
+      SuperadminApiPaths.customCommands,
       cancelToken: cancelToken,
     );
 
@@ -1347,7 +1364,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/vehicles/$vehicleId/config',
+      AdminApiPaths.vehicleConfig(vehicleId),
       cancelToken: cancelToken,
     );
 
@@ -1363,7 +1380,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/vehicles/$vehicleId/config',
+      AdminApiPaths.vehicleConfig(vehicleId),
       data: payload.toJson(),
       cancelToken: cancelToken,
     );
@@ -1386,7 +1403,7 @@ class SuperadminRepository {
     if (limit != null) qp['limit'] = limit;
 
     final res = await api.get(
-      '/superadmin/support/tickets',
+      SuperadminApiPaths.supportTickets,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -1430,7 +1447,7 @@ class SuperadminRepository {
       payload['adminId'] = adminId.trim();
     }
     final res = await api.post(
-      '/superadmin/support/tickets',
+      SuperadminApiPaths.supportTickets,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -1446,11 +1463,11 @@ class SuperadminRepository {
   Future<Result<List<Map<String, dynamic>>>> getRoles({
     CancelToken? cancelToken,
   }) async {
-    const endpoints = <String>[
-      '/superadmin/roles',
-      '/superadmin/rolelist',
-      '/admin/roles',
-      '/admin/rolelist',
+    final endpoints = <String>[
+      ApiPaths.superadminRoles,
+      ApiPaths.superadminRoleList,
+      ApiPaths.adminRoles,
+      ApiPaths.adminRoleList,
     ];
 
     for (final endpoint in endpoints) {
@@ -1498,7 +1515,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/support/tickets/$ticketId',
+      SuperadminApiPaths.supportTicketDetails(ticketId),
       cancelToken: cancelToken,
     );
 
@@ -1520,7 +1537,7 @@ class SuperadminRepository {
     PickedFilePayload? attachment,
     CancelToken? cancelToken,
   }) async {
-    final endpoint = '/superadmin/support/tickets/$ticketId/messages';
+    final endpoint = ApiPaths.superadminSupportTicketMessages(ticketId);
     Result<dynamic> res;
 
     if (attachment != null) {
@@ -1563,7 +1580,7 @@ class SuperadminRepository {
     String status, {
     CancelToken? cancelToken,
   }) async {
-    final endpoint = '/superadmin/support/tickets/$ticketId/status';
+    final endpoint = ApiPaths.superadminSupportTicketStatus(ticketId);
     final payload = <String, dynamic>{'status': status};
 
     // Prefer PATCH (matches admin endpoints). Fallback to POST for legacy.
@@ -1598,7 +1615,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/dashboard/adoptiongraph',
+      SuperadminApiPaths.dashboardAdoptionGraph,
       cancelToken: cancelToken,
     );
 
@@ -1613,7 +1630,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/dashboard/recentvehicles',
+      SuperadminApiPaths.dashboardRecentVehicles,
       cancelToken: cancelToken,
     );
 
@@ -1642,7 +1659,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/dashboard/totalcounts',
+      SuperadminApiPaths.dashboardTotalCounts,
       cancelToken: cancelToken,
     );
 
@@ -1656,7 +1673,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/dashboard/recentusers',
+      SuperadminApiPaths.dashboardRecentUsers,
       cancelToken: cancelToken,
     );
 
@@ -1701,7 +1718,7 @@ class SuperadminRepository {
     if (q != null && q.isNotEmpty) qp['q'] = q;
 
     final res = await api.get(
-      '/superadmin/transactions',
+      SuperadminApiPaths.transactions,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -1737,7 +1754,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/adminlogin/$adminId',
+      SuperadminApiPaths.adminLogin(adminId),
       cancelToken: cancelToken,
     );
 
@@ -1764,7 +1781,7 @@ class SuperadminRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/superadmin/transactions/manual',
+      SuperadminApiPaths.transactionsManual,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -1776,96 +1793,68 @@ class SuperadminRepository {
   }
 
   List? _extractList(Object? data, {List<String> extraKeys = const []}) {
-    if (data is List) return data;
-
-    final keys = <String>[
-      'data',
-      'items',
-      'result',
-      'results',
-      ...extraKeys,
-      'vehicles',
-    ];
-
-    List? walk(Object? node, int depth) {
-      if (depth > 5) return null;
-      if (node is List) return node;
-      if (node is! Map) return null;
-
-      final m = _coerceMap(node);
-      for (final key in keys) {
-        final value = m[key];
-        if (value is List) return value;
-      }
-
-      for (final value in m.values) {
-        if (value is Map || value is List) {
-          final found = walk(value, depth + 1);
-          if (found != null) return found;
-        }
-      }
-      return null;
-    }
-
-    return walk(data, 0);
+    return ApiEnvelope.list(
+      data,
+      listKeys: <String>[
+        'data',
+        'items',
+        'result',
+        'results',
+        ...extraKeys,
+        'vehicles',
+      ],
+      maxDepth: 5,
+    );
   }
 
   Map<String, dynamic> _coerceMap(Object? data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data.cast());
-    return const <String, dynamic>{};
+    return ApiEnvelope.asMap(data);
   }
 
   Map<String, dynamic> _extractMap(Object? data) {
-    final m = _coerceMap(data);
-    final candidates = [m['data'], m['item'], m['result']];
-    for (final c in candidates) {
-      if (c is Map<String, dynamic>) return c;
-      if (c is Map) return Map<String, dynamic>.from(c.cast());
-    }
-    return m;
+    return ApiEnvelope.payload(
+      data,
+      mapKeys: const [
+        'data',
+        'item',
+        'result',
+        'ticket',
+        'payload',
+        'response',
+        'config',
+        'settings',
+      ],
+    );
   }
 
   Map<String, dynamic> _extractMapFromNested(Object? data) {
-    final m = _coerceMap(data);
-    final candidates = [
-      m['data'],
-      m['item'],
-      m['result'],
-      m['items'],
-      m['config'],
-      m['settings'],
-    ];
-    for (final c in candidates) {
-      if (c is Map<String, dynamic>) return c;
-      if (c is Map) return Map<String, dynamic>.from(c.cast());
-    }
-    return m;
+    return ApiEnvelope.nestedMap(
+      data,
+      mapKeys: const [
+        'data',
+        'item',
+        'result',
+        'items',
+        'config',
+        'settings',
+        'payload',
+      ],
+      maxDepth: 5,
+    );
   }
 
   List<Map<String, dynamic>>? _toMapList(Object? value) {
-    if (value is List) {
-      return value
-          .whereType<Object>()
-          .map((e) => e is Map ? _coerceMap(e) : const <String, dynamic>{})
-          .where((m) => m.isNotEmpty)
-          .toList();
-    }
-    return null;
+    final list = ApiEnvelope.mapList(value, maxDepth: 3);
+    if (list.isEmpty) return null;
+    return list;
   }
 
   String _string(Object? value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    return value.toString();
+    return ApiEnvelope.text(value);
   }
 
   String _firstNonEmpty(List<Object?> values) {
-    for (final value in values) {
-      final text = _string(value).trim();
-      if (text.isNotEmpty) return text;
-    }
-    return '';
+    return ApiEnvelope.firstNonEmpty(values);
   }
 
   Map<String, dynamic> _deepMergeMaps(

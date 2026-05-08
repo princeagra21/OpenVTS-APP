@@ -5,8 +5,10 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -49,12 +51,12 @@ class _MoreScreenState extends State<MoreScreen> {
     if (superToken != null && superToken.isNotEmpty) {
       await storage.writeAccessToken(superToken);
       if (!mounted) return;
-      context.go('/superadmin/home');
+      context.go(AppRoutes.superadminHome);
       return;
     }
     await storage.clear();
     if (!mounted) return;
-    context.go('/login');
+    context.go(AppRoutes.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -90,7 +92,7 @@ class _MoreScreenState extends State<MoreScreen> {
           padding: const EdgeInsets.only(left: 4),
           child: Text(
             category.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.6,
@@ -161,19 +163,19 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'User',
           'subtitle': 'Manage users',
           'icon': CupertinoIcons.person,
-          'route': '/admin/users',
+          'route': AppRoutes.adminUsers,
         },
         {
           'title': 'Vehicle',
           'subtitle': 'Fleet vehicles',
           'icon': CupertinoIcons.bus,
-          'route': '/admin/vehicles',
+          'route': AppRoutes.adminVehicles,
         },
         {
           'title': 'Drivers',
           'subtitle': 'Driver profiles',
           'icon': CupertinoIcons.person_crop_square,
-          'route': '/admin/drivers',
+          'route': AppRoutes.adminDrivers,
         },
       ],
       'Asset': [
@@ -181,13 +183,13 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Devices',
           'subtitle': 'Tracking hardware',
           'icon': CupertinoIcons.device_phone_portrait,
-          'route': '/admin/devices',
+          'route': AppRoutes.adminDevices,
         },
         {
           'title': 'Sim Card',
           'subtitle': 'Network connectivity',
           'icon': Icons.sim_card_outlined,
-          'route': '/admin/sims',
+          'route': AppRoutes.adminSims,
         },
       ],
       'Finance': [
@@ -195,7 +197,7 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Transaction History',
           'subtitle': 'All transactions',
           'icon': CupertinoIcons.doc_text,
-          'route': '/admin/transactions',
+          'route': AppRoutes.adminTransactions,
         },
       ],
       'Others': [
@@ -203,19 +205,19 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Support',
           'subtitle': 'Help center',
           'icon': CupertinoIcons.question_circle,
-          'route': '/admin/support',
+          'route': AppRoutes.adminSupport,
         },
         {
           'title': 'Calendar',
           'subtitle': 'Schedules',
           'icon': CupertinoIcons.calendar,
-          'route': '/admin/calendar',
+          'route': AppRoutes.adminCalendar,
         },
         {
           'title': 'Logs',
           'subtitle': 'System activity',
           'icon': CupertinoIcons.list_bullet,
-          'route': '/admin/logs',
+          'route': AppRoutes.adminLogs,
         },
       ],
     };
@@ -299,14 +301,14 @@ class _MoreMenuCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: colorScheme.shadow.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: OpenVtsColors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => context.push(route),
@@ -340,7 +342,7 @@ class _MoreMenuCard extends StatelessWidget {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     1,
@@ -353,7 +355,7 @@ class _MoreMenuCard extends StatelessWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
@@ -393,7 +395,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
@@ -405,7 +407,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),
@@ -455,7 +457,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
           Expanded(
             child: Text(
               'Log out?',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
               ),
@@ -465,7 +467,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
       ),
       content: Text(
         'You will need to log in again to continue using the Admin dashboard.',
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 14,
           height: 1.5,
           color: colorScheme.onSurface.withOpacity(0.7),
@@ -488,7 +490,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 ),
                 child: Text(
                   'Cancel',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -509,7 +511,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 ),
                 child: Text(
                   'Log out',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                  style: AppFonts.inter(fontWeight: FontWeight.w700),
                 ),
               ),
             ),

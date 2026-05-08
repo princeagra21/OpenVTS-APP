@@ -52,52 +52,53 @@ import 'package:open_vts/modules/admin/screens/inventory/inventory_screen.dart';
 import 'package:open_vts/modules/admin/screens/inventory/inventory_add_screen.dart';
 import 'package:open_vts/modules/admin/screens/inventory/inventory_device_edit_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 final List<GoRoute> adminRoutes = [
-  GoRoute(path: '/admin/home', builder: (_, __) => const HomeScreen()),
-  GoRoute(path: '/admin', builder: (_, __) => const HomeScreen()),
-  GoRoute(path: '/admin/dashboard', builder: (_, __) => const DashboardScreen()),
-  GoRoute(path: '/admin/map', builder: (_, __) => const MapScreen()),
-  GoRoute(path: '/admin/more', builder: (_, __) => const MoreScreen()),
-  GoRoute(path: '/admin/users', builder: (_, __) => const UserScreen()),
+  GoRoute(path: AppRoutes.adminHome, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutes.admin, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutes.adminDashboard, builder: (_, __) => const DashboardScreen()),
+  GoRoute(path: AppRoutes.adminMap, builder: (_, __) => const MapScreen()),
+  GoRoute(path: AppRoutes.adminMore, builder: (_, __) => const MoreScreen()),
+  GoRoute(path: AppRoutes.adminUsers, builder: (_, __) => const UserScreen()),
   GoRoute(
-    path: '/admin/users/details/:id',
+    path: AppRoutes.adminUsersDetailsPattern,
     builder: (context, state) =>
         UserDetailsScreen(id: state.pathParameters['id']!),
   ),
-  GoRoute(path: '/admin/vehicles', builder: (_, __) => const VehicleScreen()),
+  GoRoute(path: AppRoutes.adminVehicles, builder: (_, __) => const VehicleScreen()),
   GoRoute(
-    path: '/admin/vehicles/details/:id',
+    path: AppRoutes.adminVehiclesDetailsPattern,
     builder: (context, state) =>
         VehicleDetailsScreen(vehicleId: state.pathParameters['id']!),
   ),
   GoRoute(
-    path: '/admin/vehicles/add',
+    path: AppRoutes.adminVehiclesAdd,
     builder: (_, __) => const AddVehicleScreen(),
   ),
-  GoRoute(path: '/admin/drivers', builder: (_, __) => const DriverScreen()),
+  GoRoute(path: AppRoutes.adminDrivers, builder: (_, __) => const DriverScreen()),
   GoRoute(
-    path: '/admin/drivers/details/:id',
+    path: AppRoutes.adminDriversDetailsPattern,
     builder: (context, state) =>
         AdminDriverDetailsScreen(id: state.pathParameters['id']!),
   ),
   GoRoute(
-    path: '/admin/drivers/add',
+    path: AppRoutes.adminDriversAdd,
     builder: (_, __) => const AddDriverScreen(),
   ),
-  GoRoute(path: '/admin/teams', builder: (_, __) => const TeamScreen()),
+  GoRoute(path: AppRoutes.adminTeams, builder: (_, __) => const TeamScreen()),
   GoRoute(
-    path: '/admin/teams/details/:id',
+    path: AppRoutes.adminTeamsDetailsPattern,
     builder: (context, state) =>
         TeamDetailsScreen(id: state.pathParameters['id']!),
   ),
-  GoRoute(path: '/admin/inventory', builder: (_, __) => const InventoryScreen()),
+  GoRoute(path: AppRoutes.adminInventory, builder: (_, __) => const InventoryScreen()),
   GoRoute(
-    path: '/admin/inventory/add',
+    path: AppRoutes.adminInventoryAdd,
     builder: (_, __) => const InventoryAddScreen(),
   ),
   GoRoute(
-    path: '/admin/inventory/device/:id',
+    path: AppRoutes.adminInventoryDevicePattern,
     builder: (context, state) => InventoryDeviceEditScreen(
       deviceId: state.pathParameters['id']!,
       initialRaw: state.extra is Map<String, dynamic>
@@ -105,70 +106,70 @@ final List<GoRoute> adminRoutes = [
           : null,
     ),
   ),
-  GoRoute(path: '/admin/teams/add', builder: (_, __) => const AddTeamScreen()),
-  GoRoute(path: '/admin/devices', builder: (_, __) => const DeviceScreen()),
+  GoRoute(path: AppRoutes.adminTeamsAdd, builder: (_, __) => const AddTeamScreen()),
+  GoRoute(path: AppRoutes.adminDevices, builder: (_, __) => const DeviceScreen()),
   GoRoute(
-    path: '/admin/devices/add',
+    path: AppRoutes.adminDevicesAdd,
     builder: (_, __) => const AddDeviceScreen(),
   ),
-  GoRoute(path: '/admin/sims', builder: (_, __) => const SimScreen()),
-  GoRoute(path: '/admin/sims/add', builder: (_, __) => const AddSimScreen()),
-  GoRoute(path: '/admin/payments', builder: (_, __) => const PaymentScreen()),
+  GoRoute(path: AppRoutes.adminSims, builder: (_, __) => const SimScreen()),
+  GoRoute(path: AppRoutes.adminSimsAdd, builder: (_, __) => const AddSimScreen()),
+  GoRoute(path: AppRoutes.adminPayments, builder: (_, __) => const PaymentScreen()),
   GoRoute(
-    path: '/admin/payments/add',
+    path: AppRoutes.adminPaymentsAdd,
     builder: (_, __) => const AddPaymentScreen(),
   ),
   GoRoute(
-    path: '/admin/transactions',
+    path: AppRoutes.adminTransactions,
     builder: (_, __) => const TransactionScreen(),
   ),
   GoRoute(
-    path: '/admin/calendar',
+    path: AppRoutes.adminCalendar,
     builder: (_, __) => const EventCalendarScreen(),
   ),
-  GoRoute(path: '/admin/logs', builder: (_, __) => const LogsScreen()),
-  GoRoute(path: '/admin/plans', builder: (_, __) => const PlansScreen()),
-  GoRoute(path: '/admin/plans/add', builder: (_, __) => const AddPlanScreen()),
-  GoRoute(path: '/admin/settings', builder: (_, __) => const SettingsScreen()),
-  GoRoute(path: '/admin/roles', builder: (_, __) => const RolesScreen()),
+  GoRoute(path: AppRoutes.adminLogs, builder: (_, __) => const LogsScreen()),
+  GoRoute(path: AppRoutes.adminPlans, builder: (_, __) => const PlansScreen()),
+  GoRoute(path: AppRoutes.adminPlansAdd, builder: (_, __) => const AddPlanScreen()),
+  GoRoute(path: AppRoutes.adminSettings, builder: (_, __) => const SettingsScreen()),
+  GoRoute(path: AppRoutes.adminRoles, builder: (_, __) => const RolesScreen()),
   GoRoute(
-    path: '/admin/white-label',
+    path: AppRoutes.adminWhiteLabel,
     builder: (_, __) => const BrandingSettingsScreen(),
   ),
-  GoRoute(path: '/admin/profile', builder: (_, __) => const ProfileScreen()),
-  GoRoute(path: '/admin/branding', builder: (_, __) => const BrandingScreen()),
+  GoRoute(path: AppRoutes.adminProfile, builder: (_, __) => const ProfileScreen()),
+  GoRoute(path: AppRoutes.adminBranding, builder: (_, __) => const BrandingScreen()),
   GoRoute(
-    path: '/admin/smtp-settings',
+    path: AppRoutes.adminSmtpSettings,
     builder: (_, __) => const SmtpConfigSettingsScreen(),
   ),
   GoRoute(
-    path: '/admin/localization',
+    path: AppRoutes.adminLocalization,
     builder: (_, __) => const LocalizationSettingsScreen(),
   ),
   GoRoute(
-    path: '/admin/finance-dashboard',
+    path: AppRoutes.adminFinanceDashboard,
     builder: (_, __) => const AnalyticsScreen(),
   ),
   GoRoute(
-    path: '/admin/application-settings',
+    path: AppRoutes.adminApplicationSettings,
     builder: (_, __) => const ApplicationSettingsScreen(),
   ),
   GoRoute(
-    path: '/admin/notifications',
+    path: AppRoutes.adminNotifications,
     builder: (_, __) => const AdminNotificationsScreen(),
   ),
   GoRoute(
-    path: '/admin/notify-user',
+    path: AppRoutes.adminNotifyUser,
     builder: (_, __) => const NotifyUsersScreen(),
   ),
   GoRoute(
-    path: '/admin/notification-preferences',
+    path: AppRoutes.adminNotificationPreferences,
     builder: (_, __) => const NotificationPreferencesScreen(),
   ),
-  GoRoute(path: '/admin/users/add', builder: (_, __) => const AddUserScreen()),
+  GoRoute(path: AppRoutes.adminUsersAdd, builder: (_, __) => const AddUserScreen()),
 
   GoRoute(
-    path: '/admin/transactions/details/:id',
+    path: AppRoutes.adminTransactionsDetailsPattern,
     builder: (context, state) => TransactionDetailsScreen(
       transactionId: state.pathParameters['id']!,
       initialRaw: state.extra is Map<String, dynamic>
@@ -176,14 +177,14 @@ final List<GoRoute> adminRoutes = [
           : null,
     ),
   ),
-  GoRoute(path: '/admin/renewals', builder: (_, __) => const RenewalsScreen()),
+  GoRoute(path: AppRoutes.adminRenewals, builder: (_, __) => const RenewalsScreen()),
   GoRoute(
-    path: '/admin/renewals/add',
+    path: AppRoutes.adminRenewalsAdd,
     builder: (_, __) => const AddRenewalScreen(),
   ),
-  GoRoute(path: '/admin/support', builder: (_, __) => const SupportScreen()),
+  GoRoute(path: AppRoutes.adminSupport, builder: (_, __) => const SupportScreen()),
   GoRoute(
-    path: '/admin/renewals/renew',
+    path: AppRoutes.adminRenewalsRenew,
     builder: (context, state) {
       final selectedDevices =
           (state.extra as List<Map<String, dynamic>>?) ??
@@ -194,7 +195,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/plans/edit/:id',
+    path: AppRoutes.adminPlansEditPattern,
     builder: (context, state) {
       final plan = state.extra as Map<String, dynamic>;
       return EditPlanScreen(plan: plan);
@@ -202,7 +203,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/renewals/collect',
+    path: AppRoutes.adminRenewalsCollect,
     builder: (context, state) {
       final selectedDevices =
           (state.extra as List<Map<String, dynamic>>?) ?? [];
@@ -211,7 +212,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/renewals/extend',
+    path: AppRoutes.adminRenewalsExtend,
     builder: (context, state) {
       final selectedDevices =
           (state.extra as List<Map<String, dynamic>>?) ?? [];
@@ -220,7 +221,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/renewals/suspend',
+    path: AppRoutes.adminRenewalsSuspend,
     builder: (context, state) {
       final selectedDevices =
           (state.extra as List<Map<String, dynamic>>?) ?? [];
@@ -229,7 +230,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/renewals/reminder',
+    path: AppRoutes.adminRenewalsReminder,
     builder: (context, state) {
       final selectedDevices =
           (state.extra as List<Map<String, dynamic>>?) ?? [];
@@ -238,7 +239,7 @@ final List<GoRoute> adminRoutes = [
   ),
 
   GoRoute(
-    path: '/admin/all-activities',
+    path: AppRoutes.adminAllActivities,
     builder: (context, state) {
       final extra = state.extra as Map<String, dynamic>? ?? {};
       final type =

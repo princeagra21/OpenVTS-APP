@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_log_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminLogsRepository {
   final ApiClient api;
@@ -41,17 +42,17 @@ class AdminLogsRepository {
 
     final responses = await Future.wait([
       api.get(
-        '/admin/logs/options',
+        ApiPaths.path('/admin/logs/options'),
         queryParameters: optionsQuery.isEmpty ? null : optionsQuery,
         cancelToken: cancelToken,
       ),
       api.get(
-        '/admin/logs/activity',
+        ApiPaths.path('/admin/logs/activity'),
         queryParameters: activityQuery.isEmpty ? null : activityQuery,
         cancelToken: cancelToken,
       ),
       api.get(
-        '/admin/logs/events',
+        ApiPaths.path('/admin/logs/events'),
         queryParameters: eventsQuery.isEmpty ? null : eventsQuery,
         cancelToken: cancelToken,
       ),

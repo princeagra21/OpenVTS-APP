@@ -2,14 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
+/// Infrastructure is injected by AppContainer.
+/// Do not instantiate ApiClient, AppConfig, or TokenStorage inside this repository.
 class UserProfileRepository {
   final ApiClient api;
 
   const UserProfileRepository({required this.api});
 
   Future<Result<AdminProfile>> getMyProfile({CancelToken? cancelToken}) async {
-    final res = await api.get('/user/profile', cancelToken: cancelToken);
+    final res = await api.get(
+      ApiPaths.path('/user/profile'),
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (data) => Result.ok(AdminProfile(_asMap(data))),
       failure: (err) => Result.fail(err),
@@ -21,7 +27,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/user/profile',
+      ApiPaths.path('/user/profile'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -46,7 +52,7 @@ class UserProfileRepository {
     };
 
     final res = await api.patch(
-      '/user/updatepassword',
+      ApiPaths.path('/user/updatepassword'),
       data: body,
       cancelToken: cancelToken,
     );
@@ -58,7 +64,7 @@ class UserProfileRepository {
 
   Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      '/user/profile/verify/email/request',
+      ApiPaths.path('/user/profile/verify/email/request'),
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
@@ -73,7 +79,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/profile/verify/email/confirm',
+      ApiPaths.path('/user/profile/verify/email/confirm'),
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -85,7 +91,7 @@ class UserProfileRepository {
 
   Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      '/user/profile/verify/whatsapp/request',
+      ApiPaths.path('/user/profile/verify/whatsapp/request'),
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
@@ -100,7 +106,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/profile/verify/whatsapp/confirm',
+      ApiPaths.path('/user/profile/verify/whatsapp/confirm'),
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );

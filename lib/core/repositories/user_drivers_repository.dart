@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_driver_list_item.dart';
 import 'package:open_vts/core/models/user_driver_details.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserDriversRepository {
   final ApiClient api;
@@ -12,7 +13,7 @@ class UserDriversRepository {
   Future<Result<List<AdminDriverListItem>>> getDrivers({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/drivers', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/drivers'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -47,7 +48,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/drivers',
+      ApiPaths.path('/user/drivers'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -66,7 +67,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/drivers/$driverId',
+      ApiPaths.path('/user/drivers/$driverId'),
       cancelToken: cancelToken,
     );
 
@@ -82,7 +83,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/user/drivers/$driverId',
+      ApiPaths.path('/user/drivers/$driverId'),
       data: <String, dynamic>{'driverId': driverId},
       cancelToken: cancelToken,
     );
@@ -99,7 +100,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/user/drivers/$driverId',
+      ApiPaths.path('/user/drivers/$driverId'),
       data: payload,
       cancelToken: cancelToken,
     );

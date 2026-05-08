@@ -1,8 +1,9 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/add_new_admin_screen.dart
 import 'package:country_picker/country_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -70,7 +71,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
       filled: true,
       fillColor: colorScheme.surface.withOpacity(0.05), // Subtle fill for depth
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: fontSize,
         height: 20 / 14,
@@ -100,7 +101,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   // Reusable label style
   TextStyle _labelStyle(BuildContext context, {required double fontSize}) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GoogleFonts.roboto(
+    return AppFonts.roboto(
       fontSize: fontSize,
       height: 16 / 12,
       fontWeight: FontWeight.w500,
@@ -133,7 +134,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                 children: [
                   Text(
                     "Create Admin",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize,
                       height: 20 / 16,
                       fontWeight: FontWeight.w700,
@@ -162,7 +163,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
               const SizedBox(height: 8),
               Text(
                 "Fill the details and click create.",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: helperSize,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -187,7 +188,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -223,7 +224,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           }
                         },
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -317,7 +318,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     "+${_selectedCountry?.phoneCode ?? '91'}",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: inputSize,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w500,
@@ -344,7 +345,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: inputSize,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w500,
@@ -379,7 +380,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _usernameController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -415,7 +416,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           }
                         },
                         obscureText: !_showPassword,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -459,7 +460,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _companyController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -489,7 +490,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _addressController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -524,7 +525,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           TextField(
                             controller: _countryController,
                             readOnly: true,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: inputSize,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -571,7 +572,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           TextField(
                             controller: _stateController,
                             readOnly: true,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: inputSize,
                               height: 20 / 14,
                               fontWeight: FontWeight.w500,
@@ -624,7 +625,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 TextField(
                                   controller: _cityController,
                                   readOnly: true,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -676,7 +677,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 TextField(
                                   controller: _pincodeController,
                                   keyboardType: TextInputType.number,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: inputSize,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w500,
@@ -716,7 +717,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                       TextField(
                         controller: _creditsController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: inputSize,
                           height: 20 / 14,
                           fontWeight: FontWeight.w500,
@@ -766,7 +767,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: inputSize,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -792,7 +793,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                     ),
                     child: Text(
                       _submitting ? "Creating..." : "Create Admin",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: inputSize,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -837,10 +838,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
     _superadminRepo ??= SuperadminRepository(api: _api!);
   }
@@ -976,10 +974,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _countriesToken = token;
     setState(() => _loadingCountries = true);
 
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCountries(cancelToken: token);
@@ -1021,10 +1016,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _statesToken = token;
     setState(() => _loadingStates = true);
 
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getStates(countryCode, cancelToken: token);
@@ -1048,10 +1040,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _citiesToken = token;
     setState(() => _loadingCities = true);
 
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCities(
@@ -1113,7 +1102,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1179,7 +1168,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1188,7 +1177,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),

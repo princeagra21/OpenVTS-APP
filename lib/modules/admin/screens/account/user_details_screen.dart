@@ -22,6 +22,8 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final String id;
@@ -106,10 +108,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
 
     _repo ??= AdminUsersRepository(api: _api!);
 
@@ -184,7 +183,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF151515) : Colors.white,
+        color: isDark ? OpenVtsColors.panelDarkAlt : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark
@@ -238,7 +237,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             ? theme.colorScheme.primary
                             : isDark
                                 ? Colors.white.withOpacity(0.06)
-                                : const Color(0xFFF4F5F7),
+                                : OpenVtsColors.panelLightAlt,
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
                           color: selected
@@ -509,8 +508,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(

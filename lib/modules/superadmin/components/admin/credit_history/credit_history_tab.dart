@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/credit_history_tab.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -12,7 +14,6 @@ import 'package:open_vts/modules/superadmin/components/admin/credit_history/cred
 import 'package:open_vts/modules/superadmin/components/admin/credit_history/email_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class CreditHistoryTab extends StatefulWidget {
   final String adminId;
@@ -75,10 +76,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getCreditLogs(
@@ -191,7 +189,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                   children: [
                     TextSpan(
                       text: "History",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize + 2,
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
@@ -218,7 +216,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                       _startDate == null || _endDate == null
                           ? "Select Date Range"
                           : "${_startDate!.toIso8601String().substring(0, 10)} - ${_endDate!.toIso8601String().substring(0, 10)}",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize,
                         color: colorScheme.onSurface,
                       ),
@@ -262,7 +260,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                     const SizedBox(width: 6),
                     Text(
                       "Download",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize,
                         color: colorScheme.onSurface,
                       ),
@@ -293,7 +291,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                     const SizedBox(width: 6),
                     Text(
                       "Email",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize,
                         color: colorScheme.onSurface,
                       ),
@@ -326,7 +324,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                     const SizedBox(width: 6),
                     Text(
                       "Add/Deduct",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fontSize,
                         color: colorScheme.onSurface,
                       ),
@@ -363,7 +361,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                 children: [
                   Text(
                     'No logs found',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: descFontSize,
                       color: colorScheme.onSurface.withOpacity(0.8),
                       fontWeight: FontWeight.w700,
@@ -372,7 +370,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                   const SizedBox(height: 6),
                   Text(
                     'Try adjusting search.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: (descFontSize - 1).clamp(12, 14).toDouble(),
                       color: colorScheme.onSurface.withOpacity(0.72),
                     ),
@@ -388,7 +386,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                   Expanded(
                     child: Text(
                       "Couldn't load credit history.",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: descFontSize,
                         color: colorScheme.onSurface.withOpacity(0.75),
                       ),
@@ -489,7 +487,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                 children: [
                   Text(
                     description,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: descFontSize,
                       fontWeight: FontWeight.w500,
                       color: colorScheme.onSurface,
@@ -498,7 +496,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
                   const SizedBox(height: 4),
                   Text(
                     date,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 13,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -510,7 +508,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
             // Amount
             Text(
               amount,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: color,

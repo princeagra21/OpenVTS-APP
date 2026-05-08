@@ -4,6 +4,7 @@ import 'package:open_vts/core/models/device_type_option.dart';
 import 'package:open_vts/core/models/sim_option.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminDevicesRepository {
   final ApiClient api;
@@ -28,7 +29,7 @@ class AdminDevicesRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/devices',
+      ApiPaths.path('/admin/devices'),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -58,7 +59,7 @@ class AdminDevicesRepository {
   Future<Result<List<DeviceTypeOption>>> getDeviceTypes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/devicestypes', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/devicestypes'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -83,7 +84,7 @@ class AdminDevicesRepository {
   }
 
   Future<Result<List<SimOption>>> getSims({CancelToken? cancelToken}) async {
-    final res = await api.get('/admin/simcards', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/simcards'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -110,7 +111,7 @@ class AdminDevicesRepository {
   Future<Result<List<SimOption>>> getQuickSimCards({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/quicksimcards', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/quicksimcards'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -138,7 +139,7 @@ class AdminDevicesRepository {
     String deviceId, {
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/devices/$deviceId', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/devices/$deviceId'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -199,7 +200,7 @@ class AdminDevicesRepository {
     }
 
     final res = await api.post(
-      '/admin/devices',
+      ApiPaths.path('/admin/devices'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -239,7 +240,7 @@ class AdminDevicesRepository {
     }
 
     final res = await api.post(
-      '/admin/deviceandsim',
+      ApiPaths.path('/admin/deviceandsim'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -273,7 +274,7 @@ class AdminDevicesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/devices/$deviceId',
+      ApiPaths.path('/admin/devices/$deviceId'),
       data: payload,
       cancelToken: cancelToken,
     );

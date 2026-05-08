@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/app_preferences.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AppPreferencesRepository {
   final ApiClient api;
@@ -16,7 +17,7 @@ class AppPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/superadmin/softwareconfig',
+      ApiPaths.path('/superadmin/softwareconfig'),
       cancelToken: cancelToken,
     );
 
@@ -31,7 +32,7 @@ class AppPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/superadmin/softwareconfig',
+      ApiPaths.path('/superadmin/softwareconfig'),
       data: payload,
       cancelToken: cancelToken,
     );

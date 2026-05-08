@@ -20,6 +20,8 @@ import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import '../../layout/app_layout.dart';
 
@@ -130,10 +132,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   }
 
   UserRoutesRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserRoutesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -988,7 +987,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   title: 'Route Optimization',
                   leadingIcon: Icons.route_outlined,
                   borderRadius: 0,
-                  onClose: () => context.go('/user/home'),
+                  onClose: () => context.go(AppRoutes.userHome),
                 ),
               ),
               Positioned(

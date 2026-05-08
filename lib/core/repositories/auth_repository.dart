@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_envelope.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_paths.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
+/// Infrastructure is injected by AppContainer.
+/// Do not instantiate ApiClient, AppConfig, or TokenStorage inside this repository.
 class AuthRepository {
   final ApiClient api;
   final TokenStorageBase tokenStorage;
@@ -36,7 +39,7 @@ class AuthRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.authLogin,
+      AuthApiPaths.login,
       data: {'identifier': identifier, 'password': password},
       cancelToken: cancelToken,
     );
@@ -89,7 +92,7 @@ class AuthRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.authForgotPassword,
+      AuthApiPaths.forgotPassword,
       data: {'identifier': identifier.trim()},
       cancelToken: cancelToken,
     );
@@ -108,33 +111,33 @@ class AuthRepository {
   }
 
   static String? _extractLogicalLoginFailureMessage(Object? data) {
-    if (data is! Map) return null;
+    final root = ApiEnvelope.asMap(data);
+    if (root.isEmpty) return null;
 
-    final nestedData = data['data'];
-    final nested = nestedData is Map ? nestedData : null;
+    final nested = ApiEnvelope.nestedMap(root);
 
-    final actionValue = nested?['action'] ?? data['action'];
-    final action = _coerceBool(actionValue);
+    final actionValue = nested['action'] ?? root['action'];
+    final action = ApiEnvelope.boolValue(actionValue);
     if (action == false) {
-      return _firstNonEmpty([
+      return ApiEnvelope.firstNonEmpty([
         _extractMessageFromMap(nested),
-        _extractMessageFromMap(data),
+        _extractMessageFromMap(root),
         'Invalid credentials.',
       ]);
     }
 
     final successValue =
-        nested?['success'] ?? data['success'] ?? nested?['ok'] ?? data['ok'];
-    final success = _coerceBool(successValue);
+        nested['success'] ?? root['success'] ?? nested['ok'] ?? root['ok'];
+    final success = ApiEnvelope.boolValue(successValue);
     if (success == false) {
-      return _firstNonEmpty([
+      return ApiEnvelope.firstNonEmpty([
         _extractMessageFromMap(nested),
-        _extractMessageFromMap(data),
+        _extractMessageFromMap(root),
         'Login failed.',
       ]);
     }
 
-    final statusRaw = (nested?['status'] ?? data['status'])?.toString().trim();
+    final statusRaw = (nested['status'] ?? root['status'])?.toString().trim();
     if (statusRaw != null && statusRaw.isNotEmpty) {
       final normalized = statusRaw.toLowerCase();
       if (const {
@@ -143,9 +146,9 @@ class AuthRepository {
         'error',
         'unauthorized',
       }.contains(normalized)) {
-        return _firstNonEmpty([
+        return ApiEnvelope.firstNonEmpty([
           _extractMessageFromMap(nested),
-          _extractMessageFromMap(data),
+          _extractMessageFromMap(root),
           'Login failed.',
         ]);
       }
@@ -156,67 +159,15 @@ class AuthRepository {
 
   static String? _extractMessageFromMap(Map? map) {
     if (map == null) return null;
-
-    final candidates = [
-      map['message'],
-      map['error'],
-      map['msg'],
-      map['detail'],
-      map['reason'],
-      (map['data'] is Map) ? (map['data'] as Map)['message'] : null,
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate is String && candidate.trim().isNotEmpty) {
-        return candidate.trim();
-      }
-    }
-
-    return null;
+    final message = ApiEnvelope.message(ApiEnvelope.asMap(map));
+    if (message == null || message.trim().isEmpty) return null;
+    return message.trim();
   }
 
   static String? _extractForgotPasswordMessage(Object? data) {
-    if (data is Map) {
-      final nestedData = data['data'];
-      if (nestedData is Map) {
-        final nestedMessage = nestedData['message'];
-        if (nestedMessage is String && nestedMessage.trim().isNotEmpty) {
-          return nestedMessage.trim();
-        }
-      }
-
-      final directCandidates = [
-        data['message'],
-        data['msg'],
-        data['detail'],
-      ];
-      for (final candidate in directCandidates) {
-        if (candidate is String && candidate.trim().isNotEmpty) {
-          return candidate.trim();
-        }
-      }
-    }
-    return null;
-  }
-
-  static String? _firstNonEmpty(List<String?> candidates) {
-    for (final candidate in candidates) {
-      final value = candidate?.trim();
-      if (value != null && value.isNotEmpty) return value;
-    }
-    return null;
-  }
-
-  static bool? _coerceBool(Object? value) {
-    if (value == null) return null;
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-
-    final text = value.toString().trim().toLowerCase();
-    if (text.isEmpty) return null;
-    if (const {'true', '1', 'yes', 'y'}.contains(text)) return true;
-    if (const {'false', '0', 'no', 'n'}.contains(text)) return false;
-    return null;
+    final message = ApiEnvelope.message(data);
+    if (message == null || message.trim().isEmpty) return null;
+    return message.trim();
   }
 
   static String? extractToken(Object? data) {

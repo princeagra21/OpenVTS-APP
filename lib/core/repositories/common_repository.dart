@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class CommonRepository {
   final ApiClient api;
@@ -10,7 +11,7 @@ class CommonRepository {
   Future<Result<List<ReferenceOption>>> getLanguages({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/languages', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/languages'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(
@@ -27,7 +28,7 @@ class CommonRepository {
   Future<Result<List<ReferenceOption>>> getDateFormats({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/dateformats', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/dateformats'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(
@@ -44,7 +45,7 @@ class CommonRepository {
   Future<Result<List<TimezoneOption>>> getTimezones({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/timezones', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/timezones'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -58,7 +59,7 @@ class CommonRepository {
   Future<Result<List<CountryOption>>> getCountries({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/countries', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/countries'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -93,7 +94,7 @@ class CommonRepository {
   Future<Result<List<MobilePrefixOption>>> getMobilePrefixes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/mobileprefix', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/mobileprefix'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -132,7 +133,7 @@ class CommonRepository {
     final code = countryCode.trim();
     if (code.isEmpty) return Result.ok(const []);
 
-    final res = await api.get('/states/$code', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/states/$code'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(
@@ -166,7 +167,7 @@ class CommonRepository {
     final s = stateCode.trim();
     if (c.isEmpty || s.isEmpty) return Result.ok(const []);
 
-    final res = await api.get('/cities/$c/$s', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/cities/$c/$s'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(
@@ -193,7 +194,7 @@ class CommonRepository {
   Future<Result<List<ReferenceOption>>> getVehicleTypes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/vehicletypes', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/vehicletypes'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(

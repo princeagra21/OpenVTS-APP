@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/vehicle/send_commands_tab.dart
 import 'dart:convert';
 
@@ -14,7 +16,6 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SendCommandsTab extends StatefulWidget {
   final String? imei;
@@ -113,10 +114,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
     setState(() => _loadingRefs = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final optionsRes = await _repo!.getCommandOptions(
@@ -219,10 +217,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
     setState(() => _sending = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final code = _selectedOption?.code.isNotEmpty == true
@@ -326,7 +321,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
         children: [
           Text(
             "Send Command",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: titleFs + 2,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -335,7 +330,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
           const SizedBox(height: 4),
           Text(
             "${widget.vehiclePlate} • IMEI ${widget.imei?.isNotEmpty == true ? widget.imei : 'N/A'} • ${widget.vehicleModel}",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: smallFs + 1,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -347,7 +342,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 : (_commandNames.isNotEmpty ? _commandNames.first : null),
             decoration: InputDecoration(
               labelText: "Select Command",
-              labelStyle: GoogleFonts.roboto(
+              labelStyle: AppFonts.roboto(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
@@ -372,7 +367,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 vertical: 12,
               ),
             ),
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: bodyFs,
               color: colorScheme.onSurface,
             ),
@@ -398,7 +393,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 ),
                 child: Text(
                   "Payload",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: smallFs + 2,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onPrimary,
@@ -433,7 +428,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                       const SizedBox(width: 6),
                       Text(
                         "Copy",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: smallFs + 2,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -450,13 +445,13 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
             controller: payload1Controller,
             minLines: 3,
             maxLines: 5,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: bodyFs,
               color: colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               hintText: "Enter payload here...",
-              hintStyle: GoogleFonts.roboto(
+              hintStyle: AppFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
               filled: true,
@@ -494,7 +489,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 const SizedBox(width: 6),
                 Text(
                   "Request JSON",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: smallFs + 2,
                     color: colorScheme.onSurface.withOpacity(0.8),
                   ),
@@ -513,7 +508,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
               ),
               child: Text(
                 '{\n  "imei": "${widget.imei ?? "N/A"}",\n  "command": "$selectedCommand",\n  "payload": {}\n}',
-                style: GoogleFonts.jetBrainsMono(
+                style: AppFonts.jetBrainsMono(
                   fontSize: smallFs + 1,
                   color: colorScheme.onSurface.withOpacity(0.9),
                 ),
@@ -535,7 +530,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                   ),
                   Text(
                     "Confirm Before Send",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: bodyFs,
                       color: colorScheme.onSurface,
                     ),
@@ -567,7 +562,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                     : Icon(Icons.send, size: 18, color: colorScheme.onPrimary),
                 label: Text(
                   "Send",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: bodyFs,
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
@@ -581,7 +576,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
             children: [
               Text(
                 "Recent commands",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: titleFs,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -618,7 +613,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                         const SizedBox(height: 8),
                         Text(
                           "No recent commands",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: smallFs + 2,
                             color: colorScheme.onSurface.withOpacity(0.6),
                           ),
@@ -636,18 +631,18 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                         dense: true,
                         title: Text(
                           item.name.isNotEmpty ? item.name : 'Command',
-                          style: GoogleFonts.roboto(fontSize: smallFs + 1),
+                          style: AppFonts.roboto(fontSize: smallFs + 1),
                         ),
                         subtitle: Text(
                           item.createdAt.isNotEmpty ? item.createdAt : '—',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                         trailing: Text(
                           item.status.isNotEmpty ? item.status : 'sent',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),

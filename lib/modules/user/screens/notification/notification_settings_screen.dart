@@ -1,17 +1,16 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/user_notification_preferences.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_notification_preferences_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -36,7 +35,6 @@ class _NotificationSettingsScreenState
   bool _loading = false;
   bool _errorShown = false;
 
-  ApiClient? _api;
   UserNotificationPreferencesRepository? _repo;
   CancelToken? _token;
 
@@ -53,11 +51,7 @@ class _NotificationSettingsScreenState
   }
 
   UserNotificationPreferencesRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
-    _repo ??= UserNotificationPreferencesRepository(api: _api!);
+    _repo ??= AppContainer.instance.userNotificationPreferencesRepository;
     return _repo!;
   }
 
@@ -147,7 +141,9 @@ class _NotificationSettingsScreenState
           title: item.label,
           subtitle: item.subtitle,
           icon: CupertinoIcons.bell,
-          route: '/user/toggle/${Uri.encodeComponent(item.eventType)}',
+          route: AppRoutes.userToggleEventType(
+            Uri.encodeComponent(item.eventType),
+          ),
           width: width,
           hp: hp,
           isListMode: !isGridView,
@@ -209,7 +205,7 @@ class _NotificationSettingsScreenState
         children: [
           Text(
             'No notification settings found',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
             ),
@@ -217,7 +213,7 @@ class _NotificationSettingsScreenState
           const SizedBox(height: 6),
           Text(
             'Enable channels from the backend to manage alert delivery here.',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               color: colorScheme.onSurface.withOpacity(0.55),
             ),
           ),
@@ -353,7 +349,7 @@ class _MoreMenuCard extends StatelessWidget {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     1,
@@ -366,7 +362,7 @@ class _MoreMenuCard extends StatelessWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
@@ -406,7 +402,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
@@ -418,7 +414,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),

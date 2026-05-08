@@ -3,7 +3,8 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class TopCustomersBox extends StatelessWidget {
   final bool loading;
@@ -79,7 +80,7 @@ class TopCustomersBox extends StatelessWidget {
           item.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: mainFontSize,
             fontWeight: FontWeight.w600,
           ),
@@ -88,7 +89,7 @@ class TopCustomersBox extends StatelessWidget {
           item.subtitle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: subFontSize,
             color: colorScheme.onSurface.withOpacity(0.54),
           ),
@@ -111,7 +112,7 @@ class TopCustomersBox extends StatelessWidget {
           item.metricLabel,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             color: colorScheme.onPrimary,
             fontSize: badgeFontSize,
           ),
@@ -161,17 +162,17 @@ class TopCustomersBox extends StatelessWidget {
             children: [
               Text(
                 'Top Assets',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: titleFontSize,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
                 ),
               ),
               InkWell(
-                onTap: () => context.push('/user/vehicles'),
+                onTap: () => context.push(AppRoutes.userVehicles),
                 child: Text(
                   'View all',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: linkFontSize,
                     color: colorScheme.primary,
                   ),
@@ -195,7 +196,7 @@ class TopCustomersBox extends StatelessWidget {
                 ? Center(
                     child: Text(
                       'No assets found',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         color: colorScheme.onSurface.withOpacity(0.65),
                         fontWeight: FontWeight.w600,
                       ),

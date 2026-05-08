@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_app_preferences.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminAppPreferencesRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class AdminAppPreferencesRepository {
   Future<Result<AdminAppPreferences>> getAdminAppPreferences({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/config', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/config'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(AdminAppPreferences(_extractMap(data))),
@@ -24,7 +25,7 @@ class AdminAppPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/config',
+      ApiPaths.path('/admin/config'),
       data: payload,
       cancelToken: cancelToken,
     );

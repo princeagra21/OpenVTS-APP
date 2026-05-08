@@ -1,9 +1,9 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/settings/branding_settings_screen.dart
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class BrandingSettingsScreen extends StatelessWidget {
   const BrandingSettingsScreen({super.key});
@@ -64,7 +64,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 children: [
                   Text(
                     "White Label",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface.withOpacity(0.87),
@@ -73,7 +73,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     "Branding Settings",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -91,7 +91,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 icon: Icon(Icons.save_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
                 label: Text(
                   "Save Changes",
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
@@ -111,7 +111,7 @@ class _BrandingSettingsBox extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Base URL", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                Text("Base URL", style: AppFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
                 const SizedBox(height: 8),
                 TextFormField(
                   initialValue: "app.openvts.io",
@@ -122,12 +122,12 @@ class _BrandingSettingsBox extends StatelessWidget {
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colorScheme.outline)),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
                   ),
-                  style: GoogleFonts.inter(color: colorScheme.onSurface),
+                  style: AppFonts.inter(color: colorScheme.onSurface),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Enter your custom domain without http:// or https://",
-                  style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54)),
+                  style: AppFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54)),
                 ),
               ],
             ),
@@ -147,7 +147,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                   children: [
                     Text(
                       "Server IP:",
-                      style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 6, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
+                      style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 6, fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
                     ),
                     const SizedBox(width: 6),
                     SmallTab(label: "192.168.1.100", selected: false, onTap: () {}),
@@ -156,7 +156,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   "Use this IP address for DNS configuration",
-                  style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54)),
+                  style: AppFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54)),
                 ),
               ],
             ),
@@ -214,7 +214,7 @@ class _BrandingSettingsBox extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.9),
@@ -254,7 +254,7 @@ class _BrandingSettingsBox extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -283,7 +283,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                         Text(
                           "Click to upload\nICO, PNG (max 2MB)",
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 6, color: colorScheme.onSurface.withOpacity(0.54)),
+                          style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 6, color: colorScheme.onSurface.withOpacity(0.54)),
                         ),
                       ],
                     ),
@@ -298,7 +298,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                       height: boxHeight,
                       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: colorScheme.surfaceContainerHighest),
                       child: Center(
-                        child: Text("Preview", style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54))),
+                        child: Text("Preview", style: AppFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54))),
                       ),
                     ),
                     Positioned(

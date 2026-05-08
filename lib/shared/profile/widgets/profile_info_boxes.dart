@@ -1,8 +1,9 @@
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_card.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart' show AdaptiveUtils;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ProfileInfoBoxes extends StatelessWidget {
   final AdminProfile? profile;
@@ -80,26 +81,16 @@ class ProfileInfoBoxes extends StatelessWidget {
       profile?.passwordChangedAt ?? '',
     );
 
-    return Container(
+    return OpenVtsCard(
       padding: EdgeInsets.all(horizontalPadding),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-        border: Border.all(color: colorScheme.outline.withOpacity(0.06)),
-      ),
+      borderRadius: OpenVtsRadius.radiusLg,
+      borderColor: colorScheme.outline.withOpacity(0.06),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Account activity',
-            style: GoogleFonts.inter(
+            style: OpenVtsTypography.headingMedium.copyWith(
               fontSize: titleFontSize - 2,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -175,7 +166,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: '$label: ',
-                          style: GoogleFonts.inter(
+                          style: OpenVtsTypography.bodyMedium.copyWith(
                             fontSize: labelFontSize,
                             fontWeight: labelFontWeight,
                             color: colorScheme.onSurface.withOpacity(0.85),
@@ -183,7 +174,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                         ),
                         TextSpan(
                           text: valueTitle,
-                          style: GoogleFonts.inter(
+                          style: OpenVtsTypography.bodyMedium.copyWith(
                             fontSize: valueFontSize,
                             fontWeight: valueFontWeight,
                             color: colorScheme.onSurface,
@@ -206,7 +197,7 @@ class ProfileInfoBoxes extends StatelessWidget {
           flex: 3,
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: OpenVtsTypography.bodyMedium.copyWith(
               fontSize: labelFontSize,
               fontWeight: labelFontWeight,
               color: colorScheme.onSurface.withOpacity(0.85),
@@ -222,7 +213,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                   ? const AppShimmer(width: 140, height: 14, radius: 7)
                   : Text(
                       valueTitle,
-                      style: GoogleFonts.inter(
+                      style: OpenVtsTypography.bodyMedium.copyWith(
                         fontSize: valueFontSize,
                         fontWeight: valueFontWeight,
                         color: colorScheme.onSurface,
@@ -232,7 +223,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   valueSubtitle,
-                  style: GoogleFonts.inter(
+                  style: OpenVtsTypography.bodySmall.copyWith(
                     fontSize: subtitleFontSize,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),

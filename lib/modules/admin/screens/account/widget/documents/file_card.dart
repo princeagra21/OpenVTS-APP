@@ -1,13 +1,13 @@
 import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
-import 'package:open_vts/modules/admin/screens/account/widget/documents/edit_document.dart';
+import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class FileCard extends StatelessWidget {
   final Map<String, dynamic>? document;
@@ -149,10 +149,10 @@ class FileCard extends StatelessWidget {
       }
     }
 
-    final normalizedBase = baseUrl.endsWith('/')
+    final normalizedBase = baseUrl.endsWith(AppRoutes.root)
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
-    final normalizedPath = filePath.startsWith('/') ? filePath : '/$filePath';
+    final normalizedPath = filePath.startsWith(AppRoutes.root) ? filePath : '/$filePath';
     final uri = Uri.tryParse('$normalizedBase$normalizedPath');
     if (uri == null) {
       ScaffoldMessenger.of(
@@ -175,7 +175,7 @@ class FileCard extends StatelessWidget {
   ) async {
     final updated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => EditDocumentScreen(document: doc)),
+      MaterialPageRoute(builder: (_) => AdminEditDocumentScreen(document: doc)),
     );
     if (updated == true) {
       await onChanged?.call();
@@ -218,10 +218,7 @@ class FileCard extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
 
     final repo = AdminUsersRepository(
-      api: ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      ),
+      api: ApiClientProvider.create(),
     );
     final res = await repo.deleteDocumentFile(id);
     if (!context.mounted) return;
@@ -306,7 +303,7 @@ class FileCard extends StatelessWidget {
                     children: [
                       Text(
                         displayName,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -317,7 +314,7 @@ class FileCard extends StatelessWidget {
                       SizedBox(height: spacing * 0.4),
                       Text(
                         '$displayType · $createdAt',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -355,7 +352,7 @@ class FileCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         isVisible ? 'Visible' : 'Hidden',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -423,7 +420,7 @@ class FileCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         'Title',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMeta,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -435,7 +432,7 @@ class FileCard extends StatelessWidget {
                   SizedBox(height: spacing),
                   Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsMain,
                       height: 20 / 14,
                       fontWeight: FontWeight.w600,
@@ -548,7 +545,7 @@ class FileCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMeta,
                     height: 14 / 11,
                     fontWeight: FontWeight.w500,
@@ -563,7 +560,7 @@ class FileCard extends StatelessWidget {
           SizedBox(height: spacing),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMeta + 1,
               height: 20 / 14,
               fontWeight: FontWeight.w600,

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/map_vehicle_point.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserMapRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class UserMapRepository {
   Future<Result<List<MapVehiclePoint>>> getTelemetry({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/map-telemetry', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/map-telemetry'), cancelToken: cancelToken);
     return _mapPointListResult(
       res,
       extraKeys: const ['telemetry', 'points', 'vehicles', 'rows'],
@@ -28,7 +29,7 @@ class UserMapRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      '/user/vehicles/by-imei/$imei/trail',
+      ApiPaths.path('/user/vehicles/by-imei/$imei/trail'),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -53,7 +54,7 @@ class UserMapRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      '/user/vehicles/by-imei/$imei/replay',
+      ApiPaths.path('/user/vehicles/by-imei/$imei/replay'),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -82,7 +83,7 @@ class UserMapRepository {
     if (overspeedKph != null) query['overspeedKph'] = overspeedKph;
 
     final res = await api.get(
-      '/user/vehicles/by-imei/$imei/history',
+      ApiPaths.path('/user/vehicles/by-imei/$imei/history'),
       queryParameters: query,
       cancelToken: cancelToken,
     );

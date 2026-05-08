@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:open_vts/app/app_container.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:device_preview/device_preview.dart';
 import 'package:open_vts/core/auth/route_guard.dart';
 import 'package:open_vts/core/auth/session_expired_bus.dart';
 import 'package:open_vts/core/config/api_base_url_config.dart';
 import 'package:open_vts/core/debug/app_logger.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/login_screen.dart';
 import 'package:open_vts/modules/user/router/user_routes.dart';
 import 'package:open_vts/onboarding_screen.dart';
@@ -119,47 +120,52 @@ String? _extractRoleFromToken(String token) {
 }
 
 Future<String> _resolveInitialLocation() async {
-  final storage = TokenStorage.defaultInstance();
+  final storage = AppContainer.instance.tokenStorage;
   final token = await storage.readAccessToken();
 
-  if (token == null || token.trim().isEmpty) return '/onboarding';
+  if (token == null || token.trim().isEmpty) return AppRoutes.onboarding;
 
   if (_isTokenExpired(token)) {
     await storage.clear();
-    return '/onboarding';
+    return AppRoutes.onboarding;
   }
 
   final role = _extractRoleFromToken(token);
   final targetPath = _targetPathForRole(role);
-  if (targetPath == '/login') {
+  if (targetPath == AppRoutes.login) {
     await storage.clear();
   }
   return targetPath;
 }
 
-Future<String?> _routeRedirect(BuildContext context, GoRouterState state) async {
+Future<String?> _routeRedirect(
+  BuildContext context,
+  GoRouterState state,
+) async {
   final path = state.matchedLocation;
-  final storage = TokenStorage.defaultInstance();
+  final storage = AppContainer.instance.tokenStorage;
   final token = await storage.readAccessToken();
   final hasToken = token != null && token.trim().isNotEmpty;
 
   if (!hasToken) {
-    return RouteGuard.isPublicRoute(path) ? null : '/login';
+    return RouteGuard.isPublicRoute(path) ? null : AppRoutes.login;
   }
 
   final trimmedToken = token!.trim();
 
   if (_isTokenExpired(trimmedToken)) {
     await storage.clear();
-    return path == '/onboarding' ? '/onboarding' : '/login';
+    return path == AppRoutes.onboarding
+        ? AppRoutes.onboarding
+        : AppRoutes.login;
   }
 
   final role = _extractRoleFromToken(trimmedToken);
   final targetPath = _targetPathForRole(role);
 
-  if (targetPath == '/login') {
+  if (targetPath == AppRoutes.login) {
     await storage.clear();
-    return '/login';
+    return AppRoutes.login;
   }
 
   if (RouteGuard.isPublicRoute(path)) {
@@ -181,9 +187,12 @@ GoRouter buildRouter(String initialLocation) => GoRouter(
     /// ======================
     /// 🌍 GLOBAL ROUTES
     /// ======================
-    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
+    GoRoute(
+      path: AppRoutes.onboarding,
+      builder: (_, __) => const OnboardingScreen(),
+    ),
+    GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
+    GoRoute(path: AppRoutes.root, builder: (_, __) => const LoginScreen()),
 
     /// ======================
     /// 👑 SUPERADMIN ROUTES
@@ -366,6 +375,7 @@ void main() async {
     };
   }
   await ApiBaseUrlConfig.instance.load();
+  AppContainer.initialize();
   await themeController.loadTheme();
   final initialLocation = await _resolveInitialLocation();
   const forceDevicePreview = bool.fromEnvironment(
@@ -414,9 +424,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _sessionExpiredSub = SessionExpiredBus.stream.listen((_) async {
-      await TokenStorage.defaultInstance().clear();
+      await AppContainer.instance.tokenStorage.clear();
       if (!mounted) return;
-      widget.router.go('/login');
+      widget.router.go(AppRoutes.login);
       final now = DateTime.now();
       final last = _lastSessionNoticeAt;
       if (last == null || now.difference(last).inSeconds >= 2) {

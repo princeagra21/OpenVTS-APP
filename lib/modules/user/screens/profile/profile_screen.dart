@@ -1,10 +1,8 @@
+import 'package:open_vts/app/app_container.dart';
 // components/profile/profile_screen.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/user_profile_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/shared/profile/widgets/profile_info_boxes.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
@@ -25,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _profileErrorShown = false;
   CancelToken? _profileCancelToken;
 
-  ApiClient? _api;
   UserProfileRepository? _userRepo;
 
   @override
@@ -49,11 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loadingProfile = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
-      _userRepo ??= UserProfileRepository(api: _api!);
+      _userRepo ??= AppContainer.instance.userProfileRepository;
 
       final res = await _userRepo!.getMyProfile(cancelToken: token);
       if (!mounted || token.isCancelled) return;
@@ -118,7 +111,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ProfileInfoBoxes(profile: _profile, loading: _loadingProfile),
             if (_loadingProfile ||
                 (_profile != null &&
-                    (!_profile!.emailVerified || !_profile!.phoneVerified))) ...[
+                    (!_profile!.emailVerified ||
+                        !_profile!.phoneVerified))) ...[
               const SizedBox(height: 24),
               ProfileVerificationBox(
                 profile: _profile,

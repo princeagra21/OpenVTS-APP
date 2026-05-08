@@ -10,6 +10,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
 
 class VehicleStatusBox extends StatefulWidget {
   const VehicleStatusBox({super.key});
@@ -47,10 +48,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getTotalCounts(cancelToken: token);

@@ -1,8 +1,8 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/settings/smtp_config_settings_screen.dart
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SmtpConfigSettingsScreen extends StatelessWidget {
   const SmtpConfigSettingsScreen({super.key});
@@ -77,7 +77,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                   icon: Icon(Icons.save_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
                   label: Text(
                     "Save Configuration",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
@@ -95,7 +95,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                   icon: Icon(Icons.email_outlined, color: colorScheme.onPrimary, size: AdaptiveUtils.getIconSize(width)),
                   label: Text(
                     "Send Test Email",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
@@ -111,7 +111,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           // TITLE
           Text(
             "SMTP Configuration",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: AdaptiveUtils.getTitleFontSize(width),
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.87),
@@ -120,7 +120,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           const SizedBox(height: 4),
           Text(
             "Configure your email server settings",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
               fontWeight: FontWeight.w800,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -177,7 +177,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                 const SizedBox(height: 16),
                 _buildInputField(context, label: "SMTP PORT", hint: "Common: 587, 465, 25"),
                 const SizedBox(height: 8),
-                Text("Common: 587, 465, 25", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
+                Text("Common: 587, 465, 25", style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
                 const SizedBox(height: 24),
 
                 // TLS/SSL Switch
@@ -190,7 +190,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                     children: [
                       Text(
                         "Use TLS/SSL Encryption",
-                        style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
+                        style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
                       ),
                       Transform.scale(
                         scale: 0.7,
@@ -212,7 +212,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                 const SizedBox(height: 16),
                 _buildInputField(context, label: "PASSWORD / APP PASSWORD", hint: "For Gmail/Google Workspace, use an App Password", obscureText: true),
                 const SizedBox(height: 8),
-                Text("For Gmail/Google Workspace, use an App Password", style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
+                Text("For Gmail/Google Workspace, use an App Password", style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
               ],
             ),
           ),
@@ -270,7 +270,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) + 2, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
+                  style: AppFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width) + 2, fontWeight: FontWeight.w800, color: colorScheme.onSurface.withOpacity(0.87)),
                 ),
               ),
               if (trailing != null) trailing,
@@ -278,7 +278,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 12),
-            Text(subtitle, style: GoogleFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
+            Text(subtitle, style: AppFonts.inter(fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5, color: colorScheme.onSurface.withOpacity(0.8))),
           ],
           if (child != null) ...[
             const SizedBox(height: 16),
@@ -298,19 +298,19 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
+          style: AppFonts.inter(fontSize: AdaptiveUtils.getTitleFontSize(width), fontWeight: FontWeight.w600, color: colorScheme.onSurface.withOpacity(0.87)),
         ),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: initialValue ?? '',
           obscureText: obscureText,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             color: colorScheme.onSurface,
             fontSize: AdaptiveUtils.getTitleFontSize(width),
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.inter(
+            hintStyle: AppFonts.inter(
               color: colorScheme.onSurface.withOpacity(0.6),
               fontSize: AdaptiveUtils.getTitleFontSize(width),
             ),

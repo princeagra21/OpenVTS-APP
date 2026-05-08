@@ -3,7 +3,7 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/small_box/small_box.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ProfileCompanyBox extends StatelessWidget {
   final SuperadminProfile? profile;
@@ -48,7 +48,7 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),
@@ -58,7 +58,7 @@ class ProfileCompanyBox extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -107,7 +107,7 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           Text(
             'Company',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -127,7 +127,7 @@ class ProfileCompanyBox extends StatelessWidget {
                       )
                     : Text(
                         companyName,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -150,7 +150,7 @@ class ProfileCompanyBox extends StatelessWidget {
               ? const AppShimmer(width: 170, height: 16, radius: 8)
               : Text(
                   website,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subheaderFontSize,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -159,7 +159,7 @@ class ProfileCompanyBox extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Social Media',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -180,7 +180,7 @@ class ProfileCompanyBox extends StatelessWidget {
           else if (socialLinks.isEmpty)
             Text(
               'No social links from API.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subheaderFontSize,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -197,7 +197,7 @@ class ProfileCompanyBox extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Address',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -253,7 +253,7 @@ class ProfileCompanyBox extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Contacts',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -272,7 +272,7 @@ class ProfileCompanyBox extends StatelessWidget {
                     )
                   : Text(
                       email,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subheaderFontSize,
                         color: colorScheme.onSurface.withOpacity(0.87),
                       ),
@@ -282,7 +282,7 @@ class ProfileCompanyBox extends StatelessWidget {
                   ? const AppShimmer(width: 220, height: 16, radius: 8)
                   : Text(
                       phone,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subheaderFontSize,
                         color: colorScheme.onSurface.withOpacity(0.87),
                       ),
@@ -292,7 +292,7 @@ class ProfileCompanyBox extends StatelessWidget {
                   ? const AppShimmer(width: 170, height: 16, radius: 8)
                   : Text(
                       website,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subheaderFontSize,
                         color: colorScheme.onSurface.withOpacity(0.7),
                       ),

@@ -8,7 +8,8 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ApplicationSettingsScreen extends StatelessWidget {
   const ApplicationSettingsScreen({super.key});
@@ -63,10 +64,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
   _Snapshot? _loadedSnapshot;
 
   AdminAppPreferencesRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminAppPreferencesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -279,7 +277,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 children: [
                   Text(
                     'APPLICATION',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
@@ -299,7 +297,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                         ),
                         child: Text(
                           'Reset',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
@@ -316,7 +314,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                         ),
                         child: Text(
                           'Save',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onPrimary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -329,7 +327,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(height: 4),
               Text(
                 'Application Settings',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -338,7 +336,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               const SizedBox(height: 4),
               Text(
                 'Configure signup behavior for your company.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -358,7 +356,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                   children: [
                     Text(
                       'Signup Configuration',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 2,
                         fontWeight: FontWeight.w800,
                         color: colorScheme.onSurface,
@@ -383,7 +381,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                               children: [
                                 Text(
                                   'Allow New Signups',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(width) -
                                             3,
@@ -394,7 +392,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                                 const SizedBox(height: 4),
                                 Text(
                                   'New users can register',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize:
                                         AdaptiveUtils.getSubtitleFontSize(width) -
                                             3,
@@ -428,7 +426,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                     const SizedBox(height: 6),
                     Text(
                       'Number of free credits awarded to new users upon signup',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 4,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface.withOpacity(0.65),
@@ -462,7 +460,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFs,
             fontWeight: labelWeight ?? FontWeight.w600,
             color: labelColor ?? colorScheme.onSurface.withOpacity(0.65),
@@ -473,7 +471,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
           initialValue: value.toString(),
           keyboardType: TextInputType.number,
           onChanged: (v) => onChanged(int.tryParse(v) ?? value),
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: valueFs,
             fontWeight: FontWeight.w800,
             color: colorScheme.onSurface,

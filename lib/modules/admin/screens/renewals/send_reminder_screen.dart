@@ -1,6 +1,6 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/renewals/send_reminder_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class SendReminderScreen extends StatefulWidget {
@@ -78,7 +78,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                       children: [
                         Text(
                           "Send Reminder",
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
@@ -93,7 +93,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     Center(
                       child: Text(
                         "Notify per-device or consolidated by customer.",
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: fs - 2,
                           color: cs.onSurface.withOpacity(0.7),
                         ),
@@ -104,7 +104,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     // ─── NOTIFICATION MODE ──────────────────
                     Text(
                       "Notification Mode",
-                      style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                      style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Card(
@@ -114,15 +114,15 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                       child: Column(
                         children: [
                           RadioListTile<String>(
-                            title: Text("Per-device", style: GoogleFonts.inter(fontSize: fs - 2)),
-                            subtitle: Text("Individual reminder for each device", style: GoogleFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7))),
+                            title: Text("Per-device", style: AppFonts.inter(fontSize: fs - 2)),
+                            subtitle: Text("Individual reminder for each device", style: AppFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7))),
                             value: 'per-device',
                             groupValue: notificationMode,
                             onChanged: (v) => setState(() => notificationMode = v!),
                           ),
                           RadioListTile<String>(
-                            title: Text("Consolidated by customer", style: GoogleFonts.inter(fontSize: fs - 2)),
-                            subtitle: Text("One message listing all due devices", style: GoogleFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7))),
+                            title: Text("Consolidated by customer", style: AppFonts.inter(fontSize: fs - 2)),
+                            subtitle: Text("One message listing all due devices", style: AppFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7))),
                             value: 'consolidated',
                             groupValue: notificationMode,
                             onChanged: (v) => setState(() => notificationMode = v!),
@@ -136,7 +136,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     // ─── CHANNELS ───────────────────────────
                     Text(
                       "Channels",
-                      style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                      style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                    Card(
@@ -185,7 +185,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     // ─── MESSAGE ────────────────────────────
                     Text(
                       "Message",
-                      style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                      style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -202,7 +202,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                           fillColor: cs.surface,
                           filled: true,
                           hintText: "Enter message (supports variables)",
-                          hintStyle: GoogleFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs - 2),
+                          hintStyle: AppFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs - 2),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -217,7 +217,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     const SizedBox(height: 8),
                     Text(
                       "Variables: {customer}, {vehicle}, {imei}, {expiry_date}, {amount}",
-                      style: GoogleFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
+                      style: AppFonts.inter(fontSize: fs - 4, color: cs.onSurface.withOpacity(0.7)),
                     ),
 
                     const SizedBox(height: 16),
@@ -225,7 +225,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                     // ─── PREVIEW ────────────────────────────
                     Text(
                       "Preview",
-                      style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
+                      style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Card(
@@ -236,7 +236,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                         padding: const EdgeInsets.all(16.0),
                         child: Text(
                           _getPreviewText(),
-                          style: GoogleFonts.inter(fontSize: fs - 2),
+                          style: AppFonts.inter(fontSize: fs - 2),
                         ),
                       ),
                     ),
@@ -258,7 +258,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                             ),
                             child: Text(
                               "Cancel",
-                              style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                              style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -281,7 +281,7 @@ class _SendReminderScreenState extends State<SendReminderScreen> {
                             ),
                             child: Text(
                               "Send Reminder",
-                              style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                              style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -316,7 +316,7 @@ Widget _channelItem({
       const SizedBox(height: 4),
       Text(
         label,
-        style: GoogleFonts.inter(fontSize: fs - 3),
+        style: AppFonts.inter(fontSize: fs - 3),
       ),
       Checkbox(
         value: value,

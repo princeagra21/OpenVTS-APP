@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/delete_account_box.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -8,7 +10,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class DeleteAccountBox extends StatefulWidget {
   final String adminId;
@@ -35,10 +36,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -80,7 +78,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                   Expanded(
                     child: Text(
                       'Delete admin?',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -92,7 +90,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
               const SizedBox(height: 16),
               Text(
                 'This will permanently remove the admin and all related data. You can’t undo this action.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 14,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -111,7 +109,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                       ),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                        style: AppFonts.roboto(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -129,7 +127,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                       ),
                       child: Text(
                         'Delete',
-                        style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                        style: AppFonts.roboto(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -207,7 +205,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
         children: [
           Text(
             "Danger Zone",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize + 2,
               fontWeight: FontWeight.bold,
               color: dangerColor,
@@ -222,7 +220,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
               Expanded(
                 child: Text(
                   "This action cannot be undone. It will permanently delete the user account and remove all associated data.",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fontSize,
                     color: dangerColor,
                     height: 1.3,
@@ -247,7 +245,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                     ? const AppShimmer(width: 18, height: 18, radius: 9)
                     : Text(
                         "Delete",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize,
                           color: dangerColor,
                           fontWeight: FontWeight.w600,

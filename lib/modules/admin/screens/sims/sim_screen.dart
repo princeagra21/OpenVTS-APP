@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -15,7 +19,6 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SimScreen extends StatefulWidget {
   const SimScreen({super.key});
@@ -41,10 +44,7 @@ class _SimScreenState extends State<SimScreen> {
   AdminSimCardsRepository? _repo;
 
   AdminSimCardsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminSimCardsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -139,7 +139,7 @@ class _SimScreenState extends State<SimScreen> {
   }
 
   Future<void> _openAddSim() async {
-    final created = await context.push('/admin/sims/add');
+    final created = await context.push(AppRoutes.adminSimsAdd);
     if (!mounted) return;
     if (created == true) {
       _loadSimCards();
@@ -238,8 +238,8 @@ class _SimScreenState extends State<SimScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -259,7 +259,7 @@ class _SimScreenState extends State<SimScreen> {
                   subtitle: 'Switch between device and sim cards.',
                   onTabSelected: (tab) {
                     if (tab == 'Device') {
-                      context.go('/admin/inventory');
+                      context.go(AppRoutes.adminInventory);
                     }
                   },
                 ),
@@ -279,7 +279,7 @@ class _SimScreenState extends State<SimScreen> {
                         children: [
                           Text(
                             "SIM Cards",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsSection,
                               height: 24 / 18,
                               fontWeight: FontWeight.w700,
@@ -309,7 +309,7 @@ class _SimScreenState extends State<SimScreen> {
                                   SizedBox(width: spacing / 2),
                                   Text(
                                     'Add',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain - 2,
                                       fontWeight: FontWeight.w700,
                                       color: colorScheme.onPrimary,
@@ -333,14 +333,14 @@ class _SimScreenState extends State<SimScreen> {
                         ),
                         child: TextField(
                           controller: _searchController,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             color: colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             hintText: "Search IMEI, SIM, provider, status...",
-                            hintStyle: GoogleFonts.roboto(
+                            hintStyle: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.5),
                               fontSize: fsSecondary,
                               height: 16 / 12,
@@ -420,7 +420,7 @@ class _SimScreenState extends State<SimScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Filter",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -477,7 +477,7 @@ class _SimScreenState extends State<SimScreen> {
                                           children: [
                                             Text(
                                               "Records",
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: fsMain - 3,
                                                 height: 20 / 14,
                                                 fontWeight: FontWeight.w600,
@@ -532,7 +532,7 @@ class _SimScreenState extends State<SimScreen> {
                                         SizedBox(width: spacing / 2),
                                         Text(
                                           "Refresh",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -573,7 +573,7 @@ class _SimScreenState extends State<SimScreen> {
                                     _errorShown
                                         ? "Couldn't load SIM cards."
                                         : "No SIM cards found",
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       color: colorScheme.onSurface
@@ -639,7 +639,7 @@ class _SimScreenState extends State<SimScreen> {
             child: AdminHomeAppBar(
               title: 'SIM Inventory',
               leadingIcon: Icons.sim_card,
-              onClose: () => context.go('/admin/home'),
+              onClose: () => context.go(AppRoutes.adminHome),
             ),
           ),
         ],
@@ -848,7 +848,7 @@ class _SimScreenState extends State<SimScreen> {
                             Expanded(
                               child: Text(
                                 simNumber,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMain,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -889,7 +889,7 @@ class _SimScreenState extends State<SimScreen> {
                           ),
                           child: Text(
                             provider,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMeta,
                               height: 14 / 11,
                               fontWeight: FontWeight.w600,
@@ -909,7 +909,7 @@ class _SimScreenState extends State<SimScreen> {
                             Expanded(
                               child: Text(
                                 imei,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsSecondary,
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
@@ -943,7 +943,7 @@ class _SimScreenState extends State<SimScreen> {
                   ),
                   child: Text(
                     status,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsMeta,
                       height: 14 / 11,
                       fontWeight: FontWeight.w600,

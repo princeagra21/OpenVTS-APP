@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/payments/collect_payment_screen.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -80,7 +80,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                 children: [
                   Text(
                     "Collect Payment",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -95,7 +95,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
               Center(
                 child: Text(
                   "Record an offline/manual payment across selected devices.",
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: fs - 2,
                     color: cs.onSurface.withOpacity(0.7),
                   ),
@@ -187,7 +187,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
             children: [
               Text(
                 "Total Amount",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -195,7 +195,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(totalAmount),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                 ),
@@ -211,7 +211,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
             children: [
               Text(
                 "GST (18%)",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -219,7 +219,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(gst),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                 ),
@@ -235,7 +235,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
             children: [
               Text(
                 "Grand Total",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs - 3,
                   color: Colors.grey.shade600,
                 ),
@@ -243,7 +243,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
               const SizedBox(height: 4),
               Text(
                 f.format(grandTotal),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   fontWeight: FontWeight.bold,
                 ),
@@ -276,7 +276,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                                 ),
                                 child: Text(
                                   "Cancel",
-                                  style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                                  style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ),
@@ -299,7 +299,7 @@ class _CollectPaymentScreenState extends State<CollectPaymentScreen> {
                                 ),
                                 child: Text(
                                   "Save Payment",
-                                  style: GoogleFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
+                                  style: AppFonts.inter(fontSize: fs, fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ),
@@ -352,7 +352,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
 Container(
@@ -374,7 +374,7 @@ Container(
       filled: true,
       
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
+      hintStyle: AppFonts.inter(
         color: cs.onSurface.withOpacity(0.6),
         fontSize: fs,
       ),
@@ -430,7 +430,7 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         Container(
@@ -449,7 +449,7 @@ class StylishDropdown extends StatelessWidget {
             initialValue: value,
             hint: Text(
               hint,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),

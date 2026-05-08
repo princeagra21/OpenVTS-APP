@@ -13,8 +13,11 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SubUserScreen extends StatefulWidget {
   final bool embedded;
@@ -61,10 +64,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }
@@ -212,7 +212,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
           children: [
             Text(
               'No sub-users found',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: bodyFs + 1,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -221,7 +221,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             const SizedBox(height: 8),
             Text(
               'Create a sub-user from the web console to manage delegated access.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -294,7 +294,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                 children: [
                   Text(
                     'Sub-users',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -303,7 +303,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final result = await context.push('/user/sub-users/add');
+                      final result = await context.push(AppRoutes.userSubUsersAdd);
                       if (result == true) {
                         _loadSubUsers();
                       }
@@ -331,7 +331,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                           SizedBox(width: spacing / 2),
                           Text(
                             'New',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -356,14 +356,14 @@ class _SubUserScreenState extends State<SubUserScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMain,
                     height: 20 / 14,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search name, username, mobile, email...',
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: colorScheme.onSurface.withOpacity(0.5),
                       fontSize: fsSecondary,
                       height: 16 / 12,
@@ -430,7 +430,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Filter',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -471,7 +471,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                               children: [
                                 Text(
                                   'Records',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -517,7 +517,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Refresh',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -548,7 +548,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                     children: [
                       Text(
                         'No sub-users found',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain + 2,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -557,7 +557,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                       SizedBox(height: spacing / 2),
                       Text(
                         'Create a sub-user to get started.',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSecondary,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -609,8 +609,8 @@ class _SubUserScreenState extends State<SubUserScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -629,7 +629,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             child: UserHomeAppBar(
               title: 'Sub-users',
               leadingIcon: Icons.person_outline,
-              onClose: () => context.go('/user/home'),
+              onClose: () => context.go(AppRoutes.userHome),
             ),
           ),
         ],
@@ -680,7 +680,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             hoverColor: Colors.transparent,
             onTap: () async {
               await context.push(
-                '/user/sub-users/details/${subUser.id}',
+                AppRoutes.userSubUsersDetails(subUser.id),
                 extra: subUser,
               );
               if (!mounted) return;
@@ -711,7 +711,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                           alignment: Alignment.center,
                           child: Text(
                             initials,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface,
                               fontSize:
                                   AdaptiveUtils.getFsAvatarFontSize(screenWidth),
@@ -730,7 +730,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 Expanded(
                                   child: Text(
                                     subUser.name.isEmpty ? '-' : subUser.name,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -759,7 +759,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 Expanded(
                                   child: Text(
                                     phone,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -784,7 +784,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                 Expanded(
                                   child: Text(
                                     username,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -810,7 +810,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                                   child: Text(
                                     email,
                                     softWrap: true,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -832,7 +832,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                   InkWell(
                     onTap: () async {
                       await context.push(
-                        '/user/sub-users/details/${subUser.id}',
+                        AppRoutes.userSubUsersDetails(subUser.id),
                         extra: subUser,
                       );
                       if (!mounted) return;
@@ -860,7 +860,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                           SizedBox(width: spacing),
                           Text(
                             'View',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,

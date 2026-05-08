@@ -1,9 +1,9 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/all_activities_screen.dart
 import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AllActivitiesScreen extends StatefulWidget {
@@ -75,7 +75,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
 
     final content = Text(
       activity["description"],
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: mainFontSize,
         fontWeight: FontWeight.w600,
         color: colorScheme.onSurface,
@@ -84,7 +84,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
 
     final right = Text(
       dateStr,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: subFontSize,
         color: colorScheme.onSurface.withOpacity(0.54),
       ),
@@ -128,7 +128,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             Center(
               child: Text(
                 'No activities in selected range',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fs,
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),

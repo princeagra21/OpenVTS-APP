@@ -10,7 +10,9 @@ import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_a
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class RecordManualPaymentScreen extends StatefulWidget {
   const RecordManualPaymentScreen({super.key});
@@ -58,10 +60,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -128,7 +127,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Select Admin',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -140,7 +139,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                       ? Center(
                           child: Text(
                             'No admins found',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
@@ -165,7 +164,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                       maxLines: 2,
                                       softWrap: true,
                                       overflow: TextOverflow.visible,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -180,7 +179,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                       maxLines: 2,
                                       softWrap: true,
                                       overflow: TextOverflow.visible,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
                                       ),
@@ -241,7 +240,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Select Payment Mode',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -255,7 +254,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                         const EdgeInsets.symmetric(horizontal: 6),
                     title: Text(
                       label,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -288,7 +287,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.7),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -386,8 +385,8 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -424,7 +423,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                         children: [
                           Text(
                             'Record Manual Payment',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleSize + 1,
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface.withOpacity(0.9),
@@ -433,7 +432,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Admin',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 12 *
                                   (w / 420).clamp(0.9, 1.0),
                               height: 16 / 12,
@@ -468,7 +467,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                       maxLines: 2,
                                       softWrap: true,
                                       overflow: TextOverflow.visible,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: labelSize,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w500,
@@ -494,7 +493,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Amount',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 12 *
                                   (w / 420).clamp(0.9, 1.0),
                               height: 16 / 12,
@@ -506,7 +505,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                           TextField(
                             controller: _amountController,
                             keyboardType: TextInputType.number,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize,
                               color: colorScheme.onSurface,
                             ),
@@ -524,7 +523,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Payment Mode',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 12 *
                                   (w / 420).clamp(0.9, 1.0),
                               height: 16 / 12,
@@ -537,7 +536,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                             controller: _paymentModeController,
                             readOnly: true,
                             onTap: _openPaymentModePicker,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize,
                               color: colorScheme.onSurface,
                             ),
@@ -560,7 +559,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Reference (optional)',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 12 *
                                   (w / 420).clamp(0.9, 1.0),
                               height: 16 / 12,
@@ -573,7 +572,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                             controller: _referenceController,
                             minLines: 2,
                             maxLines: 2,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize,
                               color: colorScheme.onSurface,
                             ),
@@ -608,7 +607,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                     child: Center(
                                       child: Text(
                                         'Cancel',
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: labelSize,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface
@@ -640,7 +639,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
                                             )
                                           : Text(
                                               'Record',
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: labelSize,
                                                 fontWeight: FontWeight.w600,
                                                 color: colorScheme.onPrimary,
@@ -666,8 +665,8 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
             top: 0,
             child: Container(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+                  ? OpenVtsColors.panelDark
+                  : OpenVtsColors.panelLight,
               child: const SuperAdminHomeAppBar(
                 title: 'Record Manual Payment',
                 leadingIcon: Icons.credit_card,

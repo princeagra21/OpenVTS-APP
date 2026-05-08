@@ -1,8 +1,9 @@
 // lib/onboarding_screen.dart
+import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/login_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -17,19 +18,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> _onboardingData = [
     {
-      'image': 'assets/images/group.webp',
-      'title': 'We Make It Easiest Just Deploy',
-      'subtitle': 'Open VTS’s ethos is simple: remove barriers and empower businesses to manage their fleets without technical expertise. Our software is built on simplicity, community, and real empowerment—giving clients full control and fueling success through easy, self-managed installations.',
+      'image': 'assets/images/screen-1.png',
+      'title': 'Command Every Vehicle',
+      'subtitle':
+          'Monitor live locations, routes, drivers, and activity from one secure control center built for serious fleet operations.',
     },
     {
-      'image': 'assets/images/Delivery.webp',
-      'title': 'Delivery',
-      'subtitle': 'Open VTS™ GPS Software boosts delivery efficiency, profitability, and client satisfaction. Designed for modern delivery services, it ensures accurate, timely deliveries, helping organizations thrive in today’s fast-paced world.',
+      'image': 'assets/images/screen-2.png',
+      'title': 'Your Data Stays Yours',
+      'subtitle':
+          'OpenVTS keeps fleet data inside your own infrastructure, giving your business stronger security and privacy.',
     },
     {
-      'image': 'assets/images/logistics.webp',
-      'title': 'Logistics & Trucking',
-      'subtitle': 'Open VTS’s self-hosted GPS system gives logistics and trucking providers real-time updates, ensuring timely deliveries and compliance with traffic regulations. On-time reporting helps businesses streamline operations and keep clients satisfied.',
+      'image': 'assets/images/screen-3.png',
+      'title': 'Own The Platform',
+      'subtitle':
+          'No SaaS lock-in. No outside dependency. Run self-hosted GPS software with full control, access, and ownership.',
     },
   ];
 
@@ -54,27 +58,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               return Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 40,
-                    horizontal: 28,
+                    vertical: OpenVtsSpacing.xxxl,
+                    horizontal: OpenVtsSpacing.xl,
                   ),
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: OpenVtsSpacing.xxl,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(30),
+                    color: OpenVtsColors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(
+                      OpenVtsRadius.xl + OpenVtsSpacing.sm,
+                    ),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
+                      color: OpenVtsColors.white.withOpacity(0.08),
                     ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          _onboardingData[index]['image']!,
-                          height: 250,
-                          width: 250,
-                          fit: BoxFit.cover,
+                      FractionallySizedBox(
+                        widthFactor: 1,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Image.asset(
+                              _onboardingData[index]['image']!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
 
@@ -83,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Text(
                         _onboardingData[index]['title']!,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: OpenVtsTypography.headingLarge.copyWith(
                           fontSize: titleSize,
                           fontWeight: FontWeight.w800,
                           color: colorScheme.onSurface,
@@ -95,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Text(
                         _onboardingData[index]['subtitle']!,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: OpenVtsTypography.bodyLarge.copyWith(
                           fontSize: labelSize,
                           height: 1.4,
                           color: colorScheme.onSurface.withOpacity(0.7),
@@ -121,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
               child: Text(
                 'Skip',
-                style: GoogleFonts.inter(
+                style: OpenVtsTypography.labelLarge.copyWith(
                   fontSize: labelSize,
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -136,39 +148,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             left: 0,
             right: 0,
             child: Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  if (_currentPage < _onboardingData.length - 1) {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  }
-                },
-                child: Text(
-                  _currentPage == _onboardingData.length - 1
+              child: SizedBox(
+                width: 180,
+                child: OpenVtsButton(
+                  label: _currentPage == _onboardingData.length - 1
                       ? 'Continue'
                       : 'Next',
-                  style: GoogleFonts.inter(
-                    fontSize: labelSize,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  onPressed: () {
+                    if (_currentPage < _onboardingData.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    }
+                  },
                 ),
               ),
             ),

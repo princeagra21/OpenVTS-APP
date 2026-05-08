@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/update_password_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -8,7 +10,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class UpdatePasswordScreen extends StatefulWidget {
   final String adminId;
@@ -75,10 +76,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -168,7 +166,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 children: [
                   Text(
                     "Update Password",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                     ),
@@ -188,7 +186,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
               Text(
                 "Securely update your account password",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -201,7 +199,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               TextField(
                 controller: _newPasswordController,
                 obscureText: _obscureNew,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: colorScheme.onSurface,
                   fontSize: AdaptiveUtils.getTitleFontSize(
                     w,
@@ -209,7 +207,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
                   hintText: "New Password",
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: AppFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
@@ -239,13 +237,13 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: colorScheme.onSurface,
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                 ),
                 decoration: _minimalInputDecoration(context).copyWith(
                   hintText: "Confirm Password",
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: AppFonts.roboto(
                     color: colorScheme.onSurface.withOpacity(0.5),
                     fontSize: AdaptiveUtils.getTitleFontSize(w),
                   ),
@@ -287,7 +285,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                         ? const AppShimmer(width: 18, height: 18, radius: 9)
                         : Text(
                             "Update Password",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize,
                               color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,

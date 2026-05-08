@@ -6,6 +6,8 @@ import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/debug/app_logger.dart';
 import 'package:flutter/foundation.dart';
 
+/// Infrastructure is injected by AppContainer.
+/// Do not instantiate ApiClient, AppConfig, or TokenStorage inside this repository.
 class UserNotificationPreferencesRepository {
   final ApiClient api;
 
@@ -55,7 +57,9 @@ class UserNotificationPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     if (kDebugMode) {
-      AppLogger.debug('PUT ${ApiPaths.userNotificationsPreferences} payload: $payload');
+      AppLogger.debug(
+        'PUT ${ApiPaths.userNotificationsPreferences} payload: $payload',
+      );
     }
     final res = await api.put(
       ApiPaths.userNotificationsPreferences,
@@ -66,7 +70,9 @@ class UserNotificationPreferencesRepository {
     return res.when(
       success: (data) {
         if (kDebugMode) {
-          AppLogger.debug('PUT ${ApiPaths.userNotificationsPreferences} response: $data');
+          AppLogger.debug(
+            'PUT ${ApiPaths.userNotificationsPreferences} response: $data',
+          );
         }
         return Result.ok(null);
       },

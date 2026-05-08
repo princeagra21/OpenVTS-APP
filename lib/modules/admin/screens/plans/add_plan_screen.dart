@@ -4,9 +4,10 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_pricing_plans_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart' show AdaptiveUtils;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddPlanScreen extends StatefulWidget {
   const AddPlanScreen({super.key});
@@ -30,10 +31,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
   bool _submitting = false;
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }
@@ -128,7 +126,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                 children: [
                   Text(
                     'Add New Plan',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -156,7 +154,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
               const SizedBox(height: 8),
               Text(
                 'Fill plan details and click save.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.7),
@@ -230,7 +228,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                             children: [
                               Text(
                                 'Preview',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                                   fontWeight: FontWeight.bold,
                                   color: cs.onSurface,
@@ -239,7 +237,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Quick check before saving.',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(w) - 2,
                                   color: cs.onSurface.withOpacity(0.6),
@@ -304,7 +302,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -340,7 +338,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                           )
                         : Text(
                             'Save',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               fontWeight: FontWeight.w600,
                               color: cs.onPrimary,
@@ -362,14 +360,14 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 12,
             color: cs.onSurface.withOpacity(0.8),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -413,7 +411,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -427,7 +425,7 @@ class StylishTextField extends StatelessWidget {
               fillColor: cs.surface,
               filled: true,
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),

@@ -9,7 +9,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddSubUserScreen extends StatefulWidget {
   final String? subUserId;
@@ -110,19 +111,13 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
   }
 
   CommonRepository _commonOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }
 
   UserSubUsersRepository _subUsersOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _subUsersRepo ??= UserSubUsersRepository(api: _api!);
     return _subUsersRepo!;
   }
@@ -613,7 +608,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
     InputDecoration inputDecoration(String hint, IconData icon) {
       return InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: AppFonts.inter(
           color: cs.onSurface.withOpacity(0.5),
           fontSize: labelSize,
         ),
@@ -636,7 +631,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontWeight: FontWeight.w600,
           fontSize: labelSize,
         ),
@@ -656,7 +651,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
                 children: [
                   Text(
                     isEdit ? 'Edit Sub-user' : 'Add Sub-user',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -735,7 +730,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
                           children: [
                             Text(
                               'Enter mobile number *',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                               ),
@@ -830,13 +825,13 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
                           contentPadding: EdgeInsets.zero,
                           title: Text(
                             'Active',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           subtitle: Text(
                             'Allow this sub-user to sign in immediately',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               color: cs.onSurface.withOpacity(0.6),
                             ),
                           ),
@@ -871,7 +866,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(width),
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -899,7 +894,7 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
                         ? const AppShimmer(width: 18, height: 18, radius: 9)
                         : Text(
                             isEdit ? 'Update Sub-user' : 'Add Sub-user',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,

@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_sim_card_item.dart';
 import 'package:open_vts/core/models/sim_provider_option.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminSimCardsRepository {
   final ApiClient api;
@@ -27,7 +28,7 @@ class AdminSimCardsRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/simcards',
+      ApiPaths.path('/admin/simcards'),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -57,7 +58,7 @@ class AdminSimCardsRepository {
   Future<Result<List<SimProviderOption>>> getSimProviders({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/simproviders', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/simproviders'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -87,7 +88,7 @@ class AdminSimCardsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/simcards/$simId',
+      ApiPaths.path('/admin/simcards/$simId'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -103,7 +104,7 @@ class AdminSimCardsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/simcards',
+      ApiPaths.path('/admin/simcards'),
       data: payload,
       cancelToken: cancelToken,
     );

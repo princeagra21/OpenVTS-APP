@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserRepository {
   final ApiClient api;
@@ -14,7 +15,7 @@ class UserRepository {
   Future<Result<Profile>> getProfile({CancelToken? cancelToken}) async {
     // If your backend doesn't have `/user/profile`, adjust this to a known endpoint
     // from the Postman collection.
-    final res = await api.get('/user/profile', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/profile'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(Profile(_coerceMap(data))),

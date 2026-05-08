@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/vehicle/vehicle_config_tab.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -10,7 +12,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VehicleConfigTab extends StatefulWidget {
   final String? vehicleId;
@@ -179,10 +180,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
     setState(() => _saving = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final payload = VehicleConfigUpdate(
         speedMultiplier: speed,
@@ -262,7 +260,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
+      style: AppFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
       decoration: InputDecoration(
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest,
@@ -306,7 +304,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
             const SizedBox(width: 8),
             Text(
               unit,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fs,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface.withOpacity(0.87),
@@ -344,7 +342,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs + 2,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -353,7 +351,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -384,7 +382,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
         children: [
           Text(
             "Ignition Source",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs + 2,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.9),
@@ -393,7 +391,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
           const SizedBox(height: 4),
           Text(
             "Choose how engine ON/OFF is derived.",
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs - 2,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -407,7 +405,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                   activeColor: colorScheme.primary,
                   title: Text(
                     "Ignition Wire",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fs - 1,
                       color: colorScheme.onSurface,
                     ),
@@ -424,7 +422,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                   activeColor: colorScheme.primary,
                   title: Text(
                     "Motion-Based",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fs - 1,
                       color: colorScheme.onSurface,
                     ),
@@ -473,7 +471,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                 onPressed: () => setState(_applySnapshot),
                 child: Text(
                   "Reset",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fs - 2,
                     color: colorScheme.onSurface,
                   ),
@@ -502,7 +500,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
                     if (_saving) const SizedBox(width: 8),
                     Text(
                       "Save",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fs - 2,
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -518,7 +516,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
             children: [
               Text(
                 "Vehicle Setting Configuration",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fs + 1,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.7),

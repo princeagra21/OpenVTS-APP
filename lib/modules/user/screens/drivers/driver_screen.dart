@@ -14,8 +14,11 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class DriverScreen extends StatefulWidget {
   final bool embedded;
@@ -63,10 +66,7 @@ class _DriverScreenState extends State<DriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
@@ -223,7 +223,7 @@ class _DriverScreenState extends State<DriverScreen> {
           children: [
             Text(
               'No drivers found',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs + 1,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -232,7 +232,7 @@ class _DriverScreenState extends State<DriverScreen> {
             const SizedBox(height: 8),
             Text(
               'Add a driver to get started.',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -300,7 +300,7 @@ class _DriverScreenState extends State<DriverScreen> {
                 children: [
                   Text(
                     'Drivers',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -309,7 +309,7 @@ class _DriverScreenState extends State<DriverScreen> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final result = await context.push('/user/drivers/add');
+                      final result = await context.push(AppRoutes.userDriversAdd);
                       if (result == true) {
                         _loadDrivers();
                       }
@@ -337,7 +337,7 @@ class _DriverScreenState extends State<DriverScreen> {
                           SizedBox(width: spacing / 2),
                           Text(
                             'New',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fsMain,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -362,14 +362,14 @@ class _DriverScreenState extends State<DriverScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMain,
                     height: 20 / 14,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search name, mobile, vehicle, address...',
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: colorScheme.onSurface.withOpacity(0.5),
                       fontSize: fsSecondary,
                       height: 16 / 12,
@@ -436,7 +436,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Filter',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -477,7 +477,7 @@ class _DriverScreenState extends State<DriverScreen> {
                               children: [
                                 Text(
                                   'Records',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -523,7 +523,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Refresh',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain - 3,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -554,7 +554,7 @@ class _DriverScreenState extends State<DriverScreen> {
                     children: [
                       Text(
                         'No drivers found',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain + 2,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -563,7 +563,7 @@ class _DriverScreenState extends State<DriverScreen> {
                       SizedBox(height: spacing / 2),
                       Text(
                         'Create a new driver to get started.',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSecondary,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -616,8 +616,8 @@ class _DriverScreenState extends State<DriverScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -636,7 +636,7 @@ class _DriverScreenState extends State<DriverScreen> {
             child: UserHomeAppBar(
               title: 'Drivers',
               leadingIcon: Icons.badge_outlined,
-              onClose: () => context.go('/user/home'),
+              onClose: () => context.go(AppRoutes.userHome),
             ),
           ),
         ],
@@ -687,7 +687,7 @@ class _DriverScreenState extends State<DriverScreen> {
             hoverColor: Colors.transparent,
             onTap: () async {
               await context.push(
-                '/user/drivers/details/${driver.id}',
+                AppRoutes.userDriversDetails(driver.id),
                 extra: driver,
               );
               if (!mounted) return;
@@ -718,7 +718,7 @@ class _DriverScreenState extends State<DriverScreen> {
                           alignment: Alignment.center,
                           child: Text(
                             driver.initials,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               color: colorScheme.onSurface,
                               fontSize:
                                   AdaptiveUtils.getFsAvatarFontSize(screenWidth),
@@ -737,7 +737,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                 Expanded(
                                   child: Text(
                                     _safe(driver.fullName),
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsMain,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -766,7 +766,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                 Expanded(
                                   child: Text(
                                     phone,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -791,7 +791,7 @@ class _DriverScreenState extends State<DriverScreen> {
                                 Expanded(
                                   child: Text(
                                     vehicle,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: fsSecondary,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,
@@ -837,7 +837,7 @@ class _DriverScreenState extends State<DriverScreen> {
                             Expanded(
                               child: Text(
                                 'Location',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMeta,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w500,
@@ -852,7 +852,7 @@ class _DriverScreenState extends State<DriverScreen> {
                         SizedBox(height: spacing),
                         Text(
                           address,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -887,7 +887,7 @@ class _DriverScreenState extends State<DriverScreen> {
                         SizedBox(width: spacing),
                         Text(
                           'View',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,

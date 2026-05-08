@@ -1,7 +1,7 @@
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ProfileInfoBoxes extends StatelessWidget {
   final String lastLogin;
@@ -85,7 +85,7 @@ class ProfileInfoBoxes extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -104,7 +104,7 @@ class ProfileInfoBoxes extends StatelessWidget {
                   )
                 : Text(
                     content,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: contentFontSize,
                       color: colorScheme.onSurface.withOpacity(0.6),
                       height: 1.3,

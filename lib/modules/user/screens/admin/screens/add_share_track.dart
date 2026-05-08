@@ -8,7 +8,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ShareTrackAddScreen extends StatefulWidget {
   const ShareTrackAddScreen({super.key});
@@ -69,10 +70,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
   }
 
   UserShareTrackLinksRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserShareTrackLinksRepository(api: _apiClient!);
     return _repo!;
   }
@@ -233,7 +231,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                 children: [
                   Text(
                     'Add Share Track',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -297,7 +295,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'Permissions',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: fs,
                             fontWeight: FontWeight.bold,
                           ),
@@ -305,7 +303,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                         SwitchListTile(
                           title: Text(
                             'Geofence',
-                            style: GoogleFonts.inter(fontSize: fs),
+                            style: AppFonts.inter(fontSize: fs),
                           ),
                           value: geofence,
                           onChanged: (v) => setState(() => geofence = v),
@@ -313,7 +311,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                         SwitchListTile(
                           title: Text(
                             'History last 24 hours',
-                            style: GoogleFonts.inter(fontSize: fs),
+                            style: AppFonts.inter(fontSize: fs),
                           ),
                           value: history24h,
                           onChanged: (v) => setState(() => history24h = v),
@@ -321,7 +319,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'Links auto-expire and can be revoked anytime.',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: fs - 1,
                             color: Colors.red,
                           ),
@@ -345,7 +343,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                                 ),
                                 child: Text(
                                   'Cancel',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -371,7 +369,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
                                       )
                                     : Text(
                                         'Create',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -417,13 +415,13 @@ class _PickerField extends StatelessWidget {
       child: AbsorbPointer(
         child: TextFormField(
           controller: controller,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize,
             color: colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: GoogleFonts.inter(
+            labelStyle: AppFonts.inter(
               fontSize: fontSize - 1,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -510,7 +508,7 @@ class CustomMultiDropdownField<T> extends StatelessWidget {
                                     Expanded(
                                       child: Text(
                                         hintText,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fontSize,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -554,7 +552,7 @@ class CustomMultiDropdownField<T> extends StatelessWidget {
                                           itemLabelBuilder != null
                                               ? itemLabelBuilder!(item)
                                               : item.toString(),
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fontSize,
                                           ),
                                         ),
@@ -620,7 +618,7 @@ class CustomMultiDropdownField<T> extends StatelessWidget {
                 displayText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: fontSize,
                   color: items.isEmpty
                       ? colorScheme.onSurface.withOpacity(0.5)

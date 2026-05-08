@@ -10,7 +10,8 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/shared/components/custom_text_field.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AssignDriverScreen extends StatefulWidget {
   final String? current;
@@ -49,10 +50,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= UserDriversRepository(api: _api!);
     return _repo!;
   }
@@ -130,7 +128,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                 children: [
                   Text(
                     'Assign to Driver',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -183,7 +181,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                           children: [
                             Text(
                               'No drivers found',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,
                               ),
@@ -191,7 +189,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                             const SizedBox(height: 6),
                             Text(
                               'Add a driver first, then return to assign it to this route.',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 color: cs.onSurface.withOpacity(0.6),
                               ),
                             ),
@@ -269,7 +267,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                                               driver.fullName,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.inter(
                                                 fontSize:
                                                     AdaptiveUtils.getSubtitleFontSize(
                                                       w,
@@ -284,7 +282,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                                               '${driver.fullPhone} • $location',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.inter(
                                                 fontSize:
                                                     AdaptiveUtils.getTitleFontSize(
                                                       w,
@@ -298,7 +296,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
                                             const SizedBox(height: 6),
                                             Text(
                                               driver.statusLabel,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.inter(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w500,
                                                 color: statusColor,

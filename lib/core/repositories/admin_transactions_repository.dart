@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_transaction_item.dart';
 import 'package:open_vts/core/models/admin_transactions_summary.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminTransactionsRepository {
   final ApiClient api;
@@ -31,7 +32,7 @@ class AdminTransactionsRepository {
     if (to != null && to.trim().isNotEmpty) query['to'] = to.trim();
 
     final res = await api.get(
-      '/admin/transactions',
+      ApiPaths.path('/admin/transactions'),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -64,7 +65,7 @@ class AdminTransactionsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/transactions/analytics',
+      ApiPaths.path('/admin/transactions/analytics'),
       cancelToken: cancelToken,
     );
 

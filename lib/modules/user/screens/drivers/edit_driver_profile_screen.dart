@@ -8,7 +8,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class EditDriverProfileScreen extends StatefulWidget {
   final String driverId;
@@ -56,7 +57,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -107,10 +108,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
@@ -307,7 +305,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
                 children: [
                   Text(
                     'Edit Driver Profile',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface.withOpacity(0.9),
@@ -326,7 +324,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 'Update driver details',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.87),
@@ -368,7 +366,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
       children: [
         TextField(
           controller: _nameController,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w),
             color: cs.onSurface,
           ),
@@ -379,7 +377,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
         const SizedBox(height: 16),
         TextField(
           controller: _usernameController,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w),
             color: cs.onSurface,
           ),
@@ -390,7 +388,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
         const SizedBox(height: 16),
         TextField(
           controller: _emailController,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w),
             color: cs.onSurface,
           ),
@@ -404,7 +402,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
             Expanded(
               child: TextField(
                 controller: _codeController,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -419,7 +417,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
               child: TextField(
                 controller: _mobileController,
                 keyboardType: TextInputType.phone,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -435,7 +433,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
         const SizedBox(height: 16),
         TextField(
           controller: _addressController,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w),
             color: cs.onSurface,
           ),
@@ -450,7 +448,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
             Expanded(
               child: TextField(
                 controller: _countryController,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -465,7 +463,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
             Expanded(
               child: TextField(
                 controller: _stateController,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -484,7 +482,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
             Expanded(
               child: TextField(
                 controller: _cityController,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -500,7 +498,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
               child: TextField(
                 controller: _pincodeController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getTitleFontSize(w),
                   color: cs.onSurface,
                 ),
@@ -516,7 +514,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
         const SizedBox(height: 32),
         Text(
           'Driver attributes',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w),
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -525,7 +523,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
         const SizedBox(height: 6),
         Text(
           'Add additional driver details (license, blood group, etc.)',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
             color: cs.onSurface.withOpacity(0.7),
           ),
@@ -541,7 +539,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
                 Expanded(
                   child: TextField(
                     controller: field.keyController,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(w),
                       color: cs.onSurface,
                     ),
@@ -561,7 +559,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
                 Expanded(
                   child: TextField(
                     controller: field.valueController,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(w),
                       color: cs.onSurface,
                     ),
@@ -620,7 +618,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
                   ? const AppShimmer(width: 18, height: 18, radius: 9)
                   : Text(
                       'Save Changes',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         color: cs.onPrimary,
                         fontWeight: FontWeight.w600,

@@ -14,8 +14,11 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:open_vts/modules/user/widgets/home/card/vehicle_status_box.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -54,10 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   UserHomeRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= UserHomeRepository(api: _api!);
     return _repo!;
   }
@@ -146,8 +146,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -587,7 +587,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 Text(
                   name,
                   maxLines: 2,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: mainRowFs,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -599,7 +599,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                   type,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: secondaryFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -623,7 +623,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 ),
                 child: Text(
                   status,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: metaFs,
                     height: 14 / 11,
                     fontWeight: FontWeight.w600,
@@ -634,7 +634,7 @@ class _RecentVehiclesSection extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 _timeLabel(timeRaw),
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: metaFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -707,13 +707,13 @@ class _RecentVehiclesSection extends StatelessWidget {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push('/user/vehicles'),
+                onTap: () => context.push(AppRoutes.userVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 14 * scale,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -743,7 +743,7 @@ class _RecentVehiclesSection extends StatelessWidget {
           else if (assets.isEmpty)
             Text(
               'No recent vehicles',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: linkFontSize,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,

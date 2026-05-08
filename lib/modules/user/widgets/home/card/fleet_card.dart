@@ -3,7 +3,7 @@ import 'package:open_vts/core/models/user_usage_last_7_days.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class CustomBox extends StatelessWidget {
   final Widget child;
@@ -83,7 +83,7 @@ class OverviewBox extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleFontSize,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,

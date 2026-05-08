@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_vehicle_list_item.dart';
@@ -8,7 +10,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -41,10 +42,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
   bool _assigning = false;
 
   AdminUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminUsersRepository(api: _apiClient!);
     return _repo!;
   }
@@ -91,7 +89,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
               children: [
                 Text(
                   'Export Vehicles',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(
                           MediaQuery.of(context).size.width,
                         ) +
@@ -181,7 +179,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                               Expanded(
                                 child: Text(
                                   'Assign Vehicle',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize:
                                         AdaptiveUtils.getTitleFontSize(width) + 1,
                                     fontWeight: FontWeight.w700,
@@ -238,7 +236,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                                 ? Center(
                                     child: Text(
                                       'No available vehicle to assign.',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                         color: cs.onSurface.withValues(alpha: 0.65),
@@ -275,7 +273,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                                             children: [
                                               Text(
                                                 v.nameModel,
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
                                                   color: cs.onSurface,
@@ -286,7 +284,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                                               const SizedBox(height: 4),
                                               Text(
                                                 '${v.plateNumber} · ${v.imei}',
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                   color: cs.onSurface.withValues(
@@ -342,7 +340,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
               ),
               child: Text(
                 'No available vehicle to assign.',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: cs.error,
@@ -749,7 +747,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
             children: [
               Text(
                 'Admin Vehicles',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: headerSize,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -787,7 +785,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                       const SizedBox(width: 6),
                       Text(
                         'Assign',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsMain,
                           fontWeight: FontWeight.w600,
                           color: cs.surface,
@@ -805,7 +803,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
           else
             Text(
               '${_vehicles.length} vehicle(s) registered',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2,
                 fontWeight: FontWeight.w500,
                 color: cs.onSurface.withOpacity(0.7),
@@ -826,7 +824,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search vehicles...',
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       fontSize:
                           AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2,
                       color: cs.onSurface.withOpacity(0.5),
@@ -905,7 +903,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Filter',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -955,7 +953,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Refresh',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -1002,7 +1000,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                               Flexible(
                                 child: Text(
                                   'Export',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -1028,7 +1026,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
           else if (filtered.isEmpty)
             Text(
               'No vehicles found.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsMain,
                 fontWeight: FontWeight.w500,
                 color: cs.onSurface.withOpacity(0.7),
@@ -1130,7 +1128,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                     Text(
                       name,
                       softWrap: true,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,
@@ -1152,7 +1150,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                         plate,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface.withOpacity(0.7),
@@ -1232,7 +1230,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
               color: cs.onSurface.withOpacity(0.7),
@@ -1246,7 +1244,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                 line,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: valueSize,
                   fontWeight: FontWeight.w600,
                   color: cs.onSurface,

@@ -1,6 +1,6 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/renewals/add_renewal_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class AddRenewalScreen extends StatefulWidget {
@@ -33,7 +33,7 @@ class _AddRenewalScreenState extends State<AddRenewalScreen> {
                 children: [
                   Text(
                     "New Manual Renewal",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -72,7 +72,7 @@ Row(
         ),
         child: Text(
           "Cancel",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: AppFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
     ),
@@ -92,7 +92,7 @@ Row(
         ),
         child: Text(
           "Save Renewal",
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: AppFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
     ),

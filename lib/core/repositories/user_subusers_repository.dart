@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/user_subuser_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserSubUsersRepository {
   final ApiClient api;
@@ -14,7 +15,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/subusers',
+      ApiPaths.path('/user/subusers'),
       queryParameters: {'page': page, 'limit': limit},
       cancelToken: cancelToken,
     );
@@ -46,7 +47,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/subusers',
+      ApiPaths.path('/user/subusers'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -63,7 +64,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/user/subusers/$id',
+      ApiPaths.path('/user/subusers/$id'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -79,7 +80,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/subusers/$id',
+      ApiPaths.path('/user/subusers/$id'),
       cancelToken: cancelToken,
     );
 
@@ -101,7 +102,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/subusers/$id/vehicles',
+      ApiPaths.path('/user/subusers/$id/vehicles'),
       cancelToken: cancelToken,
     );
 
@@ -132,7 +133,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/user/subusers/$id',
+      ApiPaths.path('/user/subusers/$id'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -147,7 +148,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/subusers/$id/vehicles/assign',
+      ApiPaths.path('/user/subusers/$id/vehicles/assign'),
       data: {'vehicleIds': vehicleIds},
       cancelToken: cancelToken,
     );
@@ -163,7 +164,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/subusers/$id/vehicles/unassign',
+      ApiPaths.path('/user/subusers/$id/vehicles/unassign'),
       data: {'vehicleIds': vehicleIds},
       cancelToken: cancelToken,
     );

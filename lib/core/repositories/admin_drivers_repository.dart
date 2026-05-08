@@ -5,6 +5,7 @@ import 'package:open_vts/core/models/admin_driver_list_item.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminDriversRepository {
   final ApiClient api;
@@ -29,7 +30,7 @@ class AdminDriversRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/drivers',
+      ApiPaths.path('/admin/drivers'),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -58,7 +59,7 @@ class AdminDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/drivers/$driverId',
+      ApiPaths.path('/admin/drivers/$driverId'),
       cancelToken: cancelToken,
     );
 
@@ -77,7 +78,7 @@ class AdminDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/drivers/$driverId',
+      ApiPaths.path('/admin/drivers/$driverId'),
       data: <String, dynamic>{
         // Match Postman exactly: lower-case key with string boolean.
         'isactive': isActive.toString(),
@@ -96,7 +97,7 @@ class AdminDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/documents/driver/$driverId',
+      ApiPaths.path('/admin/documents/driver/$driverId'),
       cancelToken: cancelToken,
     );
 
@@ -126,7 +127,7 @@ class AdminDriversRepository {
   }) async {
     final rk = DateTime.now().millisecondsSinceEpoch;
     final res = await api.get(
-      '/admin/drivers/linkedusers/$driverId',
+      ApiPaths.path('/admin/drivers/linkedusers/$driverId'),
       queryParameters: <String, dynamic>{'rk': rk},
       cancelToken: cancelToken,
     );
@@ -157,7 +158,7 @@ class AdminDriversRepository {
   }) async {
     final rk = DateTime.now().millisecondsSinceEpoch;
     final res = await api.get(
-      '/admin/drivers/unlinkedusers/$driverId',
+      ApiPaths.path('/admin/drivers/unlinkedusers/$driverId'),
       queryParameters: <String, dynamic>{'rk': rk},
       cancelToken: cancelToken,
     );
@@ -188,7 +189,7 @@ class AdminDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/drivers/linkedusers/$driverId',
+      ApiPaths.path('/admin/drivers/linkedusers/$driverId'),
       data: <String, dynamic>{'userId': userId},
       cancelToken: cancelToken,
     );
@@ -204,7 +205,7 @@ class AdminDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/drivers/unlinkedusers/$driverId',
+      ApiPaths.path('/admin/drivers/unlinkedusers/$driverId'),
       data: <String, dynamic>{'userId': userId},
       cancelToken: cancelToken,
     );

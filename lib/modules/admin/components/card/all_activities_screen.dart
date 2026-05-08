@@ -1,10 +1,10 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AllActivitiesScreen extends StatefulWidget {
@@ -134,9 +134,9 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity["id"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["name"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
+            Text(activity["id"], style: AppFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(activity["name"], style: AppFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(dateStr, style: AppFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
           ],
         );
 
@@ -148,7 +148,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           ),
           child: Text(
             activity["status"],
-            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
+            style: AppFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
           ),
         );
         break;
@@ -163,9 +163,9 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activity["title"], style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["description"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
+            Text(activity["title"], style: AppFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(activity["description"], style: AppFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(dateStr, style: AppFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
           ],
         );
 
@@ -177,7 +177,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           ),
           child: Text(
             activity["status"],
-            style: GoogleFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
+            style: AppFonts.inter(color: colorScheme.onPrimary, fontSize: badgeFontSize),
           ),
         );
         break;
@@ -195,16 +195,16 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           child: CircleAvatar(
             radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
             backgroundColor: Colors.transparent,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.primary)),
+            child: Text(initials, style: AppFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.bold, color: colorScheme.primary)),
           ),
         );
 
         content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name, style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-            Text(activity["email"], style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
-            Text(dateStr, style: GoogleFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
+            Text(name, style: AppFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(activity["email"], style: AppFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54))),
+            Text(dateStr, style: AppFonts.inter(fontSize: subFontSize - 1, color: colorScheme.onSurface.withOpacity(0.7))),
           ],
         );
 
@@ -267,7 +267,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                   children: [
                     Icon(Icons.calendar_month, size: fs + 4, color: colorScheme.primary),
                     const SizedBox(width: 12),
-                    Text(formattedRange, style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface)),
+                    Text(formattedRange, style: AppFonts.inter(fontSize: fs, color: colorScheme.onSurface)),
                   ],
                 ),
               ),
@@ -277,7 +277,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           if (filteredActivities.isEmpty)
             Center(
               child: Text('No activities in selected range',
-                  style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface.withOpacity(0.6))),
+                  style: AppFonts.inter(fontSize: fs, color: colorScheme.onSurface.withOpacity(0.6))),
             )
           else
             ListView.separated(

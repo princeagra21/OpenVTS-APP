@@ -1,18 +1,17 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/documents_tab/documents_tab.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_document_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/modules/admin/screens/account/widget/documents/add_document.dart';
+import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/documents/file_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AdminUserDocumentsTab extends StatefulWidget {
   final String userId;
@@ -106,10 +105,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminUsersRepository(api: _api!);
 
       final res = await _repo!.getUserDocuments(
@@ -236,7 +232,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                 children: [
                   Text(
                     'Browse Documents',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fsSection,
                       height: 24 / 18,
                       fontWeight: FontWeight.w700,
@@ -259,14 +255,14 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: (_) => setState(() {}),
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: fsMain,
                     height: 20 / 14,
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: "Search title, type, status, tag...",
-                    hintStyle: GoogleFonts.roboto(
+                    hintStyle: AppFonts.roboto(
                       color: colorScheme.onSurface.withOpacity(0.5),
                       fontSize: fsSecondary,
                       height: 16 / 12,
@@ -337,7 +333,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Filter',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -378,7 +374,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                               children: [
                                 Text(
                                   'Records',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -403,7 +399,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                             final updated = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AddDocumentScreen(
+                                builder: (context) => AdminAddDocumentScreen(
                                   associateId: widget.userId,
                                   associateType: 'USER',
                                 ),
@@ -440,7 +436,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                                 SizedBox(width: spacing / 2),
                                 Text(
                                   'Upload',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: fsMain,
                                     height: 20 / 14,
                                     fontWeight: FontWeight.w600,
@@ -484,7 +480,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                     children: [
                       Text(
                         'No documents found',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.onSurface,
@@ -493,7 +489,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                       const SizedBox(height: 6),
                       Text(
                         'Upload a document to see it listed here.',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 12,
                           height: 1.45,
                           color: colorScheme.onSurface.withOpacity(0.68),
@@ -510,7 +506,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                       Expanded(
                         child: Text(
                           "Couldn't load documents.",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: 14,
                             color: colorScheme.onSurface.withOpacity(0.75),
                           ),

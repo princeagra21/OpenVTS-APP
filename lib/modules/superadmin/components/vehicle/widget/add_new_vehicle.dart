@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/vehicle/add_vehicle_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -8,7 +10,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -76,10 +77,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     setState(() => _loadingPricingPlans = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final capRes = await _repo!.canAccessAdminPricingPlans(
@@ -139,10 +137,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     }
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getPricingPlans(cancelToken: token);
@@ -269,7 +264,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 children: [
                   Text(
                     "Add New Vehicle",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -289,7 +284,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               Center(
                 child: Text(
                   "Register a new vehicle",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize + 2,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -386,7 +381,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           ),
                           child: Text(
                             "Add Vehicle",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: labelSize + 2,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onPrimary,
@@ -436,7 +431,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface.withOpacity(0.87),
@@ -446,10 +441,10 @@ class StylishTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscureText,
-          style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
+          style: AppFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.roboto(
+            hintStyle: AppFonts.roboto(
               color: colorScheme.onSurface.withOpacity(0.6),
               fontSize: fs,
             ),
@@ -517,7 +512,7 @@ class StylishDropdown extends StatelessWidget {
             children: [
               TextSpan(
                 text: label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fs,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -553,7 +548,7 @@ class StylishDropdown extends StatelessWidget {
             value: value,
             hint: Text(
               hint,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 color: colorScheme.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -567,7 +562,7 @@ class StylishDropdown extends StatelessWidget {
             ),
             dropdownColor: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs,
               color: colorScheme.onSurface,
             ),

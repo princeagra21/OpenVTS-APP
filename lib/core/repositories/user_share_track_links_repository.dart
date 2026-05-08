@@ -4,6 +4,7 @@ import 'package:open_vts/core/models/vehicle_list_item.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserShareTrackLinksRepository {
   final ApiClient api;
@@ -14,7 +15,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/sharetracklinks',
+      ApiPaths.path('/user/sharetracklinks'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -42,7 +43,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/vehicles',
+      ApiPaths.path('/user/vehicles'),
       queryParameters: const {'limit': 100},
       cancelToken: cancelToken,
     );
@@ -80,7 +81,7 @@ class UserShareTrackLinksRepository {
     };
 
     final primary = await api.post(
-      '/user/sharetracklinks',
+      ApiPaths.path('/user/sharetracklinks'),
       data: primaryPayload,
       cancelToken: cancelToken,
     );
@@ -104,7 +105,7 @@ class UserShareTrackLinksRepository {
           'isHistory': isHistory,
         };
         final fallback = await api.post(
-          '/user/sharetracklinks',
+          ApiPaths.path('/user/sharetracklinks'),
           data: fallbackPayload,
           cancelToken: cancelToken,
         );
@@ -133,7 +134,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/user/sharetracklinks/$id',
+      ApiPaths.path('/user/sharetracklinks/$id'),
       data: {'isActive': isActive, 'active': isActive},
       cancelToken: cancelToken,
     );
@@ -147,7 +148,7 @@ class UserShareTrackLinksRepository {
 
   Future<Result<void>> deleteLink(String id, {CancelToken? cancelToken}) async {
     final res = await api.delete(
-      '/user/sharetracklinks/$id',
+      ApiPaths.path('/user/sharetracklinks/$id'),
       cancelToken: cancelToken,
     );
     return res.when(

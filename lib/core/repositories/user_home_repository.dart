@@ -5,6 +5,7 @@ import 'package:open_vts/core/models/user_top_asset_item.dart';
 import 'package:open_vts/core/models/user_usage_last_7_days.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserHomeRepository {
   final ApiClient api;
@@ -15,7 +16,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/dashboard/fleet-status',
+      ApiPaths.path('/user/dashboard/fleet-status'),
       queryParameters: <String, dynamic>{
         'rk': DateTime.now().millisecondsSinceEpoch,
       },
@@ -32,7 +33,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/dashboard/usage-last-7-days',
+      ApiPaths.path('/user/dashboard/usage-last-7-days'),
       cancelToken: cancelToken,
     );
 
@@ -47,7 +48,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/dashboard/recent-alerts',
+      ApiPaths.path('/user/dashboard/recent-alerts'),
       queryParameters: {'limit': limit},
       cancelToken: cancelToken,
     );
@@ -69,7 +70,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/dashboard/top-performing-assets',
+      ApiPaths.path('/user/dashboard/top-performing-assets'),
       queryParameters: {'limit': limit},
       cancelToken: cancelToken,
     );

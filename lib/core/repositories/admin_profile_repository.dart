@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminProfileRepository {
   final ApiClient api;
@@ -10,7 +11,7 @@ class AdminProfileRepository {
   const AdminProfileRepository({required this.api});
 
   Future<Result<AdminProfile>> getMyProfile({CancelToken? cancelToken}) async {
-    final res = await api.get('/admin/profile', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/profile'), cancelToken: cancelToken);
     return res.when(
       success: (data) => Result.ok(AdminProfile(_asMap(data))),
       failure: (err) => Result.fail(err),
@@ -22,7 +23,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/profile',
+      ApiPaths.path('/admin/profile'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -53,7 +54,7 @@ class AdminProfileRepository {
     };
 
     final res = await api.patch(
-      '/admin/updatepassword',
+      ApiPaths.path('/admin/updatepassword'),
       data: body,
       cancelToken: cancelToken,
     );
@@ -70,7 +71,7 @@ class AdminProfileRepository {
   // POST /admin/profile/verify/whatsapp/confirm body: { "otp": "123456" }
   Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      '/admin/profile/verify/email/request',
+      ApiPaths.path('/admin/profile/verify/email/request'),
       // Some backend deployments reject POST with a null JSON body.
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
@@ -86,7 +87,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/profile/verify/email/confirm',
+      ApiPaths.path('/admin/profile/verify/email/confirm'),
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -98,7 +99,7 @@ class AdminProfileRepository {
 
   Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      '/admin/profile/verify/whatsapp/request',
+      ApiPaths.path('/admin/profile/verify/whatsapp/request'),
       // Some backend deployments reject POST with a null JSON body.
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
@@ -114,7 +115,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/profile/verify/whatsapp/confirm',
+      ApiPaths.path('/admin/profile/verify/whatsapp/confirm'),
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -136,7 +137,7 @@ class AdminProfileRepository {
       );
     }
     final res = await api.patch(
-      '/admin/companydetails/$id',
+      ApiPaths.path('/admin/companydetails/$id'),
       data: payload,
       cancelToken: cancelToken,
     );

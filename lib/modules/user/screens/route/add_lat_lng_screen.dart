@@ -1,8 +1,8 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/map/add_lat_lng_screen.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/shared/components/custom_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
 class AddLatLngScreen extends StatefulWidget {
@@ -68,7 +68,7 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                 children: [
                   Text(
                     "Add Lat/Lng",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -147,7 +147,7 @@ class _AddLatLngScreenState extends State<AddLatLngScreen> {
                           children: [
                             Text(
                               "Select Icon",
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                              style: AppFonts.inter(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
                             Wrap(

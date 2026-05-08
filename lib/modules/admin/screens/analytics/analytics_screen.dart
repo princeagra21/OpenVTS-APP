@@ -1,10 +1,10 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/analytics/analytics_screen.dart
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -193,7 +193,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   // TITLE
                   Text(
                     "Renewal Overview",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: bodyFs + 2,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -205,7 +205,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   // SUBTITLE
                   Text(
                     "Upcoming renewals within 30 days",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: smallFs,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
@@ -216,7 +216,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   // AMOUNT
                   Text(
                     valueAtRiskText,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleFs + 6,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.primary,
@@ -228,7 +228,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   // DEVICES TEXT
                   Text(
                     expiring > 0 ? "$expiring devices expiring soon" : "—",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: smallFs,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
@@ -262,7 +262,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 children: [
                                   Text(
                                     "Renewal rate (est.)",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: smallFs,
                                       color: colorScheme.onSurface.withOpacity(
                                         0.6,
@@ -271,7 +271,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   ),
                                   Text(
                                     renewalRateText,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
@@ -309,7 +309,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 children: [
                                   Text(
                                     "Churn (est.)",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: smallFs,
                                       color: colorScheme.onSurface.withOpacity(
                                         0.6,
@@ -318,7 +318,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   ),
                                   Text(
                                     churnText,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.red,
@@ -362,7 +362,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             // TOP CUSTOMERS
             Text(
               "Top Customers • Expiring Value",
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs + 2,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
@@ -370,7 +370,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             Text(
               "Next 30 days",
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: smallFs,
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -393,7 +393,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ),
                 child: Text(
                   "—",
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: bodyFs,
                     color: colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -429,7 +429,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             child: Text(
                               "#${index + 1} ${cust['name']}",
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: bodyFs,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface,
@@ -445,7 +445,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             ),
                             label: Text(
                               "Remind",
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -459,7 +459,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       // POTENTIAL UNDER NAME
                       Text(
                         "Potential: ${f.format(cust['potential'])}",
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: bodyFs - 1,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -490,7 +490,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 children: [
                   Text(
                     "Operations Pulse",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: bodyFs + 2,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -498,7 +498,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                   Text(
                     "Quick health across the funnel",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: smallFs,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
@@ -519,7 +519,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           SizedBox(width: 8),
                           Text(
                             "Collection success (est.)",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: smallFs,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -529,7 +529,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                       Text(
                         collectionSuccessText,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: bodyFs,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -553,7 +553,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           SizedBox(width: 8),
                           Text(
                             "At-risk devices",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: smallFs,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -563,7 +563,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                       Text(
                         atRiskText,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: bodyFs,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -587,7 +587,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           SizedBox(width: 8),
                           Text(
                             "Avg. ticket",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: smallFs,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -597,7 +597,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                       Text(
                         avgTicketText,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: bodyFs,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -621,7 +621,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           SizedBox(width: 8),
                           Text(
                             "Customers with >10 devices",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: smallFs,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -631,7 +631,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                       Text(
                         largeCustomersText,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: bodyFs,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -666,14 +666,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           children: [
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: smallFs,
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             Text(
               value,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary.withOpacity(0.5),
@@ -682,7 +682,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             if (subtitle.isNotEmpty)
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: smallFs - 1,
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -814,7 +814,7 @@ class _CashflowBoxState extends State<CashflowBox> {
     final double dotRadius = AdaptiveUtils.getIconSize(screenWidth) / 4;
     final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth) - 4;
 
-    final titleStyle = GoogleFonts.inter(
+    final titleStyle = AppFonts.inter(
       fontSize: titleFontSize,
       fontWeight: FontWeight.bold,
       color: colorScheme.onSurface,
@@ -851,7 +851,7 @@ class _CashflowBoxState extends State<CashflowBox> {
           SizedBox(height: padding / 2),
           Text(
             "Online vs Manual collections",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: subheaderFontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
               fontWeight: FontWeight.w500,
@@ -887,7 +887,7 @@ class _CashflowBoxState extends State<CashflowBox> {
                       SizedBox(width: 4),
                       Text(
                         stat.toLowerCase(),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: subheaderFontSize + 5,
                           color: colorScheme.onSurface.withOpacity(textOpacity),
                         ),
@@ -944,7 +944,7 @@ class _CashflowBoxState extends State<CashflowBox> {
                           .map((spot) {
                             return LineTooltipItem(
                               f.format(spot.y.toInt()),
-                              GoogleFonts.inter(
+                              AppFonts.inter(
                                 fontSize: 12,
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -969,7 +969,7 @@ class _CashflowBoxState extends State<CashflowBox> {
                               locale: 'en_IN',
                               symbol: '₹',
                             ).format(value.toInt()),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: leftTitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.87),
                             ),
@@ -996,7 +996,7 @@ class _CashflowBoxState extends State<CashflowBox> {
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             label,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: bottomTitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.54),
                             ),

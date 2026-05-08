@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/vehicle/widget/vehicle_logs_tab.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -11,7 +13,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class VehicleLogsTab extends StatefulWidget {
   final String? imei;
@@ -140,10 +141,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getVehicleLogs(
@@ -232,7 +230,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                   SizedBox(width: hp / 2),
                   Text(
                     "Vehicle Logs",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fs + 2,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -251,7 +249,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
               const SizedBox(height: 4),
               Text(
                 "Generate and filter vehicle GPS logs",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: smallFs,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -279,7 +277,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       const SizedBox(width: 12),
                       Text(
                         formattedRange,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fs,
                           color: colorScheme.onSurface,
                         ),
@@ -291,13 +289,13 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
               const SizedBox(height: 16),
               TextField(
                 controller: _searchController,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fs,
                   color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: "Search by IMEI, coordinate, attributes...",
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: AppFonts.roboto(
                     fontSize: fs,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -340,7 +338,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       ),
                       label: Text(
                         "Export CSV",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fs,
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -369,7 +367,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       ),
                       label: Text(
                         "Email",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fs,
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -408,7 +406,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       const SizedBox(height: 12),
                       Text(
                         "No Logs Found",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fs + 2,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface.withOpacity(0.8),
@@ -418,7 +416,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       Text(
                         "Try adjusting your date range or search filter",
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: smallFs,
                           color: colorScheme.onSurface.withOpacity(0.6),
                         ),
@@ -441,7 +439,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                       children: [
                         Text(
                           log.type.isNotEmpty ? log.type : 'Log',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fs,
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
@@ -450,7 +448,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                         const SizedBox(height: 4),
                         Text(
                           log.message.isNotEmpty ? log.message : 'No message',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.75),
                           ),
@@ -458,7 +456,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                         const SizedBox(height: 6),
                         Text(
                           log.time.isNotEmpty ? log.time : '—',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: smallFs,
                             color: colorScheme.onSurface.withOpacity(0.6),
                           ),

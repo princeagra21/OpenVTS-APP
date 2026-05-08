@@ -11,10 +11,13 @@ import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_a
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -83,7 +86,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final id = admin['id']?.toString() ?? '';
     if (id.isEmpty) return;
     final changed = await context.push<bool>(
-      '/superadmin/admins/details/$id',
+      AppRoutes.superadminAdminsDetails(id),
       extra: admin['active'] == true || admin['status'] == true,
     );
     if (changed == true) {
@@ -170,10 +173,7 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdmins(
@@ -298,10 +298,7 @@ class _AdminScreenState extends State<AdminScreen> {
       _statusSubmittingAdminIds.add(adminId);
     });
 
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= SuperadminRepository(api: _api!);
 
     _statusTokensByAdminId[adminId]?.cancel('New toggle');
@@ -361,10 +358,7 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() {});
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.loginAsAdmin(adminId);
@@ -378,7 +372,7 @@ class _AdminScreenState extends State<AdminScreen> {
           }
           await storage.writeAccessToken(token);
           if (!mounted) return;
-          context.go('/admin/home');
+          context.go(AppRoutes.adminHome);
         },
         failure: (err) {
           final msg =
@@ -456,8 +450,8 @@ class _AdminScreenState extends State<AdminScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -488,7 +482,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     children: [
                       Text(
                         "Administrators",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fsSection,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -498,7 +492,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       InkWell(
                         onTap: () async {
                           final created = await context.push(
-                            '/superadmin/admins/add',
+                            AppRoutes.superadminAdminsAdd,
                           );
                           if (created == true) {
                             _loadAdmins();
@@ -527,7 +521,7 @@ class _AdminScreenState extends State<AdminScreen> {
                               SizedBox(width: spacing / 2),
                               Text(
                                 "New",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsMain,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -555,14 +549,14 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsMain,
                         height: 20 / 14,
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: "Search name, email, role, department...",
-                        hintStyle: GoogleFonts.roboto(
+                        hintStyle: AppFonts.roboto(
                           color: colorScheme.onSurface.withOpacity(0.5),
                           fontSize: fsSecondary,
                           height: 16 / 12,
@@ -641,7 +635,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Filter",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fsMain - 3,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -684,7 +678,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                       children: [
                                         Text(
                                           "Records",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
@@ -736,7 +730,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                     SizedBox(width: spacing / 2),
                                     Text(
                                       "Refresh",
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fsMain - 3,
                                         height: 20 / 14,
                                         fontWeight: FontWeight.w600,
@@ -777,7 +771,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                 _adminsLoadFailed
                                     ? "Couldn't load admins."
                                     : "No admins found",
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fsSecondary,
                                   height: 16 / 12,
                                   color: colorScheme.onSurface.withOpacity(0.8),
@@ -885,7 +879,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                             alignment: Alignment.center,
                                             child: Text(
                                               admin["initials"],
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 color:
                                                     colorScheme.onSurface,
                                                 fontSize:
@@ -929,7 +923,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                               ?.toString(),
                                                           fallback: '—',
                                                         ),
-                                                        style: GoogleFonts.roboto(
+                                                        style: AppFonts.roboto(
                                                           fontSize: fsMain,
                                                           height: 20 / 14,
                                                           fontWeight:
@@ -960,7 +954,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                               ?.toString(),
                                                         ),
                                                         style:
-                                                            GoogleFonts.roboto(
+                                                            AppFonts.roboto(
                                                           fontSize: fsSecondary,
                                                           height: 16 / 12,
                                                           fontWeight:
@@ -991,7 +985,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -1022,7 +1016,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -1055,7 +1049,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsSecondary,
                                                         height: 16 / 12,
                                                         fontWeight:
@@ -1127,7 +1121,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                         children: [
                                           Text(
                                             "Location",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsMeta,
                                               height: 14 / 11,
                                               fontWeight: FontWeight.w500,
@@ -1141,7 +1135,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                               admin["location"]?.toString(),
                                               fallback: '—',
                                             ),
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: fsSecondary,
                                               height: 16 / 12,
                                               color: colorScheme.onSurface,
@@ -1196,7 +1190,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                           child: Text(
                                                             "Usage",
                                                             style:
-                                                                GoogleFonts.roboto(
+                                                                AppFonts.roboto(
                                                               fontSize: fsMeta,
                                                               height: 14 / 11,
                                                               fontWeight:
@@ -1221,7 +1215,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsMain,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -1270,7 +1264,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                           child: Text(
                                                             "Recent login",
                                                             style:
-                                                                GoogleFonts.roboto(
+                                                                AppFonts.roboto(
                                                               fontSize: fsMeta,
                                                               height: 14 / 11,
                                                               fontWeight:
@@ -1295,7 +1289,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                             ?.toString(),
                                                         fallback: '—',
                                                       ),
-                                                      style: GoogleFonts.roboto(
+                                                      style: AppFonts.roboto(
                                                         fontSize: fsMain,
                                                         height: 20 / 14,
                                                         fontWeight:
@@ -1348,7 +1342,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   )
                                                 : Text(
                                                     "Login",
-                                                    style: GoogleFonts.roboto(
+                                                    style: AppFonts.roboto(
                                                       fontSize: fsMain,
                                                       height: 20 / 14,
                                                       fontWeight:
@@ -1389,7 +1383,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
                 } else {
-                  context.go('/superadmin/home');
+                  context.go(AppRoutes.superadminHome);
                 }
               },
             ),
@@ -1547,7 +1541,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Login as admin?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1559,7 +1553,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'You are about to enter the admin module as $adminName. You can return to superadmin at any time.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1578,7 +1572,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1596,7 +1590,7 @@ class _AdminLoginConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Login',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

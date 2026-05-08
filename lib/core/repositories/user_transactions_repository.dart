@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_transaction_item.dart';
 import 'package:open_vts/core/models/user_transactions_page.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserTransactionsRepository {
   final ApiClient api;
@@ -25,7 +26,7 @@ class UserTransactionsRepository {
     }
 
     final res = await api.get(
-      '/user/transactions',
+      ApiPaths.path('/user/transactions'),
       queryParameters: queryParameters,
       cancelToken: cancelToken,
     );

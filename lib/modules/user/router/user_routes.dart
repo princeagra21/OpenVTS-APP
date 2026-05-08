@@ -35,29 +35,30 @@ import 'package:open_vts/core/models/user_driver_details.dart';
 import 'package:open_vts/core/models/user_subuser_item.dart';
 import 'package:open_vts/core/models/vehicle_list_item.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 final List<GoRoute> userRoutes = [
-  GoRoute(path: '/user', builder: (_, __) => const HomeScreen()),
-  GoRoute(path: '/user/home', builder: (_, __) => const HomeScreen()),
-  GoRoute(path: '/user/dashboard', builder: (_, __) => const DashboardScreen()),
-  GoRoute(path: '/user/maps', builder: (_, __) => const MapScreen()),
-  GoRoute(path: '/user/admin', builder: (_, __) => const AdminScreen()),
-  GoRoute(path: '/user/accounts', builder: (_, __) => const AccountsScreen()),
+  GoRoute(path: AppRoutes.user, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutes.userHome, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutes.userDashboard, builder: (_, __) => const DashboardScreen()),
+  GoRoute(path: AppRoutes.userMaps, builder: (_, __) => const MapScreen()),
+  GoRoute(path: AppRoutes.userAdmin, builder: (_, __) => const AdminScreen()),
+  GoRoute(path: AppRoutes.userAccounts, builder: (_, __) => const AccountsScreen()),
   GoRoute(
-    path: '/user/share-track',
+    path: AppRoutes.userShareTrack,
     builder: (_, __) => const ShareTrackScreen(),
   ),
   GoRoute(
-    path: '/user/share-track/add',
+    path: AppRoutes.userShareTrackAdd,
     builder: (_, __) => const ShareTrackAddScreen(),
   ),
-  GoRoute(path: '/user/vehicles', builder: (_, __) => const VehicleScreen()),
+  GoRoute(path: AppRoutes.userVehicles, builder: (_, __) => const VehicleScreen()),
   GoRoute(
-    path: '/user/vehicles/add',
+    path: AppRoutes.userVehiclesAdd,
     builder: (_, __) => const AddVehicleScreen(),
   ),
   GoRoute(
-    path: '/user/vehicles/details/:id',
+    path: AppRoutes.userVehiclesDetailsPattern,
     builder: (context, state) => VehicleDetailsScreen(
       vehicleId: state.pathParameters['id']!,
       initialVehicle: state.extra is VehicleListItem
@@ -65,13 +66,13 @@ final List<GoRoute> userRoutes = [
           : null,
     ),
   ),
-  GoRoute(path: '/user/drivers', builder: (_, __) => const DriverScreen()),
+  GoRoute(path: AppRoutes.userDrivers, builder: (_, __) => const DriverScreen()),
   GoRoute(
-    path: '/user/drivers/add',
+    path: AppRoutes.userDriversAdd,
     builder: (_, __) => const AddDriverScreen(),
   ),
   GoRoute(
-    path: '/user/drivers/details/:id',
+    path: AppRoutes.userDriversDetailsPattern,
     builder: (context, state) => DriverDetailsScreen(
       driverId: state.pathParameters['id']!,
       initialDriver: state.extra is AdminDriverListItem
@@ -80,7 +81,7 @@ final List<GoRoute> userRoutes = [
     ),
   ),
   GoRoute(
-    path: '/user/drivers/edit/:id',
+    path: AppRoutes.userDriversEditPattern,
     builder: (context, state) => EditDriverProfileScreen(
       driverId: state.pathParameters['id']!,
       initialDetails: state.extra is UserDriverDetails
@@ -88,37 +89,37 @@ final List<GoRoute> userRoutes = [
           : null,
     ),
   ),
-  GoRoute(path: '/user/geofence', builder: (_, __) => const GeofenceScreen()),
+  GoRoute(path: AppRoutes.userGeofence, builder: (_, __) => const GeofenceScreen()),
   GoRoute(
-    path: '/user/route-optimization',
+    path: AppRoutes.userRouteOptimization,
     builder: (_, __) => const RouteOptimizationScreen(),
   ),
-  GoRoute(path: '/user/support', builder: (_, __) => const SupportScreen()),
-  GoRoute(path: '/user/settings', builder: (_, __) => const SettingsScreen()),
-  GoRoute(path: '/user/profile', builder: (_, __) => const ProfileScreen()),
+  GoRoute(path: AppRoutes.userSupport, builder: (_, __) => const SupportScreen()),
+  GoRoute(path: AppRoutes.userSettings, builder: (_, __) => const SettingsScreen()),
+  GoRoute(path: AppRoutes.userProfile, builder: (_, __) => const ProfileScreen()),
   GoRoute(
-    path: '/user/generate-report',
+    path: AppRoutes.userGenerateReport,
     builder: (_, __) => const GenerateReportScreen(),
   ),
   GoRoute(
-    path: '/user/localization',
+    path: AppRoutes.userLocalization,
     builder: (_, __) => const LocalizationSettingsScreen(),
   ),
   GoRoute(
-    path: '/user/notifications/push',
+    path: AppRoutes.userNotificationsPush,
     builder: (_, __) => const PushNotificationScreen(),
   ),
   GoRoute(
-    path: '/user/notifications',
+    path: AppRoutes.userNotifications,
     builder: (_, __) => const NotificationsScreen(),
   ),
   GoRoute(
-    path: '/user/notification-settings',
+    path: AppRoutes.userNotificationSettings,
     builder: (_, __) => const NotificationSettingsScreen(),
   ),
-  GoRoute(path: '/user/sub-users', builder: (_, __) => const SubUserScreen()),
+  GoRoute(path: AppRoutes.userSubUsers, builder: (_, __) => const SubUserScreen()),
   GoRoute(
-    path: '/user/sub-users/details/:id',
+    path: AppRoutes.userSubUsersDetailsPattern,
     builder: (context, state) => SubUserDetailsScreen(
       userId: state.pathParameters['id']!,
       initialSubUser: state.extra is UserSubUserItem
@@ -127,7 +128,7 @@ final List<GoRoute> userRoutes = [
     ),
   ),
   GoRoute(
-    path: '/user/sub-users/edit/:id',
+    path: AppRoutes.userSubUsersEditPattern,
     builder: (context, state) => AddSubUserScreen(
       subUserId: state.pathParameters['id']!,
       initialSubUser: state.extra is UserSubUserItem
@@ -136,21 +137,21 @@ final List<GoRoute> userRoutes = [
     ),
   ),
   GoRoute(
-    path: '/user/sub-users/add',
+    path: AppRoutes.userSubUsersAdd,
     builder: (_, __) => const AddSubUserScreen(),
   ),
   GoRoute(
-    path: '/user/toggle/:eventType',
+    path: AppRoutes.userToggleEventTypePattern,
     builder: (context, state) =>
         VehicleToggleScreen(eventType: state.pathParameters['eventType']!),
   ),
-  GoRoute(path: '/user/more', builder: (_, __) => const MoreScreen()),
+  GoRoute(path: AppRoutes.userMore, builder: (_, __) => const MoreScreen()),
   GoRoute(
-    path: '/user/transactions',
+    path: AppRoutes.userTransactions,
     builder: (_, __) => const TransactionScreen(),
   ),
   GoRoute(
-    path: '/user/transactions/details/:id',
+    path: AppRoutes.userTransactionsDetailsPattern,
     builder: (context, state) => TransactionDetailsScreen(
       transactionId: state.pathParameters['id']!,
       transaction: state.extra is AdminTransactionItem

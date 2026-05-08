@@ -37,12 +37,6 @@ The app uses Dart defines (see `AppConfig.fromDartDefine()`):
 - `APP_ENV`
 - `API_BASE_URL`
 
-## API Docs
-Helpful references in the repo root:
-- `FleetStack-API-Reference.md`
-- `FleetStack-API-Reference-Missing.md`
-- `FleetStack-Missing-APIs-Client-Report.md`
-
 ## Conventions
 - UI text styles use `GoogleFonts.roboto`
 - Layout sizing via `AdaptiveUtils` and `AppUtils`

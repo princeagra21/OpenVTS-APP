@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // lib/screens/notification_toggle_tile.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // If using GoogleFonts, else adjust
 
 class NotificationToggleTile extends StatelessWidget {
   final IconData icon;
@@ -35,7 +35,7 @@ class NotificationToggleTile extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter( // Adjust if not using GoogleFonts
+        style: AppFonts.inter(
           fontSize: subtitleFont,
           fontWeight: FontWeight.bold,
           color: colorScheme.onSurface,
@@ -43,7 +43,7 @@ class NotificationToggleTile extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: bodyFont,
           color: colorScheme.onSurface.withOpacity(0.55),
         ),

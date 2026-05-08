@@ -8,7 +8,8 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class RolesScreen extends StatefulWidget {
   const RolesScreen({super.key});
@@ -66,10 +67,7 @@ class _RolesScreenState extends State<RolesScreen> {
   }
 
   SuperadminRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= SuperadminRepository(api: _apiClient!);
     return _repo!;
   }
@@ -437,7 +435,7 @@ class _RolesScreenState extends State<RolesScreen> {
                         icon: Icon(Icons.delete_outline, color: scheme.onError),
                         label: Text(
                           "Delete",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: scheme.onError,
                             fontWeight: FontWeight.w600,
                             fontSize: titleFs - 2,
@@ -456,7 +454,7 @@ class _RolesScreenState extends State<RolesScreen> {
                         ),
                         label: Text(
                           "Save",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: scheme.onPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: titleFs - 2,
@@ -468,7 +466,7 @@ class _RolesScreenState extends State<RolesScreen> {
                   const SizedBox(height: 16),
                   Text(
                     "Role Permissions",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs + 2,
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface.withOpacity(0.95),
@@ -477,7 +475,7 @@ class _RolesScreenState extends State<RolesScreen> {
                   const SizedBox(height: 4),
                   Text(
                     "Configure access levels for different modules",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs - 2,
                       fontWeight: FontWeight.w300,
                       color: scheme.onSurface.withOpacity(0.72),
@@ -487,7 +485,7 @@ class _RolesScreenState extends State<RolesScreen> {
 
                   Text(
                     "Roles",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs,
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
@@ -517,7 +515,7 @@ class _RolesScreenState extends State<RolesScreen> {
                       ),
                       child: Text(
                         "No role data from API.",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: scheme.onSurface.withOpacity(0.7),
                         ),
                       ),
@@ -540,7 +538,7 @@ class _RolesScreenState extends State<RolesScreen> {
                   const SizedBox(height: 28),
                   Text(
                     "Role Title",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs,
                       fontWeight: FontWeight.w600,
                       color: scheme.onSurface,
@@ -558,13 +556,13 @@ class _RolesScreenState extends State<RolesScreen> {
                       controller: _roleController,
                       onChanged: (v) => setState(() => selectedRoleTitle = v),
                       decoration: _inputDecoration(context, hint: "Role name"),
-                      style: GoogleFonts.roboto(color: scheme.onSurface),
+                      style: AppFonts.roboto(color: scheme.onSurface),
                     ),
 
                   const SizedBox(height: 24),
                   Text(
                     "Monthly Cost",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs,
                       fontWeight: FontWeight.w600,
                       color: scheme.onSurface,
@@ -605,7 +603,7 @@ class _RolesScreenState extends State<RolesScreen> {
                             child: DropdownButton<String>(
                               value: selectedCurrency,
                               isExpanded: true,
-                              style: GoogleFonts.roboto(color: scheme.onSurface),
+                              style: AppFonts.roboto(color: scheme.onSurface),
                               onChanged: (v) {
                                 if (v == null) return;
                                 setState(() => selectedCurrency = v);
@@ -637,7 +635,7 @@ class _RolesScreenState extends State<RolesScreen> {
                             child: DropdownButton<int>(
                               value: selectedAmount,
                               isExpanded: true,
-                              style: GoogleFonts.roboto(color: scheme.onSurface),
+                              style: AppFonts.roboto(color: scheme.onSurface),
                               onChanged: (v) {
                                 if (v == null) return;
                                 setState(() => selectedAmount = v);
@@ -659,7 +657,7 @@ class _RolesScreenState extends State<RolesScreen> {
                   const SizedBox(height: 28),
                   Text(
                     "Set all:",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleFs,
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
@@ -731,7 +729,7 @@ class _RolesScreenState extends State<RolesScreen> {
                       ),
                       child: Text(
                         "No permissions data for selected role.",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: scheme.onSurface.withOpacity(0.7),
                         ),
                       ),
@@ -755,7 +753,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                 flex: 3,
                                 child: Text(
                                   "Module",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontWeight: FontWeight.w800,
                                     color: scheme.onSurface,
                                   ),
@@ -765,7 +763,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                 flex: 5,
                                 child: Text(
                                   "Access",
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontWeight: FontWeight.w800,
                                     color: scheme.onSurface,
                                   ),
@@ -786,7 +784,7 @@ class _RolesScreenState extends State<RolesScreen> {
                                     flex: 3,
                                     child: Text(
                                       module,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontWeight: FontWeight.w600,
                                         color: scheme.onSurface,
                                       ),
@@ -832,7 +830,7 @@ class _RolesScreenState extends State<RolesScreen> {
     final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: scheme.onSurface.withOpacity(0.6),
         fontSize: 14,
       ),
@@ -891,7 +889,7 @@ class _LocalTab extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: small ? 11 : 13,
               fontWeight: FontWeight.w600,
               color: selected ? scheme.onPrimary : scheme.onSurface,

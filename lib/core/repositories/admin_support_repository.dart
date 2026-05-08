@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_ticket_list_item.dart';
 import 'package:open_vts/core/models/admin_ticket_message_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_envelope.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/utils/file_picker_helper.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminSupportRepository {
   final ApiClient api;
@@ -30,28 +32,20 @@ class AdminSupportRepository {
     if (rk != null) query['rk'] = rk;
 
     final res = await api.get(
-      '/admin/tickets',
+      AdminApiPaths.tickets,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['tickets', 'items', 'rows', 'results'],
         );
         final out = <AdminTicketListItem>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminTicketListItem(item));
-            } else if (item is Map) {
-              out.add(
-                AdminTicketListItem(Map<String, dynamic>.from(item.cast())),
-              );
-            }
-          }
+        for (final item in list) {
+          out.add(AdminTicketListItem(item));
         }
         return Result.ok(out);
       },
@@ -77,28 +71,20 @@ class AdminSupportRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      '/admin/mytickets',
+      AdminApiPaths.myTickets,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['tickets', 'items', 'rows', 'results', 'data'],
         );
         final out = <AdminTicketListItem>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminTicketListItem(item));
-            } else if (item is Map) {
-              out.add(
-                AdminTicketListItem(Map<String, dynamic>.from(item.cast())),
-              );
-            }
-          }
+        for (final item in list) {
+          out.add(AdminTicketListItem(item));
         }
         return Result.ok(out);
       },
@@ -114,33 +100,27 @@ class AdminSupportRepository {
     final query = <String, dynamic>{};
     if (rk != null) query['rk'] = rk;
     final res = await api.get(
-      '/admin/tickets/$ticketId',
+      AdminApiPaths.ticketDetails(ticketId),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
         );
         final out = <AdminTicketMessageItem>[];
 
-        if (list != null) {
+        if (list.isNotEmpty) {
           for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminTicketMessageItem(item));
-            } else if (item is Map) {
-              out.add(
-                AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())),
-              );
-            }
+            out.add(AdminTicketMessageItem(item));
           }
           return Result.ok(out);
         }
 
-        final single = _extractMap(data);
+        final single = _extractPayloadMap(data);
         if (single.isNotEmpty && _messageLike(single)) {
           out.add(AdminTicketMessageItem(single));
         }
@@ -158,30 +138,13 @@ class AdminSupportRepository {
     final query = <String, dynamic>{};
     if (rk != null) query['rk'] = rk;
     final res = await api.get(
-      '/admin/tickets/$ticketId',
+      AdminApiPaths.ticketDetails(ticketId),
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
 
     return res.when(
-      success: (data) {
-        if (data is! Map) return Result.ok(const <String, dynamic>{});
-        final root = data is Map<String, dynamic>
-            ? data
-            : Map<String, dynamic>.from(data.cast());
-
-        Map<String, dynamic> toMap(Object? v) {
-          if (v is Map<String, dynamic>) return v;
-          if (v is Map) return Map<String, dynamic>.from(v.cast());
-          return const <String, dynamic>{};
-        }
-
-        final l1 = toMap(root['data']);
-        final l2 = toMap(l1['data']);
-        if (l2.isNotEmpty) return Result.ok(l2);
-        if (l1.isNotEmpty) return Result.ok(l1);
-        return Result.ok(root);
-      },
+      success: (data) => Result.ok(_extractPayloadMap(data)),
       failure: (err) => Result.fail(err),
     );
   }
@@ -191,32 +154,26 @@ class AdminSupportRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/admin/mytickets/$ticketId',
+      AdminApiPaths.myTicketDetails(ticketId),
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
         );
         final out = <AdminTicketMessageItem>[];
 
-        if (list != null) {
+        if (list.isNotEmpty) {
           for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              out.add(AdminTicketMessageItem(item));
-            } else if (item is Map) {
-              out.add(
-                AdminTicketMessageItem(Map<String, dynamic>.from(item.cast())),
-              );
-            }
+            out.add(AdminTicketMessageItem(item));
           }
           return Result.ok(out);
         }
 
-        final single = _extractMap(data);
+        final single = _extractPayloadMap(data);
         if (single.isNotEmpty && _messageLike(single)) {
           out.add(AdminTicketMessageItem(single));
         }
@@ -251,15 +208,13 @@ class AdminSupportRepository {
         ),
       });
       res = await api.post(
-        '/admin/tickets/$ticketId/messages',
+        AdminApiPaths.ticketMessages(ticketId),
         data: form,
         queryParameters: query.isEmpty ? null : query,
         cancelToken: cancelToken,
         options: Options(
           contentType: 'multipart/form-data',
-          headers: const {
-            'Accept': 'application/json',
-          },
+          headers: const {'Accept': 'application/json'},
         ),
       );
     } else {
@@ -268,7 +223,7 @@ class AdminSupportRepository {
         if (internal) 'type': 'INTERNAL',
       };
       res = await api.post(
-        '/admin/tickets/$ticketId/messages',
+        AdminApiPaths.ticketMessages(ticketId),
         data: payload,
         queryParameters: query.isEmpty ? null : query,
         cancelToken: cancelToken,
@@ -277,27 +232,19 @@ class AdminSupportRepository {
 
     return res.when(
       success: (data) {
-        final map = _extractMap(data);
+        final map = _extractPayloadMap(data);
         if (map.isEmpty) return Result.ok(null);
 
         if (_messageLike(map)) {
           return Result.ok(AdminTicketMessageItem(map));
         }
 
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
         );
-        if (list != null && list.isNotEmpty) {
-          final first = list.first;
-          if (first is Map<String, dynamic>) {
-            return Result.ok(AdminTicketMessageItem(first));
-          }
-          if (first is Map) {
-            return Result.ok(
-              AdminTicketMessageItem(Map<String, dynamic>.from(first.cast())),
-            );
-          }
+        if (list.isNotEmpty) {
+          return Result.ok(AdminTicketMessageItem(list.first));
         }
         return Result.ok(null);
       },
@@ -314,34 +261,26 @@ class AdminSupportRepository {
     final payload = <String, dynamic>{'message': message};
 
     final res = await api.post(
-      '/admin/mytickets/$ticketId/messages',
+      AdminApiPaths.myTicketMessages(ticketId),
       data: payload,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        final map = _extractMap(data);
+        final map = _extractPayloadMap(data);
         if (map.isEmpty) return Result.ok(null);
 
         if (_messageLike(map)) {
           return Result.ok(AdminTicketMessageItem(map));
         }
 
-        final list = _extractList(
+        final list = _extractMapList(
           data,
           extraKeys: const ['messages', 'conversation', 'thread', 'replies'],
         );
-        if (list != null && list.isNotEmpty) {
-          final first = list.first;
-          if (first is Map<String, dynamic>) {
-            return Result.ok(AdminTicketMessageItem(first));
-          }
-          if (first is Map) {
-            return Result.ok(
-              AdminTicketMessageItem(Map<String, dynamic>.from(first.cast())),
-            );
-          }
+        if (list.isNotEmpty) {
+          return Result.ok(AdminTicketMessageItem(list.first));
         }
         return Result.ok(null);
       },
@@ -358,7 +297,7 @@ class AdminSupportRepository {
     final query = <String, dynamic>{};
     if (rk != null) query['rk'] = rk;
     final res = await api.patch(
-      '/admin/tickets/$ticketId/status',
+      AdminApiPaths.ticketStatus(ticketId),
       data: <String, dynamic>{'status': status},
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
@@ -376,7 +315,7 @@ class AdminSupportRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/admin/mytickets/$ticketId/status',
+      AdminApiPaths.myTicketStatus(ticketId),
       data: <String, dynamic>{'status': status},
       cancelToken: cancelToken,
     );
@@ -396,7 +335,7 @@ class AdminSupportRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/admin/tickets',
+      AdminApiPaths.tickets,
       data: <String, dynamic>{
         'fromUserId': userId,
         'userId': userId,
@@ -432,15 +371,13 @@ class AdminSupportRepository {
         'message': message,
         'attachments': attachments
             .map(
-              (file) => MultipartFile.fromBytes(
-                file.bytes,
-                filename: file.filename,
-              ),
+              (file) =>
+                  MultipartFile.fromBytes(file.bytes, filename: file.filename),
             )
             .toList(),
       });
       res = await api.post(
-        '/admin/mytickets',
+        AdminApiPaths.myTickets,
         data: form,
         cancelToken: cancelToken,
         options: Options(
@@ -450,7 +387,7 @@ class AdminSupportRepository {
       );
     } else {
       res = await api.post(
-        '/admin/mytickets',
+        AdminApiPaths.myTickets,
         data: <String, dynamic>{
           'title': title,
           'category': category,
@@ -476,61 +413,28 @@ class AdminSupportRepository {
         keys.contains('sendername');
   }
 
-  Map<String, dynamic> _extractMap(Object? data) {
-    if (data is! Map) return const <String, dynamic>{};
-
-    final level0 = data is Map<String, dynamic>
-        ? data
-        : Map<String, dynamic>.from(data.cast());
-    final keys = const ['data', 'result', 'item', 'ticket'];
-
-    for (final key in keys) {
-      final value = level0[key];
-      if (value is Map<String, dynamic>) return value;
-      if (value is Map) return Map<String, dynamic>.from(value.cast());
-    }
-
-    for (final value in level0.values) {
-      if (value is Map<String, dynamic>) return value;
-      if (value is Map) return Map<String, dynamic>.from(value.cast());
-    }
-
-    return level0;
+  Map<String, dynamic> _extractPayloadMap(
+    Object? data, {
+    List<String> mapKeys = const <String>[
+      'data',
+      'result',
+      'item',
+      'ticket',
+      'payload',
+      'response',
+    ],
+  }) {
+    return ApiEnvelope.payload(data, mapKeys: mapKeys);
   }
 
-  List? _extractList(
+  List<Map<String, dynamic>> _extractMapList(
     Object? data, {
     List<String> extraKeys = const <String>[],
   }) {
-    if (data is List) return data;
-    if (data is! Map) return null;
-
-    final keys = <String>['data', 'items', 'result', 'results', ...extraKeys];
-
-    List? walk(Object? node, int depth) {
-      if (depth > 6) return null;
-      if (node is List) return node;
-      if (node is! Map) return null;
-
-      final map = node is Map<String, dynamic>
-          ? node
-          : Map<String, dynamic>.from(node.cast());
-
-      for (final key in keys) {
-        final value = map[key];
-        if (value is List) return value;
-      }
-
-      for (final value in map.values) {
-        if (value is List || value is Map) {
-          final found = walk(value, depth + 1);
-          if (found != null) return found;
-        }
-      }
-
-      return null;
-    }
-
-    return walk(data, 0);
+    return ApiEnvelope.mapList(
+      data,
+      listKeys: <String>['data', 'items', 'result', 'results', ...extraKeys],
+      maxDepth: 6,
+    );
   }
 }

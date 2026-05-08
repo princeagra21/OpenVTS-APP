@@ -8,7 +8,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddSimScreen extends StatefulWidget {
   const AddSimScreen({super.key});
@@ -45,10 +46,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
   AdminSimCardsRepository? _repo;
 
   AdminSimCardsRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminSimCardsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -253,7 +251,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
                 children: [
                   Text(
                     'Add New SIM Card',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(w),
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -361,7 +359,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
                                 ),
                                 child: Text(
                                   'Cancel',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -392,7 +390,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
                                       )
                                     : Text(
                                         'Add SIM Card',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -421,7 +419,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         const AppShimmer(width: double.infinity, height: 55, radius: 16),
@@ -458,7 +456,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -470,7 +468,7 @@ class StylishTextField extends StatelessWidget {
               fillColor: cs.surface,
               filled: true,
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -522,7 +520,7 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -534,7 +532,7 @@ class StylishDropdown extends StatelessWidget {
             initialValue: value,
             hint: Text(
               hint,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/pricing_plan.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminPricingPlansRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class AdminPricingPlansRepository {
   Future<Result<List<PricingPlan>>> getPlans({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/pricingplans', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/pricingplans'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -47,7 +48,7 @@ class AdminPricingPlansRepository {
     };
 
     final res = await api.post(
-      '/admin/pricingplans',
+      ApiPaths.path('/admin/pricingplans'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -74,7 +75,7 @@ class AdminPricingPlansRepository {
     };
 
     final res = await api.patch(
-      '/admin/pricingplans/$id',
+      ApiPaths.path('/admin/pricingplans/$id'),
       data: payload,
       cancelToken: cancelToken,
     );

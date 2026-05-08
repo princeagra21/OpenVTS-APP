@@ -1,3 +1,6 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 // components/profile/profile_box.dart
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
@@ -5,7 +8,6 @@ import 'package:open_vts/modules/admin/components/admin/edit_admin_profile_scree
 import 'package:open_vts/modules/admin/components/admin/update_password_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ProfileSettingBox extends StatelessWidget {
   final AdminProfile? profile;
@@ -64,19 +66,9 @@ class ProfileSettingBox extends StatelessWidget {
     final isActive = profile?.isActive ?? false;
     final emailVerified = profile?.emailVerified ?? false;
 
-    return Container(
+    return OpenVtsCard(
       padding: EdgeInsets.all(padding + 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      borderRadius: BorderRadius.circular(25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -93,7 +85,7 @@ class ProfileSettingBox extends StatelessWidget {
                       )
                     : Text(
                         _initials(displayName),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -116,7 +108,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 )
                               : Text(
                                   displayName,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -142,7 +134,7 @@ class ProfileSettingBox extends StatelessWidget {
                                 )
                               : Text(
                                   role,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -160,7 +152,7 @@ class ProfileSettingBox extends StatelessWidget {
                           )
                         : Text(
                             '@$displayUsername',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
@@ -175,44 +167,29 @@ class ProfileSettingBox extends StatelessWidget {
           SizedBox(height: largeSpacing + 4),
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: spacing + 4,
-                  vertical: spacing - 2,
-                ),
-                decoration: BoxDecoration(
-                  color: (isActive ? Colors.green : Colors.grey).withOpacity(
-                    0.2,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: loading
-                    ? const AppShimmer(width: 40, height: 12, radius: 6)
-                    : Text(
-                        isActive ? 'Active' : '—',
-                        style: GoogleFonts.inter(
-                          fontSize: badgeFontSize,
-                          color: isActive
-                              ? Colors.green[800]
-                              : colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
+              loading
+                  ? const AppShimmer(width: 64, height: 24, radius: 12)
+                  : OpenVtsStatusChip(
+                      label: isActive ? 'Active' : 'Inactive',
+                      tone: isActive
+                          ? OpenVtsStatusTone.success
+                          : OpenVtsStatusTone.neutral,
+                      compact: true,
+                    ),
               SizedBox(width: spacing),
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
-                      color: Colors.transparent,
+                      color: OpenVtsColors.transparent,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.verified_rounded,
                       size: badgeFontSize + 4,
                       color: emailVerified
-                          ? Colors.blueAccent
+                          ? OpenVtsColors.brandInkSoft
                           : colorScheme.onSurface.withOpacity(0.4),
                     ),
                   ),
@@ -221,7 +198,7 @@ class ProfileSettingBox extends StatelessWidget {
                       ? const AppShimmer(width: 88, height: 12, radius: 6)
                       : Text(
                           emailVerified ? 'Email Verified' : '—',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: badgeFontSize,
                             color: colorScheme.onSurface.withOpacity(0.8),
                             fontWeight: FontWeight.w600,
@@ -235,8 +212,11 @@ class ProfileSettingBox extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () async {
+                child: OpenVtsButton(
+                  label: 'Edit Profile',
+                  variant: OpenVtsButtonVariant.secondary,
+                  size: OpenVtsButtonSize.small,
+                  onPressed: () async {
                     final changed = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
@@ -248,32 +228,14 @@ class ProfileSettingBox extends StatelessWidget {
                       await onUpdated?.call();
                     }
                   },
-                  child: Container(
-                    height: 30,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: colorScheme.primary,
-                        width: 1.5,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Edit Profile',
-                        style: GoogleFonts.inter(
-                          fontSize: buttonFontSize,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
               SizedBox(width: spacing + 4),
               Expanded(
-                child: GestureDetector(
-                  onTap: () async {
+                child: OpenVtsButton(
+                  label: 'Update Password',
+                  size: OpenVtsButtonSize.small,
+                  onPressed: () async {
                     final changed = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
@@ -284,23 +246,6 @@ class ProfileSettingBox extends StatelessWidget {
                       await onUpdated?.call();
                     }
                   },
-                  child: Container(
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Update Password',
-                        style: GoogleFonts.inter(
-                          fontSize: buttonFontSize,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ],

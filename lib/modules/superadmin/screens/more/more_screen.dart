@@ -5,8 +5,10 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -46,7 +48,7 @@ class _MoreScreenState extends State<MoreScreen> {
     await PushNotificationsService.instance.unregisterForLogout();
     await TokenStorage.defaultInstance().clear();
     if (!mounted) return;
-    context.go('/login');
+    context.go(AppRoutes.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -112,37 +114,37 @@ class _MoreScreenState extends State<MoreScreen> {
       //   'title': 'Server',
       //   'subtitle': 'Status and setup',
       //   'icon': CupertinoIcons.settings,
-      //   'route': '/superadmin/server',
+      //   'route': AppRoutes.superadminServer,
       // },
       {
         'title': 'Calendar',
         'subtitle': 'Jobs and events',
         'icon': CupertinoIcons.calendar,
-        'route': '/superadmin/calendar',
+        'route': AppRoutes.superadminCalendar,
       },
       {
         'title': 'Support',
         'subtitle': 'Help center',
         'icon': CupertinoIcons.question_circle,
-        'route': '/superadmin/support',
+        'route': AppRoutes.superadminSupport,
       },
       {
         'title': 'Setting',
         'subtitle': 'App and account',
         'icon': CupertinoIcons.settings_solid,
-        'route': '/superadmin/settings',
+        'route': AppRoutes.superadminSettings,
       },
       // {
       //   'title': 'SSL',
       //   'subtitle': 'Certificate & HTTPS',
       //   'icon': CupertinoIcons.lock_shield,
-      //   'route': '/superadmin/ssl',
+      //   'route': AppRoutes.superadminSsl,
       // },
       {
         'title': 'Roles',
         'subtitle': 'Admin & permissions',
         'icon': CupertinoIcons.person_2_fill,
-        'route': '/superadmin/roles',
+        'route': AppRoutes.superadminRoles,
       },
     ];
 
@@ -163,7 +165,7 @@ class _MoreScreenState extends State<MoreScreen> {
           children: [
             Text(
               "Tools & Settings",
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 4,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface.withOpacity(0.9),
@@ -220,7 +222,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Log out?',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -232,7 +234,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Your current session will end. You will need to log in again to continue.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -251,7 +253,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -269,7 +271,7 @@ class _LogoutConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Log out',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -325,14 +327,14 @@ class _MoreMenuCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: colorScheme.shadow.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: OpenVtsColors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => context.push(route),
@@ -366,7 +368,7 @@ class _MoreMenuCard extends StatelessWidget {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getSubtitleFontSize(width) -
                                     1,
@@ -379,7 +381,7 @@ class _MoreMenuCard extends StatelessWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize:
                                     AdaptiveUtils.getTitleFontSize(width) - 1,
                                 color: colorScheme.onSurface.withOpacity(0.55),
@@ -419,7 +421,7 @@ class _MoreMenuCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 1,
                           fontWeight: FontWeight.bold,
@@ -431,7 +433,7 @@ class _MoreMenuCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                           color: colorScheme.onSurface.withOpacity(0.55),
                         ),

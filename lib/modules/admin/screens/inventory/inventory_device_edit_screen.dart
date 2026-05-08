@@ -11,8 +11,10 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class InventoryDeviceEditScreen extends StatefulWidget {
   final String deviceId;
@@ -56,10 +58,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
   bool _initialIsActive = true;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -181,7 +180,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 14,
                           height: 20 / 14,
                           fontWeight: FontWeight.w700,
@@ -192,14 +191,14 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                       TextField(
                         controller: searchController,
                         onChanged: (value) => setSheetState(() => query = value.trim()),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: fontSize,
                           fontWeight: FontWeight.w500,
                           color: cs.onSurface,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search',
-                          hintStyle: GoogleFonts.roboto(
+                          hintStyle: AppFonts.roboto(
                             fontSize: fontSize,
                             fontWeight: FontWeight.w500,
                             color: cs.onSurface.withOpacity(0.6),
@@ -245,7 +244,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: 14,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -476,8 +475,8 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       bottomNavigationBar: _loading
           ? null
           : SafeArea(
@@ -499,7 +498,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                           ),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -525,7 +524,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                           ),
                           child: Text(
                             _saving ? 'Saving...' : 'Save',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(screenWidth),
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -649,7 +648,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                                         children: [
                                           Text(
                                             'Active',
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color: cs.onSurface,
@@ -658,7 +657,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
                                           const SizedBox(height: 4),
                                           Text(
                                             'Enable or disable this device.',
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                               color: cs.onSurface.withOpacity(0.7),
@@ -711,7 +710,7 @@ class _ReadOnlyField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -727,7 +726,7 @@ class _ReadOnlyField extends StatelessWidget {
           ),
           child: Text(
             value.isEmpty ? '—' : value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fs,
               fontWeight: FontWeight.w500,
               color: cs.onSurface,
@@ -761,7 +760,7 @@ class _InputField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -771,14 +770,14 @@ class _InputField extends StatelessWidget {
         TextFormField(
           controller: controller,
           validator: validator,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w500,
             color: cs.onSurface,
           ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: GoogleFonts.roboto(
+            hintStyle: AppFonts.roboto(
               fontSize: fs,
               fontWeight: FontWeight.w500,
               color: cs.onSurface.withOpacity(0.6),
@@ -830,7 +829,7 @@ class _SelectField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fs,
             fontWeight: FontWeight.w600,
             color: cs.onSurface,
@@ -854,7 +853,7 @@ class _SelectField extends StatelessWidget {
                     value.isEmpty ? hint : value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fs,
                       fontWeight: FontWeight.w500,
                       color: value.isEmpty

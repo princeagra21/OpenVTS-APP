@@ -1,3 +1,6 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 // UPDATED: components/activity/recent_activity_box.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -11,7 +14,6 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 
 class RecentActivityBox extends StatefulWidget {
@@ -193,7 +195,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       fontWeight: FontWeight.w600,
                       color: textColor,
@@ -233,10 +235,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentVehicles = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentVehicles(cancelToken: token);
@@ -312,10 +311,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentTransactions = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentTransactions(
@@ -390,10 +386,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentUsers = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentUsers(cancelToken: token);
@@ -586,7 +579,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             Text(
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 2,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -601,7 +594,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     _capitalizeFirst(
                       _safeString(activity["type"], fallback: "—"),
                     ),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: subFontSize,
                       fontWeight: FontWeight.w500,
                       height: 16 / 12,
@@ -616,7 +609,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                       _formatDate(activity["timeRaw"]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subFontSize,
                         fontWeight: FontWeight.w500,
                         height: 16 / 12,
@@ -647,7 +640,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               ),
               child: Text(
                 activity["status"],
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: colorScheme.onSurface.withOpacity(0.7),
                   fontSize: badgeFontSize,
                   fontWeight: FontWeight.w600,
@@ -658,7 +651,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 4),
             Text(
               _relativeTime(activity["timeRaw"]),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -689,7 +682,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -699,7 +692,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 6),
             Text(
               _formatDateOnly(activity["timeRaw"]),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -713,7 +706,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           children: [
             Text(
               _safeString(activity["value"], fallback: "—"),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -723,7 +716,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             const SizedBox(height: 4),
             Text(
               _safeString(activity["status"], fallback: ""),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: badgeFontSize,
                 fontWeight: FontWeight.w600,
                 height: 14 / 11,
@@ -761,7 +754,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             Text(
               name,
               maxLines: 2,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
@@ -770,7 +763,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
             ),
             Text(
               _safeString(activity["email"], fallback: ""),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
@@ -782,7 +775,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
 
         right = Text(
           _formatDateOnly(activity["timeRaw"]),
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: subFontSize,
             fontWeight: FontWeight.w500,
             height: 16 / 12,
@@ -974,7 +967,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     children: [
                       TextSpan(
                         text: title,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: 18 * scale,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -997,7 +990,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               ),
               if (title == 'Transactions')
                 InkWell(
-                  onTap: () => context.push('/superadmin/payments'),
+                  onTap: () => context.push(AppRoutes.superadminPayments),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -1021,7 +1014,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                       children: [
                         Text(
                           "View all",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: linkFontSize,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,

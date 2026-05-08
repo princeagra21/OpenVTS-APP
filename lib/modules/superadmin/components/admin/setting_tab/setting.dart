@@ -1,16 +1,16 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/admin_settings_tab.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_settings.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminSettingsTab extends StatefulWidget {
@@ -103,8 +103,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
   Future<void> _ensureRepos() async {
     if (_api != null) return;
     final config = AppConfig.fromDartDefine();
-    final tokenStorage = TokenStorage.defaultInstance();
-    _api = ApiClient(config: config, tokenStorage: tokenStorage);
+    _api = ApiClientProvider.create(config: config);
     _superadminRepo = SuperadminRepository(api: _api!);
     _commonRepo = CommonRepository(api: _api!);
   }
@@ -417,7 +416,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -444,7 +443,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
           ),
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: fontSize,
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
@@ -452,7 +451,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
           dropdownColor: colorScheme.surface,
           hint: Text(
             hint,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withOpacity(0.6),
@@ -491,7 +490,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
         if (showLabel) ...[
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
@@ -524,7 +523,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                             opt.label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: 14,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -559,7 +558,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                     selectedLabel.isNotEmpty ? selectedLabel : hint,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fontSize,
                       fontWeight: FontWeight.w500,
                       color: selectedLabel.isNotEmpty
@@ -601,7 +600,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             if (textOnTop)
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w500,
                   color: isSelected
@@ -620,7 +619,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
             if (!textOnTop)
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w500,
                   color: isSelected
@@ -718,7 +717,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                       Expanded(
                         child: Text(
                           "Admin Settings",
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize:
                                 18 *
                                 (AdaptiveUtils.getTitleFontSize(
@@ -752,7 +751,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                         ),
                         child: Text(
                           'Reset',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface,
@@ -774,7 +773,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                         ),
                         child: Text(
                           'Save',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onPrimary,
@@ -802,7 +801,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                           children: [
                             Text(
                               'Live Preview',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface,
@@ -814,7 +813,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.right,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: colorScheme.onSurface.withOpacity(0.7),
@@ -851,7 +850,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                       children: [
                                         Text(
                                           'Date',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface
@@ -861,7 +860,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                         const SizedBox(height: 6),
                                         Text(
                                           '30 March 2026',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface,
@@ -878,7 +877,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                       children: [
                                         Text(
                                           'Time',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface
@@ -888,7 +887,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                         const SizedBox(height: 6),
                                         Text(
                                           '08:01',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface,
@@ -897,7 +896,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                         const SizedBox(height: 4),
                                         Text(
                                           'UTC +06:00',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                             color: colorScheme.onSurface
@@ -954,7 +953,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Language',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -963,7 +962,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Choose language',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1028,7 +1027,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Layout Direction',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1037,7 +1036,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Display direction',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1093,7 +1092,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                         const SizedBox(width: 6),
                                         Text(
                                           'LTR',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             color: _selectedDirection == 'LTR'
                                                 ? colorScheme.onPrimary
                                                 : colorScheme.onSurface,
@@ -1137,7 +1136,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                         const SizedBox(width: 6),
                                         Text(
                                           'RTL',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             color: _selectedDirection == 'RTL'
                                                 ? colorScheme.onPrimary
                                                 : colorScheme.onSurface,
@@ -1194,7 +1193,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Date Format',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1203,7 +1202,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Display style',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1268,7 +1267,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Time Format',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1277,7 +1276,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   '24-hour clock',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1297,7 +1296,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               _selectedTimeFormat == '24h'
                                   ? '24-hour clock'
                                   : '12-hour clock',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface.withOpacity(0.8),
@@ -1357,7 +1356,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Theme',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1366,7 +1365,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Light / Dark / System',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1411,7 +1410,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       'Light',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: _selectedTheme == 'light'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1442,7 +1441,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       'Dark',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: _selectedTheme == 'dark'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1473,7 +1472,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       'System',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: _selectedTheme == 'system'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1528,7 +1527,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Timezone',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1537,7 +1536,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'UTC Offset',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1610,7 +1609,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                               children: [
                                 Text(
                                   'Units',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.onSurface,
@@ -1619,7 +1618,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Distance units',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: colorScheme.onSurface.withOpacity(
@@ -1664,7 +1663,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       'KM',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: _selectedUnit == 'KM'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,
@@ -1695,7 +1694,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                     alignment: Alignment.center,
                                     child: Text(
                                       'Miles',
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         color: _selectedUnit == 'MILES'
                                             ? colorScheme.onPrimary
                                             : colorScheme.onSurface,

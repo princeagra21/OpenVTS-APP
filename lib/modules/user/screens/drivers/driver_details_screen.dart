@@ -14,7 +14,10 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class DriverDetailsScreen extends StatefulWidget {
   final String driverId;
@@ -61,19 +64,13 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
 
   CommonRepository _commonOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }
@@ -217,8 +214,8 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -357,7 +354,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                   Expanded(
                     child: Text(
                       'Limited access\n\nYou can view this driver, but editing is restricted because it was created by admin.',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12 * scale,
                         height: 17 / 12,
                         fontWeight: FontWeight.w500,
@@ -375,7 +372,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             children: [
               Text(
                 'Driver Overview',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: 18 * (fs / 14),
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -387,7 +384,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                     ? null
                     : () async {
                         final result = await context.push(
-                          '/user/drivers/edit/${widget.driverId}',
+                          AppRoutes.userDriversEdit(widget.driverId),
                           extra: _details,
                         );
                         if (result == true) {
@@ -408,7 +405,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                 ),
                 label: Text(
                   'Edit Profile',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 13 * (fs / 14),
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -494,7 +491,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             alignment: Alignment.center,
             child: Text(
               _initials(name),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -511,7 +508,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFs,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -535,7 +532,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: statusFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -548,7 +545,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   username,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -560,7 +557,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   phone,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -572,7 +569,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   email,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -682,7 +679,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -699,7 +696,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           const SizedBox(height: 6),
           Text(
             pair.date,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -712,7 +709,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             const SizedBox(height: 4),
             Text(
               pair.time,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subValueFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -759,7 +756,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
               const SizedBox(width: 6),
               Text(
                 'Address',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -773,7 +770,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             address,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -797,7 +794,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               height: 14 / 11,
               fontWeight: FontWeight.w500,
@@ -809,7 +806,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -850,7 +847,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'Driver Documents',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface.withOpacity(0.7),
@@ -861,7 +858,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                   ),
                   Text(
                     '$totalDocs total',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(w) - 1,
                       color: cs.onSurface,
                     ),
@@ -935,7 +932,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
         children: [
           Text(
             'Driver Logs',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMain + 2,
               fontWeight: FontWeight.w600,
               color: cs.onSurface,
@@ -950,13 +947,13 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
               border: Border.all(color: cs.onSurface.withOpacity(0.1)),
             ),
             child: TextField(
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsMain,
                 color: cs.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: 'Search logs...',
-                hintStyle: GoogleFonts.roboto(
+                hintStyle: AppFonts.roboto(
                   fontSize: fsSecondary,
                   color: cs.onSurface.withOpacity(0.5),
                 ),
@@ -984,7 +981,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             ),
             child: Text(
               'No logs available',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fsMain,
                 color: cs.onSurface.withOpacity(0.7),
               ),
@@ -1016,7 +1013,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
         children: [
           Text(
             'Danger Zone',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMain + 2,
               fontWeight: FontWeight.w600,
               color: dangerColor,
@@ -1027,7 +1024,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
             limitedAccess
                 ? 'This driver was created by admin. Deletion is restricted.'
                 : 'This action cannot be undone. It will permanently delete the driver and remove all associated data.',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsMain,
               color: dangerColor,
             ),
@@ -1068,7 +1065,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                   : limitedAccess
                       ? Text(
                           'Locked',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: fsMain,
                             color: dangerColor,
                             fontWeight: FontWeight.w600,
@@ -1076,7 +1073,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                         )
                   : Text(
                       'Delete',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fsMain,
                         color: dangerColor,
                         fontWeight: FontWeight.w600,
@@ -1122,7 +1119,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: cs.onSurface.withOpacity(0.6),
@@ -1131,7 +1128,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: color,
@@ -1161,7 +1158,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: cs.onSurface,
@@ -1170,7 +1167,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               color: cs.onSurface.withOpacity(0.6),
             ),
@@ -1225,7 +1222,7 @@ class _NavigateBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -1235,7 +1232,7 @@ class _NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -1306,7 +1303,7 @@ class _SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize ?? defaultFontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -1360,7 +1357,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1372,7 +1369,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -1391,7 +1388,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1409,7 +1406,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     ),
                     child: Text(
                       'Delete',
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

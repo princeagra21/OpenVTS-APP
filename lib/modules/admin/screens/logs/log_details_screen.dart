@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 import 'package:open_vts/core/models/admin_log_item.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AdminLogDetailsScreen extends StatelessWidget {
@@ -124,7 +125,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -133,7 +134,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 1.3,
               fontWeight: FontWeight.w600,
@@ -170,8 +171,8 @@ class AdminLogDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -221,7 +222,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'Activity Log Details',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(width) +
                                       1,
@@ -232,7 +233,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 _friendlyAction(action.isEmpty ? log.message : action),
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getTitleFontSize(width) + 1,
                                   fontWeight: FontWeight.w600,
@@ -320,7 +321,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Metadata',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface.withOpacity(0.7),
@@ -341,7 +342,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
                             child: SingleChildScrollView(
                               child: SelectableText(
                                 _metadataJson(),
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize:
                                       AdaptiveUtils.getTitleFontSize(width) +
                                       0.5,

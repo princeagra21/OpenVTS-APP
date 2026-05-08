@@ -8,7 +8,9 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/payments_tab/add_admin_payment_record_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminPaymentsTab extends StatefulWidget {
   final String adminId;
@@ -56,13 +58,10 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
 
       final res = await _api!.get(
-        '/superadmin/transactions',
+        ApiPaths.path('/superadmin/transactions'),
         queryParameters: {
           'adminId': widget.adminId,
           'page': 1,
@@ -223,7 +222,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                     Expanded(
                       child: Text(
                         'Recent Transactions',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: headerSize,
                           height: 24 / 18,
                           fontWeight: FontWeight.w700,
@@ -263,7 +262,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                       icon: const Icon(Icons.add, size: 18),
                       label: Text(
                         'Record',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -276,7 +275,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                 if (_loading)
                   Text(
                     'Loading...',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       color: cs.onSurface.withOpacity(0.6),
                     ),
@@ -284,7 +283,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                 else if (_items.isEmpty)
                   Text(
                     'No transactions found.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       color: cs.onSurface.withOpacity(0.6),
                     ),
@@ -343,7 +342,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize - 1,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.7),
@@ -361,7 +360,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueSize + 4,
               fontWeight: FontWeight.w700,
               color: cs.onSurface,
@@ -407,7 +406,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
         children: [
           Text(
             date,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: cs.onSurface.withOpacity(0.7),
@@ -423,7 +422,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                   children: [
                     Text(
                       '${t.currency} ${t.amount}',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueSize + 2,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,
@@ -446,7 +445,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                       ),
                       child: Text(
                         t.status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface,
@@ -463,7 +462,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                   children: [
                     Text(
                       mode.isEmpty ? '—' : mode,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueSize + 1,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -472,7 +471,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                     const SizedBox(height: 4),
                     Text(
                       reference,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
@@ -480,7 +479,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
                     const SizedBox(height: 4),
                     Text(
                       name,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),
                       ),

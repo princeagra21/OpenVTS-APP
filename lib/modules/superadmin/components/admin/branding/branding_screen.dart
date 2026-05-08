@@ -1,9 +1,10 @@
 import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/main.dart' show themeController;
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class BrandingScreen extends StatefulWidget {
   const BrandingScreen({super.key});
@@ -18,10 +19,10 @@ class _BrandingScreenState extends State<BrandingScreen> {
 
   final Map<String, Color> themeColors = {
     "Default": OpenVtsTheme.defaultBrand,
-    "Corporate": const Color(0xFF0055FF),
-    "Modern": const Color(0xFF6A00FF),
-    "Luxury": const Color(0xFFB8933D),
-    "Futuristic": const Color(0xFF00FFFF),
+    "Corporate": OpenVtsColors.themeCorporate,
+    "Modern": OpenVtsColors.themeModern,
+    "Luxury": OpenVtsColors.themeLuxury,
+    "Futuristic": OpenVtsColors.themeFuturistic,
   };
 
  Color get currentBrand => themeController.brandColor.value;
@@ -138,7 +139,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
               children: [
                 Text(
                   "Preview Mode",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width),
                     fontWeight: FontWeight.w800,
                     color: theme.colorScheme.onSurface,
@@ -219,7 +220,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                 children: [
                   Text(
                     "Sample Dashboard",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
                       fontWeight: FontWeight.w800,
                       color: theme.colorScheme.onSurface,
@@ -228,7 +229,7 @@ class _BrandingScreenState extends State<BrandingScreen> {
                   const SizedBox(height: 12),
                   Text(
                     "This is how your UI will look.",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),

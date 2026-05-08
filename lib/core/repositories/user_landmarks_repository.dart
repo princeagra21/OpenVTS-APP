@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserLandmarksRepository {
   final ApiClient api;
@@ -10,21 +11,21 @@ class UserLandmarksRepository {
   Future<Result<List<Map<String, dynamic>>>> getGeofences({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/geofences', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/geofences'), cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['geofences']);
   }
 
   Future<Result<List<Map<String, dynamic>>>> getRoutes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/routes', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/routes'), cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['routes']);
   }
 
   Future<Result<List<Map<String, dynamic>>>> getPois({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/pois', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/pois'), cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['pois']);
   }
 
@@ -33,7 +34,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/geofences',
+      ApiPaths.path('/user/geofences'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -48,7 +49,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/routes',
+      ApiPaths.path('/user/routes'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -63,7 +64,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/pois',
+      ApiPaths.path('/user/pois'),
       data: payload,
       cancelToken: cancelToken,
     );

@@ -6,7 +6,8 @@ import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddAdminPaymentRecordScreen extends StatefulWidget {
   final String adminId;
@@ -53,10 +54,7 @@ class _AddAdminPaymentRecordScreenState
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -102,7 +100,7 @@ class _AddAdminPaymentRecordScreenState
                 const SizedBox(height: 12),
                 Text(
                   'Select Payment Mode',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,
                   ),
@@ -115,7 +113,7 @@ class _AddAdminPaymentRecordScreenState
                     contentPadding: const EdgeInsets.symmetric(horizontal: 6),
                     title: Text(
                       label,
-                      style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+                      style: AppFonts.roboto(fontWeight: FontWeight.w600),
                     ),
                     trailing: _paymentMode == value
                         ? Icon(Icons.check, color: cs.primary)
@@ -145,7 +143,7 @@ class _AddAdminPaymentRecordScreenState
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: cs.onSurface.withOpacity(0.7),
         fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
       ),
@@ -241,7 +239,7 @@ class _AddAdminPaymentRecordScreenState
                 children: [
                   Text(
                     'Add Payment',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface.withOpacity(0.9),
@@ -260,7 +258,7 @@ class _AddAdminPaymentRecordScreenState
               const SizedBox(height: 12),
               Text(
                 'Record manual payment',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: cs.onSurface.withOpacity(0.87),
@@ -290,7 +288,7 @@ class _AddAdminPaymentRecordScreenState
                           maxLines: 2,
                           softWrap: true,
                           overflow: TextOverflow.visible,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelSize,
                             height: 20 / 14,
                             fontWeight: FontWeight.w500,
@@ -302,7 +300,7 @@ class _AddAdminPaymentRecordScreenState
                       TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: cs.onSurface,
                         ),
@@ -322,7 +320,7 @@ class _AddAdminPaymentRecordScreenState
                         controller: _paymentModeController,
                         readOnly: true,
                         onTap: _openPaymentModePicker,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: cs.onSurface,
                         ),
@@ -346,7 +344,7 @@ class _AddAdminPaymentRecordScreenState
                         controller: _referenceController,
                         minLines: 2,
                         maxLines: 2,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: cs.onSurface,
                         ),
@@ -377,7 +375,7 @@ class _AddAdminPaymentRecordScreenState
                                 child: Center(
                                   child: Text(
                                     'Cancel',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: labelSize,
                                       color: cs.onSurface,
                                       fontWeight: FontWeight.w600,
@@ -414,7 +412,7 @@ class _AddAdminPaymentRecordScreenState
                                         )
                                       : Text(
                                           'Add Record',
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: labelSize,
                                             color: cs.onPrimary,
                                             fontWeight: FontWeight.w600,

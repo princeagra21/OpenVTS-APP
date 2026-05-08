@@ -25,4 +25,14 @@ class OpenVtsColors {
   static const Color success = Color(0xFF2D6A4F);
   static const Color warning = Color(0xFF8A5C1D);
   static const Color danger = Color(0xFF8A2E43);
+
+  // Legacy feature-screen tokens migrated from raw hex literals.
+  static const Color panelDark = Color(0xFF0A0A0A);
+  static const Color panelLight = Color(0xFFF5F5F7);
+  static const Color panelDarkAlt = Color(0xFF151515);
+  static const Color panelLightAlt = Color(0xFFF4F5F7);
+  static const Color themeCorporate = Color(0xFF0055FF);
+  static const Color themeModern = Color(0xFF6A00FF);
+  static const Color themeLuxury = Color(0xFFB8933D);
+  static const Color themeFuturistic = Color(0xFF00FFFF);
 }

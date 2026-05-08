@@ -3,7 +3,7 @@ import 'package:open_vts/core/models/admin_transaction_item.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminUserPaymentsTab extends StatelessWidget {
   final String userId;
@@ -108,7 +108,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                   children: [
                     Text(
                       'Recent Transactions',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: headerSize,
                         height: 24 / 18,
                         fontWeight: FontWeight.w700,
@@ -149,7 +149,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               'Renew',
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 fontWeight: FontWeight.w600,
                                 color: cs.surface,
@@ -165,7 +165,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                 if (loading)
                   Text(
                     'Loading...',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       color: cs.onSurface.withOpacity(0.6),
                     ),
@@ -173,7 +173,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                 else if (items.isEmpty)
                   Text(
                     'No transactions found.',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: labelSize,
                       color: cs.onSurface.withOpacity(0.6),
                     ),
@@ -234,7 +234,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize - 1,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.7),
@@ -252,7 +252,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueSize + 4,
               fontWeight: FontWeight.w700,
               color: cs.onSurface,
@@ -300,7 +300,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
             date,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: cs.onSurface.withOpacity(0.7),
@@ -318,7 +318,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                       amountText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueSize + 2,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface,
@@ -338,7 +338,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                       ),
                       child: Text(
                         t.statusLabel,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface,
@@ -357,7 +357,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                       mode.isEmpty ? '—' : mode,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueSize + 1,
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -368,7 +368,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                       reference,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),
                       ),
@@ -378,7 +378,7 @@ class AdminUserPaymentsTab extends StatelessWidget {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelSize,
                         color: cs.onSurface.withOpacity(0.7),
                       ),

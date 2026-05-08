@@ -5,8 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/map_vehicle_point.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -123,10 +123,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create(config: AppConfig.fromDartDefine());
       _repo ??= widget.repositoryBuilder(_api!);
 
       final res = await _repo!.getMapTelemetry(cancelToken: token);

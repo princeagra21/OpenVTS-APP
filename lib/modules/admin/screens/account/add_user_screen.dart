@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/account/add_user_screen.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -8,7 +10,6 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});
@@ -63,10 +64,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   CancelToken? _prefixesToken;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -268,7 +266,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -332,7 +330,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fontSize - 1,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -341,7 +339,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                   ? null
                                   : Text(
                                       trailing,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: fontSize - 2,
                                         color: colorScheme.onSurface
                                             .withOpacity(0.6),
@@ -537,7 +535,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 children: [
                   Text(
                     "Add User",
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16 * ((w / 420).clamp(0.9, 1.0)),
                       height: 20 / 16,
                       fontWeight: FontWeight.w700,
@@ -566,7 +564,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
               const SizedBox(height: 8),
               Text(
                 "Fill the details and click add.",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
                   height: 16 / 12,
                   fontWeight: FontWeight.w500,
@@ -586,7 +584,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       children: [
                         Text(
                           "Basic Information",
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
@@ -681,7 +679,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
                         Text(
                           "Contact Information",
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
@@ -750,7 +748,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
                         Text(
                           "Location",
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: AdaptiveUtils.getSubtitleFontSize(w) - 2,
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
@@ -867,7 +865,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: AdaptiveUtils.getTitleFontSize(w),
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -904,7 +902,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           )
                         : Text(
                             "Add User",
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(w),
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -966,7 +964,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -983,7 +981,7 @@ class StylishTextField extends StatelessWidget {
               fillColor: cs.surface,
               filled: true,
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),
@@ -1041,7 +1039,7 @@ class StylishDropdown extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -1053,7 +1051,7 @@ class StylishDropdown extends StatelessWidget {
             initialValue: value,
             hint: Text(
               hint,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 color: cs.onSurface.withOpacity(0.6),
                 fontSize: fs,
               ),

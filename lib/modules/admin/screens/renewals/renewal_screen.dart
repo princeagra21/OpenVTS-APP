@@ -1,3 +1,5 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 // screens/renewals/renewals_screen.dart
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
@@ -6,7 +8,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class RenewalsScreen extends StatefulWidget {
@@ -182,13 +183,13 @@ class _RenewalsScreenState extends State<RenewalsScreen>
             ),
             child: TextField(
               controller: _searchController,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs,
                 color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: "Search customer, vehicle, IMEI, plan...",
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.inter(
                   color: colorScheme.onSurface.withOpacity(0.6),
                   fontSize: bodyFs,
                 ),
@@ -426,7 +427,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
 
           Text(
             "Showing ${filteredCustomers.length} of ${custList.length} customers",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: bodyFs,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),
@@ -451,7 +452,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
               ),
               child: Text(
                 "—",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: bodyFs,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -510,7 +511,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                 children: [
                                   Text(
                                     cust["name"],
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs + 2,
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme.onSurface,
@@ -519,7 +520,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     "${cust["devices"]} devices",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface,
@@ -528,7 +529,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     "${cust["expiring"]} expiring • ${cust["overdue"]} overdue • ${cust["suspended"]} suspended",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs - 1,
                                       color: colorScheme.onSurface.withOpacity(
                                         0.6,
@@ -540,7 +541,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                             ),
                             Text(
                               f.format(cust["amount"]),
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: bodyFs,
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.primary,
@@ -668,7 +669,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
 
           Text(
             "Showing ${filteredRenewals.length} of ${renewals.length} devices",
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: bodyFs,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),
@@ -693,7 +694,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
               ),
               child: Text(
                 "—",
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: bodyFs,
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -763,7 +764,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                     children: [
                                       Text(
                                         r["expiry"],
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: smallFs,
                                           color: colorScheme.onSurface
                                               .withOpacity(0.6),
@@ -782,7 +783,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                         ),
                                         child: Text(
                                           r["status"],
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.inter(
                                             fontSize: smallFs,
                                             fontWeight: FontWeight.w600,
                                             color: statusColor,
@@ -794,7 +795,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     r["customer"],
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs + 2,
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme.onSurface,
@@ -803,7 +804,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     r["vehicle"],
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface,
@@ -814,7 +815,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                     children: [
                                       Text(
                                         r["imei"],
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: bodyFs,
                                           fontWeight: FontWeight.w500,
                                           color: colorScheme.onSurface,
@@ -839,7 +840,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                     children: [
                                       Text(
                                         r["plan"],
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: bodyFs,
                                           fontWeight: FontWeight.w500,
                                           color: colorScheme.onSurface,
@@ -847,7 +848,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                       ),
                                       Text(
                                         r["amount"],
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: bodyFs,
                                           fontWeight: FontWeight.bold,
                                           color: colorScheme.onSurface,
@@ -858,14 +859,14 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                   SizedBox(height: spacing / 2),
                                   Text(
                                     "Installed: ${r["installed"]}",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: smallFs,
                                       color: colorScheme.onSurface,
                                     ),
                                   ),
                                   Text(
                                     "Start: ${r["start"]}",
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: smallFs,
                                       color: colorScheme.onSurface,
                                     ),
@@ -877,7 +878,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                     children: [
                                       Text(
                                         daysStr,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: bodyFs - 1,
                                           color: statusColor,
                                         ),
@@ -886,7 +887,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                         children: [
                                           Text(
                                             "Auto Renew",
-                                            style: GoogleFonts.inter(
+                                            style: AppFonts.inter(
                                               fontSize: bodyFs - 1,
                                               color: colorScheme.onSurface,
                                             ),
@@ -915,31 +916,31 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                 switch (value) {
                                   case 'renew':
                                     context.push(
-                                      '/admin/renewals/renew',
+                                      AppRoutes.adminRenewalsRenew,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'collect':
                                     context.push(
-                                      '/admin/renewals/collect',
+                                      AppRoutes.adminRenewalsCollect,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'extend':
                                     context.push(
-                                      '/admin/renewals/extend',
+                                      AppRoutes.adminRenewalsExtend,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'suspend':
                                     context.push(
-                                      '/admin/renewals/suspend',
+                                      AppRoutes.adminRenewalsSuspend,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'reminder':
                                     context.push(
-                                      '/admin/renewals/reminder',
+                                      AppRoutes.adminRenewalsReminder,
                                       extra: selectedDevices,
                                     );
 
@@ -1037,14 +1038,14 @@ class _RenewalsScreenState extends State<RenewalsScreen>
           children: [
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: smallFs,
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             Text(
               value,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: bodyFs,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary.withOpacity(0.5),
@@ -1052,7 +1053,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
             ),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: smallFs - 1,
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),

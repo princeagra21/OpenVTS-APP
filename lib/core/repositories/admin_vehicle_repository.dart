@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_vehicle_preview_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminVehicleRepository {
   final ApiClient api;
@@ -16,7 +17,7 @@ class AdminVehicleRepository {
     if (limit > 0) qp['limit'] = limit;
 
     final res = await api.get(
-      '/admin/vehicles',
+      ApiPaths.path('/admin/vehicles'),
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -50,7 +51,7 @@ class AdminVehicleRepository {
     List<String>? imeis,
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/admin/map-telemetry', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/admin/map-telemetry'), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {

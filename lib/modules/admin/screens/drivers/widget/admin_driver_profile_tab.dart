@@ -9,7 +9,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminDriverProfileTab extends StatefulWidget {
   final AdminDriverDetails? details;
@@ -69,10 +70,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
   }
 
   AdminDriversRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= AdminDriversRepository(api: _api!);
     return _repo!;
   }
@@ -220,7 +218,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             children: [
               Text(
                 "Driver Overview",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fsSection,
                   height: 24 / 18,
                   fontWeight: FontWeight.w700,
@@ -250,7 +248,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 ),
                 label: Text(
                   isActive ? "Set Inactive" : "Set Active",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 13 * scale,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -343,7 +341,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             alignment: Alignment.center,
             child: Text(
               _initials(name),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: 16 * scale,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -360,7 +358,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleFs,
                           height: 20 / 14,
                           fontWeight: FontWeight.w600,
@@ -383,7 +381,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                       ),
                       child: Text(
                         status,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: statusFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w600,
@@ -396,7 +394,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 const SizedBox(height: 4),
                 Text(
                   username,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -407,7 +405,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 const SizedBox(height: 6),
                 Text(
                   phone,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -418,7 +416,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 const SizedBox(height: 6),
                 Text(
                   email,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: subtitleFs,
                     height: 16 / 12,
                     fontWeight: FontWeight.w500,
@@ -542,7 +540,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
               children: [
                 Text(
                   "Primary User",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelFs,
                     height: 14 / 11,
                     fontWeight: FontWeight.w500,
@@ -553,7 +551,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 Text(
                   primaryUser,
                   softWrap: true,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: titleFs,
                     height: 20 / 14,
                     fontWeight: FontWeight.w600,
@@ -602,7 +600,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -619,7 +617,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
           const SizedBox(height: 6),
           Text(
             pair.date,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -631,7 +629,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             const SizedBox(height: 4),
             Text(
               pair.time,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subValueFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -678,7 +676,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
               const SizedBox(width: 6),
               Text(
                 "Address",
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelFs,
                   height: 14 / 11,
                   fontWeight: FontWeight.w500,
@@ -691,7 +689,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
           Text(
             address,
             softWrap: true,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 20 / 14,
               fontWeight: FontWeight.w600,
@@ -759,7 +757,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
         Text(
           label,
           textAlign: align,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: labelFs,
             height: 14 / 11,
             fontWeight: FontWeight.w500,
@@ -770,7 +768,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
         Text(
           value,
           textAlign: align,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: valueFs,
             height: 16 / 12,
             fontWeight: FontWeight.w600,

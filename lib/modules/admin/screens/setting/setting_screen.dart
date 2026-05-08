@@ -15,9 +15,12 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -62,10 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _loadingProfile = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= AdminProfileRepository(api: _api!);
 
       final res = await _repo!.getMyProfile(cancelToken: token);
@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     final baseUrl = AppConfig.fromDartDefine().baseUrl;
     if (baseUrl.isEmpty) return '';
-    if (value.startsWith('/')) return '$baseUrl$value';
+    if (value.startsWith(AppRoutes.root)) return '$baseUrl$value';
     return '$baseUrl/$value';
   }
 
@@ -278,8 +278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -390,12 +390,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             top: 0,
             child: Container(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF0A0A0A)
-                  : const Color(0xFFF5F5F7),
+                  ? OpenVtsColors.panelDark
+                  : OpenVtsColors.panelLight,
               child: AdminHomeAppBar(
                 title: 'Settings',
                 leadingIcon: Icons.settings,
-                onClose: () => context.go('/admin/home'),
+                onClose: () => context.go(AppRoutes.adminHome),
               ),
             ),
           ),
@@ -446,7 +446,7 @@ class _NavigateBox extends StatelessWidget {
         children: [
           Text(
             'System Settings',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSection,
               height: 24 / 18,
               fontWeight: FontWeight.w700,
@@ -456,7 +456,7 @@ class _NavigateBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Manage admin configuration',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fsSubtitle,
               height: 16 / 12,
               fontWeight: FontWeight.w500,
@@ -546,7 +546,7 @@ class _SettingsTab extends StatelessWidget {
               ],
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize,
                   height: 18 / 13,
                   fontWeight: FontWeight.w600,
@@ -693,7 +693,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: buttonFont,
                   height: 16 / 12,
                   fontWeight: FontWeight.w600,
@@ -732,7 +732,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
                     children: [
                       Text(
                         'Overview',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: titleSize,
                           fontWeight: FontWeight.w800,
                           color: cs.onSurface,
@@ -741,7 +741,7 @@ class _ProfileOverviewHeader extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Profile',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: subtitleSize,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface.withOpacity(0.65),
@@ -931,7 +931,7 @@ class _ProfileDatesGrid extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: labelSize,
                 height: 14 / 11,
                 fontWeight: FontWeight.w500,
@@ -941,7 +941,7 @@ class _ProfileDatesGrid extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               loading ? '—' : date,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: valueSize,
                 height: 18 / 13,
                 fontWeight: FontWeight.w700,
@@ -951,7 +951,7 @@ class _ProfileDatesGrid extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               loading ? '—' : time,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: timeSize,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1050,7 +1050,7 @@ class _ProfileEmailCard extends StatelessWidget {
               children: [
                 Text(
                   'Email',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.65),
@@ -1062,7 +1062,7 @@ class _ProfileEmailCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.visible,
                   softWrap: true,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,
@@ -1145,7 +1145,7 @@ class _ProfilePhoneCard extends StatelessWidget {
               children: [
                 Text(
                   'Phone',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.65),
@@ -1157,7 +1157,7 @@ class _ProfilePhoneCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.visible,
                   softWrap: true,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,
@@ -1229,7 +1229,7 @@ class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
           const SizedBox(width: 6),
           Text(
             widget.label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 12 * scale,
               height: 16 / 12,
               fontWeight: FontWeight.w600,
@@ -1272,7 +1272,7 @@ class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
                   ? const AppShimmer(width: 52, height: 12, radius: 6)
                   : Text(
                       'Verify',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: 12 * scale,
                         height: 16 / 12,
                         fontWeight: FontWeight.w700,
@@ -1294,10 +1294,7 @@ Future<void> _sendAndVerifyOtp(
 }) async {
   if (!context.mounted) return;
   final cs = Theme.of(context).colorScheme;
-  final api = ApiClient(
-    config: AppConfig.fromDartDefine(),
-    tokenStorage: TokenStorage.defaultInstance(),
-  );
+  final api = ApiClientProvider.create();
   final repo = AdminProfileRepository(api: api);
   final sendToken = CancelToken();
 
@@ -1449,7 +1446,7 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 1,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface,
@@ -1520,7 +1517,7 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
                     ? const AppShimmer(width: 42, height: 12, radius: 6)
                     : Text(
                         'Verify OTP',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: cs.onPrimary,
                           fontWeight: FontWeight.w700,
@@ -1587,7 +1584,7 @@ class _ProfileWhatsappCard extends StatelessWidget {
               children: [
                 Text(
                   'WhatsApp',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: labelSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.65),
@@ -1599,7 +1596,7 @@ class _ProfileWhatsappCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.visible,
                   softWrap: true,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: valueSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface,
@@ -1707,7 +1704,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                   children: [
                     Text(
                       "Company",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -1723,7 +1720,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                           )
                         : Text(
                             companyName,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -1736,7 +1733,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                         onTap: () => openUrl(companyWebsite),
                         child: Text(
                           companyWebsite,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -1804,7 +1801,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                       ),
                       child: Text(
                         label,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,
@@ -1861,7 +1858,7 @@ class _ProfileAccountCard extends StatelessWidget {
         backgroundColor: cs.primary,
         child: Text(
           initials,
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: 16 * scale,
             fontWeight: FontWeight.w700,
             color: cs.onPrimary,
@@ -1903,7 +1900,7 @@ class _ProfileAccountCard extends StatelessWidget {
                   loading ? '—' : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: nameSize,
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
@@ -1914,7 +1911,7 @@ class _ProfileAccountCard extends StatelessWidget {
                   loading ? '—' : username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: handleSize,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withOpacity(0.65),
@@ -1943,7 +1940,7 @@ class _ProfileAccountCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     verified ? 'Verified' : 'Unverified',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 12 * scale,
                       height: 16 / 12,
                       fontWeight: FontWeight.w600,
@@ -2018,7 +2015,7 @@ class _ProfileAddressCard extends StatelessWidget {
                   children: [
                     Text(
                       "Address",
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -2034,7 +2031,7 @@ class _ProfileAddressCard extends StatelessWidget {
                           )
                         : Text(
                             address,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,

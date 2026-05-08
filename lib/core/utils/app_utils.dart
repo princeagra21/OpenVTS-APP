@@ -3,8 +3,7 @@
 // It includes dimensions for cards, paddings, borders, buttons, app bars, and more.
 // Updated to support light and dark modes with a minimal black, white, and transparent color palette.
 // Added app-specific constants to match the provided code (e.g., paddings of 20, sizes of 45/40, etc.).
-// Updated fonts: Using 'Inter' from Google Fonts for body text, and 'Satoshi' (custom font) for headings.
-// To use 'Inter', add dependency: google_fonts: ^6.2.1 (or latest) in pubspec.yaml.
+// Updated fonts: Using centralized AppFonts for body text, and 'Satoshi' (custom font) for headings.
 // For 'Satoshi', download from Fontshare[](https://www.fontshare.com/fonts/satoshi), add font files to assets/fonts/,
 // and declare in pubspec.yaml under fonts:
 //   - family: Satoshi
@@ -24,7 +23,7 @@
 export 'package:open_vts/core/debug/app_logger.dart';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AppUtils {
   // Minimal Color Palette (black, white, transparent as specified)
@@ -40,7 +39,7 @@ class AppUtils {
 
   // Font Families
   static const String headingFont = 'Satoshi';
-  // Body font is handled via GoogleFonts.inter()
+  // Body font is handled via AppFonts.inter()
 
   // Text Styles (premium typography: clean, sans-serif, with hierarchy)
   // Base styles without color; colors applied in themes
@@ -63,27 +62,27 @@ class AppUtils {
     fontFamily: headingFont,
   );
 
-  static TextStyle bodyLargeBase = GoogleFonts.inter(
+  static TextStyle bodyLargeBase = AppFonts.inter(
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle bodyMediumBase = GoogleFonts.inter(
+  static TextStyle bodyMediumBase = AppFonts.inter(
     fontSize: 14.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle bodySmallBase = GoogleFonts.inter(
+  static TextStyle bodySmallBase = AppFonts.inter(
     fontSize: 12.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle subtitleBase = GoogleFonts.inter(
+  static TextStyle subtitleBase = AppFonts.inter(
     fontSize: 13.0,
     fontWeight: FontWeight.normal,
   );
 
-  static TextStyle buttonTextBase = GoogleFonts.inter(
+  static TextStyle buttonTextBase = AppFonts.inter(
     fontSize: 16.0,
     fontWeight: FontWeight.bold,
   );

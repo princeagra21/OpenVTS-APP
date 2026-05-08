@@ -12,7 +12,8 @@ import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class BrandingSettingsScreen extends StatefulWidget {
   const BrandingSettingsScreen({super.key});
@@ -75,10 +76,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
   }
 
   WhiteLabelRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= WhiteLabelRepository(api: _api!);
     return _repo!;
   }
@@ -473,7 +471,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 children: [
                   Text(
                     "White Label",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width),
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface.withOpacity(0.87),
@@ -484,7 +482,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                     children: [
                       Text(
                         "Branding Settings",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 3,
                           fontWeight: FontWeight.w800,
@@ -528,7 +526,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                 ),
                 label: Text(
                   "Save Changes",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                     color: colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
@@ -547,7 +545,7 @@ class _BrandingSettingsBox extends StatelessWidget {
               children: [
                 Text(
                   "Base URL",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
@@ -589,12 +587,12 @@ class _BrandingSettingsBox extends StatelessWidget {
                         ),
                       ),
                     ),
-                    style: GoogleFonts.roboto(color: colorScheme.onSurface),
+                    style: AppFonts.roboto(color: colorScheme.onSurface),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     "Enter your custom domain without http:// or https://",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 12,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -618,7 +616,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                     children: [
                       Text(
                         "Server IP:",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize:
                               AdaptiveUtils.getSubtitleFontSize(width) - 6,
                           fontWeight: FontWeight.w600,
@@ -638,7 +636,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                   serverIp.trim().isEmpty
                       ? "Server IP not provided by API."
                       : "Use this IP address for DNS configuration",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: 12,
                     color: colorScheme.onSurface.withOpacity(0.54),
                   ),
@@ -733,7 +731,7 @@ class _BrandingSettingsBox extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface.withOpacity(0.9),
@@ -783,7 +781,7 @@ class _BrandingSettingsBox extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -837,7 +835,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                                       Text(
                                         "Click to upload\nICO, PNG (max 2MB)",
                                         textAlign: TextAlign.center,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize:
                                               AdaptiveUtils.getSubtitleFontSize(
                                                 width,
@@ -888,7 +886,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                                         errorBuilder: (_, __, ___) => Center(
                                           child: Text(
                                             "Preview",
-                                            style: GoogleFonts.roboto(
+                                            style: AppFonts.roboto(
                                               fontSize: 12,
                                               color: colorScheme.onSurface
                                                   .withOpacity(0.54),
@@ -899,7 +897,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                                     : Center(
                                         child: Text(
                                           "Preview",
-                                          style: GoogleFonts.roboto(
+                                          style: AppFonts.roboto(
                                             fontSize: 12,
                                             color: colorScheme.onSurface
                                                 .withOpacity(0.54),

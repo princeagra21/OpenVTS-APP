@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -11,7 +15,6 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class AdminUserActivityTab extends StatefulWidget {
@@ -53,13 +56,10 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
 
       final res = await _api!.get(
-        '/admin/users/${widget.userId}/activitylogs',
+        ApiPaths.path('/admin/users/${widget.userId}/activitylogs'),
         queryParameters: const {'limit': 20},
         cancelToken: _token,
       );
@@ -267,7 +267,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelSize,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -276,7 +276,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueSize,
               height: 1.25,
               fontWeight: FontWeight.w600,
@@ -323,7 +323,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                   Expanded(
                     child: Text(
                       'User Activity',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: headerSize,
                         height: 24 / 18,
                         fontWeight: FontWeight.w700,
@@ -347,7 +347,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: 'Search activity...',
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: AppFonts.roboto(
                     fontSize: labelSize,
                     color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
@@ -367,7 +367,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                     borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
                   ),
                 ),
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface,
@@ -404,7 +404,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                             const SizedBox(width: 6),
                             Text(
                               _selectedFilter,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: labelSize,
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.onSurface,
@@ -480,7 +480,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                             Expanded(
                               child: Text(
                                 rangeLabel,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: labelSize,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface,
@@ -506,7 +506,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                 child: items.isEmpty
                     ? Text(
                         'No activity logs found.',
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -561,7 +561,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                           children: [
                                             Text(
                                               _friendlyAction(log.action),
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: headerSize,
                                                 fontWeight: FontWeight.w700,
                                                 color: colorScheme.onSurface,
@@ -570,7 +570,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                             const SizedBox(height: 6),
                                             Text(
                                               log.action.isNotEmpty ? log.action : '—',
-                                              style: GoogleFonts.roboto(
+                                              style: AppFonts.roboto(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color: colorScheme.onSurface.withValues(alpha: 0.65),
@@ -587,7 +587,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                               ),
                                               child: Text(
                                                 log.entity.isNotEmpty ? log.entity : '—',
-                                                style: GoogleFonts.roboto(
+                                                style: AppFonts.roboto(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
                                                   color: colorScheme.onSurface,
@@ -814,7 +814,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: labelFs,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -823,7 +823,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: valueFs,
               height: 1.3,
               fontWeight: FontWeight.w600,
@@ -844,8 +844,8 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: Stack(
         children: [
           Positioned.fill(
@@ -887,7 +887,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'Activity Log Details',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 1,
                                   fontWeight: FontWeight.w800,
                                   color: colorScheme.onSurface,
@@ -896,7 +896,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 _friendlyAction(log.action),
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface.withValues(alpha: 0.75),
@@ -955,7 +955,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Metadata',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -974,7 +974,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                             child: SingleChildScrollView(
                               child: SelectableText(
                                 _metadataJson(),
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: AdaptiveUtils.getTitleFontSize(width) + 0.5,
                                   height: 1.5,
                                   fontWeight: FontWeight.w500,

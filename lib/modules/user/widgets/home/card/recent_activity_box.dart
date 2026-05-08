@@ -3,7 +3,8 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -41,7 +42,7 @@ class SmallTab extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
@@ -151,7 +152,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                   activity.displayText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: mainFontSize - 3,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
@@ -162,7 +163,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                   _formatRelative(activity.createdAt),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: subFontSize,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -213,10 +214,10 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 ],
               ),
               InkWell(
-                onTap: () => context.push('/user/notifications'),
+                onTap: () => context.push(AppRoutes.userNotifications),
                 child: Text(
                   'View all',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: linkFontSize,
                     color: colorScheme.primary,
                   ),
@@ -241,7 +242,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 ? Center(
                     child: Text(
                       'No alerts found',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         color: colorScheme.onSurface.withOpacity(0.65),
                         fontWeight: FontWeight.w600,
                       ),

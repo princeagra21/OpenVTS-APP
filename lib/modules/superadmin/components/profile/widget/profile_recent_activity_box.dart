@@ -1,7 +1,7 @@
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ProfileActivityEntry {
   final String title;
@@ -59,7 +59,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
         children: [
           Text(
             'Recent Activity',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: titleFontSize + 2,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface.withOpacity(0.85),
@@ -84,7 +84,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
           else if (activities.isEmpty)
             Text(
               'No recent activity from API.',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subtitleFontSize,
                 color: colorScheme.onSurface.withOpacity(0.65),
               ),
@@ -109,7 +109,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                       child: Center(
                         child: Text(
                           '$index',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             color: colorScheme.onPrimary,
                             fontSize: subtitleFontSize - 2,
                             fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                         children: [
                           Text(
                             _display(activity.title),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFontSize,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface.withOpacity(0.87),
@@ -133,7 +133,7 @@ class ProfileRecentActivityBox extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${_display(activity.time)} | ${_display(activity.subtitle)}',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: subtitleFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               height: 1.3,

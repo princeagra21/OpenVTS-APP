@@ -1,3 +1,5 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 // Ticket details screen extracted
 import 'dart:io';
 
@@ -14,7 +16,6 @@ import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_a
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class Ticket {
   final String title;
@@ -385,7 +386,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           controller: messageController,
                           minLines: 1,
                           maxLines: 3,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: bodyFs,
                             fontWeight: FontWeight.w500,
                             color: colorScheme.onSurface,
@@ -393,7 +394,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           decoration: InputDecoration(
                             isDense: true,
                             hintText: 'Type a message…',
-                            hintStyle: GoogleFonts.roboto(
+                            hintStyle: AppFonts.roboto(
                               fontSize: bodyFs,
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurfaceVariant,
@@ -408,7 +409,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               _attachment!.filename,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: secondaryFs - 1,
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme.onSurfaceVariant,
@@ -465,7 +466,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         alignment: Alignment.centerLeft,
         child: Text(
           '—',
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: secondaryFs,
             fontWeight: FontWeight.w500,
             color: mutedText,
@@ -508,7 +509,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     ),
                     child: Text(
                       currentDate,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: secondaryFs - 1,
                         fontWeight: FontWeight.w600,
                         color: mutedText,
@@ -550,7 +551,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           msg.content,
                           textAlign:
                               isOutgoing ? TextAlign.right : TextAlign.left,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: bodyFs - 0.5,
                             fontWeight: FontWeight.w500,
                             color: isOutgoing
@@ -595,7 +596,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       msg.attachmentName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: secondaryFs - 1,
                                         fontWeight: FontWeight.w500,
                                         color: isOutgoing
@@ -614,7 +615,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           alignment: Alignment.centerRight,
                           child: Text(
                             _formatMessageTime(msg),
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: secondaryFs - 2.5,
                               fontWeight: FontWeight.w500,
                               color: isOutgoing
@@ -680,10 +681,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       final dir = await _resolveDownloadDir();
       final fileName = _safeAttachmentName(message.attachmentName);
       final file = File('${dir.path}${Platform.pathSeparator}$fileName');
@@ -712,10 +710,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     setState(() => _loadingDetails = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getTicketDetails(
         widget.ticket.numericId.isNotEmpty
@@ -865,10 +860,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     });
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final internal = selectedLocalTab == 'Internal Note';
@@ -951,10 +943,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     });
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.updateTicketStatus(
         widget.ticket.numericId.isNotEmpty
@@ -1093,7 +1082,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   fromName.isNotEmpty
                                       ? fromName[0].toUpperCase()
                                       : '—',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: bodyFs - 1,
                                     fontWeight: FontWeight.w700,
                                     color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1109,7 +1098,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       fromName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: bodyFs,
                                         fontWeight: FontWeight.w600,
                                         color: colorScheme.onSurface,
@@ -1120,7 +1109,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       fromDate,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.roboto(
+                                      style: AppFonts.roboto(
                                         fontSize: secondaryFs,
                                         fontWeight: FontWeight.w500,
                                         color: colorScheme.onSurfaceVariant,
@@ -1264,7 +1253,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                         _detailTitle!.trim().isNotEmpty)
                                     ? _detailTitle!
                                     : widget.ticket.title,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: ticketTitleFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -1305,7 +1294,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     _detailStatus ?? selectedDropdownStatus,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: metaFs,
                                       height: 14 / 11,
                                       fontWeight: FontWeight.w600,
@@ -1332,7 +1321,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             if (_titleCase(_detailPriority ?? '').isNotEmpty)
                               '${_titleCase(_detailPriority ?? '')} Priority',
                           ].join(' · '),
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: metaFs,
                             height: 14 / 11,
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -1357,7 +1346,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             children: [
                               Text(
                                 'From',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: metaFs,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w600,
@@ -1368,7 +1357,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 fromName,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: bodyFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w600,
@@ -1380,7 +1369,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 fromEmail,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: secondaryFs,
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
@@ -1419,7 +1408,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 : (value) {
                                     if (value != null) _changeStatus(value);
                                   },
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: secondaryFs,
                               height: 16 / 12,
                               color: colorScheme.onSurface,
@@ -1476,7 +1465,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 fromName.isNotEmpty
                                     ? fromName[0].toUpperCase()
                                     : '—',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: bodyFs,
                                   height: 20 / 14,
                                   fontWeight: FontWeight.w700,
@@ -1492,7 +1481,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 children: [
                                   Text(
                                     fromName,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: bodyFs,
                                       height: 20 / 14,
                                       fontWeight: FontWeight.w600,
@@ -1504,7 +1493,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     fromDate,
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: secondaryFs,
                                       height: 16 / 12,
                                       fontWeight: FontWeight.w500,

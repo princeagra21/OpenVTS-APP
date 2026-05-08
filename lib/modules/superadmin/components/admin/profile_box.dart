@@ -10,7 +10,8 @@ import 'package:open_vts/modules/superadmin/components/admin/profile_tab/edit_ad
 import 'package:open_vts/modules/superadmin/components/admin/profile_tab/update_password_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ProfileBox extends StatefulWidget {
   final String adminId;
@@ -50,10 +51,7 @@ class _ProfileBoxState extends State<ProfileBox> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api = ApiClientProvider.create();
     _repo = SuperadminRepository(api: _api!);
   }
 
@@ -251,7 +249,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                       )
                     : Text(
                         _initials(displayName, displayUsername),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -275,7 +273,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                                 )
                               : Text(
                                   displayName,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -300,7 +298,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                                 )
                               : Text(
                                   roleLabel,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -314,7 +312,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                         ? const AppShimmer(width: 120, height: 14, radius: 8)
                         : Text(
                             displayUsername,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
@@ -341,7 +339,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                   ),
                   Text(
                     "Status",
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: badgeFontSize,
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
@@ -366,7 +364,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                 ),
                 child: Text(
                   statusLabel,
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontSize: badgeFontSize,
                     color: _active ? Colors.green[800] : colorScheme.error,
                     fontWeight: FontWeight.w600,
@@ -387,7 +385,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                 ),
                 child: Text(
                   isVerified ? "Email Verified" : "Email Not Verified",
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     color: isVerified
                         ? colorScheme.onPrimary
                         : colorScheme.onSurface.withOpacity(0.8),
@@ -429,7 +427,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                     child: Center(
                       child: Text(
                         "Edit Profile",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.primary,
@@ -460,7 +458,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                     child: Center(
                       child: Text(
                         "Update Password",
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: buttonFontSize,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onPrimary,

@@ -11,6 +11,8 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
 
 class RenewVehicleScreen extends StatefulWidget {
   final String? initialUserId;
@@ -48,10 +50,7 @@ class _RenewVehicleScreenState extends State<RenewVehicleScreen> {
   bool _submitting = false;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     return _apiClient!;
   }
 
@@ -385,8 +384,8 @@ class _RenewVehicleScreenState extends State<RenewVehicleScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(

@@ -1,7 +1,7 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
 // components/small_box/small_box.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -47,7 +47,7 @@ class SmallTab extends StatelessWidget {
         child: icon == null
             ? Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: fontSize ?? defaultFontSize,
                   fontWeight: FontWeight.w600,
                   color:
@@ -67,7 +67,7 @@ class SmallTab extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     label,
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: fontSize ?? defaultFontSize,
                       fontWeight: FontWeight.w600,
                       color: selected

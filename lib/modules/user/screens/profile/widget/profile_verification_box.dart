@@ -9,7 +9,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 enum _VerificationChannel { email, phone }
 
@@ -68,10 +69,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
     }
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= UserProfileRepository(api: _api!);
 
       final Result<void> result = channel == _VerificationChannel.email
@@ -189,7 +187,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
               ? const AppShimmer(width: 130, height: 16, radius: 8)
               : Text(
                   'Verification',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: titleSize,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface.withOpacity(0.9),
@@ -269,7 +267,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
                     '$label: $value',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: labelSize,
                       color: colorScheme.onSurface.withOpacity(0.9),
                     ),
@@ -294,7 +292,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
                       ),
                       child: Text(
                         'Not verified',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize - 2,
                           color: Colors.orange[800],
                           fontWeight: FontWeight.w700,
@@ -308,7 +306,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
                           ? const AppShimmer(width: 52, height: 10, radius: 5)
                           : Text(
                               'Send OTP',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: labelSize - 2,
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w700,
@@ -437,7 +435,7 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize + 1,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
@@ -517,7 +515,7 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
                     ? const AppShimmer(width: 42, height: 12, radius: 6)
                     : Text(
                         'Verify OTP',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: labelSize,
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w700,

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/user_policy.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserPolicyRepository {
   final ApiClient api;
@@ -15,7 +16,7 @@ class UserPolicyRepository {
   Future<Result<List<UserPolicy>>> getPolicies({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/policies', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/policies'), cancelToken: cancelToken);
     return res.when(
       success: (data) => Result.ok(UserPolicy.fromResponse(data)),
       failure: (err) => Result.fail(err),
@@ -31,7 +32,7 @@ class UserPolicyRepository {
 
     for (final update in updates) {
       final res = await api.patch(
-        '/superadmin/policy',
+        ApiPaths.path('/superadmin/policy'),
         data: update,
         cancelToken: cancelToken,
       );

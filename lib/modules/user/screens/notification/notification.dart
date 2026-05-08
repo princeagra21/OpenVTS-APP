@@ -11,7 +11,9 @@ import 'package:open_vts/core/widgets/push_notification_banner.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -96,13 +98,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   RoleNotificationsRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= RoleNotificationsRepository(
       api: _api!,
-      pathPrefix: '/user/notifications',
+      pathPrefix: AppRoutes.userNotifications,
     );
     return _repo!;
   }
@@ -339,7 +338,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Expanded(
                   child: Text(
                     'Inbox',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width),
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
@@ -359,7 +358,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 4),
             Text(
               '${_items.length} notifications',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -479,7 +478,7 @@ class _NotificationCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -499,7 +498,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
                   child: Text(
                     item.isRead ? 'Read' : 'Unread',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 1,
                       fontWeight: FontWeight.w700,
                       color: item.isRead
@@ -513,7 +512,7 @@ class _NotificationCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '$kind • $created',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -525,7 +524,7 @@ class _NotificationCard extends StatelessWidget {
               body,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: AdaptiveUtils.getTitleFontSize(width),
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -618,7 +617,7 @@ class _EmptyNotificationsCard extends StatelessWidget {
       ),
       child: Text(
         'No notifications',
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 3,
           fontWeight: FontWeight.w700,
           color: colorScheme.onSurface.withOpacity(0.7),

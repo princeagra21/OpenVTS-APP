@@ -3,7 +3,7 @@ import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/admin_user_details_ui.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminUserProfileBox extends StatelessWidget {
   final AdminUserDetails? details;
@@ -94,7 +94,7 @@ class AdminUserProfileBox extends StatelessWidget {
                       )
                     : Text(
                         _initials(displayName, displayUsername),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           color: colorScheme.onPrimary,
                           fontSize: avatarFontSize,
                           fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class AdminUserProfileBox extends StatelessWidget {
                                 )
                               : Text(
                                   displayName,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     fontSize: nameFontSize,
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
@@ -145,7 +145,7 @@ class AdminUserProfileBox extends StatelessWidget {
                                 )
                               : Text(
                                   roleLabel,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.inter(
                                     color: colorScheme.onPrimary,
                                     fontSize: badgeFontSize,
                                     fontWeight: FontWeight.w600,
@@ -192,7 +192,7 @@ class AdminUserProfileBox extends StatelessWidget {
                         ? const AppShimmer(width: 140, height: 14, radius: 8)
                         : Text(
                             displayUsername,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: usernameFontSize,
                               color: colorScheme.onSurface.withValues(
                                 alpha: 0.6,
@@ -269,7 +269,7 @@ class AdminUserProfileBox extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: fontSize,
           color: fg,
           fontWeight: FontWeight.w600,

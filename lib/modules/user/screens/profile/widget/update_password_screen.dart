@@ -7,7 +7,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class UpdatePasswordScreen extends StatefulWidget {
   const UpdatePasswordScreen({super.key});
@@ -61,10 +62,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   }
 
   UserProfileRepository _repoOrCreate() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= UserProfileRepository(api: _api!);
     return _repo!;
   }
@@ -156,13 +154,13 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         color: colorScheme.onSurface,
         fontSize: AdaptiveUtils.getTitleFontSize(width),
       ),
       decoration: _minimalInputDecoration(context).copyWith(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: AppFonts.inter(
           color: colorScheme.onSurface.withOpacity(0.5),
           fontSize: AdaptiveUtils.getTitleFontSize(width),
         ),
@@ -215,7 +213,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 children: [
                   Text(
                     'Update Password',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                     ),
@@ -233,7 +231,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               const SizedBox(height: 12),
               Text(
                 'Securely update your account password',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -293,7 +291,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                                   )
                                 : Text(
                                     'Update Password',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,

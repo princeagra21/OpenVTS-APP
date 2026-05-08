@@ -1,3 +1,6 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 // UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -12,7 +15,6 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
@@ -173,7 +175,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   DateTime? _parseInputDate(String value) {
-    final parts = value.trim().split('/');
+    final parts = value.trim().split(AppRoutes.root);
     if (parts.length != 3) return null;
     final d = int.tryParse(parts[0]);
     final m = int.tryParse(parts[1]);
@@ -349,10 +351,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= SuperadminRepository(api: _api!);
   }
 
@@ -419,7 +418,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Select Admin',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -442,7 +441,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                     const EdgeInsets.symmetric(horizontal: 6),
                                 title: Text(
                                   'All Admins',
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -467,13 +466,13 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                   const EdgeInsets.symmetric(horizontal: 6),
                               title: Text(
                                 name,
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               subtitle: Text(
                                 a.email.isNotEmpty ? a.email : '—',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   color: colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
@@ -526,7 +525,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Date Filter',
-                  style: GoogleFonts.roboto(
+                  style: AppFonts.roboto(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
@@ -770,7 +769,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                             c['title'] as String,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleSize,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -788,7 +787,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                     const SizedBox(height: 8),
                     Text(
                       c['value'] as String,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: valueSize,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
@@ -844,7 +843,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -858,7 +857,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                     _capitalizeFirst(
                       _safeString(activity["type"], fallback: "—"),
                     ),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: subFontSize,
                       color: colorScheme.onSurface.withOpacity(0.54),
                     ),
@@ -871,7 +870,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       dateStr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: subFontSize - 2,
                         color: colorScheme.onSurface.withOpacity(0.54),
                       ),
@@ -900,7 +899,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               ),
               child: Text(
                 activity["status"],
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   color: colorScheme.onSurface.withOpacity(0.7),
                   fontSize: badgeFontSize - 2,
                 ),
@@ -909,7 +908,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 4),
             Text(
               _relativeTime(date),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -939,7 +938,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               _capitalizeFirst(_safeString(activity["name"], fallback: "")),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -948,7 +947,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 6),
             Text(
               _formatDateOnly(date),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize - 2,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -961,7 +960,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           children: [
             Text(
               _safeString(activity["value"], fallback: "—"),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -970,7 +969,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             const SizedBox(height: 4),
             Text(
               _safeString(activity["status"], fallback: ""),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize - 3,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -1001,7 +1000,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: mainFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
@@ -1009,7 +1008,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
             ),
             Text(
               _safeString(activity["email"], fallback: ""),
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: subFontSize,
                 color: colorScheme.onSurface.withOpacity(0.54),
               ),
@@ -1019,7 +1018,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
 
         right = Text(
           _formatDateOnly(date),
-          style: GoogleFonts.roboto(
+          style: AppFonts.roboto(
             fontSize: subFontSize - 2,
             color: colorScheme.onSurface.withOpacity(0.54),
           ),
@@ -1185,7 +1184,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                         children: [
                           Text(
                             'Payments',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs - 1,
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -1194,7 +1193,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Manage transactions',
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: fs - 3,
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),
@@ -1203,7 +1202,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       ),
                       GestureDetector(
                         onTap: () => context.push(
-                          '/superadmin/transactions/record-manual',
+                          AppRoutes.superadminTransactionsRecordManual,
                         ),
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -1224,7 +1223,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                               const SizedBox(width: 6),
                               Text(
                                 'Record payment',
-                                style: GoogleFonts.roboto(
+                                style: AppFonts.roboto(
                                   fontSize: fs - 3,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
@@ -1301,7 +1300,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fs - 2,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
@@ -1356,7 +1355,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                                         _dateFilterLabel,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.roboto(
+                                        style: AppFonts.roboto(
                                           fontSize: fs - 2,
                                           fontWeight: FontWeight.w600,
                                           color: colorScheme.onSurface,
@@ -1385,7 +1384,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       _searchQuery.isNotEmpty
                           ? 'No activities found'
                           : 'No activities in selected range',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: fs,
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),

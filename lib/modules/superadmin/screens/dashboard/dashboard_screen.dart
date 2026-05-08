@@ -17,9 +17,12 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -49,8 +52,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0A0A0A)
-          : const Color(0xFFF5F5F7),
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
       body: SafeArea(
         top: false,
         bottom: false,
@@ -156,10 +159,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentVehicles(cancelToken: _cancelToken);
       if (!mounted) return;
@@ -331,13 +331,13 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push('/superadmin/vehicles'),
+                onTap: () => context.push(AppRoutes.superadminVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: mainRowFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -367,7 +367,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
           else if (_vehicles.isEmpty)
             Text(
               'No recent vehicles',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -417,7 +417,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                             Text(
                               name,
                               maxLines: 2,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -429,7 +429,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                               type,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -458,7 +458,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                             ),
                             child: Text(
                               status,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: metaFs,
                                 height: 14 / 11,
                                 fontWeight: FontWeight.w600,
@@ -469,7 +469,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                           const SizedBox(height: 6),
                           Text(
                             timeText,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: metaFs,
                               height: 14 / 11,
                               fontWeight: FontWeight.w500,
@@ -522,10 +522,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentTransactions(
         limit: 5,
@@ -708,13 +705,13 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push('/superadmin/payments'),
+                onTap: () => context.push(AppRoutes.superadminPayments),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'View all',
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: mainRowFs,
                         height: 20 / 14,
                         fontWeight: FontWeight.w600,
@@ -744,7 +741,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
           else if (_transactions.isEmpty)
             Text(
               'No recent transactions',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -797,7 +794,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                             Text(
                               name,
                               maxLines: 2,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -808,7 +805,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                             Text(
                               date,
                               maxLines: 2,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -824,7 +821,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                         children: [
                           Text(
                             amount,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: mainRowFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -856,7 +853,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                                 const SizedBox(width: 4),
                                 Text(
                                   statusText,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: metaFs,
                                     height: 14 / 11,
                                     fontWeight: FontWeight.w600,
@@ -910,10 +907,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentUsers(cancelToken: _cancelToken);
       if (!mounted) return;
@@ -1063,7 +1057,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
           else if (_users.isEmpty)
             Text(
               'No recent users',
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: secondaryFs,
                 height: 16 / 12,
                 fontWeight: FontWeight.w500,
@@ -1097,7 +1091,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                         alignment: Alignment.center,
                         child: Text(
                           name.isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: mainRowFs,
                             height: 20 / 14,
                             fontWeight: FontWeight.w600,
@@ -1113,7 +1107,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                             Text(
                               name,
                               maxLines: 2,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: mainRowFs,
                                 height: 20 / 14,
                                 fontWeight: FontWeight.w600,
@@ -1125,7 +1119,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                               email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.roboto(
+                              style: AppFonts.roboto(
                                 fontSize: secondaryFs,
                                 height: 16 / 12,
                                 fontWeight: FontWeight.w500,
@@ -1138,7 +1132,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                       const SizedBox(width: 12),
                       Text(
                         date,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: metaFs,
                           height: 14 / 11,
                           fontWeight: FontWeight.w500,

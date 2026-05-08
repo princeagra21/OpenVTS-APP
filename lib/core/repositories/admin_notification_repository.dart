@@ -3,6 +3,7 @@ import 'package:open_vts/core/models/admin_user_recipient.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminNotificationRepository {
   final ApiClient api;
@@ -18,7 +19,7 @@ class AdminNotificationRepository {
     if (q.isNotEmpty) qp['search'] = q;
 
     final res = await api.get(
-      '/admin/users',
+      ApiPaths.path('/admin/users'),
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );

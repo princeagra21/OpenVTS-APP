@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/user_route_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/result.dart';
+import 'package:open_vts/core/network/api_paths.dart';
 
 class UserRoutesRepository {
   final ApiClient api;
@@ -11,7 +12,7 @@ class UserRoutesRepository {
   Future<Result<List<UserRouteItem>>> getRoutes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/user/routes', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.path('/user/routes'), cancelToken: cancelToken);
     return res.when(
       success: (data) {
         final list = _extractList(data, extraKeys: const ['routes']);
@@ -36,7 +37,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/routes/$routeId',
+      ApiPaths.path('/user/routes/$routeId'),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -52,7 +53,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/user/routes',
+      ApiPaths.path('/user/routes'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -70,7 +71,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      '/user/routes/$routeId',
+      ApiPaths.path('/user/routes/$routeId'),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -87,7 +88,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/user/routes/$routeId',
+      ApiPaths.path('/user/routes/$routeId'),
       cancelToken: cancelToken,
     );
     return res.when(

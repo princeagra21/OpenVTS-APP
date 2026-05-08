@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -14,7 +17,6 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key});
@@ -46,10 +48,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   AdminDevicesRepository? _repo;
 
   AdminDevicesRepository _repoOrCreate() {
-    _apiClient ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _apiClient ??= ApiClientProvider.create();
     _repo ??= AdminDevicesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -210,7 +209,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     final parsed = DateTime.tryParse(text);
     if (parsed != null) return parsed;
 
-    final parts = text.split('/');
+    final parts = text.split(AppRoutes.root);
     if (parts.length == 3) {
       final d = int.tryParse(parts[0]);
       final m = int.tryParse(parts[1]);
@@ -231,7 +230,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Future<void> _openAddDevice() async {
-    final result = await context.push('/admin/devices/add');
+    final result = await context.push(AppRoutes.adminDevicesAdd);
     if (!mounted) return;
     if (result == true) {
       _loadDevices();
@@ -387,13 +386,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: bodyFs,
                   color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search IMEI, type, SIM, provider...',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: AppFonts.inter(
                     color: colorScheme.onSurface.withOpacity(0.6),
                     fontSize: bodyFs,
                   ),
@@ -449,7 +448,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               children: [
                 Text(
                   'Showing ${filteredDevices.length} of ${allDevices.length} devices',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: bodyFs,
                     color: colorScheme.onSurface.withOpacity(0.87),
                   ),
@@ -470,7 +469,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     ),
                     child: Text(
                       'Add Device',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: bodyFs - 3,
                         fontWeight: FontWeight.w600,
                         color: colorScheme.primary,
@@ -566,7 +565,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               children: [
                 Text(
                   'No devices found',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: bodyFs + 1,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
@@ -575,7 +574,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Add a device or ask superadmin to assign one.',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: smallFs + 1,
                     color: colorScheme.onSurface.withOpacity(0.72),
                   ),
@@ -748,7 +747,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                     imei,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs + 2,
                                       fontWeight: FontWeight.bold,
                                       color: colorScheme.onSurface,
@@ -769,7 +768,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                     status,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: smallFs,
                                       fontWeight: FontWeight.w600,
                                       color: _statusTextColor(status),
@@ -793,7 +792,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     softWrap: false,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface,
@@ -817,7 +816,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     softWrap: false,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface,
@@ -841,7 +840,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     softWrap: false,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: bodyFs,
                                       fontWeight: FontWeight.w500,
                                       color: colorScheme.onSurface,
@@ -864,7 +863,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                           'Expiry: $expiry',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: smallFs + 1,
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurface.withOpacity(0.87),

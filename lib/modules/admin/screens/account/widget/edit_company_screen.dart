@@ -8,7 +8,8 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminEditCompanyScreen extends StatefulWidget {
   final AdminProfile profile;
@@ -120,10 +121,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClient(
-      config: AppConfig.fromDartDefine(),
-      tokenStorage: TokenStorage.defaultInstance(),
-    );
+    _api ??= ApiClientProvider.create();
     _repo ??= AdminProfileRepository(api: _api!);
   }
 
@@ -229,7 +227,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                   ),
                   title: Text(
                     e[0].toUpperCase() + e.substring(1),
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -395,7 +393,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
       filled: true,
       fillColor: Colors.transparent,
       hintText: hint,
-      hintStyle: GoogleFonts.roboto(
+      hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
         fontSize: AdaptiveUtils.getTitleFontSize(
           MediaQuery.of(context).size.width,
@@ -447,7 +445,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                 children: [
                   Text(
                     'Edit Company',
-                    style: GoogleFonts.roboto(
+                    style: AppFonts.roboto(
                       fontSize: titleSize + 2,
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface.withOpacity(0.9),
@@ -466,7 +464,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
               const SizedBox(height: 12),
               Text(
                 'Update company details',
-                style: GoogleFonts.roboto(
+                style: AppFonts.roboto(
                   fontSize: labelSize - 2,
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface.withOpacity(0.87),
@@ -480,7 +478,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                     children: [
                       TextField(
                         controller: _nameController,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -499,7 +497,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                       TextField(
                         controller: _websiteController,
                         keyboardType: TextInputType.url,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -518,7 +516,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                       TextField(
                         controller: _customDomainController,
                         keyboardType: TextInputType.url,
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: labelSize,
                           color: colorScheme.onSurface,
                         ),
@@ -560,7 +558,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                                 child: Text(
                                   _selectedSocial[0].toUpperCase() +
                                       _selectedSocial.substring(1),
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: labelSize,
                                     color: colorScheme.onSurface,
                                   ),
@@ -616,7 +614,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                                 child: TextField(
                                   controller: controller,
                                   keyboardType: TextInputType.url,
-                                  style: GoogleFonts.roboto(
+                                  style: AppFonts.roboto(
                                     fontSize: labelSize,
                                     color: colorScheme.onSurface,
                                   ),
@@ -668,7 +666,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
                                   )
                                 : Text(
                                     'Save Changes',
-                                    style: GoogleFonts.roboto(
+                                    style: AppFonts.roboto(
                                       fontSize: labelSize,
                                       color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,

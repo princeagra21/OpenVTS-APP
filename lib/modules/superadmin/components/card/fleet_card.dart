@@ -1,3 +1,4 @@
+import 'package:open_vts/core/network/api_client_provider.dart';
 // components/fleet/fleet_overview_box.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -93,10 +94,7 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
     setState(() => _loadingCounts = true);
 
     try {
-      _api ??= ApiClient(
-        config: AppConfig.fromDartDefine(),
-        tokenStorage: TokenStorage.defaultInstance(),
-      );
+      _api ??= ApiClientProvider.create();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getTotalCounts(cancelToken: token);

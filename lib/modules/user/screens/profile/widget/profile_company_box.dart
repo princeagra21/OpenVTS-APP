@@ -2,8 +2,8 @@ import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
 
 class ProfileCompanyBox extends StatelessWidget {
   final AdminProfile? profile;
@@ -76,7 +76,7 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: fontSize,
               color: colorScheme.onSurface.withOpacity(0.87),
             ),
@@ -86,7 +86,7 @@ class ProfileCompanyBox extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.roboto(
+              style: AppFonts.roboto(
                 fontSize: fontSize,
                 color: colorScheme.onSurface.withOpacity(0.87),
               ),
@@ -138,7 +138,7 @@ class ProfileCompanyBox extends StatelessWidget {
         children: [
           Text(
             'Company',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -166,7 +166,7 @@ class ProfileCompanyBox extends StatelessWidget {
                     ? const AppShimmer(width: 22, height: 22, radius: 10)
                     : Text(
                         _initials(companyName),
-                        style: GoogleFonts.roboto(
+                        style: AppFonts.roboto(
                           fontSize: iconSize - 2,
                           fontWeight: FontWeight.w700,
                           color: colorScheme.primary,
@@ -182,7 +182,7 @@ class ProfileCompanyBox extends StatelessWidget {
                         ? const AppShimmer(width: 120, height: 14, radius: 7)
                         : Text(
                             companyName,
-                            style: GoogleFonts.roboto(
+                            style: AppFonts.roboto(
                               fontSize: titleFs,
                               height: 20 / 14,
                               fontWeight: FontWeight.w600,
@@ -199,7 +199,7 @@ class ProfileCompanyBox extends StatelessWidget {
                         onTap: () => openUrl(website),
                         child: Text(
                           website,
-                          style: GoogleFonts.roboto(
+                          style: AppFonts.roboto(
                             fontSize: labelFs,
                             height: 14 / 11,
                             fontWeight: FontWeight.w500,
@@ -235,7 +235,7 @@ class ProfileCompanyBox extends StatelessWidget {
                     ),
                     child: Text(
                       label,
-                      style: GoogleFonts.roboto(
+                      style: AppFonts.roboto(
                         fontSize: labelFs,
                         height: 14 / 11,
                         fontWeight: FontWeight.w500,
@@ -250,7 +250,7 @@ class ProfileCompanyBox extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Address',
-            style: GoogleFonts.roboto(
+            style: AppFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withOpacity(0.7),
