@@ -2,7 +2,6 @@
 import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../../utils/app_utils.dart';
 
 class AdoptionGrowthBox extends StatefulWidget {
   const AdoptionGrowthBox({super.key});

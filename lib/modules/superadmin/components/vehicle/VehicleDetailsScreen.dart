@@ -588,7 +588,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.35),
+        color: scheme.surfaceContainerHighest.withOpacity(0.35),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: scheme.outline.withOpacity(0.45)),
       ),

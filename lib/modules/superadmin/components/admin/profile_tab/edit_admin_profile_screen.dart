@@ -570,7 +570,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           hintText: 'Search',
                           filled: true,
                           fillColor:
-                              colorScheme.surfaceVariant.withOpacity(0.3),
+                              colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -802,7 +802,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),

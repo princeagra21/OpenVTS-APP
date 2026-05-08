@@ -186,7 +186,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,7 +351,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
             height: avatarSize,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               shape: BoxShape.circle,
               border: Border.all(
@@ -396,7 +396,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -530,7 +530,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
     final double labelFs = 11 * scale;
     final double valueFs = 14 * scale;
     final double subValueFs = 12 * scale;
-    IconData _titleIcon(String t) {
+    IconData titleIcon(String t) {
       final l = t.toLowerCase();
       if (l.contains('vehicle')) return Icons.directions_car_outlined;
       if (l.contains('status')) return Icons.verified_user_outlined;
@@ -562,7 +562,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 ),
               ),
               Icon(
-                _titleIcon(title),
+                titleIcon(title),
                 size: 14 * scale,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -813,7 +813,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                 height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? colorScheme.surfaceVariant
+                      ? colorScheme.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -916,7 +916,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
                           ),
                           decoration: BoxDecoration(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? colorScheme.surfaceVariant
+                                ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(

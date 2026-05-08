@@ -637,7 +637,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         scale: 0.7,
                         child: Switch(
                           value: firebaseEnabled,
-                          activeColor: colorScheme.onPrimary,
+                          activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
                           inactiveTrackColor: colorScheme.primary.withOpacity(
@@ -1008,7 +1008,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         scale: 0.7,
                         child: Switch(
                           value: geoEnabled,
-                          activeColor: colorScheme.onPrimary,
+                          activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
                           inactiveTrackColor: colorScheme.primary.withOpacity(
@@ -1195,7 +1195,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                                   scale: 0.7,
                                   child: Switch(
                                     value: providerActive,
-                                    activeColor: colorScheme.onPrimary,
+                                    activeThumbColor: colorScheme.onPrimary,
                                     activeTrackColor: colorScheme.primary,
                                     inactiveThumbColor: colorScheme.onPrimary,
                                     inactiveTrackColor: colorScheme.primary
@@ -1548,7 +1548,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         scale: 0.7,
                         child: Switch(
                           value: ssoEnabled,
-                          activeColor: colorScheme.onPrimary,
+                          activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
                           inactiveTrackColor: colorScheme.primary.withOpacity(
@@ -1870,7 +1870,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
                         scale: 0.7,
                         child: Switch(
                           value: openAiEnabled,
-                          activeColor: colorScheme.onPrimary,
+                          activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
                           inactiveTrackColor: colorScheme.primary.withOpacity(

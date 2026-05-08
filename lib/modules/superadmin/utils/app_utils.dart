@@ -245,7 +245,7 @@ class AppUtils {
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       appBarTheme: AppBarTheme(
-        color: primaryColor,
+        backgroundColor: primaryColor,
         elevation: elevationMedium,
         titleTextStyle: headlineMediumBase.copyWith(color: white),
       ),
@@ -271,7 +271,7 @@ class AppUtils {
         primarySwatch: Colors.grey, // Minimal, using grey for scheme
       ).copyWith(
         secondary: black,
-        background: backgroundColor,
+        surface: backgroundColor,
         error: errorColor,
       ),
     );
@@ -288,7 +288,7 @@ class AppUtils {
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       appBarTheme: AppBarTheme(
-        color: primaryColor,
+        backgroundColor: primaryColor,
         elevation: elevationMedium,
         titleTextStyle: headlineMediumBase.copyWith(color: black),
       ),
@@ -315,7 +315,7 @@ class AppUtils {
         brightness: Brightness.dark,
       ).copyWith(
         secondary: white,
-        background: backgroundColor,
+        surface: backgroundColor,
         error: errorColor,
       ),
     );

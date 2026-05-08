@@ -469,7 +469,7 @@ class StylishDropdown extends StatelessWidget {
             ],
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             hint: Text(
               hint,
               style: GoogleFonts.inter(

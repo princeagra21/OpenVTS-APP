@@ -33,7 +33,7 @@ class SmallTab extends StatelessWidget {
           vertical: screenWidth < 420 ? 5 : 6,
         ),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
+          color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colorScheme.primary.withOpacity(0.3),

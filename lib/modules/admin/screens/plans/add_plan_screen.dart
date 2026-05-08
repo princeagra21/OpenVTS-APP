@@ -248,7 +248,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: cs.surfaceVariant,
+                                  color: cs.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(

@@ -275,7 +275,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                                     filled: true,
                                     fillColor: Theme.of(context)
                                         .colorScheme
-                                        .surfaceVariant
+                                        .surfaceContainerHighest
                                         .withOpacity(0.3),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
@@ -1146,7 +1146,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor: colorScheme.surfaceVariant.withOpacity(
+                          fillColor: colorScheme.surfaceContainerHighest.withOpacity(
                             0.3,
                           ),
                           border: OutlineInputBorder(

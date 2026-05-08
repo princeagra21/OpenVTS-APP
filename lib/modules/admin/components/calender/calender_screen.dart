@@ -132,7 +132,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
               ),
               value: [initial],
               onValueChanged: (values) {
-                if (values.isNotEmpty && values.first != null) {
+                if (values.isNotEmpty) {
                   Navigator.of(ctx).pop(values.first);
                 }
               },

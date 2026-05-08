@@ -490,7 +490,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   bool _loadingMessages = false;
   bool _sending = false;
-  bool _updatingStatus = false;
+  final bool _updatingStatus = false;
   bool _hasChanges = false;
   PickedFilePayload? _attachment;
 

@@ -408,7 +408,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                           Switch(
                             value: signupAllowed,
                             onChanged: (v) => setState(() => signupAllowed = v),
-                            activeColor: colorScheme.primary,
+                            activeThumbColor: colorScheme.primary,
                           ),
                         ],
                       ),

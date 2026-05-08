@@ -533,7 +533,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     children: [
@@ -1109,7 +1109,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                                   onChanged: isUpdating
                                       ? null
                                       : (_) => _toggleLink(track),
-                                  activeColor: colorScheme.onPrimary,
+                                  activeThumbColor: colorScheme.onPrimary,
                                   activeTrackColor: colorScheme.primary,
                                   inactiveThumbColor: colorScheme.onPrimary,
                                   inactiveTrackColor:

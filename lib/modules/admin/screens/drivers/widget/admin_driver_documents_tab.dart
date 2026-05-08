@@ -211,7 +211,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.surfaceVariant),
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.06),
@@ -375,7 +375,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(

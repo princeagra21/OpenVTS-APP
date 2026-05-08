@@ -154,7 +154,7 @@ class ProfileCompanyBox extends StatelessWidget {
                 height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? colorScheme.surfaceVariant
+                      ? colorScheme.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -226,7 +226,7 @@ class ProfileCompanyBox extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? colorScheme.surfaceVariant
+                          ? colorScheme.surfaceContainerHighest
                           : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(

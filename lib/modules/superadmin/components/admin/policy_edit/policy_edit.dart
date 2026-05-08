@@ -411,7 +411,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                     Container(
                       padding: EdgeInsets.all(hp),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceVariant,
+                        color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -434,7 +434,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: selectedPolicy,
+                            initialValue: selectedPolicy,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: colorScheme.surface,
@@ -491,7 +491,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
                     Container(
                       padding: EdgeInsets.all(hp),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceVariant,
+                        color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -687,7 +687,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
     return Container(
       padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

@@ -37,7 +37,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
   );
 
   String ignitionSource = "Ignition Wire";
-  bool _loading = false;
+  final bool _loading = false;
   bool _saving = false;
   bool _missingVehicleIdShown = false;
   CancelToken? _saveToken;
@@ -265,7 +265,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
       style: GoogleFonts.roboto(fontSize: fs, color: colorScheme.onSurface),
       decoration: InputDecoration(
         filled: true,
-        fillColor: colorScheme.surfaceVariant,
+        fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 12,

@@ -442,7 +442,7 @@ class _EditCompanyScreenState extends State<EditCompanyScreen> {
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),

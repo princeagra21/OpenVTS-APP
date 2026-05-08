@@ -311,7 +311,7 @@ class _TeamScreenState extends State<TeamScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     children: [
@@ -911,7 +911,7 @@ class _TeamScreenState extends State<TeamScreen> {
                                   onChanged: isUpdating
                                       ? null
                                       : (v) => _toggleTeamActive(team, v),
-                                  activeColor: colorScheme.onPrimary,
+                                  activeThumbColor: colorScheme.onPrimary,
                                   activeTrackColor: colorScheme.primary,
                                   inactiveThumbColor: colorScheme.onPrimary,
                                   inactiveTrackColor:

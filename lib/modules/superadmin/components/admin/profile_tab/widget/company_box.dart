@@ -63,7 +63,7 @@ class CompanyBox extends StatelessWidget {
                 height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? colorScheme.surfaceVariant
+                      ? colorScheme.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -178,7 +178,7 @@ class CompanyBox extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? colorScheme.surfaceVariant
+                                ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(

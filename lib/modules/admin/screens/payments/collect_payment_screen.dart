@@ -446,7 +446,7 @@ class StylishDropdown extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             iconEnabledColor: cs.primary,
             iconDisabledColor: cs.primary,
-            value: value,
+            initialValue: value,
             hint: Text(
               hint,
               style: GoogleFonts.inter(

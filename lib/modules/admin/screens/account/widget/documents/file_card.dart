@@ -288,7 +288,7 @@ class FileCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? cs.surfaceVariant
+                        ? cs.surfaceContainerHighest
                         : Colors.grey.shade50,
                     border: Border.all(color: cs.outline.withOpacity(0.3)),
                   ),

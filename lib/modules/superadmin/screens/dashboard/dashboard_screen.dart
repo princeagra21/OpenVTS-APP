@@ -309,7 +309,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.light
                       ? Colors.grey[100]
-                      : cs.surfaceVariant,
+                      : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
@@ -399,7 +399,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                           color: Theme.of(context).brightness ==
                                   Brightness.light
                               ? Colors.grey.shade50
-                              : cs.surfaceVariant,
+                              : cs.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -453,7 +453,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
                                   Theme.of(context).brightness ==
                                           Brightness.light
                                       ? Colors.grey.shade50
-                                      : cs.surfaceVariant,
+                                      : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -686,7 +686,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.light
                       ? Colors.grey[100]
-                      : cs.surfaceVariant,
+                      : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
@@ -779,7 +779,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                           color: Theme.of(context).brightness ==
                                   Brightness.light
                               ? Colors.grey.shade50
-                              : cs.surfaceVariant,
+                              : cs.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -842,7 +842,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
                                   Theme.of(context).brightness ==
                                           Brightness.light
                                       ? Colors.grey.shade50
-                                      : cs.surfaceVariant,
+                                      : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Row(
@@ -1029,7 +1029,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.light
                       ? Colors.grey[100]
-                      : cs.surfaceVariant,
+                      : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,

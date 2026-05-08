@@ -829,7 +829,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.directions_car_outlined,
             size: mainFontSize + 1,
@@ -895,7 +895,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.light
                     ? Colors.grey[100]
-                    : colorScheme.surfaceVariant,
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -924,7 +924,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.credit_card,
             size: mainFontSize + 1,
@@ -986,7 +986,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.group,
             size: mainFontSize + 1,

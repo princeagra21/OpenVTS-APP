@@ -215,7 +215,7 @@ class ProfileSettingBox extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: (isActive == true)
                         ? Colors.green.withOpacity(0.2)
-                        : colorScheme.surfaceVariant.withOpacity(0.7),
+                        : colorScheme.surfaceContainerHighest.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -237,7 +237,7 @@ class ProfileSettingBox extends StatelessWidget {
                     vertical: spacing - 2,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withOpacity(0.7),
+                    color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -256,7 +256,7 @@ class ProfileSettingBox extends StatelessWidget {
                       vertical: spacing - 2,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant.withOpacity(0.7),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(

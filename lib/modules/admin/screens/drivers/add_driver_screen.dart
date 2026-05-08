@@ -372,7 +372,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                         decoration: InputDecoration(
                           hintText: searchHint,
                           filled: true,
-                          fillColor: cs.surfaceVariant.withOpacity(0.3),
+                          fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,

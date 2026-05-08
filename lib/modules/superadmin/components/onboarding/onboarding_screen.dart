@@ -40,7 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final double titleSize = labelSize + 6;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           PageView.builder(

@@ -472,7 +472,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               decoration: BoxDecoration(
                 color: cs.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: cs.surfaceVariant),
+                border: Border.all(color: cs.surfaceContainerHighest),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,7 +693,7 @@ class _ProfileCard extends StatelessWidget {
             height: avatarSize,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               shape: BoxShape.circle,
               border: Border.all(
@@ -737,7 +737,7 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(999),
                       ),

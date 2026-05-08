@@ -1110,7 +1110,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? cs.surfaceVariant
+                      ? cs.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: cs.onSurface.withOpacity(0.12)),
@@ -1144,7 +1144,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? cs.surfaceVariant
+                            ? cs.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(999),
                       ),

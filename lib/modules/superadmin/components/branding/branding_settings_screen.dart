@@ -868,7 +868,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                         height: boxHeight,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),

@@ -48,6 +48,7 @@ class UserDriverDetails extends AdminDriverListItem {
   String get createdAtLabel =>
       _text(raw['createdAt'] ?? raw['created_at'] ?? raw['created']);
 
+  @override
   String get driverVehicleLabel {
     final vehicle = raw['driverVehicle'];
     if (vehicle is Map<String, dynamic>) {

@@ -77,7 +77,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.surfaceVariant),
+            border: Border.all(color: cs.surfaceContainerHighest),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.06),
@@ -255,7 +255,7 @@ class _AdminDriverUsersTabState extends State<AdminDriverUsersTab> {
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? cs.surfaceVariant
+                                            ? cs.surfaceContainerHighest
                                             : Colors.grey.shade50,
                                         borderRadius: BorderRadius.circular(
                                           999,

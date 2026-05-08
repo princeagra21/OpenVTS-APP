@@ -656,9 +656,9 @@ class _HomeShortcutTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: AppUtils.borderRadiusMedium,
-      splashColor: cs.surfaceVariant.withOpacity(0.4),
-      highlightColor: cs.surfaceVariant.withOpacity(0.4),
-      hoverColor: cs.surfaceVariant.withOpacity(0.4),
+      splashColor: cs.surfaceContainerHighest.withOpacity(0.4),
+      highlightColor: cs.surfaceContainerHighest.withOpacity(0.4),
+      hoverColor: cs.surfaceContainerHighest.withOpacity(0.4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -720,7 +720,7 @@ class _ProfileAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.light
             ? Colors.grey.shade50
-            : colorScheme.surfaceVariant,
+            : colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
         border: Border.all(
           color: colorScheme.onSurface.withOpacity(0.2),

@@ -30,7 +30,6 @@ import 'package:fleet_stack/modules/superadmin/screens/home/home_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/map/map_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/more/more_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/notifications/superadmin_notifications_screen.dart';
-import 'package:fleet_stack/modules/superadmin/screens/setting/setting_screen.dart';
 import 'package:fleet_stack/modules/superadmin/screens/setting/superadmin_settings_screen.dart';
 import 'package:go_router/go_router.dart';
 

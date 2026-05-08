@@ -384,7 +384,7 @@ class _PaymentGatewayDetailsScreenState
                     scale: 0.7,
                     child: Switch(
                       value: isPrimary,
-                      activeColor: Colors.white,
+                      activeThumbColor: Colors.white,
                       activeTrackColor: Colors.black,
                       inactiveThumbColor: Colors.white,
                       inactiveTrackColor: Colors.black.withOpacity(0.3),

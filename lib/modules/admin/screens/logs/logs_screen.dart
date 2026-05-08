@@ -704,7 +704,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                                           .brightness ==
                                                       Brightness.light
                                                   ? Colors.grey.shade50
-                                                  : colorScheme.surfaceVariant,
+                                                  : colorScheme.surfaceContainerHighest,
                                               borderRadius:
                                                   BorderRadius.circular(999),
                                             ),
@@ -747,7 +747,7 @@ class _LogsScreenState extends State<LogsScreen> {
                                                             Brightness.light
                                                         ? Colors.grey.shade50
                                                         : colorScheme
-                                                            .surfaceVariant,
+                                                            .surfaceContainerHighest,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                       999,

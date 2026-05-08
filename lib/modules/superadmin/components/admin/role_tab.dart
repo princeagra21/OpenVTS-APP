@@ -313,7 +313,7 @@ class _RolesTabState extends State<RolesTab> {
               ),
             ),
             filled: true,
-            fillColor: colorScheme.surfaceVariant,
+            fillColor: colorScheme.surfaceContainerHighest,
           ),
           style: GoogleFonts.roboto(
             fontSize: fontSize,
@@ -330,7 +330,7 @@ class _RolesTabState extends State<RolesTab> {
             ),
           ),
           items: items,
-          value: selectedValue,
+          initialValue: selectedValue,
           onChanged: items.isEmpty
               ? null
               : (value) {
@@ -372,7 +372,7 @@ class _RolesTabState extends State<RolesTab> {
               ),
               selected: _permissions[module] == level,
               selectedColor: colorScheme.primary.withOpacity(0.18),
-              backgroundColor: colorScheme.surfaceVariant.withOpacity(0.55),
+              backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.55),
               side: BorderSide(
                 color: _permissions[module] == level
                     ? colorScheme.primary
@@ -493,7 +493,7 @@ class _RolesTabState extends State<RolesTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.35),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.35),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: colorScheme.onSurface.withOpacity(0.08),

@@ -219,7 +219,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.surfaceVariant),
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.06),
@@ -470,7 +470,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.06),

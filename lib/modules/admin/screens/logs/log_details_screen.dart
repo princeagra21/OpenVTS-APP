@@ -204,7 +204,7 @@ class AdminLogDetailsScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                ? colorScheme.surfaceVariant
+                                ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                           ),

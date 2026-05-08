@@ -12,7 +12,7 @@ class CustomBox extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
 
   const CustomBox({
-    Key? key,
+    super.key,
     required this.child,
     this.width,
     this.height,
@@ -22,7 +22,7 @@ class CustomBox extends StatelessWidget {
     this.border,
     this.padding = const EdgeInsets.all(16),
     this.margin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

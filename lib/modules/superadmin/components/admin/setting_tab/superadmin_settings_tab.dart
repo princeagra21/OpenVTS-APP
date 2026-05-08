@@ -419,7 +419,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                       height: 36,
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? colorScheme.surfaceVariant
+                        ? colorScheme.surfaceContainerHighest
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -486,7 +486,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   Switch(
                     value: demoEnabled,
                     onChanged: (v) => setState(() => demoEnabled = v),
-                    activeColor: colorScheme.primary,
+                    activeThumbColor: colorScheme.primary,
                   ),
                 ],
               ),
@@ -512,7 +512,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                   height: 36,
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? colorScheme.surfaceVariant
+                        ? colorScheme.surfaceContainerHighest
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -653,7 +653,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                       height: 36,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -695,7 +695,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: backupRetention,
+                  initialValue: backupRetention,
                   isExpanded: true,
                   decoration: InputDecoration(
                     filled: true,
@@ -813,7 +813,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
                         Switch(
                           value: signupAllowed,
                           onChanged: (v) => setState(() => signupAllowed = v),
-                          activeColor: colorScheme.primary,
+                          activeThumbColor: colorScheme.primary,
                         ),
                       ],
                     ),
@@ -872,7 +872,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: colorScheme.primary,
+          activeThumbColor: colorScheme.primary,
         ),
       ],
     );
@@ -901,7 +901,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(
             filled: true,

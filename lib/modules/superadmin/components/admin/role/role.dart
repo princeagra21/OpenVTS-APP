@@ -254,10 +254,12 @@ class _RolesScreenState extends State<RolesScreen> {
           _isTruthy(map['access'])) {
         return 1;
       }
-      if (map.containsKey('level'))
+      if (map.containsKey('level')) {
         return _permissionLevelFromAny(map['level']);
-      if (map.containsKey('value'))
+      }
+      if (map.containsKey('value')) {
         return _permissionLevelFromAny(map['value']);
+      }
       return 0;
     }
 
@@ -878,7 +880,7 @@ class _LocalTab extends StatelessWidget {
           vertical: small ? 6 : 8,
         ),
         decoration: BoxDecoration(
-          color: selected ? scheme.primary : scheme.surfaceVariant,
+          color: selected ? scheme.primary : scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected

@@ -294,7 +294,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     children: [
@@ -875,7 +875,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             Transform.scale(
                               scale: 0.85,
                               child: CupertinoSwitch(
-                                activeColor: colorScheme.primary,
+                                activeTrackColor: colorScheme.primary,
                                 value: device.isActive,
                                 onChanged: _togglingDeviceIds.contains(device.id)
                                     ? null
@@ -949,7 +949,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? colorScheme.surfaceVariant
+                        ? colorScheme.surfaceContainerHighest
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(999),
                   ),

@@ -333,7 +333,7 @@ class _ProfileBoxState extends State<ProfileBox> {
                       onChanged: (_submittingStatus || _loading)
                           ? null
                           : _toggleStatus,
-                      activeColor: colorScheme.onPrimary,
+                      activeThumbColor: colorScheme.onPrimary,
                       activeTrackColor: colorScheme.primary,
                       inactiveThumbColor: colorScheme.onPrimary,
                       inactiveTrackColor: colorScheme.primary.withOpacity(0.3),

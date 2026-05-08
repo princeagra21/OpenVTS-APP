@@ -1,8 +1,6 @@
 // components/home/fleet_overview.dart
 import 'dart:ui';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../utils/app_utils.dart';
 
 class FleetOverview extends StatelessWidget {
   const FleetOverview({super.key});

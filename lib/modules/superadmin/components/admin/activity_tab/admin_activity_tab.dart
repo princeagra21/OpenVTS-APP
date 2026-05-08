@@ -626,7 +626,7 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                                               Theme.of(context).brightness ==
                                                   Brightness.light
                                               ? Colors.grey.shade50
-                                              : colorScheme.surfaceVariant,
+                                              : colorScheme.surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(
                                             999,
                                           ),
@@ -680,7 +680,7 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                                                         Brightness.light
                                                     ? Colors.grey.shade50
                                                     : colorScheme
-                                                          .surfaceVariant,
+                                                          .surfaceContainerHighest,
                                                 borderRadius:
                                                     BorderRadius.circular(999),
                                               ),
@@ -986,7 +986,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                ? colorScheme.surfaceVariant
+                                ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                           ),

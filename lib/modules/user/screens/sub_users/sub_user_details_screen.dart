@@ -324,7 +324,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +465,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
             height: avatarSize,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               shape: BoxShape.circle,
               border: Border.all(
@@ -510,7 +510,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -643,7 +643,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
     final double labelFs = 11 * scale;
     final double valueFs = 14 * scale;
     final double subValueFs = 12 * scale;
-    IconData _titleIcon(String t) {
+    IconData titleIcon(String t) {
       final l = t.toLowerCase();
       if (l.contains('vehicle')) return Icons.directions_car_outlined;
       if (l.contains('status')) return Icons.verified_user_outlined;
@@ -675,7 +675,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                 ),
               ),
               Icon(
-                _titleIcon(title),
+                titleIcon(title),
                 size: 14 * scale,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -734,7 +734,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -793,7 +793,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
               decoration: BoxDecoration(
                 color: cs.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: cs.surfaceVariant),
+                border: Border.all(color: cs.surfaceContainerHighest),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -864,7 +864,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                               borderRadius: BorderRadius.circular(12),
                               color: Theme.of(context).brightness ==
                                       Brightness.dark
-                                  ? cs.surfaceVariant
+                                  ? cs.surfaceContainerHighest
                                   : Colors.grey.shade50,
                               border: Border.all(
                                 color: cs.outline.withOpacity(0.3),
@@ -986,7 +986,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).brightness ==
                                             Brightness.dark
-                                        ? cs.surfaceVariant
+                                        ? cs.surfaceContainerHighest
                                         : Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(16),
                                   ),
@@ -1151,7 +1151,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
         ],
       ),
     );
@@ -1632,7 +1632,7 @@ class _SmallTab extends StatelessWidget {
           vertical: screenWidth < 420 ? 5 : 6,
         ),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
+          color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colorScheme.primary.withOpacity(0.3),

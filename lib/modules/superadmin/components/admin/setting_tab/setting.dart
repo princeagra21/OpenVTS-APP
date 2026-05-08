@@ -442,7 +442,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             filled: true,
-            fillColor: colorScheme.surfaceVariant,
+            fillColor: colorScheme.surfaceContainerHighest,
           ),
           style: GoogleFonts.roboto(
             fontSize: fontSize,
@@ -458,7 +458,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
               color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: onChanged,
         ),
@@ -1310,7 +1310,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
                                   () => _selectedTimeFormat = v ? '24h' : '12h',
                                 );
                               },
-                              activeColor: colorScheme.primary,
+                              activeThumbColor: colorScheme.primary,
                             ),
                           ],
                         ),

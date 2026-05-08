@@ -191,7 +191,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -242,7 +242,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -285,7 +285,7 @@ class _VehicleDocumentsTabState extends State<VehicleDocumentsTab> {
                                   ? [
                                       PieChartSectionData(
                                         value: 1,
-                                        color: colorScheme.surfaceVariant,
+                                        color: colorScheme.surfaceContainerHighest,
                                         radius: 18,
                                         showTitle: false,
                                       ),

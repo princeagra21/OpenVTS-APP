@@ -26,7 +26,7 @@ class CustomDropdownField<T> extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.primary),
       style: GoogleFonts.inter(fontSize: fontSize, color: colorScheme.onSurface),

@@ -113,7 +113,7 @@ class AdminUserDriversTab extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).brightness ==
                                             Brightness.dark
-                                        ? cs.surfaceVariant
+                                        ? cs.surfaceContainerHighest
                                         : Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(999),
                                   ),

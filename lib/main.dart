@@ -320,6 +320,18 @@ class ValueListenableBuilder2<A, B> extends StatelessWidget {
 /// ===========================
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kDebugMode) {
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+      debugPrintStack(stackTrace: details.stack);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('PLATFORM_ERROR: $error');
+      debugPrintStack(stackTrace: stack);
+      return false;
+    };
+  }
   await ApiBaseUrlConfig.instance.load();
   await themeController.loadTheme();
   final initialLocation = await _resolveInitialLocation();
@@ -368,7 +380,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    unawaited(PushNotificationsService.instance.syncOnAppStart());
+    // unawaited(PushNotificationsService.instance.syncOnAppStart());
     _sessionExpiredSub = SessionExpiredBus.stream.listen((_) async {
       await TokenStorage.defaultInstance().clear();
       if (!mounted) return;
@@ -441,6 +453,13 @@ class _MyAppState extends State<MyApp> {
                 );
                 if (widget.enableDevicePreview) {
                   result = DevicePreview.appBuilder(context, result);
+                }
+                if (kDebugMode) {
+                  result = Banner(
+                    message: 'WEB DEBUG',
+                    location: BannerLocation.topStart,
+                    child: result,
+                  );
                 }
                 return result;
               },

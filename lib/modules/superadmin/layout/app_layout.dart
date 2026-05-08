@@ -88,18 +88,16 @@ class _AppLayoutState extends State<AppLayout> {
     if (widget.actionIcons != null) {
       for (int i = 0; i < widget.actionIcons!.length; i++) {
         if (widget.actionIcons![i] == CupertinoIcons.search) {
-          VoidCallback searchTap = () {
+          void searchTap() {
             setState(() {
               _isSearching = true;
             });
-          };
+          }
 
-          if (effectiveTaps == null) {
-            effectiveTaps = List.generate(
+          effectiveTaps ??= List.generate(
               widget.actionIcons!.length,
               (_) => () {},
             );
-          }
 
           if (widget.onActionTaps != null &&
               i < widget.onActionTaps!.length) {

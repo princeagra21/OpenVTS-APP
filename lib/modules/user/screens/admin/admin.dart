@@ -134,14 +134,14 @@ class _AdminScreenState extends State<AdminScreen> {
       },
     ];
 
-    final IconData _toggleViewIcon =
+    final IconData toggleViewIcon =
         _isGridView ? CupertinoIcons.list_bullet : CupertinoIcons.square_grid_2x2;
 
     return AppLayout(
       title: "Open VTS",
       subtitle: "Admin Menu",
       horizontalPadding: 5,
-      actionIcons: [_toggleViewIcon],
+      actionIcons: [toggleViewIcon],
       onActionTaps: [
         _toggleViewMode,
       ],

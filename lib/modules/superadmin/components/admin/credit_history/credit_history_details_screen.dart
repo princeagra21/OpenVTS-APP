@@ -32,7 +32,7 @@ class CreditHistoryDetailsScreen extends StatelessWidget {
     final Color amountColor = isPositive ? colorScheme.primary : colorScheme.error;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),

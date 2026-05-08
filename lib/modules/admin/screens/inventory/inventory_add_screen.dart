@@ -534,7 +534,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
       ),
       child: Form(
         key: _deviceFormKey,
@@ -630,7 +630,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
       ),
       child: Form(
         key: _simFormKey,
@@ -743,7 +743,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.surfaceVariant),
+        border: Border.all(color: cs.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

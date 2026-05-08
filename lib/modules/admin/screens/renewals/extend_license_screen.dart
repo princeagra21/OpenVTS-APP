@@ -108,8 +108,9 @@ class _ExtendLicenseScreenState extends State<ExtendLicenseScreen> {
                       onChanged: (v) {
                         setState(() {
                           selectedExtension = v;
-                          if (v == "Quarterly") customMonths = 3;
-                          else if (v == "Half-Year") customMonths = 6;
+                          if (v == "Quarterly") {
+                            customMonths = 3;
+                          } else if (v == "Half-Year") customMonths = 6;
                           else if (v == "Annual") customMonths = 12;
                           
                           _monthsController.text = customMonths.toString();
@@ -283,7 +284,7 @@ class StylishDropdown extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             iconEnabledColor: cs.primary,
             iconDisabledColor: cs.primary,
-            value: value,
+            initialValue: value,
             hint: Text(hint, style: GoogleFonts.inter(color: cs.onSurface.withOpacity(0.6), fontSize: fs)),
             decoration: InputDecoration(
               fillColor: cs.surface,

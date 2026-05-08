@@ -127,7 +127,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
       case "Vehicles":
         avatar = CircleAvatar(
           radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
+          backgroundColor: colorScheme.surfaceContainerHighest,
           child: Icon(Icons.directions_car, color: colorScheme.primary),
         );
 
@@ -156,7 +156,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
       case "Activities":
         avatar = CircleAvatar(
           radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-          backgroundColor: colorScheme.surfaceVariant,
+          backgroundColor: colorScheme.surfaceContainerHighest,
           child: Icon(Icons.timeline, color: colorScheme.primary),
         );
 

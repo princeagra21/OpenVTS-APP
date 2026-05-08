@@ -347,7 +347,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -643,7 +643,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   inputDecoration: InputDecoration(
                                     hintText: 'Search',
                                     filled: true,
-                                    fillColor: colorScheme.surfaceVariant
+                                    fillColor: colorScheme.surfaceContainerHighest
                                         .withOpacity(0.3),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),

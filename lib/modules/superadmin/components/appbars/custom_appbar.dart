@@ -199,7 +199,7 @@ class _CustomAppBarState extends State<CustomAppBar>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: blurAmount, sigmaY: blurAmount),
           child: Container(
-            color: cs.background.withOpacity(bgOpacity),
+            color: cs.surface.withOpacity(bgOpacity),
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -286,7 +286,7 @@ class _CustomAppBarState extends State<CustomAppBar>
                                             .copyWith(
                                               fontSize: subtitleFontSize,
                                               fontWeight: FontWeight.w900,
-                                              color: cs.onBackground,
+                                              color: cs.onSurface,
                                               letterSpacing: -0.5,
                                             ),
                                         maxLines: 1,
@@ -377,7 +377,7 @@ class _CustomAppBarState extends State<CustomAppBar>
                                   ),
                                 ),
                               );
-                            }).toList(),
+                            }),
 
                           if (widget.showRightAvatar)
                             Padding(

@@ -2,6 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const String _kDefaultApiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://app.openvts.io/api',
+);
+
 class ApiBaseUrlConfig extends ChangeNotifier {
   ApiBaseUrlConfig._();
 
@@ -15,10 +20,7 @@ class ApiBaseUrlConfig extends ChangeNotifier {
   String? _customBaseUrl;
   bool _loaded = false;
 
-  static String get _defaultBaseUrl => String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'https://app.openvts.io/api',
-      );
+  static String get _defaultBaseUrl => _kDefaultApiBaseUrl;
 
   String get defaultBaseUrl => _defaultBaseUrl;
 

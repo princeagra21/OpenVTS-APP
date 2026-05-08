@@ -98,7 +98,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         children: [
           CircleAvatar(
             radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-            backgroundColor: colorScheme.surfaceVariant,
+            backgroundColor: colorScheme.surfaceContainerHighest,
             child: const AppShimmer(width: 18, height: 18, radius: 9),
           ),
           SizedBox(width: itemPadding + 2),
@@ -127,7 +127,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final avatar = CircleAvatar(
       radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
       backgroundColor: activity.isRead
-          ? colorScheme.surfaceVariant
+          ? colorScheme.surfaceContainerHighest
           : colorScheme.primary.withOpacity(0.12),
       child: Icon(
         Icons.notifications_none_rounded,

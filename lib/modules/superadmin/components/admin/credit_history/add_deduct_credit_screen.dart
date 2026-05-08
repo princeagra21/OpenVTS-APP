@@ -91,7 +91,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
@@ -154,7 +154,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.surfaceVariant,
+                                  color: colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(

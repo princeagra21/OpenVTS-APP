@@ -265,7 +265,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                     vertical: hp * 0.9,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: colorScheme.primary, width: 1.5),
                   ),
@@ -307,7 +307,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                     color: colorScheme.primary,
                   ),
                   filled: true,
-                  fillColor: colorScheme.surfaceVariant,
+                  fillColor: colorScheme.surfaceContainerHighest,
                   contentPadding: EdgeInsets.symmetric(vertical: hp * 0.9),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -395,7 +395,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                   width: double.infinity,
                   padding: EdgeInsets.all(hp * 2),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -433,7 +433,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: EdgeInsets.all(hp),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(

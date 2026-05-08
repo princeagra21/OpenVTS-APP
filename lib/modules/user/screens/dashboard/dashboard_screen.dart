@@ -569,7 +569,7 @@ class _RecentVehiclesSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.light
                   ? Colors.grey.shade50
-                  : cs.surfaceVariant,
+                  : cs.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -618,7 +618,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.light
                       ? Colors.grey.shade50
-                      : cs.surfaceVariant,
+                      : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -685,7 +685,7 @@ class _RecentVehiclesSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.light
                       ? Colors.grey[100]
-                      : cs.surfaceVariant,
+                      : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,

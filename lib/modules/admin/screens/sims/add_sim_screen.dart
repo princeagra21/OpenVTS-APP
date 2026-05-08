@@ -531,7 +531,7 @@ class StylishDropdown extends StatelessWidget {
             iconEnabledColor: cs.primary,
             iconDisabledColor: cs.primary,
             focusColor: cs.surface,
-            value: value,
+            initialValue: value,
             hint: Text(
               hint,
               style: GoogleFonts.inter(

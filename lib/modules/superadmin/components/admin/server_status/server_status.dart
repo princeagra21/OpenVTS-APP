@@ -418,12 +418,12 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final double hp = AdaptiveUtils.getHorizontalPadding(width);
     final double fs = AdaptiveUtils.getTitleFontSize(width);
     final overallUp = _overall?.isUp == true;
-    final int? cpu = _overall != null ? _overall!.cpuPercent.round() : null;
-    final int? mem = _overall != null ? _overall!.memPercent.round() : null;
-    final int? disk = _overall != null ? _overall!.diskPercent.round() : null;
-    final double? load1 = _overall != null ? _overall!.loadAvg1 : null;
-    final double? load5 = _overall != null ? _overall!.loadAvg5 : null;
-    final double? load15 = _overall != null ? _overall!.loadAvg15 : null;
+    final int? cpu = _overall?.cpuPercent.round();
+    final int? mem = _overall?.memPercent.round();
+    final int? disk = _overall?.diskPercent.round();
+    final double? load1 = _overall?.loadAvg1;
+    final double? load5 = _overall?.loadAvg5;
+    final double? load15 = _overall?.loadAvg15;
     final pgPrimary = _logsDb ?? _postgres ?? _addressDb;
     final pgName = (pgPrimary?.dbName.isNotEmpty == true)
         ? pgPrimary!.dbName
@@ -911,7 +911,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Row(
         children: [
@@ -991,7 +991,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1057,7 +1057,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.grey.shade300),
@@ -1148,7 +1148,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1221,7 +1221,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1280,7 +1280,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark
-              ? colorScheme.surfaceVariant
+              ? colorScheme.surfaceContainerHighest
               : Colors.grey.shade300,
         ),
       ),
@@ -1350,7 +1350,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final double fsValue = 32 * scale;
     final double fsSecondary = 12 * scale;
     final percent = data.percent;
-    final int? clamped = percent == null ? null : percent.clamp(0, 100).toInt();
+    final int? clamped = percent?.clamp(0, 100).toInt();
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1358,7 +1358,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark
-              ? colorScheme.surfaceVariant
+              ? colorScheme.surfaceContainerHighest
               : Colors.grey.shade300,
         ),
       ),
@@ -1442,7 +1442,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
             ),
             child: Column(
@@ -1478,7 +1478,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1600,7 +1600,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),
                 child: const Column(
@@ -1644,7 +1644,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Container(
         width: double.infinity,
@@ -1751,7 +1751,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: colorScheme.onSurface.withOpacity(0.08),
@@ -1935,7 +1935,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1964,7 +1964,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -2040,7 +2040,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2086,7 +2086,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Text(
         message,
@@ -2214,7 +2214,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(hp),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -2332,9 +2332,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final double scale =
         (MediaQuery.of(context).size.width / 420).clamp(0.9, 1.0);
-    final int? clampedPercent = percent == null
-        ? null
-        : percent.clamp(0, 100).toInt();
+    final int? clampedPercent = percent?.clamp(0, 100).toInt();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2365,7 +2363,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             width: double.infinity,
             height: 8,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(999),
             ),
           )
@@ -2375,7 +2373,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
             child: Container(
               width: double.infinity,
               height: 8,
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(

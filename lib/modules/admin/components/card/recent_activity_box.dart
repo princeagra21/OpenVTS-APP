@@ -145,7 +145,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
         children: [
           CircleAvatar(
             radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
-            backgroundColor: colorScheme.surfaceVariant,
+            backgroundColor: colorScheme.surfaceContainerHighest,
             child: Icon(Icons.directions_car, color: colorScheme.primary),
           ),
           SizedBox(width: itemPadding + 2),

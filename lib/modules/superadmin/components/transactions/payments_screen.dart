@@ -1498,7 +1498,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           offset: const Offset(0, 4),
                         ),
                       ],
-                      border: Border.all(color: cs.surfaceVariant),
+                      border: Border.all(color: cs.surfaceContainerHighest),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1816,7 +1816,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               BorderRadius.circular(12),
                                           color: Theme.of(context).brightness ==
                                                   Brightness.dark
-                                              ? cs.surfaceVariant
+                                              ? cs.surfaceContainerHighest
                                               : Colors.grey.shade50,
                                           border: Border.all(
                                             color: cs.outline.withOpacity(0.3),
@@ -1883,7 +1883,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                               color: Theme.of(context)
                                                           .brightness ==
                                                       Brightness.dark
-                                                  ? cs.surfaceVariant
+                                                  ? cs.surfaceContainerHighest
                                                   : Colors.grey.shade50,
                                               borderRadius:
                                                   BorderRadius.circular(999),

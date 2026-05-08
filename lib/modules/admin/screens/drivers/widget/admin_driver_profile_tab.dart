@@ -210,7 +210,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.surfaceVariant),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,7 +333,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             height: avatarSize,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               shape: BoxShape.circle,
               border: Border.all(
@@ -377,7 +377,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -521,7 +521,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
             height: iconBox,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? colorScheme.surfaceVariant
+                  ? colorScheme.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -578,7 +578,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
     final double labelFs = 11 * scale;
     final double valueFs = 14 * scale;
     final double subValueFs = 12 * scale;
-    IconData _titleIcon(String t) {
+    IconData titleIcon(String t) {
       final l = t.toLowerCase();
       if (l.contains('primary')) return Icons.verified_user_outlined;
       if (l.contains('status')) return Icons.verified_user_outlined;
@@ -610,7 +610,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
                 ),
               ),
               Icon(
-                _titleIcon(title),
+                titleIcon(title),
                 size: 14 * scale,
                 color: colorScheme.onSurface.withOpacity(0.7),
               ),

@@ -467,7 +467,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<String>(
-                  value: backupRetention,
+                  initialValue: backupRetention,
                   decoration: _dropdownDecoration(context),
                   items: ["1 Month", "3 Months", "6 Months", "12 Months"]
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -512,7 +512,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                       scale: 0.7,
                       child: Switch(
                         value: signupAllowed,
-                        activeColor: colorScheme.onPrimary,
+                        activeThumbColor: colorScheme.onPrimary,
                         activeTrackColor: colorScheme.primary,
                         inactiveThumbColor: colorScheme.onPrimary,
                         inactiveTrackColor: colorScheme.primary.withOpacity(
@@ -745,7 +745,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
                 scale: 0.7,
                 child: Switch(
                   value: value,
-                  activeColor: colorScheme.onPrimary,
+                  activeThumbColor: colorScheme.onPrimary,
                   activeTrackColor: colorScheme.primary,
                   inactiveThumbColor: colorScheme.onPrimary,
                   inactiveTrackColor: colorScheme.primary.withOpacity(0.3),

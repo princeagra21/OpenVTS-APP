@@ -1024,7 +1024,7 @@ class _ProfileEmailCard extends StatelessWidget {
             height: 36 * scale,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? cs.surfaceVariant
+                  ? cs.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
@@ -1119,7 +1119,7 @@ class _ProfilePhoneCard extends StatelessWidget {
             height: 36 * scale,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? cs.surfaceVariant
+                  ? cs.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
@@ -1206,7 +1206,7 @@ class _VerifyPillWithActionState extends State<_VerifyPillWithAction> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
-            ? cs.surfaceVariant
+            ? cs.surfaceContainerHighest
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(999),
       ),
@@ -1577,7 +1577,7 @@ class _ProfileWhatsappCard extends StatelessWidget {
             height: 36 * scale,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? cs.surfaceVariant
+                  ? cs.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
@@ -1655,7 +1655,7 @@ class _ProfileCompanyCard extends StatelessWidget {
     final double iconBox = 40 * scale2;
     final double iconSize = 18 * scale2;
 
-    String? _socialUrl(String label) {
+    String? socialUrl(String label) {
       final key = label.toLowerCase().replaceAll(' ', '');
       final byKey = socialLinks[key]?.toString();
       if (byKey != null && byKey.trim().isNotEmpty) return byKey;
@@ -1668,7 +1668,7 @@ class _ProfileCompanyCard extends StatelessWidget {
       return null;
     }
 
-    Future<void> _openUrl(String url) async {
+    Future<void> openUrl(String url) async {
       final uri = Uri.tryParse(url);
       if (uri == null) return;
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -1693,7 +1693,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                 height: iconBox,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? cs.surfaceVariant
+                      ? cs.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
@@ -1800,10 +1800,10 @@ class _ProfileCompanyCard extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: socialLabels.map((label) {
-                  final url = _socialUrl(label);
+                  final url = socialUrl(label);
                   return InkWell(
                     borderRadius: BorderRadius.circular(10),
-                    onTap: url == null ? null : () => _openUrl(url),
+                    onTap: url == null ? null : () => openUrl(url),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -1811,7 +1811,7 @@ class _ProfileCompanyCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? cs.surfaceVariant
+                            ? cs.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
@@ -1874,7 +1874,7 @@ class _ProfileAddressCard extends StatelessWidget {
             height: iconBox,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? cs.surfaceVariant
+                  ? cs.surfaceContainerHighest
                   : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -1977,7 +1977,7 @@ class _ProfileAccountCard extends StatelessWidget {
     Widget imageAvatar(String url) {
       return CircleAvatar(
         radius: 28 * scale,
-        backgroundColor: cs.surfaceVariant,
+        backgroundColor: cs.surfaceContainerHighest,
         backgroundImage: NetworkImage(url),
       );
     }
@@ -2033,7 +2033,7 @@ class _ProfileAccountCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
+                    ? cs.surfaceContainerHighest
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(999),
               ),

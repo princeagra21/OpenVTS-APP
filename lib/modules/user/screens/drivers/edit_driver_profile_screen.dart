@@ -295,7 +295,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
     final labelSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: cs.background,
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),

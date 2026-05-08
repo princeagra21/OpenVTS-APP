@@ -467,7 +467,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
 
             SizedBox(height: hp),
 
@@ -985,8 +985,9 @@ class _CashflowBoxState extends State<CashflowBox> {
                       reservedSize: 32,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index % 5 != 0 || index >= numDays)
+                        if (index % 5 != 0 || index >= numDays) {
                           return const SizedBox();
+                        }
                         final day = currentDate.subtract(
                           Duration(days: numDays - 1 - index),
                         );

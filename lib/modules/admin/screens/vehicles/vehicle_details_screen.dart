@@ -45,7 +45,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   String _logQuery = '';
   String _logFilter = 'All';
   DateTimeRange? _logDateRange;
-  bool _loadingConfig = false;
+  final bool _loadingConfig = false;
   bool _savingConfig = false;
   bool _configLoaded = false;
   CancelToken? _configToken;
@@ -596,7 +596,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           height: 40 * (fsMain / 14),
                           decoration: BoxDecoration(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? cs.surfaceVariant
+                                ? cs.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -634,7 +634,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? cs.surfaceVariant
+                                      ? cs.surfaceContainerHighest
                                       : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -756,7 +756,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? cs.surfaceVariant
+                                    ? cs.surfaceContainerHighest
                                     : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -1313,7 +1313,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? colorScheme.surfaceVariant
+                      ? colorScheme.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1423,7 +1423,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       height: 40 * (fsMain / 14),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? cs.surfaceVariant
+                            ? cs.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -1664,13 +1664,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                     setDialogState(() {
                                       selection = values;
                                     });
-                                    if (values.length >= 2 &&
-                                        values[0] != null &&
-                                        values[1] != null) {
+                                    if (values.length >= 2) {
                                       Navigator.of(ctx).pop(
                                         DateTimeRange(
-                                          start: values[0]!,
-                                          end: values[1]!,
+                                          start: values[0],
+                                          end: values[1],
                                         ),
                                       );
                                     }
@@ -1773,7 +1771,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                     color: Theme.of(context).brightness ==
                                             Brightness.light
                                         ? Colors.grey.shade50
-                                        : cs.surfaceVariant,
+                                        : cs.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   alignment: Alignment.center,
@@ -1809,7 +1807,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                           color: Theme.of(context).brightness ==
                                                   Brightness.light
                                               ? Colors.grey.shade50
-                                              : cs.surfaceVariant,
+                                              : cs.surfaceContainerHighest,
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),

@@ -170,7 +170,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
           Container(
             height: hp * 3.5,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -553,7 +553,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                   ),
                 ),
               );
-            }).toList(),
+            }),
           SizedBox(height: hp * 5), // Added extra space for scroll comfort
         ],
       ),
@@ -1007,7 +1007,7 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                   ),
                 ),
               );
-            }).toList(),
+            }),
           SizedBox(height: hp * 5),
         ],
       ),

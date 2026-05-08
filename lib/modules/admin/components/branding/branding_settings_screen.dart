@@ -296,7 +296,7 @@ class _BrandingSettingsBox extends StatelessWidget {
                   children: [
                     Container(
                       height: boxHeight,
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: colorScheme.surfaceVariant),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: colorScheme.surfaceContainerHighest),
                       child: Center(
                         child: Text("Preview", style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.54))),
                       ),

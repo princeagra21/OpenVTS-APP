@@ -478,7 +478,7 @@ class _RolesScreenState extends State<RolesScreen> {
                               ],
                             ),
                           );
-                        }).toList(),
+                        }),
                       ],
                     ),
                   ),
@@ -534,7 +534,7 @@ class _LocalTab extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16, vertical: small ? 6 : 8),
         decoration: BoxDecoration(
-          color: selected ? scheme.primary : scheme.surfaceVariant,
+          color: selected ? scheme.primary : scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: selected ? scheme.primary : scheme.onSurface.withOpacity(0.06)),
         ),

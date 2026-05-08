@@ -193,7 +193,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor: cs.surfaceVariant.withOpacity(0.3),
+                          fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,

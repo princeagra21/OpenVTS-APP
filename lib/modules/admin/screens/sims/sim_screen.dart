@@ -270,7 +270,7 @@ class _SimScreenState extends State<SimScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     children: [
@@ -862,7 +862,7 @@ class _SimScreenState extends State<SimScreen> {
                             Transform.scale(
                               scale: 0.85,
                               child: CupertinoSwitch(
-                                activeColor: colorScheme.primary,
+                                activeTrackColor: colorScheme.primary,
                                 value: simCard.isActive,
                                 onChanged: _togglingSimIds.contains(simCard.id)
                                     ? null
@@ -880,7 +880,7 @@ class _SimScreenState extends State<SimScreen> {
                           decoration: BoxDecoration(
                             color: Theme.of(context).brightness ==
                                     Brightness.dark
-                                ? colorScheme.surfaceVariant
+                                ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
@@ -937,7 +937,7 @@ class _SimScreenState extends State<SimScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? colorScheme.surfaceVariant
+                        ? colorScheme.surfaceContainerHighest
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(999),
                   ),

@@ -575,7 +575,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.directions_car_outlined,
             size: 18 * scale,
@@ -645,7 +645,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.light
                     ? Colors.grey[100]
-                    : colorScheme.surfaceVariant,
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -677,7 +677,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.credit_card,
             size: 18 * scale,
@@ -750,7 +750,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.grey[200]
-                  : colorScheme.surfaceVariant,
+                  : colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.group,
             size: 18 * scale,
@@ -961,7 +961,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.light
                           ? Colors.grey[100]
-                          : colorScheme.surfaceVariant,
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
@@ -1009,7 +1009,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.light
                           ? Colors.white
-                          : colorScheme.surfaceVariant,
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(

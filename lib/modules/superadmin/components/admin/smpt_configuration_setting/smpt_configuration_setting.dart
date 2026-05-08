@@ -519,7 +519,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
               scale: 0.7,
               child: Switch(
                 value: smtpEnabled,
-                activeColor: colorScheme.onPrimary,
+                activeThumbColor: colorScheme.onPrimary,
                 activeTrackColor: colorScheme.primary,
                 inactiveThumbColor: colorScheme.onPrimary,
                 inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
@@ -613,7 +613,7 @@ class _SmtpConfigHeaderState extends State<SmtpConfigHeader> {
                         scale: 0.7,
                         child: Switch(
                           value: tlsEnabled,
-                          activeColor: colorScheme.onPrimary,
+                          activeThumbColor: colorScheme.onPrimary,
                           activeTrackColor: colorScheme.primary,
                           inactiveThumbColor: colorScheme.onPrimary,
                           inactiveTrackColor: colorScheme.primary.withOpacity(

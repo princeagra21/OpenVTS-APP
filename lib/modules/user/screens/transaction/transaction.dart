@@ -41,8 +41,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   bool _loading = false;
   bool _errorShown = false;
-  bool _detailsApiUnavailableShown = false;
-  bool _receiptApiUnavailableShown = false;
+  final bool _detailsApiUnavailableShown = false;
+  final bool _receiptApiUnavailableShown = false;
 
   CancelToken? _loadToken;
   Timer? _searchDebounce;
@@ -693,7 +693,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
-            ? cs.surfaceVariant
+            ? cs.surfaceContainerHighest
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(999),
       ),
@@ -1251,7 +1251,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        border: Border.all(color: cs.surfaceVariant),
+                        border: Border.all(color: cs.surfaceContainerHighest),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1577,7 +1577,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                             color: Theme.of(context)
                                                         .brightness ==
                                                     Brightness.dark
-                                                ? cs.surfaceVariant
+                                                ? cs.surfaceContainerHighest
                                                 : Colors.grey.shade50,
                                             border: Border.all(
                                               color:
@@ -1647,7 +1647,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                                 color: Theme.of(context)
                                                             .brightness ==
                                                         Brightness.dark
-                                                    ? cs.surfaceVariant
+                                                    ? cs.surfaceContainerHighest
                                                     : Colors.grey.shade50,
                                                 borderRadius:
                                                     BorderRadius.circular(999),

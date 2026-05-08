@@ -50,7 +50,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   bool _loadingDocuments = false;
   bool _documentsLoadFailed = false;
   bool _loadingDocTypes = false;
-  bool _uploadingDocument = false;
+  final bool _uploadingDocument = false;
   bool _documentsLoaded = false;
   final TextEditingController _docSearchController = TextEditingController();
   String _docFilterTab = 'All';
@@ -227,7 +227,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
   void _loadConfigFromDetails(UserVehicleDetails details) {
     final device = details.device;
-    String _fmtDecimal(Object? v, {int fixed = 2}) {
+    String fmtDecimal(Object? v, {int fixed = 2}) {
       final text = _safe(v?.toString());
       final parsed = double.tryParse(text);
       if (parsed == null) return text == '—' ? '' : text;
@@ -235,21 +235,21 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     }
 
     _speedController.text =
-        _fmtDecimal(device['speedVariation'], fixed: 2).isEmpty
+        fmtDecimal(device['speedVariation'], fixed: 2).isEmpty
             ? '1.00'
-            : _fmtDecimal(device['speedVariation'], fixed: 2);
+            : fmtDecimal(device['speedVariation'], fixed: 2);
     _distanceController.text =
-        _fmtDecimal(device['distanceVariation'], fixed: 2).isEmpty
+        fmtDecimal(device['distanceVariation'], fixed: 2).isEmpty
             ? '1.00'
-            : _fmtDecimal(device['distanceVariation'], fixed: 2);
+            : fmtDecimal(device['distanceVariation'], fixed: 2);
     _odometerController.text =
-        _fmtDecimal(device['odometer'], fixed: 0).isEmpty
+        fmtDecimal(device['odometer'], fixed: 0).isEmpty
             ? '0'
-            : _fmtDecimal(device['odometer'], fixed: 0);
+            : fmtDecimal(device['odometer'], fixed: 0);
     _engineHoursController.text =
-        _fmtDecimal(device['engineHours'], fixed: 0).isEmpty
+        fmtDecimal(device['engineHours'], fixed: 0).isEmpty
             ? '0'
-            : _fmtDecimal(device['engineHours'], fixed: 0);
+            : fmtDecimal(device['engineHours'], fixed: 0);
     final ignition = _safe(device['ignitionSource']?.toString());
     if (ignition.isNotEmpty && ignition != '—') {
       _ignitionSource =
@@ -848,7 +848,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? colorScheme.surfaceVariant
+                      ? colorScheme.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1066,7 +1066,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           height: 40 * (fsMain / 14),
                           decoration: BoxDecoration(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? cs.surfaceVariant
+                                ? cs.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -1106,7 +1106,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? cs.surfaceVariant
+                                      ? cs.surfaceContainerHighest
                                       : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -1226,7 +1226,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? cs.surfaceVariant
+                                    ? cs.surfaceContainerHighest
                                     : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -1409,7 +1409,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.surfaceVariant),
+            border: Border.all(color: cs.surfaceContainerHighest),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.06),
@@ -1530,7 +1530,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   decoration: BoxDecoration(
                     color: cs.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cs.surfaceVariant),
+                    border: Border.all(color: cs.surfaceContainerHighest),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.06),
@@ -2104,7 +2104,7 @@ class _SmallTab extends StatelessWidget {
           vertical: screenWidth < 420 ? 5 : 6,
         ),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceVariant,
+          color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colorScheme.primary.withOpacity(0.3),
@@ -2403,7 +2403,7 @@ class _UserVehicleAddDocumentScreenState
     final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
     final double labelSize = AdaptiveUtils.getTitleFontSize(w);
     return Scaffold(
-      backgroundColor: cs.background,
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
@@ -2575,7 +2575,7 @@ class _UserVehicleAddDocumentScreenState
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 decoration: BoxDecoration(
-                                  color: cs.surfaceVariant,
+                                  color: cs.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(

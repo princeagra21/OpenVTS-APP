@@ -229,7 +229,7 @@ class _AddAdminPaymentRecordScreenState
         : 'Admin #${widget.adminId}';
 
     return Scaffold(
-      backgroundColor: cs.background,
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),
@@ -371,7 +371,7 @@ class _AddAdminPaymentRecordScreenState
                                   vertical: 18,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: cs.surfaceVariant,
+                                  color: cs.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(

@@ -528,8 +528,8 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
     final total = items.length;
     final active = items.where((v) => v.isActive == true).length;
     final inactive = total - active;
-    final filterLabel = _selectedFilter?.isNotEmpty == true
-        ? _selectedFilter!
+    final filterLabel = _selectedFilter.isNotEmpty == true
+        ? _selectedFilter
         : 'All';
     final generatedAt = DateTime.now();
     final generatedAtText =
@@ -826,7 +826,7 @@ class _AdminVehiclesTabState extends State<AdminVehiclesTab> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? cs.surfaceVariant
+                      ? cs.surfaceContainerHighest
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: cs.onSurface.withOpacity(0.12)),

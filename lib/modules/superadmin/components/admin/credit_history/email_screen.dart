@@ -15,7 +15,7 @@ class CreditHistoryEmailScreen extends StatelessWidget {
     final double inputFontSize = AdaptiveUtils.getTitleFontSize(w);
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(padding),

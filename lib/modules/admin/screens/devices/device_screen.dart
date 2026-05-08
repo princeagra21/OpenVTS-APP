@@ -375,7 +375,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             Container(
               height: hp * 3.5,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -877,10 +877,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
                           ignoring: isPlaceholder || isUpdating,
                           child: Switch(
                             value: enabled,
-                            activeColor: colorScheme.onPrimary,
+                            activeThumbColor: colorScheme.onPrimary,
                             activeTrackColor: colorScheme.primary,
                             inactiveThumbColor: colorScheme.onSurfaceVariant,
-                            inactiveTrackColor: colorScheme.surfaceVariant,
+                            inactiveTrackColor: colorScheme.surfaceContainerHighest,
                             onChanged: isPlaceholder
                                 ? null
                                 : (v) => _toggleDeviceActive(device, v),

@@ -448,7 +448,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                         decoration: InputDecoration(
                           hintText: 'Search language',
                           filled: true,
-                          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -1058,7 +1058,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1132,7 +1132,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1293,7 +1293,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1332,7 +1332,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _dropdownValueOrNull(_dateFormats, dateFormat),
+                  initialValue: _dropdownValueOrNull(_dateFormats, dateFormat),
                   hint: Text(
                     _dateFormats.isEmpty
                         ? 'No date format options'
@@ -1372,7 +1372,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1529,7 +1529,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1568,7 +1568,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _dropdownValueOrNull(_timezones, timezone),
+                  initialValue: _dropdownValueOrNull(_timezones, timezone),
                   hint: Text(
                     _timezones.isEmpty
                         ? 'No timezone options'
@@ -1608,7 +1608,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1769,7 +1769,7 @@ class _LocalizationHeaderState extends State<LocalizationHeader> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),

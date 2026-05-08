@@ -342,7 +342,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
-            value: _commandNames.contains(selectedCommand)
+            initialValue: _commandNames.contains(selectedCommand)
                 ? selectedCommand
                 : (_commandNames.isNotEmpty ? _commandNames.first : null),
             decoration: InputDecoration(
@@ -352,7 +352,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 color: colorScheme.onSurface.withOpacity(0.8),
               ),
               filled: true,
-              fillColor: colorScheme.surfaceVariant,
+              fillColor: colorScheme.surfaceContainerHighest,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -420,7 +420,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                     vertical: spacing - 2,
                   ),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: colorScheme.outline.withOpacity(0.5),
@@ -460,7 +460,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
                 color: colorScheme.onSurface.withOpacity(0.6),
               ),
               filled: true,
-              fillColor: colorScheme.surfaceVariant,
+              fillColor: colorScheme.surfaceContainerHighest,
               contentPadding: const EdgeInsets.all(14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -508,7 +508,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -602,7 +602,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
             width: double.infinity,
             height: 120,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: _recentCommands.isEmpty

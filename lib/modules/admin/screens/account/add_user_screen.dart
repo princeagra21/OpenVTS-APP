@@ -301,7 +301,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor: colorScheme.surfaceVariant.withOpacity(
+                          fillColor: colorScheme.surfaceContainerHighest.withOpacity(
                             0.3,
                           ),
                           border: OutlineInputBorder(
@@ -1050,7 +1050,7 @@ class StylishDropdown extends StatelessWidget {
             iconEnabledColor: cs.primary,
             iconDisabledColor: cs.primary,
             focusColor: cs.surface,
-            value: value,
+            initialValue: value,
             hint: Text(
               hint,
               style: GoogleFonts.inter(

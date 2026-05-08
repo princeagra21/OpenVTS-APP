@@ -240,7 +240,7 @@ class _PlansScreenState extends State<PlansScreen> {
                     offset: const Offset(0, 4),
                   ),
                 ],
-                border: Border.all(color: colorScheme.surfaceVariant),
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,7 +540,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                         borderRadius: BorderRadius.circular(12),
                                         color: Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? colorScheme.surfaceVariant
+                                            ? colorScheme.surfaceContainerHighest
                                             : Colors.grey.shade50,
                                         border: Border.all(
                                           color:
@@ -673,7 +673,7 @@ class _PlansScreenState extends State<PlansScreen> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                 ],
               ),
             ),

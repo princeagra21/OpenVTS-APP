@@ -896,7 +896,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                         offset: const Offset(0, 4),
                       ),
                     ],
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     children: [
@@ -1187,7 +1187,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                         offset: const Offset(0, 4),
                       ),
                     ],
-                    border: Border.all(color: colorScheme.surfaceVariant),
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1366,7 +1366,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? colorScheme.surfaceVariant
+                            ? colorScheme.surfaceContainerHighest
                             : Colors.grey.shade50,
                         border: Border.all(
                           color: colorScheme.outline.withOpacity(0.3),

@@ -1805,7 +1805,7 @@ Widget _channelRow(
           height: 36,
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark
-                ? cs.surfaceVariant
+                ? cs.surfaceContainerHighest
                 : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1891,7 +1891,7 @@ Widget _vehicleAlertCard(
               height: 36,
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
+                    ? cs.surfaceContainerHighest
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2068,7 +2068,7 @@ Widget _vehicleSpeedCard(
               height: 36,
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
+                    ? cs.surfaceContainerHighest
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2239,7 +2239,7 @@ Widget _vehicleGeofenceCard(
               height: 36,
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
+                    ? cs.surfaceContainerHighest
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2295,7 +2295,7 @@ Widget _vehicleGeofenceCard(
               height: 28,
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? cs.surfaceVariant
+                    ? cs.surfaceContainerHighest
                     : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
