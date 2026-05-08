@@ -27,6 +27,15 @@ class _FakeTokenStorage implements TokenStorageBase {
 
   @override
   Future<void> clearImpersonatorToken() async {}
+
+  @override
+  Future<String?> readRefreshToken() async => null;
+
+  @override
+  Future<void> writeRefreshToken(String token) async {}
+
+  @override
+  Future<void> clearRefreshToken() async {}
 }
 
 void main() {

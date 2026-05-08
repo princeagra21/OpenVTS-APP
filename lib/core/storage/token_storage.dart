@@ -15,11 +15,18 @@ abstract class TokenStorageBase {
 
   Future<void> clearImpersonatorToken();
 
+  Future<String?> readRefreshToken();
+
+  Future<void> writeRefreshToken(String token);
+
+  Future<void> clearRefreshToken();
+
   Future<void> clear();
 }
 
 class TokenStorage implements TokenStorageBase {
   static const _kAccessTokenKey = 'access_token';
+  static const _kRefreshTokenKey = 'refresh_token';
   static const _kImpersonatorTokenKey = 'impersonator_access_token';
   static const _kImpersonatorStackKey = 'impersonator_access_token_stack';
 
@@ -80,8 +87,19 @@ class TokenStorage implements TokenStorageBase {
   }
 
   @override
+  Future<String?> readRefreshToken() => _storage.read(key: _kRefreshTokenKey);
+
+  @override
+  Future<void> writeRefreshToken(String token) =>
+      _storage.write(key: _kRefreshTokenKey, value: token);
+
+  @override
+  Future<void> clearRefreshToken() => _storage.delete(key: _kRefreshTokenKey);
+
+  @override
   Future<void> clear() async {
     await _storage.delete(key: _kAccessTokenKey);
+    await _storage.delete(key: _kRefreshTokenKey);
     await _storage.delete(key: _kImpersonatorTokenKey);
     await _storage.delete(key: _kImpersonatorStackKey);
   }

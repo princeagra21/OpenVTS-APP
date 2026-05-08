@@ -9,7 +9,7 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/documents/add_document.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/documents/file_card.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';

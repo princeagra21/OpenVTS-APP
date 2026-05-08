@@ -5,6 +5,7 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/network/interceptors/auth_interceptor.dart';
 import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiClient {
   final Dio dio;
@@ -33,9 +34,11 @@ class ApiClient {
     );
 
     dio.interceptors.add(AuthInterceptor(tokenStorage: tokenStorage));
-    dio.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: false),
-    );
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: false),
+      );
+    }
 
     return ApiClient._(dio, config, tokenStorage);
   }
@@ -222,10 +225,11 @@ class ApiClient {
 
   Future<void> _handleUnauthorizedIfNeeded(DioException e) async {
     final status = e.response?.statusCode;
-    if (status == 401 || status == 403) {
+    if (status == 401) {
       await _tokenStorage.clear();
       SessionExpiredBus.emit();
     }
+    // 403 is treated as permission denied, return ApiException normally
   }
 
   bool _isAbsoluteUrl(String path) {

@@ -8,7 +8,7 @@ import 'package:fleet_stack/core/repositories/admin_localization_repository.dart
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/admin/theme/app_theme.dart';
 import 'package:fleet_stack/main.dart' show themeController;
 import 'package:flutter/material.dart';

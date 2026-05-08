@@ -1,6 +1,6 @@
 // components/notifications/notification_preferences_screen.dart
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

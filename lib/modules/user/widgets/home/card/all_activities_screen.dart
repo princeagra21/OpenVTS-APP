@@ -1,6 +1,6 @@
 // screens/all_activities_screen.dart
-import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/modules/user/layout/app_layout.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,10 +9,7 @@ import 'package:intl/intl.dart';
 class AllActivitiesScreen extends StatefulWidget {
   final String activityType;
 
-  const AllActivitiesScreen({
-    super.key,
-    required this.activityType,
-  });
+  const AllActivitiesScreen({super.key, required this.activityType});
 
   @override
   State<AllActivitiesScreen> createState() => _AllActivitiesScreenState();
@@ -41,10 +38,13 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
       "Group Logistics permissions changed",
     ];
     if (widget.activityType == "Recent Activity") {
-      allActivities = List.generate(50, (i) => {
-            "description": descTemplates[i % descTemplates.length],
-            "date": DateTime.now().subtract(Duration(days: i)),
-          });
+      allActivities = List.generate(
+        50,
+        (i) => {
+          "description": descTemplates[i % descTemplates.length],
+          "date": DateTime.now().subtract(Duration(days: i)),
+        },
+      );
     } else {
       allActivities = [];
     }
@@ -58,11 +58,14 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    final double mainFontSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double mainFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
     final double subFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
     final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
 
-    final dateStr = DateFormat('MMM dd, yyyy • hh:mm a').format(activity["date"]);
+    final dateStr = DateFormat(
+      'MMM dd, yyyy • hh:mm a',
+    ).format(activity["date"]);
 
     final avatar = CircleAvatar(
       radius: AdaptiveUtils.getAvatarSize(screenWidth) / 2.4,
@@ -72,12 +75,19 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
 
     final content = Text(
       activity["description"],
-      style: GoogleFonts.inter(fontSize: mainFontSize, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+      style: GoogleFonts.inter(
+        fontSize: mainFontSize,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      ),
     );
 
     final right = Text(
       dateStr,
-      style: GoogleFonts.inter(fontSize: subFontSize, color: colorScheme.onSurface.withOpacity(0.54)),
+      style: GoogleFonts.inter(
+        fontSize: subFontSize,
+        color: colorScheme.onSurface.withOpacity(0.54),
+      ),
     );
 
     return Padding(
@@ -97,7 +107,9 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double fs = AdaptiveUtils.getSubtitleFontSize(MediaQuery.of(context).size.width);
+    final double fs = AdaptiveUtils.getSubtitleFontSize(
+      MediaQuery.of(context).size.width,
+    );
     final String title = widget.activityType;
     final String subtitle = 'All ${widget.activityType}';
 
@@ -114,17 +126,27 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
         children: [
           if (filteredActivities.isEmpty)
             Center(
-              child: Text('No activities in selected range',
-                  style: GoogleFonts.inter(fontSize: fs, color: colorScheme.onSurface.withOpacity(0.6))),
+              child: Text(
+                'No activities in selected range',
+                style: GoogleFonts.inter(
+                  fontSize: fs,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
             )
           else
             ListView.separated(
               shrinkWrap: true, // Added to fix unbounded height
-              physics: NeverScrollableScrollPhysics(), // Added to disable inner scroll, let outer handle it
+              physics:
+                  NeverScrollableScrollPhysics(), // Added to disable inner scroll, let outer handle it
               padding: EdgeInsets.zero,
               itemCount: filteredActivities.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: colorScheme.onSurface.withOpacity(0.08)),
-              itemBuilder: (_, index) => buildActivityItem(filteredActivities[index]),
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: colorScheme.onSurface.withOpacity(0.08),
+              ),
+              itemBuilder: (_, index) =>
+                  buildActivityItem(filteredActivities[index]),
             ),
         ],
       ),

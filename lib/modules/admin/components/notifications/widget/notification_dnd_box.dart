@@ -1,4 +1,4 @@
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 import 'notification_toggle_tile.dart';

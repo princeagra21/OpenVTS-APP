@@ -4,14 +4,13 @@ import 'dart:async';
 import 'package:device_preview/device_preview.dart';
 import 'package:fleet_stack/core/auth/session_expired_bus.dart';
 import 'package:fleet_stack/core/config/api_base_url_config.dart';
-import 'package:fleet_stack/core/services/push_notifications_service.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/login_screen.dart';
 import 'package:fleet_stack/modules/user/router/user_routes.dart';
 import 'package:fleet_stack/onboarding_screen.dart';
 import 'package:fleet_stack/modules/superadmin/router/superadmin_routes.dart';
 import 'package:fleet_stack/modules/admin/router/admin_routes.dart';
-import 'package:fleet_stack/modules/superadmin/theme/app_theme.dart';
+import 'package:fleet_stack/core/theme/open_vts_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -174,10 +173,12 @@ GoRouter buildRouter(String initialLocation) => GoRouter(
 ///  THEME CONTROLLER + CACHE
 /// ==============================
 class ThemeController extends ChangeNotifier {
-  final ValueNotifier<ThemeMode> themeMode =
-      ValueNotifier<ThemeMode>(ThemeMode.light);
-  final ValueNotifier<Color> brandColor =
-      ValueNotifier<Color>(AppTheme.defaultBrand);
+  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(
+    ThemeMode.light,
+  );
+  final ValueNotifier<Color> brandColor = ValueNotifier<Color>(
+    OpenVtsTheme.defaultBrand,
+  );
   final ValueNotifier<TextDirection> textDirection =
       ValueNotifier<TextDirection>(TextDirection.ltr);
   final ValueNotifier<String> units = ValueNotifier<String>('KM');
@@ -188,7 +189,7 @@ class ThemeController extends ChangeNotifier {
     final isDark = prefs.getBool("isDark") ?? false;
     final modeRaw = prefs.getString("themeMode");
     final colorValue =
-        prefs.getInt("brandColor") ?? AppTheme.defaultBrand.toARGB32();
+        prefs.getInt("brandColor") ?? OpenVtsTheme.defaultBrand.toARGB32();
     final directionRaw =
         prefs.getString("layoutDirection") ?? prefs.getString("direction");
     final unitsRaw = prefs.getString("units") ?? 'KM';
@@ -203,9 +204,8 @@ class ThemeController extends ChangeNotifier {
     final bool isLightMode =
         themeMode.value != ThemeMode.dark && isDark == false;
     if (isLightMode &&
-        ThemeData.estimateBrightnessForColor(nextBrand) ==
-            Brightness.light) {
-      nextBrand = AppTheme.defaultBrand;
+        ThemeData.estimateBrightnessForColor(nextBrand) == Brightness.light) {
+      nextBrand = OpenVtsTheme.defaultBrand;
       await prefs.setInt("brandColor", nextBrand.toARGB32());
     }
     brandColor.value = nextBrand;
@@ -232,11 +232,11 @@ class ThemeController extends ChangeNotifier {
 
     // Keep default brand contrast usable immediately when toggling modes.
     if (mode == ThemeMode.dark &&
-        brandColor.value == AppTheme.defaultBrand) {
-      brandColor.value = AppTheme.defaultDarkBrand;
+        brandColor.value == OpenVtsTheme.defaultBrand) {
+      brandColor.value = OpenVtsTheme.defaultDarkBrand;
     } else if (mode == ThemeMode.light &&
-        brandColor.value == AppTheme.defaultDarkBrand) {
-      brandColor.value = AppTheme.defaultBrand;
+        brandColor.value == OpenVtsTheme.defaultDarkBrand) {
+      brandColor.value = OpenVtsTheme.defaultBrand;
     }
 
     notifyListeners();
@@ -261,10 +261,10 @@ class ThemeController extends ChangeNotifier {
   }
 
   Future<void> setTextDirection(String direction) async {
-    final normalized =
-        direction.trim().toUpperCase() == 'RTL' ? 'RTL' : 'LTR';
-    textDirection.value =
-        normalized == 'RTL' ? TextDirection.rtl : TextDirection.ltr;
+    final normalized = direction.trim().toUpperCase() == 'RTL' ? 'RTL' : 'LTR';
+    textDirection.value = normalized == 'RTL'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -429,13 +429,16 @@ class _MyAppState extends State<MyApp> {
                 final backgroundColor = theme.scaffoldBackgroundColor;
                 final overlayStyle = SystemUiOverlayStyle(
                   statusBarColor: backgroundColor,
-                  statusBarIconBrightness:
-                      isDark ? Brightness.light : Brightness.dark,
-                  statusBarBrightness:
-                      isDark ? Brightness.dark : Brightness.light,
+                  statusBarIconBrightness: isDark
+                      ? Brightness.light
+                      : Brightness.dark,
+                  statusBarBrightness: isDark
+                      ? Brightness.dark
+                      : Brightness.light,
                   systemNavigationBarColor: backgroundColor,
-                  systemNavigationBarIconBrightness:
-                      isDark ? Brightness.light : Brightness.dark,
+                  systemNavigationBarIconBrightness: isDark
+                      ? Brightness.light
+                      : Brightness.dark,
                   systemNavigationBarDividerColor: Colors.transparent,
                 );
 
@@ -445,9 +448,7 @@ class _MyAppState extends State<MyApp> {
                     color: backgroundColor,
                     child: Directionality(
                       textDirection: direction,
-                      child: SafeArea(
-                        child: child ?? const SizedBox.shrink(),
-                      ),
+                      child: SafeArea(child: child ?? const SizedBox.shrink()),
                     ),
                   ),
                 );
@@ -464,8 +465,8 @@ class _MyAppState extends State<MyApp> {
                 return result;
               },
               routerConfig: widget.router,
-              theme: AppTheme.light(brand),
-              darkTheme: AppTheme.dark(brand),
+              theme: OpenVtsTheme.light(brand),
+              darkTheme: OpenVtsTheme.dark(brand),
               themeMode: mode,
             );
           },

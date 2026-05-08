@@ -12,8 +12,8 @@ import 'package:fleet_stack/modules/admin/components/admin/edit_admin_profile_sc
 import 'package:fleet_stack/modules/admin/components/admin/localization/localization.dart';
 import 'package:fleet_stack/modules/admin/components/admin/update_password_screen.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';

@@ -1,7 +1,9 @@
 import 'package:fleet_stack/core/services/push_notifications_service.dart';
-import 'package:fleet_stack/core/widgets/app_shimmer.dart';
+import 'package:fleet_stack/core/theme/open_vts_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'open_vts_button.dart';
+import 'open_vts_card.dart';
 
 class PushNotificationBanner extends StatelessWidget {
   final PushDeviceState state;
@@ -30,16 +32,11 @@ class PushNotificationBanner extends StatelessWidget {
         ? 'This device will receive new alerts for this account.'
         : 'Turn on device notifications now. You can change this later here.';
     final String buttonLabel = enabled ? 'Turn off' : 'Enable';
+    final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return OpenVtsCard(
+      margin: const EdgeInsets.only(bottom: OpenVtsSpacing.lg),
+      padding: const EdgeInsets.all(OpenVtsSpacing.lg),
       child: Row(
         children: [
           Container(
@@ -57,53 +54,36 @@ class PushNotificationBanner extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: OpenVtsSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
+                  style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: OpenVtsSpacing.xs),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.68),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          InkWell(
-            onTap: loading ? null : onPressed,
-            borderRadius: BorderRadius.circular(999),
-            child: Container(
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              alignment: Alignment.center,
-              child: loading
-                  ? const AppShimmer(width: 58, height: 12, radius: 6)
-                  : Text(
-                      buttonLabel,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-            ),
+          const SizedBox(width: OpenVtsSpacing.md),
+          OpenVtsButton(
+            label: buttonLabel,
+            onPressed: loading ? null : onPressed,
+            loading: loading,
+            height: 36,
+            variant: enabled
+                ? OpenVtsButtonVariant.ghost
+                : OpenVtsButtonVariant.secondary,
           ),
         ],
       ),

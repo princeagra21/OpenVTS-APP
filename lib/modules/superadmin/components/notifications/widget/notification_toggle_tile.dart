@@ -1,5 +1,5 @@
 // components/notifications/widget/notification_toggle_tile.dart
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 class NotificationToggleTile extends StatelessWidget {

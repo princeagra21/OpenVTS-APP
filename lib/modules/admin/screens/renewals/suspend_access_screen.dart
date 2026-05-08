@@ -1,7 +1,7 @@
 // screens/renewals/suspend_access_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 
 class SuspendAccessScreen extends StatefulWidget {
   final List<Map<String, dynamic>> selectedDevices; // List of selected devices

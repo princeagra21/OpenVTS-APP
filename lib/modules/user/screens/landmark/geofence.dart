@@ -7,7 +7,7 @@ import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/repositories/user_landmarks_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:fleet_stack/modules/user/screens/landmark/add_buffer_screen.dart';
 import 'package:fleet_stack/modules/user/screens/map/widgets/glass_map_control_button.dart';

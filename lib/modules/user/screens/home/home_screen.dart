@@ -14,8 +14,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

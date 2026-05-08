@@ -1,8 +1,8 @@
 import 'package:fleet_stack/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/localization/localization.dart';
 import 'package:fleet_stack/modules/superadmin/components/admin/setting_tab/superadmin_settings_tab.dart';
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/superadmin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/config/app_config.dart';
 import 'package:fleet_stack/core/models/superadmin_profile.dart';

@@ -2,7 +2,7 @@ import 'package:fleet_stack/core/models/admin_user_list_item.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_drivers_repository.dart';
 import 'package:fleet_stack/modules/admin/screens/account/widget/admin_user_details_ui.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

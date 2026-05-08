@@ -14,7 +14,7 @@ import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/edit
 import 'package:fleet_stack/modules/superadmin/components/admin/profile_tab/widget/delete_account_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileTab extends StatefulWidget {

@@ -2,7 +2,7 @@
 import 'package:fleet_stack/core/models/admin_dashboard_summary.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
 import 'package:flutter/material.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../utils/adaptive_utils.dart';
 

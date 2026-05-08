@@ -16,7 +16,7 @@ import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_map_tab.dart';
 import 'package:fleet_stack/modules/superadmin/components/vehicle/widget/vehicle_users_tab.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';

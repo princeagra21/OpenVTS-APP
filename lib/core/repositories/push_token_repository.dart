@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/network/api_paths.dart';
 import 'package:fleet_stack/core/network/result.dart';
 
 class PushWebConfigPayload {
@@ -18,7 +19,7 @@ class PushTokenRepository {
   Future<Result<PushWebConfigPayload>> getWebConfig({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/auth/fcm-web-config', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.authFcmWebConfig, cancelToken: cancelToken);
     return res.when(
       success: (data) {
         final map = _extractMap(data);
@@ -47,7 +48,7 @@ class PushTokenRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/auth/push-token',
+      ApiPaths.authPushToken,
       cancelToken: cancelToken,
       data: <String, dynamic>{
         'token': token,
@@ -67,7 +68,7 @@ class PushTokenRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      '/auth/push-token',
+      ApiPaths.authPushToken,
       cancelToken: cancelToken,
       data: <String, dynamic>{'token': token},
     );
@@ -80,7 +81,7 @@ class PushTokenRepository {
   Future<Result<List<Map<String, dynamic>>>> getMyTokens({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get('/auth/push-tokens/me', cancelToken: cancelToken);
+    final res = await api.get(ApiPaths.authPushTokensMe, cancelToken: cancelToken);
     return res.when(
       success: (data) {
         final list = _extractList(data);

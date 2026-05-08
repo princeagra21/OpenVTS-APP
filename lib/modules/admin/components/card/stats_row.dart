@@ -1,5 +1,5 @@
 // components/cards/stats_row.dart
-import 'package:fleet_stack/modules/admin/components/card/card_starts.dart';
+import 'package:fleet_stack/shared/cards/card_starts.dart';
 import 'package:flutter/material.dart';
 
 class StatsRow extends StatelessWidget {

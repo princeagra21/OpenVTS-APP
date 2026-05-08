@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
+import 'package:fleet_stack/core/network/api_paths.dart';
 import 'package:fleet_stack/core/network/result.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 
@@ -35,7 +36,7 @@ class AuthRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/auth/login',
+      ApiPaths.authLogin,
       data: {'identifier': identifier, 'password': password},
       cancelToken: cancelToken,
     );
@@ -70,7 +71,11 @@ class AuthRepository {
         }
 
         final role = extractRole(data, token: token);
+        final refreshToken = extractRefreshToken(data);
         await tokenStorage.writeAccessToken(token);
+        if (refreshToken != null) {
+          await tokenStorage.writeRefreshToken(refreshToken);
+        }
         return Result.ok(
           AuthLoginContext(token: token, role: role, response: data),
         );
@@ -84,7 +89,7 @@ class AuthRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      '/auth/forgot-password',
+      ApiPaths.authForgotPassword,
       data: {'identifier': identifier.trim()},
       cancelToken: cancelToken,
     );
@@ -221,6 +226,13 @@ class AuthRepository {
     return null;
   }
 
+  static String? extractRefreshToken(Object? data) {
+    if (data is Map) {
+      return _extractRefreshTokenFromMap(data);
+    }
+    return null;
+  }
+
   static String? _extractTokenFromMap(Map map) {
     String? asToken(Object? v) {
       if (v is String && v.trim().isNotEmpty) return v;
@@ -241,6 +253,35 @@ class AuthRepository {
         for (final item in nested) {
           if (item is Map) {
             final token = _extractTokenFromMap(item);
+            if (token != null) return token;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static String? _extractRefreshTokenFromMap(Map map) {
+    String? asToken(Object? v) {
+      if (v is String && v.trim().isNotEmpty) return v;
+      return null;
+    }
+
+    final direct = asToken(
+      map['refreshToken'] ?? map['refresh_token'] ?? map['refreshToken'],
+    );
+    if (direct != null) return direct;
+
+    for (final key in const ['data', 'result', 'item', 'payload', 'response']) {
+      final nested = map[key];
+      if (nested is Map) {
+        final token = _extractRefreshTokenFromMap(nested);
+        if (token != null) return token;
+      } else if (nested is List) {
+        for (final item in nested) {
+          if (item is Map) {
+            final token = _extractRefreshTokenFromMap(item);
             if (token != null) return token;
           }
         }

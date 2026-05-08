@@ -5,7 +5,7 @@ import 'package:fleet_stack/core/models/admin_profile.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/repositories/user_profile_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:fleet_stack/modules/user/layout/app_layout.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_info_boxes.dart';
 import 'package:fleet_stack/modules/user/screens/profile/widget/profile_setting_box.dart';

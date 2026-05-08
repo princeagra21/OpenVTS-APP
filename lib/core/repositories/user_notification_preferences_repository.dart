@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:fleet_stack/core/models/user_notification_preferences.dart';
 import 'package:fleet_stack/core/network/api_client.dart';
+import 'package:fleet_stack/core/network/api_paths.dart';
 import 'package:fleet_stack/core/network/result.dart';
+import 'package:flutter/foundation.dart';
 
 class UserNotificationPreferencesRepository {
   final ApiClient api;
@@ -12,7 +14,7 @@ class UserNotificationPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      '/user/notifications/preferences',
+      ApiPaths.userNotificationsPreferences,
       cancelToken: cancelToken,
     );
 
@@ -51,25 +53,20 @@ class UserNotificationPreferencesRepository {
     Map<String, dynamic> payload, {
     CancelToken? cancelToken,
   }) async {
-    // Debug logging for mismatch issues.
-    assert(() {
-      // ignore: avoid_print
-      print('PUT /user/notifications/preferences payload: $payload');
-      return true;
-    }());
+    if (kDebugMode) {
+      debugPrint('PUT ${ApiPaths.userNotificationsPreferences} payload: $payload');
+    }
     final res = await api.put(
-      '/user/notifications/preferences',
+      ApiPaths.userNotificationsPreferences,
       data: payload,
       cancelToken: cancelToken,
     );
 
     return res.when(
       success: (data) {
-        assert(() {
-          // ignore: avoid_print
-          print('PUT /user/notifications/preferences response: $data');
-          return true;
-        }());
+        if (kDebugMode) {
+          debugPrint('PUT ${ApiPaths.userNotificationsPreferences} response: $data');
+        }
         return Result.ok(null);
       },
       failure: (err) => Result.fail(err),

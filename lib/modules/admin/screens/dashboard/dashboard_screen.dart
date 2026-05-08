@@ -18,8 +18,8 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

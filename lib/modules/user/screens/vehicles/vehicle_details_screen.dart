@@ -10,9 +10,9 @@ import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/user_vehicles_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
-import 'package:fleet_stack/modules/admin/screens/account/widget/documents/file_card.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
+import 'package:fleet_stack/shared/documents/file_card.dart';
 import 'package:fleet_stack/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -60,14 +60,18 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   CancelToken? _documentsToken;
   CancelToken? _docTypesToken;
   CancelToken? _uploadDocumentToken;
-  final TextEditingController _speedController =
-      TextEditingController(text: '1.00');
-  final TextEditingController _distanceController =
-      TextEditingController(text: '1.00');
-  final TextEditingController _odometerController =
-      TextEditingController(text: '0');
-  final TextEditingController _engineHoursController =
-      TextEditingController(text: '0');
+  final TextEditingController _speedController = TextEditingController(
+    text: '1.00',
+  );
+  final TextEditingController _distanceController = TextEditingController(
+    text: '1.00',
+  );
+  final TextEditingController _odometerController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController _engineHoursController = TextEditingController(
+    text: '0',
+  );
   String _ignitionSource = 'Ignition Wire';
   String _snapSpeed = '1.00';
   String _snapDistance = '1.00';
@@ -75,11 +79,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   String _snapEngineHours = '0';
   String _snapIgnition = 'Ignition Wire';
 
-  final List<String> _tabs = [
-    'Vehicle Details',
-    'Documents',
-    'Config',
-  ];
+  final List<String> _tabs = ['Vehicle Details', 'Documents', 'Config'];
 
   ApiClient? _apiClient;
   UserVehiclesRepository? _repo;
@@ -214,7 +214,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     _docTypesToken = token;
     if (!mounted) return;
     setState(() => _loadingDocTypes = true);
-    final res = await _repoOrCreate().getVehicleDocumentTypes(cancelToken: token);
+    final res = await _repoOrCreate().getVehicleDocumentTypes(
+      cancelToken: token,
+    );
     if (!mounted || token.isCancelled) return;
     res.when(
       success: (items) => setState(() {
@@ -236,24 +238,24 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
     _speedController.text =
         fmtDecimal(device['speedVariation'], fixed: 2).isEmpty
-            ? '1.00'
-            : fmtDecimal(device['speedVariation'], fixed: 2);
+        ? '1.00'
+        : fmtDecimal(device['speedVariation'], fixed: 2);
     _distanceController.text =
         fmtDecimal(device['distanceVariation'], fixed: 2).isEmpty
-            ? '1.00'
-            : fmtDecimal(device['distanceVariation'], fixed: 2);
-    _odometerController.text =
-        fmtDecimal(device['odometer'], fixed: 0).isEmpty
-            ? '0'
-            : fmtDecimal(device['odometer'], fixed: 0);
+        ? '1.00'
+        : fmtDecimal(device['distanceVariation'], fixed: 2);
+    _odometerController.text = fmtDecimal(device['odometer'], fixed: 0).isEmpty
+        ? '0'
+        : fmtDecimal(device['odometer'], fixed: 0);
     _engineHoursController.text =
         fmtDecimal(device['engineHours'], fixed: 0).isEmpty
-            ? '0'
-            : fmtDecimal(device['engineHours'], fixed: 0);
+        ? '0'
+        : fmtDecimal(device['engineHours'], fixed: 0);
     final ignition = _safe(device['ignitionSource']?.toString());
     if (ignition.isNotEmpty && ignition != '—') {
-      _ignitionSource =
-          ignition.toLowerCase().contains('motion') ? 'Motion-Based' : 'Ignition Wire';
+      _ignitionSource = ignition.toLowerCase().contains('motion')
+          ? 'Motion-Based'
+          : 'Ignition Wire';
     }
 
     _snapSpeed = _speedController.text;
@@ -324,9 +326,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final validationError =
         speedError ?? distanceError ?? odometerError ?? engineHoursError;
     if (validationError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(validationError)));
       return;
     }
 
@@ -367,9 +369,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           final msg = err is ApiException && err.message.trim().isNotEmpty
               ? err.message
               : "Couldn't update config.";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
         },
       );
     } catch (_) {
@@ -713,9 +715,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.onSurface.withOpacity(0.12),
-        ),
+        border: Border.all(color: colorScheme.onSurface.withOpacity(0.12)),
       ),
       child: Row(
         children: [
@@ -853,11 +853,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  color: colorScheme.onSurface,
-                  size: 18,
-                ),
+                child: Icon(icon, color: colorScheme.onSurface, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -903,13 +899,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(w)
         ? 12.0
         : AdaptiveUtils.isSmallScreen(w)
-            ? 14.0
-            : 18.0;
+        ? 14.0
+        : 18.0;
     final topPadding = AdaptiveUtils.isVerySmallScreen(w)
         ? 8.0
         : AdaptiveUtils.isSmallScreen(w)
-            ? 10.0
-            : 12.0;
+        ? 10.0
+        : 12.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -949,13 +945,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                         w: w,
                       )
                     : _selectedTab == 'Documents'
-                        ? _buildDocumentsTab(context)
-                        : _buildConfigTab(
-                            context,
-                            details: details,
-                            spacing: spacing,
-                            w: w,
-                          ),
+                    ? _buildDocumentsTab(context)
+                    : _buildConfigTab(
+                        context,
+                        details: details,
+                        spacing: spacing,
+                        w: w,
+                      ),
               ],
             ),
           ),
@@ -1014,8 +1010,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final amountText = planPrice == '—'
         ? planCurrency
         : planCurrency == '—'
-            ? planPrice
-            : '$planCurrency $planPrice';
+        ? planPrice
+        : '$planCurrency $planPrice';
 
     if (_loading) {
       return _buildVehicleDetailsShimmer(context);
@@ -1065,7 +1061,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           width: 40 * (fsMain / 14),
                           height: 40 * (fsMain / 14),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? cs.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
@@ -1104,7 +1101,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness ==
+                                  color:
+                                      Theme.of(context).brightness ==
                                           Brightness.dark
                                       ? cs.surfaceContainerHighest
                                       : Colors.grey.shade50,
@@ -1226,8 +1224,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? cs.surfaceContainerHighest
-                                    : Colors.grey.shade50,
+                                ? cs.surfaceContainerHighest
+                                : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -1376,7 +1374,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final q = _docSearchController.text.trim().toLowerCase();
     final mappedDocs = _documents.map(_mapVehicleDocToAdminStyle).toList();
     final filtered = mappedDocs.where((file) {
-      final matchesSearch = q.isEmpty ||
+      final matchesSearch =
+          q.isEmpty ||
           file['fileName'].toString().toLowerCase().contains(q) ||
           file['title'].toString().toLowerCase().contains(q) ||
           file['fileType'].toString().toLowerCase().contains(q) ||
@@ -1459,11 +1458,18 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       fontSize: fsSecondary,
                       height: 16 / 12,
                     ),
-                    prefixIcon: Icon(Icons.search, size: iconSize, color: cs.onSurface),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: iconSize,
+                      color: cs.onSurface,
+                    ),
                     filled: true,
                     fillColor: Colors.transparent,
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: hp,
+                      vertical: hp,
+                    ),
                   ),
                 ),
               ),
@@ -1486,33 +1492,67 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           itemBuilder: (context) => const [
                             PopupMenuItem(value: 'All', child: Text('All')),
                             PopupMenuItem(value: 'Valid', child: Text('Valid')),
-                            PopupMenuItem(value: 'Warning', child: Text('Warning')),
-                            PopupMenuItem(value: 'Expired', child: Text('Expired')),
+                            PopupMenuItem(
+                              value: 'Warning',
+                              child: Text('Warning'),
+                            ),
+                            PopupMenuItem(
+                              value: 'Expired',
+                              child: Text('Expired'),
+                            ),
                           ],
-                          child: _actionCell(context, 'Filter', Icons.tune, hp, spacing, fsMain, iconSize),
+                          child: _actionCell(
+                            context,
+                            'Filter',
+                            Icons.tune,
+                            hp,
+                            spacing,
+                            fsMain,
+                            iconSize,
+                          ),
                         ),
                       ),
                       SizedBox(
                         width: cellWidth,
                         child: PopupMenuButton<int>(
-                          onSelected: (value) => setState(() => _docPageSize = value),
+                          onSelected: (value) =>
+                              setState(() => _docPageSize = value),
                           itemBuilder: (context) => const [
                             PopupMenuItem(value: 10, child: Text('10')),
                             PopupMenuItem(value: 25, child: Text('25')),
                             PopupMenuItem(value: 50, child: Text('50')),
                           ],
-                          child: _actionCell(context, 'Records', Icons.keyboard_arrow_down, hp, spacing, fsMain, iconSize, trailing: true),
+                          child: _actionCell(
+                            context,
+                            'Records',
+                            Icons.keyboard_arrow_down,
+                            hp,
+                            spacing,
+                            fsMain,
+                            iconSize,
+                            trailing: true,
+                          ),
                         ),
                       ),
                       SizedBox(
                         width: cellWidth,
                         child: InkWell(
-                          onTap: (_loadingDocTypes || _uploadingDocument) ? null : _openAddVehicleDocumentSheet,
+                          onTap: (_loadingDocTypes || _uploadingDocument)
+                              ? null
+                              : _openAddVehicleDocumentSheet,
                           borderRadius: BorderRadius.circular(12),
                           splashColor: Colors.transparent,
                           highlightColor: Colors.transparent,
                           hoverColor: Colors.transparent,
-                          child: _actionCell(context, 'Upload', Icons.upload_outlined, hp, spacing, fsMain, iconSize),
+                          child: _actionCell(
+                            context,
+                            'Upload',
+                            Icons.upload_outlined,
+                            hp,
+                            spacing,
+                            fsMain,
+                            iconSize,
+                          ),
                         ),
                       ),
                     ],
@@ -1521,7 +1561,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               ),
               const SizedBox(height: 16),
               if (_loadingDocuments)
-                ...List<Widget>.generate(3, (_) => _buildDocumentFileSkeleton(cs))
+                ...List<Widget>.generate(
+                  3,
+                  (_) => _buildDocumentFileSkeleton(cs),
+                )
               else if (showEmpty && !_documentsLoadFailed)
                 Container(
                   width: double.infinity,
@@ -1585,10 +1628,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 )
               else
                 ...visible.map(
-                  (f) => FileCard(
-                    document: f,
-                    onChanged: _loadVehicleDocuments,
-                  ),
+                  (f) =>
+                      FileCard(document: f, onChanged: _loadVehicleDocuments),
                 ),
             ],
           ),
@@ -1693,7 +1734,8 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         final name = (rawDocType['name'] ?? '').toString().trim();
         if (name.isNotEmpty) return name;
       }
-      final rawType = d.raw['type'] ?? d.raw['documentType'] ?? d.raw['docType'];
+      final rawType =
+          d.raw['type'] ?? d.raw['documentType'] ?? d.raw['docType'];
       if (rawType is String && rawType.trim().isNotEmpty) return rawType.trim();
       if (rawType is Map) {
         final name = (rawType['name'] ?? '').toString().trim();
@@ -1711,16 +1753,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final tagsList = <String>[];
     if (tagsRaw is String && tagsRaw.trim().isNotEmpty) {
       tagsList.addAll(
-        tagsRaw
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty),
+        tagsRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
       );
     } else if (tagsRaw is List) {
       tagsList.addAll(
-        tagsRaw
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty),
+        tagsRaw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty),
       );
     }
 
@@ -1728,9 +1765,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final isValid = bucket == 'Valid';
     final isWarning = bucket == 'Warning';
     final isExpired = bucket == 'Expired';
-    final rawFilePath = (d.raw['filePath'] ?? d.raw['fileUrl'] ?? d.raw['url'] ?? d.raw['path'])
-        .toString()
-        .trim();
+    final rawFilePath =
+        (d.raw['filePath'] ?? d.raw['fileUrl'] ?? d.raw['url'] ?? d.raw['path'])
+            .toString()
+            .trim();
     final mappedFilePath = rawFilePath.isNotEmpty ? rawFilePath : d.url.trim();
 
     return <String, dynamic>{
@@ -1738,7 +1776,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       'docTypeId': '',
       'fileName': fileName,
       'version': '',
-      'fileSize': d.sizeBytes <= 0 ? '' : '${(d.sizeBytes / 1024).toStringAsFixed(2)} KB',
+      'fileSize': d.sizeBytes <= 0
+          ? ''
+          : '${(d.sizeBytes / 1024).toStringAsFixed(2)} KB',
       'type': readDocTypeName(),
       'fileType': fileTypeValue,
       'filePath': mappedFilePath,
@@ -1778,38 +1818,39 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
           vehicleLabel: _vehicleAppBarTitle(),
           loadingDocTypes: _loadingDocTypes,
           onReloadTypes: _loadVehicleDocumentTypes,
-          onSubmit: ({
-            required String title,
-            required int docTypeId,
-            required PlatformFile file,
-            required String tags,
-            required String description,
-            required String? expiryAt,
-            required bool isVisible,
-          }) async {
-            _uploadDocumentToken?.cancel('Upload document');
-            final token = CancelToken();
-            _uploadDocumentToken = token;
-            final bytes = file.bytes;
-            if (bytes == null) return 'Unable to read selected file.';
-            final res = await _repoOrCreate().uploadVehicleDocument(
-              vehicleId: widget.vehicleId,
-              title: title,
-              docTypeId: docTypeId,
-              fileBytes: bytes,
-              filename: file.name,
-              tags: tags,
-              expiryAt: expiryAt,
-              isVisible: isVisible,
-              cancelToken: token,
-            );
-            if (res.isSuccess) return null;
-            final err = res.error;
-            if (err is ApiException && err.message.trim().isNotEmpty) {
-              return err.message;
-            }
-            return "Couldn't upload document.";
-          },
+          onSubmit:
+              ({
+                required String title,
+                required int docTypeId,
+                required PlatformFile file,
+                required String tags,
+                required String description,
+                required String? expiryAt,
+                required bool isVisible,
+              }) async {
+                _uploadDocumentToken?.cancel('Upload document');
+                final token = CancelToken();
+                _uploadDocumentToken = token;
+                final bytes = file.bytes;
+                if (bytes == null) return 'Unable to read selected file.';
+                final res = await _repoOrCreate().uploadVehicleDocument(
+                  vehicleId: widget.vehicleId,
+                  title: title,
+                  docTypeId: docTypeId,
+                  fileBytes: bytes,
+                  filename: file.name,
+                  tags: tags,
+                  expiryAt: expiryAt,
+                  isVisible: isVisible,
+                  cancelToken: token,
+                );
+                if (res.isSuccess) return null;
+                final err = res.error;
+                if (err is ApiException && err.message.trim().isNotEmpty) {
+                  return err.message;
+                }
+                return "Couldn't upload document.";
+              },
         ),
       ),
     );
@@ -1870,9 +1911,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                         ? null
                         : () => setState(_applyConfigSnapshot),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: cs.onSurface.withOpacity(0.2),
-                      ),
+                      side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -1893,8 +1932,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed:
-                        (_savingConfig || _loadingConfig) ? null : _saveConfig,
+                    onPressed: (_savingConfig || _loadingConfig)
+                        ? null
+                        : _saveConfig,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(
@@ -2104,7 +2144,9 @@ class _SmallTab extends StatelessWidget {
           vertical: screenWidth < 420 ? 5 : 6,
         ),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colorScheme.primary.withOpacity(0.3),
@@ -2137,7 +2179,8 @@ class _UserVehicleAddDocumentScreen extends StatefulWidget {
     required String description,
     required String? expiryAt,
     required bool isVisible,
-  }) onSubmit;
+  })
+  onSubmit;
 
   const _UserVehicleAddDocumentScreen({
     required this.docTypes,
@@ -2167,7 +2210,9 @@ class _UserVehicleAddDocumentScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDocType = widget.docTypes.isNotEmpty ? widget.docTypes.first : null;
+    _selectedDocType = widget.docTypes.isNotEmpty
+        ? widget.docTypes.first
+        : null;
   }
 
   @override
@@ -2196,9 +2241,11 @@ class _UserVehicleAddDocumentScreenState
     if (result != null && result.isNotEmpty && result.first != null) {
       final date = result.first!;
       setState(() {
-        _selectedExpiryAt = DateTime(date.year, date.month, date.day)
-            .toUtc()
-            .toIso8601String();
+        _selectedExpiryAt = DateTime(
+          date.year,
+          date.month,
+          date.day,
+        ).toUtc().toIso8601String();
         _selectedExpiryLabel =
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       });
@@ -2210,7 +2257,15 @@ class _UserVehicleAddDocumentScreenState
       type: FileType.custom,
       withData: true,
       allowMultiple: false,
-      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'webp'],
+      allowedExtensions: const [
+        'jpg',
+        'jpeg',
+        'png',
+        'pdf',
+        'doc',
+        'docx',
+        'webp',
+      ],
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.single;
@@ -2261,11 +2316,13 @@ class _UserVehicleAddDocumentScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text('Select Document Type',
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        )),
+                    Text(
+                      'Select Document Type',
+                      style: GoogleFonts.roboto(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: searchController,
@@ -2292,13 +2349,16 @@ class _UserVehicleAddDocumentScreenState
                             )
                           : ListView.separated(
                               itemCount: filtered.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 6),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 6),
                               itemBuilder: (_, i) {
                                 final item = filtered[i];
-                                final selected = _selectedDocType?.id == item.id;
+                                final selected =
+                                    _selectedDocType?.id == item.id;
                                 return ListTile(
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
                                   title: Text(
                                     item.name,
                                     style: GoogleFonts.roboto(
@@ -2343,7 +2403,9 @@ class _UserVehicleAddDocumentScreenState
       hintText: hint,
       hintStyle: GoogleFonts.roboto(
         color: cs.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
@@ -2423,7 +2485,11 @@ class _UserVehicleAddDocumentScreenState
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: cs.onSurface.withOpacity(0.8)),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: cs.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
@@ -2444,10 +2510,15 @@ class _UserVehicleAddDocumentScreenState
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                          border: Border.all(
+                            color: cs.onSurface.withOpacity(0.12),
+                          ),
                         ),
                         child: Text(
                           widget.vehicleLabel,
@@ -2459,23 +2530,36 @@ class _UserVehicleAddDocumentScreenState
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Text('Document Type *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'Document Type *',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: _openDocumentTypePicker,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                            border: Border.all(
+                              color: cs.onSurface.withOpacity(0.12),
+                            ),
                           ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  _selectedDocType?.name ?? 'Select document type',
+                                  _selectedDocType?.name ??
+                                      'Select document type',
                                   style: GoogleFonts.roboto(
                                     fontSize: labelSize,
                                     color: _selectedDocType == null
@@ -2485,33 +2569,78 @@ class _UserVehicleAddDocumentScreenState
                                 ),
                               ),
                               widget.loadingDocTypes
-                                  ? const AppShimmer(width: 16, height: 16, radius: 8)
-                                  : Icon(Icons.expand_more, color: cs.onSurface.withOpacity(0.6)),
+                                  ? const AppShimmer(
+                                      width: 16,
+                                      height: 16,
+                                      radius: 8,
+                                    )
+                                  : Icon(
+                                      Icons.expand_more,
+                                      color: cs.onSurface.withOpacity(0.6),
+                                    ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Text('Title *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'Title *',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      TextField(controller: _titleController, decoration: _fieldDecoration(context, hint: 'e.g., Registration Certificate')),
+                      TextField(
+                        controller: _titleController,
+                        decoration: _fieldDecoration(
+                          context,
+                          hint: 'e.g., Registration Certificate',
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                      Text('Expiry Date (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'Expiry Date (optional)',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: _pickExpiryDate,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                            border: Border.all(
+                              color: cs.onSurface.withOpacity(0.12),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Expanded(child: Text(_selectedExpiryLabel ?? 'Select date', style: GoogleFonts.roboto(fontSize: labelSize, color: _selectedExpiryLabel == null ? cs.onSurface.withOpacity(0.5) : cs.onSurface))),
-                              Icon(Icons.calendar_month_outlined, color: cs.primary),
+                              Expanded(
+                                child: Text(
+                                  _selectedExpiryLabel ?? 'Select date',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: labelSize,
+                                    color: _selectedExpiryLabel == null
+                                        ? cs.onSurface.withOpacity(0.5)
+                                        : cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.calendar_month_outlined,
+                                color: cs.primary,
+                              ),
                             ],
                           ),
                         ),
@@ -2520,30 +2649,80 @@ class _UserVehicleAddDocumentScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Visible To Admin', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
-                          Switch.adaptive(value: _isVisible, onChanged: (v) => setState(() => _isVisible = v)),
+                          Text(
+                            'Visible To Admin',
+                            style: GoogleFonts.roboto(
+                              fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: _isVisible,
+                            onChanged: (v) => setState(() => _isVisible = v),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Text('Tags (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'Tags (optional)',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      TextField(controller: _tagsController, decoration: _fieldDecoration(context, hint: 'Type and press Enter…')),
+                      TextField(
+                        controller: _tagsController,
+                        decoration: _fieldDecoration(
+                          context,
+                          hint: 'Type and press Enter…',
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                      Text('Description (optional)', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'Description (optional)',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      TextField(controller: _descriptionController, minLines: 3, maxLines: 4, decoration: _fieldDecoration(context, hint: 'Additional description…')),
+                      TextField(
+                        controller: _descriptionController,
+                        minLines: 3,
+                        maxLines: 4,
+                        decoration: _fieldDecoration(
+                          context,
+                          hint: 'Additional description…',
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                      Text('File Selection *', style: GoogleFonts.roboto(fontSize: 12 * (w / 420).clamp(0.9, 1.0), fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.7))),
+                      Text(
+                        'File Selection *',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12 * (w / 420).clamp(0.9, 1.0),
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface.withOpacity(0.7),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: _pickFile,
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 18,
+                            horizontal: 16,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                            border: Border.all(
+                              color: cs.onSurface.withOpacity(0.12),
+                            ),
                             color: cs.surface,
                           ),
                           child: Column(
@@ -2554,13 +2733,18 @@ class _UserVehicleAddDocumentScreenState
                                 style: GoogleFonts.roboto(
                                   fontSize: labelSize,
                                   fontWeight: FontWeight.w600,
-                                  color: _selectedFile == null ? cs.onSurface.withOpacity(0.6) : cs.onSurface,
+                                  color: _selectedFile == null
+                                      ? cs.onSurface.withOpacity(0.6)
+                                      : cs.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'JPG, JPEG, PNG, PDF, DOC, DOCX, WEBP (max 5.0 MB per file)',
-                                style: GoogleFonts.roboto(fontSize: labelSize - 4, color: cs.onSurface.withOpacity(0.55)),
+                                style: GoogleFonts.roboto(
+                                  fontSize: labelSize - 4,
+                                  color: cs.onSurface.withOpacity(0.55),
+                                ),
                               ),
                             ],
                           ),
@@ -2571,9 +2755,13 @@ class _UserVehicleAddDocumentScreenState
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: _uploading ? null : () => Navigator.pop(context),
+                              onTap: _uploading
+                                  ? null
+                                  : () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: cs.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
@@ -2596,7 +2784,9 @@ class _UserVehicleAddDocumentScreenState
                             child: GestureDetector(
                               onTap: _uploading ? null : _upload,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: cs.primary,
                                   borderRadius: BorderRadius.circular(16),
@@ -2608,7 +2798,10 @@ class _UserVehicleAddDocumentScreenState
                                           height: 18,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  cs.onPrimary,
+                                                ),
                                           ),
                                         )
                                       : Text(

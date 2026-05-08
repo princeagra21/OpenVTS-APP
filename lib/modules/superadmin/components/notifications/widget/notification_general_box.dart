@@ -1,6 +1,6 @@
 // components/notifications/widget/notification_general_box.dart
 import 'package:fleet_stack/modules/superadmin/components/notifications/widget/notification_toggle_tile.dart';
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 class NotificationGeneralBox extends StatefulWidget {

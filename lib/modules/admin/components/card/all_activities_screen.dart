@@ -1,7 +1,7 @@
 // UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:fleet_stack/modules/admin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

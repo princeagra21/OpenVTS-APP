@@ -12,8 +12,8 @@ import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_pr
 import 'package:fleet_stack/modules/admin/screens/drivers/widget/admin_driver_users_tab.dart';
 import 'package:fleet_stack/modules/admin/components/admin/navigate.dart';
 import 'package:fleet_stack/modules/admin/components/appbars/admin_home_appbar.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/modules/admin/utils/app_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 

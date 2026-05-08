@@ -1,7 +1,7 @@
 import 'package:fleet_stack/core/models/user_fleet_status_summary.dart';
 import 'package:fleet_stack/core/models/user_usage_last_7_days.dart';
 import 'package:fleet_stack/core/widgets/app_shimmer.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

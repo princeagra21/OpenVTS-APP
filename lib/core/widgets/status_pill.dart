@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'open_vts_status_chip.dart';
 
 class StatusPill extends StatelessWidget {
   final bool isActive;
@@ -17,44 +18,17 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pillColor = isDark
-        ? (isActive
-            ? colorScheme.primary.withOpacity(0.15)
-            : colorScheme.error.withOpacity(0.15))
-        : Colors.grey.shade50;
-    final fgColor = isDark
-        ? (isActive ? colorScheme.primary : colorScheme.error)
-        : colorScheme.onSurface;
-
-    return Container(
+    return OpenVtsStatusChip(
+      label: label,
+      tone: isActive ? OpenVtsStatusTone.success : OpenVtsStatusTone.danger,
+      icon: isActive ? Icons.check_circle : Icons.cancel,
       padding: padding,
-      decoration: BoxDecoration(
-        color: pillColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isActive ? Icons.check_circle : Icons.cancel,
-            size: fontSize + 2,
-            color: fgColor,
+      textStyle: (Theme.of(context).textTheme.labelMedium ?? const TextStyle())
+          .copyWith(
+            fontSize: fontSize,
+            height: 14 / 11,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.roboto(
-              fontSize: fontSize,
-              height: 14 / 11,
-              fontWeight: FontWeight.w600,
-              color: fgColor,
-            ),
-            softWrap: true,
-          ),
-        ],
-      ),
     );
   }
 }

@@ -14,7 +14,7 @@ import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile
 import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_recent_activity_box.dart';
 import 'package:fleet_stack/modules/superadmin/components/profile/widget/profile_setting_box.dart';
 import 'package:fleet_stack/modules/superadmin/layout/app_layout.dart';
-import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {

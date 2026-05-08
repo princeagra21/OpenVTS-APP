@@ -4,7 +4,7 @@ import 'package:fleet_stack/core/network/api_client.dart';
 import 'package:fleet_stack/core/network/api_exception.dart';
 import 'package:fleet_stack/core/repositories/admin_pricing_plans_repository.dart';
 import 'package:fleet_stack/core/storage/token_storage.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart' show AdaptiveUtils;
+import 'package:fleet_stack/core/utils/adaptive_utils.dart' show AdaptiveUtils;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -93,8 +93,9 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
         final message = err is ApiException
             ? err.message
             : 'Failed to create plan.';
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       },
     );
   }
@@ -292,7 +293,9 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                 child: SizedBox(
                   height: 56,
                   child: OutlinedButton(
-                    onPressed: _submitting ? null : () => Navigator.pop(context),
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
                       shape: RoundedRectangleBorder(
@@ -330,8 +333,9 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                cs.onPrimary,
+                              ),
                             ),
                           )
                         : Text(
@@ -409,10 +413,7 @@ class StylishTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: fs,
-          ),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
         ),
         const SizedBox(height: 8),
         SizedBox(

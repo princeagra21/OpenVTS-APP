@@ -13,7 +13,7 @@ import 'package:fleet_stack/modules/admin/components/auth/widgets/animated_orbit
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fleet_stack/modules/admin/utils/adaptive_utils.dart';
+import 'package:fleet_stack/core/utils/adaptive_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
