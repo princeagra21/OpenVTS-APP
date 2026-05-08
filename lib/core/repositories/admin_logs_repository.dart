@@ -42,17 +42,17 @@ class AdminLogsRepository {
 
     final responses = await Future.wait([
       api.get(
-        ApiPaths.path('/admin/logs/options'),
+        AdminApiPaths.logsOptions,
         queryParameters: optionsQuery.isEmpty ? null : optionsQuery,
         cancelToken: cancelToken,
       ),
       api.get(
-        ApiPaths.path('/admin/logs/activity'),
+        AdminApiPaths.logsActivity,
         queryParameters: activityQuery.isEmpty ? null : activityQuery,
         cancelToken: cancelToken,
       ),
       api.get(
-        ApiPaths.path('/admin/logs/events'),
+        AdminApiPaths.logsEvents,
         queryParameters: eventsQuery.isEmpty ? null : eventsQuery,
         cancelToken: cancelToken,
       ),

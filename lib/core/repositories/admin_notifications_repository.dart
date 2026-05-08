@@ -12,7 +12,7 @@ class AdminNotificationsRepository {
   Future<Result<List<AdminNotificationItem>>> getNotifications({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/notifications'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.notifications, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -39,7 +39,7 @@ class AdminNotificationsRepository {
 
   Future<Result<void>> markRead(String id, {CancelToken? cancelToken}) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/notifications/$id/read'),
+      AdminApiPaths.notificationRead(id),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -50,7 +50,7 @@ class AdminNotificationsRepository {
 
   Future<Result<void>> markAllRead({CancelToken? cancelToken}) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/notifications/read-all'),
+      AdminApiPaths.notificationsReadAll,
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );

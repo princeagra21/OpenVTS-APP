@@ -15,7 +15,8 @@ lib/modules/user/
 - Notifications and support
 
 ## UI Notes
-- Typography: `GoogleFonts.roboto`
+- Design system source of truth: `lib/design_system/theme` + `lib/design_system/components`
+- Typography/tokens come from centralized `OpenVtsTheme` and `OpenVtsTypography`
 - Shared design utilities: `AdaptiveUtils`, `AppUtils`
 - Loading states: `AppShimmer`
 

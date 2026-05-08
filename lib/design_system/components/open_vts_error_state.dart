@@ -7,17 +7,28 @@ import 'open_vts_card.dart';
 class OpenVtsErrorState extends StatelessWidget {
   const OpenVtsErrorState({
     super.key,
-    required this.title,
-    required this.message,
+    this.title = 'Something went wrong',
+    this.message,
+    this.description,
+    this.retryLabel = 'Try again',
     this.onRetry,
   });
 
   final String title;
-  final String message;
+  final String? message;
+  // Legacy alias used by core widget API.
+  final String? description;
+  // Legacy retry button label.
+  final String retryLabel;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final String? resolvedMessage =
+        (message ?? description)?.trim().isNotEmpty == true
+        ? (message ?? description)!.trim()
+        : null;
+
     return OpenVtsCard(
       borderColor: OpenVtsColors.danger.withOpacity(0.25),
       child: Column(
@@ -34,16 +45,18 @@ class OpenVtsErrorState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium),
           ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium),
-          ),
+          if (resolvedMessage != null) ...[
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Text(
+              resolvedMessage,
+              textAlign: TextAlign.center,
+              style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium),
+            ),
+          ],
           if (onRetry != null) ...[
             const SizedBox(height: OpenVtsSpacing.lg),
             OpenVtsButton(
-              label: 'Retry',
+              label: retryLabel,
               onPressed: onRetry,
               variant: OpenVtsButtonVariant.danger,
             ),

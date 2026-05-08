@@ -4,7 +4,7 @@ import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/user_notification_preferences.dart';
 import 'package:open_vts/core/navigation/app_routes.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
@@ -401,4 +401,5 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
     );
   }
 }
+
 

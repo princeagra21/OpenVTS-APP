@@ -23,7 +23,7 @@ class AdminPaymentsRepository {
     };
 
     final res = await api.post(
-      ApiPaths.path('/admin/payments/renew'),
+      AdminApiPaths.paymentsRenew,
       data: payload,
       cancelToken: cancelToken,
     );

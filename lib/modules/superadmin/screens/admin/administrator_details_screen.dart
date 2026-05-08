@@ -11,14 +11,13 @@ import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class AdministratorDetailsScreen extends StatefulWidget {
   // Made stateful to manage tab state
@@ -127,8 +126,8 @@ class _AdministratorDetailsScreenState
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 8.0
         : AdaptiveUtils.isSmallScreen(screenWidth)
-            ? 10.0
-            : 12.0;
+        ? 10.0
+        : 12.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -162,9 +161,7 @@ class _AdministratorDetailsScreenState
                   ),
                   const SizedBox(height: 4),
                   KeyedSubtree(
-                    key: ValueKey(
-                      'detail_${selectedTab}_$_detailReloadNonce',
-                    ),
+                    key: ValueKey('detail_${selectedTab}_$_detailReloadNonce'),
                     child: _buildTabContent(),
                   ),
                   const SizedBox(height: 24),
@@ -225,7 +222,7 @@ class _AdministratorDetailsScreenState
         return Column(
           children: const [
             SizedBox(height: 24),
-            LocalizationHeader(),
+            SuperadminLocalizationScreen(),
             SizedBox(height: 24),
           ],
         );
@@ -241,10 +238,7 @@ class _AdministratorDetailsScreenState
         return Column(
           children: [
             const SizedBox(height: 24),
-            AdminPaymentsTab(
-              adminId: widget.id,
-              adminName: _headerName,
-            ),
+            AdminPaymentsTab(adminId: widget.id, adminName: _headerName),
             const SizedBox(height: 24),
           ],
         );

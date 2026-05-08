@@ -1,9 +1,7 @@
 import 'package:open_vts/core/services/push_notifications_service.dart';
-import 'package:open_vts/core/theme/open_vts_spacing.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:flutter/material.dart';
-
-import 'open_vts_button.dart';
-import 'open_vts_card.dart';
 
 class PushNotificationBanner extends StatelessWidget {
   final PushDeviceState state;

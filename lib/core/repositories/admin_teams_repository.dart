@@ -23,7 +23,7 @@ class AdminTeamsRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      ApiPaths.path('/admin/teams'),
+      AdminApiPaths.teams,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -53,7 +53,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/teams/$teamId'),
+      AdminApiPaths.teamDetails(teamId),
       data: <String, dynamic>{'isActive': isActive},
       cancelToken: cancelToken,
     );
@@ -69,7 +69,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/teams/$teamId'),
+      AdminApiPaths.teamDetails(teamId),
       cancelToken: cancelToken,
     );
 
@@ -88,7 +88,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/teams/$teamId'),
+      AdminApiPaths.teamDetails(teamId),
       data: <String, dynamic>{'password': password},
       cancelToken: cancelToken,
     );
@@ -109,7 +109,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/teams/$teamId'),
+      AdminApiPaths.teamDetails(teamId),
       data: <String, dynamic>{
         'name': name.trim(),
         'email': email.trim(),
@@ -136,7 +136,7 @@ class AdminTeamsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/admin/teams'),
+      AdminApiPaths.teams,
       data: <String, dynamic>{
         'name': name,
         'email': email,

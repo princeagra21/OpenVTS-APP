@@ -12,7 +12,7 @@ class UserMapRepository {
   Future<Result<List<MapVehiclePoint>>> getTelemetry({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/map-telemetry'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.mapTelemetry, cancelToken: cancelToken);
     return _mapPointListResult(
       res,
       extraKeys: const ['telemetry', 'points', 'vehicles', 'rows'],
@@ -29,7 +29,7 @@ class UserMapRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      ApiPaths.path('/user/vehicles/by-imei/$imei/trail'),
+      UserApiPaths.vehicleByImeiTrail(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -54,7 +54,7 @@ class UserMapRepository {
     if (maxPoints != null) query['maxPoints'] = maxPoints;
 
     final res = await api.get(
-      ApiPaths.path('/user/vehicles/by-imei/$imei/replay'),
+      UserApiPaths.vehicleByImeiReplay(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );
@@ -83,7 +83,7 @@ class UserMapRepository {
     if (overspeedKph != null) query['overspeedKph'] = overspeedKph;
 
     final res = await api.get(
-      ApiPaths.path('/user/vehicles/by-imei/$imei/history'),
+      UserApiPaths.vehicleByImeiHistory(imei),
       queryParameters: query,
       cancelToken: cancelToken,
     );

@@ -4,7 +4,6 @@ import 'package:open_vts/core/models/admin_team_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_teams_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/components/admin/navigate.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
@@ -15,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class TeamDetailsScreen extends StatefulWidget {
   final String id;
@@ -939,3 +938,5 @@ class _DatePair {
 
   const _DatePair(this.date, this.time);
 }
+
+

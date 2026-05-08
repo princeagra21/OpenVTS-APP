@@ -12,7 +12,7 @@ class AdminAppPreferencesRepository {
   Future<Result<AdminAppPreferences>> getAdminAppPreferences({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/config'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.config, cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(AdminAppPreferences(_extractMap(data))),
@@ -25,7 +25,7 @@ class AdminAppPreferencesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/config'),
+      AdminApiPaths.config,
       data: payload,
       cancelToken: cancelToken,
     );

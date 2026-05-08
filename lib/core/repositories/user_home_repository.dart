@@ -16,7 +16,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/dashboard/fleet-status'),
+      UserApiPaths.dashboardFleetStatus,
       queryParameters: <String, dynamic>{
         'rk': DateTime.now().millisecondsSinceEpoch,
       },
@@ -33,7 +33,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/dashboard/usage-last-7-days'),
+      UserApiPaths.dashboardUsageLast7Days,
       cancelToken: cancelToken,
     );
 
@@ -48,7 +48,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/dashboard/recent-alerts'),
+      UserApiPaths.dashboardRecentAlerts,
       queryParameters: {'limit': limit},
       cancelToken: cancelToken,
     );
@@ -70,7 +70,7 @@ class UserHomeRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/dashboard/top-performing-assets'),
+      UserApiPaths.dashboardTopPerformingAssets,
       queryParameters: {'limit': limit},
       cancelToken: cancelToken,
     );

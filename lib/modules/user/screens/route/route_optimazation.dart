@@ -4,7 +4,6 @@ import 'package:open_vts/core/models/user_route_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_routes_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
@@ -1145,3 +1144,4 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     );
   }
 }
+

@@ -15,7 +15,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/calendar/events'),
+      AdminApiPaths.calendarEvents,
       queryParameters: <String, dynamic>{'from': from, 'to': to},
       cancelToken: cancelToken,
     );
@@ -83,7 +83,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/calendar/user/$userId'),
+      AdminApiPaths.calendarUser(userId),
       cancelToken: cancelToken,
     );
 
@@ -98,7 +98,7 @@ class AdminCalendarRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/calendar/day'),
+      AdminApiPaths.calendarDay,
       queryParameters: {'date': date},
       cancelToken: cancelToken,
     );

@@ -15,7 +15,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/subusers'),
+      UserApiPaths.subusers,
       queryParameters: {'page': page, 'limit': limit},
       cancelToken: cancelToken,
     );
@@ -47,7 +47,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/subusers'),
+      UserApiPaths.subusers,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -64,7 +64,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/user/subusers/$id'),
+      UserApiPaths.subuserDetails(id),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -80,7 +80,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/subusers/$id'),
+      UserApiPaths.subuserDetails(id),
       cancelToken: cancelToken,
     );
 
@@ -102,7 +102,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/subusers/$id/vehicles'),
+      UserApiPaths.subuserVehicles(id),
       cancelToken: cancelToken,
     );
 
@@ -133,7 +133,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      ApiPaths.path('/user/subusers/$id'),
+      UserApiPaths.subuserDetails(id),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -148,7 +148,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/subusers/$id/vehicles/assign'),
+      UserApiPaths.subuserVehiclesAssign(id),
       data: {'vehicleIds': vehicleIds},
       cancelToken: cancelToken,
     );
@@ -164,7 +164,7 @@ class UserSubUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/subusers/$id/vehicles/unassign'),
+      UserApiPaths.subuserVehiclesUnassign(id),
       data: {'vehicleIds': vehicleIds},
       cancelToken: cancelToken,
     );

@@ -81,7 +81,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
       _api ??= ApiClientProvider.create();
 
       final res = await _api!.post(
-        ApiPaths.path('/admin/updateuserpassword/${widget.userId}'),
+        AdminApiPaths.updateUserPassword(widget.userId),
         data: <String, dynamic>{'newPassword': newPassword},
         cancelToken: token,
       );

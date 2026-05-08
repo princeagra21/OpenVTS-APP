@@ -28,7 +28,7 @@ class AdminSimCardsRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      ApiPaths.path('/admin/simcards'),
+      AdminApiPaths.simcards,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -58,7 +58,7 @@ class AdminSimCardsRepository {
   Future<Result<List<SimProviderOption>>> getSimProviders({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/simproviders'), cancelToken: cancelToken);
+    final res = await api.get(PublicApiPaths.simProviders, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -88,7 +88,7 @@ class AdminSimCardsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/simcards/$simId'),
+      AdminApiPaths.simcardDetails(simId),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -104,7 +104,7 @@ class AdminSimCardsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/admin/simcards'),
+      AdminApiPaths.simcards,
       data: payload,
       cancelToken: cancelToken,
     );

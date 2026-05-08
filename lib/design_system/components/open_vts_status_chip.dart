@@ -9,11 +9,20 @@ class OpenVtsStatusChip extends StatelessWidget {
     super.key,
     required this.label,
     this.tone = OpenVtsStatusTone.neutral,
+    this.icon,
+    this.padding,
+    this.textStyle,
     this.compact = false,
   });
 
   final String label;
   final OpenVtsStatusTone tone;
+  // Legacy optional leading icon support.
+  final IconData? icon;
+  // Legacy custom padding support.
+  final EdgeInsetsGeometry? padding;
+  // Legacy custom text style support.
+  final TextStyle? textStyle;
   final bool compact;
 
   Color _background() {
@@ -48,24 +57,39 @@ class OpenVtsStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final EdgeInsetsGeometry resolvedPadding =
+        padding ??
+        EdgeInsets.symmetric(
+          horizontal: compact ? OpenVtsSpacing.sm : OpenVtsSpacing.md,
+          vertical: compact ? OpenVtsSpacing.xs : OpenVtsSpacing.sm,
+        );
+
+    final Color foreground = _foreground();
+
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? OpenVtsSpacing.sm : OpenVtsSpacing.md,
-        vertical: compact ? OpenVtsSpacing.xs : OpenVtsSpacing.sm,
-      ),
+      padding: resolvedPadding,
       decoration: BoxDecoration(
         color: _background(),
         borderRadius: OpenVtsRadius.radiusLg,
-        border: Border.all(color: _foreground().withOpacity(0.25), width: 1),
+        border: Border.all(color: foreground.withOpacity(0.25), width: 1),
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: OpenVtsTypography.labelLarge.copyWith(
-          color: _foreground(),
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) Icon(icon, size: 14, color: foreground),
+          if (icon != null) const SizedBox(width: OpenVtsSpacing.xs),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style:
+                textStyle ??
+                OpenVtsTypography.labelLarge.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
       ),
     );
   }

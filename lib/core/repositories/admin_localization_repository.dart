@@ -12,7 +12,7 @@ class AdminLocalizationRepository {
   Future<Result<AdminLocalizationSettings>> getLocalization({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/localization'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.localization, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -31,7 +31,7 @@ class AdminLocalizationRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/localization'),
+      AdminApiPaths.localization,
       data: payload,
       cancelToken: cancelToken,
     );

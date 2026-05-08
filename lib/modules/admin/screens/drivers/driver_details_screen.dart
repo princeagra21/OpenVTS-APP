@@ -6,7 +6,6 @@ import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_drivers_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/modules/admin/screens/drivers/widget/admin_driver_documents_tab.dart';
 import 'package:open_vts/modules/admin/screens/drivers/widget/admin_driver_profile_tab.dart';
 import 'package:open_vts/modules/admin/screens/drivers/widget/admin_driver_users_tab.dart';
@@ -17,7 +16,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class AdminDriverDetailsScreen extends StatefulWidget {
   final String id;
@@ -373,3 +372,5 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
     }
   }
 }
+
+

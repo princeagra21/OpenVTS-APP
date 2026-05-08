@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/repositories/user_profile_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -148,15 +148,16 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => const _LogoutConfirmDialog(),
     );
     if (shouldLogout != true) return;
-    final storage = TokenStorage.defaultInstance();
-    final superToken = await storage.popImpersonatorToken();
-    if (superToken != null && superToken.isNotEmpty) {
-      await storage.writeAccessToken(superToken);
+    final sessionService = AppContainer.instance.sessionService;
+    await sessionService.logout();
+    if (!mounted) return;
+    final restoredToken = await sessionService.readAccessToken();
+    if (!mounted) return;
+    if (restoredToken != null && restoredToken.trim().isNotEmpty) {
       if (!mounted) return;
       context.go(AppRoutes.adminHome);
       return;
     }
-    await storage.clear();
     if (!mounted) return;
     context.go(AppRoutes.login);
   }

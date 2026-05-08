@@ -17,7 +17,7 @@ class AdminVehicleRepository {
     if (limit > 0) qp['limit'] = limit;
 
     final res = await api.get(
-      ApiPaths.path('/admin/vehicles'),
+      AdminApiPaths.vehicles,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );
@@ -51,7 +51,7 @@ class AdminVehicleRepository {
     List<String>? imeis,
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/map-telemetry'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.mapTelemetry, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {

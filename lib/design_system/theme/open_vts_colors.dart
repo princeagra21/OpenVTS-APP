@@ -1,44 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart' as core;
 
 class OpenVtsColors {
   const OpenVtsColors._();
 
-  static const Color brandInk = core.OpenVtsColors.brandInk;
-  static const Color brandInkSoft = core.OpenVtsColors.brandInkSoft;
-  static const Color white = core.OpenVtsColors.white;
+  static const Color brandInk = Color(0xFF141118);
+  static const Color brandInkSoft = Color(0xFF1D1821);
+  static const Color white = Color(0xFFFFFFFF);
   static const Color transparent = Color(0x00000000);
 
-  static const Color background = core.OpenVtsColors.background;
-  static const Color surface = core.OpenVtsColors.surface;
-  static const Color border = core.OpenVtsColors.border;
-  static const Color divider = core.OpenVtsColors.divider;
+  static const Color background = Color(0xFFFAFAFB);
+  static const Color surface = Color(0xFFF4F3F6);
+  static const Color border = Color(0xFFE7E3EA);
+  static const Color divider = Color(0xFFD8D3DC);
 
-  static const Color textPrimary = core.OpenVtsColors.textPrimary;
-  static const Color textSecondary = core.OpenVtsColors.textSecondary;
-  static const Color textTertiary = core.OpenVtsColors.textTertiary;
+  static const Color textPrimary = brandInk;
+  static const Color textSecondary = Color(0xFF6B6570);
+  static const Color textTertiary = Color(0xFF908A96);
 
-  static const Color darkBackground = core.OpenVtsColors.darkBackground;
-  static const Color darkSurface = core.OpenVtsColors.darkSurface;
-  static const Color darkBorder = core.OpenVtsColors.darkBorder;
-  static const Color darkDivider = core.OpenVtsColors.darkDivider;
-  static const Color darkTextPrimary = core.OpenVtsColors.darkTextPrimary;
-  static const Color darkTextSecondary = core.OpenVtsColors.darkTextSecondary;
-  static const Color darkTextTertiary = core.OpenVtsColors.darkTextTertiary;
+  static const Color darkBackground = Color(0xFF121015);
+  static const Color darkSurface = Color(0xFF1A1620);
+  static const Color darkBorder = Color(0xFF342D3D);
+  static const Color darkDivider = Color(0xFF433A4E);
+  static const Color darkTextPrimary = white;
+  static const Color darkTextSecondary = Color(0xFFC4BFCA);
+  static const Color darkTextTertiary = Color(0xFF9F97AB);
 
-  static const Color success = core.OpenVtsColors.success;
-  static const Color warning = core.OpenVtsColors.warning;
-  static const Color danger = core.OpenVtsColors.danger;
+  static const Color success = Color(0xFF2D6A4F);
+  static const Color warning = Color(0xFF8A5C1D);
+  static const Color danger = Color(0xFF8A2E43);
 
-  static const Color panelDark = core.OpenVtsColors.panelDark;
-  static const Color panelLight = core.OpenVtsColors.panelLight;
-  static const Color panelDarkAlt = core.OpenVtsColors.panelDarkAlt;
-  static const Color panelLightAlt = core.OpenVtsColors.panelLightAlt;
+  // Legacy feature-screen tokens migrated from raw hex literals.
+  static const Color panelDark = Color(0xFF0A0A0A);
+  static const Color panelLight = Color(0xFFF5F5F7);
+  static const Color panelDarkAlt = Color(0xFF151515);
+  static const Color panelLightAlt = Color(0xFFF4F5F7);
 
-  static const Color themeCorporate = core.OpenVtsColors.themeCorporate;
-  static const Color themeModern = core.OpenVtsColors.themeModern;
-  static const Color themeLuxury = core.OpenVtsColors.themeLuxury;
-  static const Color themeFuturistic = core.OpenVtsColors.themeFuturistic;
+  static const Color themeCorporate = Color(0xFF0055FF);
+  static const Color themeModern = Color(0xFF6A00FF);
+  static const Color themeLuxury = Color(0xFFB8933D);
+  static const Color themeFuturistic = Color(0xFF00FFFF);
 
   static const Color overlayStrong = Color(0x33000000);
   static const Color overlaySoft = Color(0x14000000);

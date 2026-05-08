@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 import 'package:open_vts/core/models/admin_log_item.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
@@ -376,3 +376,4 @@ class AdminLogDetailsScreen extends StatelessWidget {
     );
   }
 }
+

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/modules/user/screens/drivers/driver_screen.dart';
 import 'package:open_vts/modules/user/screens/sub_users/sub_user_screen.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/navigation/app_routes.dart';
 
 class AccountsScreen extends StatefulWidget {
@@ -220,3 +220,4 @@ class _SmallTab extends StatelessWidget {
     );
   }
 }
+

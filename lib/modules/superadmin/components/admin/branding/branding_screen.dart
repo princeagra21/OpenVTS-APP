@@ -1,6 +1,5 @@
-import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
 import 'package:open_vts/main.dart' show themeController;
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -260,3 +259,4 @@ class _BrandingScreenState extends State<BrandingScreen> {
     );
   }
 }
+

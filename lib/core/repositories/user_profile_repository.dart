@@ -13,7 +13,7 @@ class UserProfileRepository {
 
   Future<Result<AdminProfile>> getMyProfile({CancelToken? cancelToken}) async {
     final res = await api.get(
-      ApiPaths.path('/user/profile'),
+      UserApiPaths.profile,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -27,7 +27,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/user/profile'),
+      UserApiPaths.profile,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -52,7 +52,7 @@ class UserProfileRepository {
     };
 
     final res = await api.patch(
-      ApiPaths.path('/user/updatepassword'),
+      UserApiPaths.updatePassword,
       data: body,
       cancelToken: cancelToken,
     );
@@ -64,7 +64,7 @@ class UserProfileRepository {
 
   Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      ApiPaths.path('/user/profile/verify/email/request'),
+      UserApiPaths.profileVerifyEmailRequest,
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
@@ -79,7 +79,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/profile/verify/email/confirm'),
+      UserApiPaths.profileVerifyEmailConfirm,
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -91,7 +91,7 @@ class UserProfileRepository {
 
   Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      ApiPaths.path('/user/profile/verify/whatsapp/request'),
+      UserApiPaths.profileVerifyWhatsappRequest,
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
     );
@@ -106,7 +106,7 @@ class UserProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/profile/verify/whatsapp/confirm'),
+      UserApiPaths.profileVerifyWhatsappConfirm,
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );

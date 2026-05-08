@@ -16,7 +16,7 @@ class UserPolicyRepository {
   Future<Result<List<UserPolicy>>> getPolicies({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/policies'), cancelToken: cancelToken);
+    final res = await api.get(PublicApiPaths.policies, cancelToken: cancelToken);
     return res.when(
       success: (data) => Result.ok(UserPolicy.fromResponse(data)),
       failure: (err) => Result.fail(err),
@@ -32,7 +32,7 @@ class UserPolicyRepository {
 
     for (final update in updates) {
       final res = await api.patch(
-        ApiPaths.path('/superadmin/policy'),
+        SuperadminApiPaths.policy,
         data: update,
         cancelToken: cancelToken,
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/session/session_service.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
 import 'package:open_vts/core/repositories/push_token_repository.dart';
@@ -15,6 +16,7 @@ class AppContainer {
   AppContainer._({
     required this.appConfig,
     required this.tokenStorage,
+    required this.sessionService,
     required this.apiClient,
     required this.authRepository,
     required this.pushNotificationsService,
@@ -31,6 +33,7 @@ class AppContainer {
 
     final appConfig = AppConfig.fromDartDefine();
     final tokenStorage = TokenStorage.defaultInstance();
+    final sessionService = SessionService(tokenStorage: tokenStorage);
     final apiClient = ApiClient(config: appConfig, tokenStorage: tokenStorage);
 
     final pushTokenRepository = PushTokenRepository(api: apiClient);
@@ -44,6 +47,7 @@ class AppContainer {
     final container = AppContainer._(
       appConfig: appConfig,
       tokenStorage: tokenStorage,
+      sessionService: sessionService,
       apiClient: apiClient,
       authRepository: AuthRepository(
         api: apiClient,
@@ -77,6 +81,7 @@ class AppContainer {
 
   final AppConfig appConfig;
   final TokenStorageBase tokenStorage;
+  final SessionService sessionService;
   final ApiClient apiClient;
   final AuthRepository authRepository;
   final PushNotificationsService pushNotificationsService;

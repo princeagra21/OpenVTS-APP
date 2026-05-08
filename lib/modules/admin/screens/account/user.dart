@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/navigation/app_routes.dart';
 
 import 'package:dio/dio.dart';
@@ -316,12 +316,9 @@ class _UserScreenState extends State<UserScreen> {
 
       result.when(
         success: (newToken) async {
-          final storage = AppContainer.instance.tokenStorage;
-          final currentToken = await storage.readAccessToken();
-          if (currentToken != null && currentToken.isNotEmpty) {
-            await storage.writeImpersonatorToken(currentToken);
-          }
-          await storage.writeAccessToken(newToken);
+          await AppContainer.instance.sessionService.startImpersonation(
+            newToken,
+          );
           if (!mounted) return;
           context.go(AppRoutes.userHome);
         },

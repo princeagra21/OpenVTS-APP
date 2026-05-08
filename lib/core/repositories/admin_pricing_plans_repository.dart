@@ -12,7 +12,7 @@ class AdminPricingPlansRepository {
   Future<Result<List<PricingPlan>>> getPlans({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/pricingplans'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.pricingPlans, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -48,7 +48,7 @@ class AdminPricingPlansRepository {
     };
 
     final res = await api.post(
-      ApiPaths.path('/admin/pricingplans'),
+      AdminApiPaths.pricingPlans,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -75,7 +75,7 @@ class AdminPricingPlansRepository {
     };
 
     final res = await api.patch(
-      ApiPaths.path('/admin/pricingplans/$id'),
+      AdminApiPaths.pricingPlanDetails(id),
       data: payload,
       cancelToken: cancelToken,
     );

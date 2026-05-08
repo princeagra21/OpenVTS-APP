@@ -1,3 +1,4 @@
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/navigation/app_routes.dart';
@@ -10,7 +11,6 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +71,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   Future<void> _loadCurrentProfile() async {
     _ensureRepo();
-    _authToken = await TokenStorage.defaultInstance().readAccessToken() ?? '';
+    _authToken =
+        await AppContainer.instance.sessionService.readAccessToken() ?? '';
     final res = await _repo!.getSuperadminProfile();
     if (!mounted) return;
     res.when(
@@ -174,7 +175,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   Future<void> _pickAndUploadImage() async {
     if (_uploadingImage) return;
-    
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       withData: true,
@@ -223,14 +224,14 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   Future<void> _deleteImage() async {
     if (_imageUrl == null || _imageUrl!.isEmpty) return;
-    
+
     // For deletion, the backend usually expects the profile to be updated with empty image
-    // or a specific DELETE endpoint for documents. 
-    // Since we don't have a direct "delete profile pic" in SuperadminRepo yet that is proven, 
+    // or a specific DELETE endpoint for documents.
+    // Since we don't have a direct "delete profile pic" in SuperadminRepo yet that is proven,
     // we'll at least clear it in UI and notify the user it's a placeholder.
     // Actually, I added deleteSuperadminFile earlier. But what's the file ID?
     // Often for profile pics, uploading a new one replaces it.
-    
+
     setState(() => _imageUrl = null);
     _snackOnce('Profile picture removed (UI only for now)');
   }
@@ -305,7 +306,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   String _countryCode() {
     final code = _selectedCountryOption?.isoCode;
-    if (code != null && code.trim().isNotEmpty) return code.trim().toUpperCase();
+    if (code != null && code.trim().isNotEmpty)
+      return code.trim().toUpperCase();
     final cc = _countryController.text.trim();
     if (cc.isNotEmpty) return cc.toUpperCase();
     return '';
@@ -568,8 +570,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search',
                           filled: true,
-                          fillColor:
-                              colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          fillColor: colorScheme.surfaceContainerHighest
+                              .withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -592,8 +594,9 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                               const SizedBox(height: 4),
                           itemBuilder: (_, index) {
                             final item = filtered[index];
-                            final trailing =
-                                trailingFor != null ? trailingFor(item) : null;
+                            final trailing = trailingFor != null
+                                ? trailingFor(item)
+                                : null;
                             return ListTile(
                               title: Text(
                                 labelFor(item),
@@ -862,46 +865,47 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                       child: ClipOval(
                         child: _uploadingImage
                             ? const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                                ? CachedNetworkImage(
-                                    imageUrl: _imageUrl!,
-                                    fit: BoxFit.cover,
-                                    httpHeaders: _authToken.isNotEmpty
-                                        ? {'Authorization': 'Bearer $_authToken'}
-                                        : null,
-                                    placeholder: (_, __) => const AppShimmer(
-                                      width: 100,
-                                      height: 100,
-                                      radius: 50,
-                                    ),
-                                    errorWidget: (_, __, ___) => Center(
-                                      child: Text(
-                                        _nameController.text.isNotEmpty
-                                            ? _nameController.text[0]
-                                                .toUpperCase()
-                                            : 'A',
-                                        style: AppFonts.roboto(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.bold,
-                                          color: colorScheme.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Center(
-                                    child: Text(
-                                      _nameController.text.isNotEmpty
-                                          ? _nameController.text[0].toUpperCase()
-                                          : 'A',
-                                      style: AppFonts.roboto(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.primary,
-                                      ),
+                            ? CachedNetworkImage(
+                                imageUrl: _imageUrl!,
+                                fit: BoxFit.cover,
+                                httpHeaders: _authToken.isNotEmpty
+                                    ? {'Authorization': 'Bearer $_authToken'}
+                                    : null,
+                                placeholder: (_, __) => const AppShimmer(
+                                  width: 100,
+                                  height: 100,
+                                  radius: 50,
+                                ),
+                                errorWidget: (_, __, ___) => Center(
+                                  child: Text(
+                                    _nameController.text.isNotEmpty
+                                        ? _nameController.text[0].toUpperCase()
+                                        : 'A',
+                                    style: AppFonts.roboto(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.primary,
                                     ),
                                   ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  _nameController.text.isNotEmpty
+                                      ? _nameController.text[0].toUpperCase()
+                                      : 'A',
+                                  style: AppFonts.roboto(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     Positioned(
@@ -914,7 +918,10 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           decoration: BoxDecoration(
                             color: colorScheme.primary,
                             shape: BoxShape.circle,
-                            border: Border.all(color: colorScheme.surface, width: 2),
+                            border: Border.all(
+                              color: colorScheme.surface,
+                              width: 2,
+                            ),
                           ),
                           child: Icon(
                             Icons.edit,
@@ -935,7 +942,10 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                             decoration: BoxDecoration(
                               color: colorScheme.error,
                               shape: BoxShape.circle,
-                              border: Border.all(color: colorScheme.surface, width: 2),
+                              border: Border.all(
+                                color: colorScheme.surface,
+                                width: 2,
+                              ),
                             ),
                             child: Icon(
                               Icons.delete_outline,
@@ -1016,8 +1026,9 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    (_selectedPrefix?.code ?? '+91')
-                                            .startsWith('+')
+                                    (_selectedPrefix?.code ?? '+91').startsWith(
+                                          '+',
+                                        )
                                         ? (_selectedPrefix?.code ?? '+91')
                                         : '+${_selectedPrefix?.code ?? '91'}',
                                     style: AppFonts.roboto(fontSize: 16),
@@ -1037,16 +1048,17 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                 fontSize: labelSize,
                                 color: colorScheme.onSurface,
                               ),
-                              decoration: _minimalDecoration(
-                                context,
-                                hint: "Phone Number",
-                              ).copyWith(
-                                prefixIcon: Icon(
-                                  Icons.phone_outlined,
-                                  color: colorScheme.primary,
-                                  size: 22,
-                                ),
-                              ),
+                              decoration:
+                                  _minimalDecoration(
+                                    context,
+                                    hint: "Phone Number",
+                                  ).copyWith(
+                                    prefixIcon: Icon(
+                                      Icons.phone_outlined,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                         ],

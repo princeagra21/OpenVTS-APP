@@ -11,7 +11,7 @@ class AdminProfileRepository {
   const AdminProfileRepository({required this.api});
 
   Future<Result<AdminProfile>> getMyProfile({CancelToken? cancelToken}) async {
-    final res = await api.get(ApiPaths.path('/admin/profile'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.profile, cancelToken: cancelToken);
     return res.when(
       success: (data) => Result.ok(AdminProfile(_asMap(data))),
       failure: (err) => Result.fail(err),
@@ -23,7 +23,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/profile'),
+      AdminApiPaths.profile,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -54,7 +54,7 @@ class AdminProfileRepository {
     };
 
     final res = await api.patch(
-      ApiPaths.path('/admin/updatepassword'),
+      AdminApiPaths.updatePassword,
       data: body,
       cancelToken: cancelToken,
     );
@@ -71,7 +71,7 @@ class AdminProfileRepository {
   // POST /admin/profile/verify/whatsapp/confirm body: { "otp": "123456" }
   Future<Result<void>> sendEmailOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      ApiPaths.path('/admin/profile/verify/email/request'),
+      AdminApiPaths.profileVerifyEmailRequest,
       // Some backend deployments reject POST with a null JSON body.
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
@@ -87,7 +87,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/admin/profile/verify/email/confirm'),
+      AdminApiPaths.profileVerifyEmailConfirm,
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -99,7 +99,7 @@ class AdminProfileRepository {
 
   Future<Result<void>> sendPhoneOtp({CancelToken? cancelToken}) async {
     final res = await api.post(
-      ApiPaths.path('/admin/profile/verify/whatsapp/request'),
+      AdminApiPaths.profileVerifyWhatsappRequest,
       // Some backend deployments reject POST with a null JSON body.
       data: const <String, dynamic>{},
       cancelToken: cancelToken,
@@ -115,7 +115,7 @@ class AdminProfileRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/admin/profile/verify/whatsapp/confirm'),
+      AdminApiPaths.profileVerifyWhatsappConfirm,
       data: {'otp': code.trim()},
       cancelToken: cancelToken,
     );
@@ -137,7 +137,7 @@ class AdminProfileRepository {
       );
     }
     final res = await api.patch(
-      ApiPaths.path('/admin/companydetails/$id'),
+      AdminApiPaths.companyDetails(id),
       data: payload,
       cancelToken: cancelToken,
     );

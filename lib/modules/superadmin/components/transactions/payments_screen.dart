@@ -18,7 +18,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pdf/pdf.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class PaymentsScreen extends StatefulWidget {
@@ -2069,3 +2069,4 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     );
   }
 }
+

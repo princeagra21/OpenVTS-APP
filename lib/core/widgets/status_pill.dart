@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'open_vts_status_chip.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
 
 class StatusPill extends StatelessWidget {
   final bool isActive;

@@ -19,7 +19,7 @@ class AdminNotificationRepository {
     if (q.isNotEmpty) qp['search'] = q;
 
     final res = await api.get(
-      ApiPaths.path('/admin/users'),
+      AdminApiPaths.users,
       queryParameters: qp.isEmpty ? null : qp,
       cancelToken: cancelToken,
     );

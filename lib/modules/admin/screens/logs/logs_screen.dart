@@ -5,7 +5,6 @@ import 'package:open_vts/core/models/admin_log_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_logs_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
@@ -842,3 +841,4 @@ class _LogsScreenState extends State<LogsScreen> {
     );
   }
 }
+

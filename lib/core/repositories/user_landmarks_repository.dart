@@ -11,21 +11,21 @@ class UserLandmarksRepository {
   Future<Result<List<Map<String, dynamic>>>> getGeofences({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/geofences'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.geofences, cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['geofences']);
   }
 
   Future<Result<List<Map<String, dynamic>>>> getRoutes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/routes'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.routes, cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['routes']);
   }
 
   Future<Result<List<Map<String, dynamic>>>> getPois({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/pois'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.pois, cancelToken: cancelToken);
     return _listResult(res, extraKeys: const ['pois']);
   }
 
@@ -34,7 +34,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/geofences'),
+      UserApiPaths.geofences,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -49,7 +49,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/routes'),
+      UserApiPaths.routes,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -64,7 +64,7 @@ class UserLandmarksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/pois'),
+      UserApiPaths.pois,
       data: payload,
       cancelToken: cancelToken,
     );

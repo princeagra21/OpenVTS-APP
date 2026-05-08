@@ -5,7 +5,6 @@ import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_support_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/screens/support/new_ticket_screen.dart';
 import 'package:open_vts/modules/admin/screens/support/support_screen.dart';
@@ -67,7 +66,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
     setState(() => _loading = true);
 
     final result = await _repoOrCreate().api.get(
-      ApiPaths.path('/admin/tickets'),
+      AdminApiPaths.tickets,
       queryParameters: <String, dynamic>{
         'userId': widget.userId,
         'rk': DateTime.now().millisecondsSinceEpoch,
@@ -684,3 +683,4 @@ class _TicketCardLocal extends StatelessWidget {
     );
   }
 }
+

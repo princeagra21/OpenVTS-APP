@@ -26,7 +26,7 @@ class UserTransactionsRepository {
     }
 
     final res = await api.get(
-      ApiPaths.path('/user/transactions'),
+      UserApiPaths.transactions,
       queryParameters: queryParameters,
       cancelToken: cancelToken,
     );

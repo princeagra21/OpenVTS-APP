@@ -13,7 +13,7 @@ import 'package:open_vts/modules/user/router/user_routes.dart';
 import 'package:open_vts/onboarding_screen.dart';
 import 'package:open_vts/modules/superadmin/router/superadmin_routes.dart';
 import 'package:open_vts/modules/admin/router/admin_routes.dart';
-import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';

@@ -12,7 +12,7 @@ class UserRoutesRepository {
   Future<Result<List<UserRouteItem>>> getRoutes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/routes'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.routes, cancelToken: cancelToken);
     return res.when(
       success: (data) {
         final list = _extractList(data, extraKeys: const ['routes']);
@@ -37,7 +37,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/routes/$routeId'),
+      UserApiPaths.routeDetails(routeId),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -53,7 +53,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/routes'),
+      UserApiPaths.routes,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -71,7 +71,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/user/routes/$routeId'),
+      UserApiPaths.routeDetails(routeId),
       data: payload,
       cancelToken: cancelToken,
     );
@@ -88,7 +88,7 @@ class UserRoutesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      ApiPaths.path('/user/routes/$routeId'),
+      UserApiPaths.routeDetails(routeId),
       cancelToken: cancelToken,
     );
     return res.when(

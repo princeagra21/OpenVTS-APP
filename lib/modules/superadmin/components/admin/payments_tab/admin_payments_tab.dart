@@ -61,7 +61,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
       _api ??= ApiClientProvider.create();
 
       final res = await _api!.get(
-        ApiPaths.path('/superadmin/transactions'),
+        SuperadminApiPaths.transactions,
         queryParameters: {
           'adminId': widget.adminId,
           'page': 1,

@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadAccessToken() async {
-    final token = await TokenStorage.defaultInstance().readAccessToken();
+    final token = await AppContainer.instance.sessionService.readAccessToken();
     if (!mounted) return;
     setState(() => _accessToken = token?.trim() ?? '');
   }
@@ -171,7 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (shouldLogout != true) return;
     await PushNotificationsService.instance.unregisterForLogout();
-    await TokenStorage.defaultInstance().clear();
+    final sessionService = AppContainer.instance.sessionService;
+    await sessionService.logout();
+    await sessionService.clearSession();
     if (!mounted) return;
     context.go(AppRoutes.login);
   }

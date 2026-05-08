@@ -40,7 +40,7 @@ class AdminRepository {
     });
 
     final res = await api.post(
-      ApiPaths.path('/admin/upload'),
+      AdminApiPaths.upload,
       data: form,
       cancelToken: cancelToken,
       options: Options(

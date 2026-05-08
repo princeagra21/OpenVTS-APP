@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/small_box/small_box.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
@@ -16,7 +16,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/navigation/app_routes.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -267,9 +267,7 @@ class _AdminScreenState extends State<AdminScreen> {
               final isSelected = _pageSize == v;
               return ListTile(
                 title: Text('$v'),
-                trailing: isSelected
-                    ? const Icon(Icons.check_rounded)
-                    : null,
+                trailing: isSelected ? const Icon(Icons.check_rounded) : null,
                 onTap: () => Navigator.of(ctx).pop(v),
               );
             }).toList(),
@@ -365,20 +363,14 @@ class _AdminScreenState extends State<AdminScreen> {
       if (!mounted) return;
       res.when(
         success: (token) async {
-          final storage = TokenStorage.defaultInstance();
-          final currentToken = await storage.readAccessToken();
-          if (currentToken != null && currentToken.isNotEmpty) {
-            await storage.writeImpersonatorToken(currentToken);
-          }
-          await storage.writeAccessToken(token);
+          await AppContainer.instance.sessionService.startImpersonation(token);
           if (!mounted) return;
           context.go(AppRoutes.adminHome);
         },
         failure: (err) {
-          final msg =
-              err is ApiException
-                  ? (err.message ?? 'Login failed.')
-                  : 'Login failed.';
+          final msg = err is ApiException
+              ? (err.message ?? 'Login failed.')
+              : 'Login failed.';
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(msg)));
@@ -413,8 +405,10 @@ class _AdminScreenState extends State<AdminScreen> {
     // --- ADAPTIVE VALUES ---
     final padding = AdaptiveUtils.getHorizontalPadding(screenWidth); // 8-16
     final spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth); // 6-10
-    final scale =
-        (screenWidth / 390).clamp(0.9, 1.05); // responsive but close to spec
+    final scale = (screenWidth / 390).clamp(
+      0.9,
+      1.05,
+    ); // responsive but close to spec
     final fsHeader = 16 * scale;
     final fsSection = 18 * scale;
     final fsMain = 14 * scale;
@@ -464,911 +458,965 @@ class _AdminScreenState extends State<AdminScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // --------------------------------------------
-            // ADMIN LIST
-            // --------------------------------------------
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(cardPadding),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colorScheme.surfaceContainerHighest),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // --------------------------------------------
+                // ADMIN LIST
+                // --------------------------------------------
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                  child: Column(
                     children: [
-                      Text(
-                        "Administrators",
-                        style: AppFonts.roboto(
-                          fontSize: fsSection,
-                          height: 24 / 18,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          final created = await context.push(
-                            AppRoutes.superadminAdminsAdd,
-                          );
-                          if (created == true) {
-                            _loadAdmins();
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        hoverColor: Colors.transparent,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: padding * 1.2,
-                            vertical: spacing,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurface,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.add,
-                                size: iconSize,
-                                color: colorScheme.surface,
-                              ),
-                              SizedBox(width: spacing / 2),
-                              Text(
-                                "New",
-                                style: AppFonts.roboto(
-                                  fontSize: fsMain,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.surface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: padding),
-                  // --------------------------------------------
-                  // SEARCH FIELD
-                  // --------------------------------------------
-                  Container(
-                    height: padding * 3.5,
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.1),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: AppFonts.roboto(
-                        fontSize: fsMain,
-                        height: 20 / 14,
-                        color: colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: "Search name, email, role, department...",
-                        hintStyle: AppFonts.roboto(
-                          color: colorScheme.onSurface.withOpacity(0.5),
-                          fontSize: fsSecondary,
-                          height: 16 / 12,
-                        ),
-                        prefixIcon: Icon(
-                          CupertinoIcons.search,
-                          size: iconSize + 2,
-                          color: colorScheme.onSurface,
-                        ),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: padding,
-                          vertical: padding,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: padding),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final double gap = spacing;
-                      final double cellWidth =
-                          (constraints.maxWidth - gap * 2) / 3;
-                      return Wrap(
-                        spacing: gap,
-                        runSpacing: gap,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SizedBox(
-                            width: cellWidth,
-                            child: PopupMenuButton<String>(
-                              onSelected: (value) {
-                                if (selectedTab == value) return;
-                                setState(() => selectedTab = value);
-                              },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(
-                                  value: "All",
-                                  child: Text('All'),
-                                ),
-                                PopupMenuItem(
-                                  value: "Active",
-                                  child: Text('Active'),
-                                ),
-                                PopupMenuItem(
-                                  value: "Disabled",
-                                  child: Text('Disabled'),
-                                ),
-                                PopupMenuItem(
-                                  value: "Pending",
-                                  child: Text('Pending'),
-                                ),
-                              ],
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: padding,
-                                  vertical: spacing,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.1),
+                          Text(
+                            "Administrators",
+                            style: AppFonts.roboto(
+                              fontSize: fsSection,
+                              height: 24 / 18,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              final created = await context.push(
+                                AppRoutes.superadminAdminsAdd,
+                              );
+                              if (created == true) {
+                                _loadAdmins();
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: padding * 1.2,
+                                vertical: spacing,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    size: iconSize,
+                                    color: colorScheme.surface,
                                   ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.tune,
-                                      size: iconSize,
-                                      color: colorScheme.onSurface,
+                                  SizedBox(width: spacing / 2),
+                                  Text(
+                                    "New",
+                                    style: AppFonts.roboto(
+                                      fontSize: fsMain,
+                                      height: 20 / 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.surface,
                                     ),
-                                    SizedBox(width: spacing / 2),
-                                    Text(
-                                      "Filter",
-                                      style: AppFonts.roboto(
-                                        fontSize: fsMain - 3,
-                                        height: 20 / 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: cellWidth,
-                            child: InkWell(
-                              onTap: _openRecordsSheet,
-                              borderRadius: BorderRadius.circular(12),
-                              splashColor: Colors.transparent,
-                              highlightColor: Colors.transparent,
-                              hoverColor: Colors.transparent,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: padding,
-                                  vertical: spacing,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.1),
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
+                        ],
+                      ),
+                      SizedBox(height: padding),
+                      // --------------------------------------------
+                      // SEARCH FIELD
+                      // --------------------------------------------
+                      Container(
+                        height: padding * 3.5,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withOpacity(0.1),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: AppFonts.roboto(
+                            fontSize: fsMain,
+                            height: 20 / 14,
+                            color: colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Search name, email, role, department...",
+                            hintStyle: AppFonts.roboto(
+                              color: colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: fsSecondary,
+                              height: 16 / 12,
+                            ),
+                            prefixIcon: Icon(
+                              CupertinoIcons.search,
+                              size: iconSize + 2,
+                              color: colorScheme.onSurface,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: padding,
+                              vertical: padding,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: padding),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double gap = spacing;
+                          final double cellWidth =
+                              (constraints.maxWidth - gap * 2) / 3;
+                          return Wrap(
+                            spacing: gap,
+                            runSpacing: gap,
+                            children: [
+                              SizedBox(
+                                width: cellWidth,
+                                child: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (selectedTab == value) return;
+                                    setState(() => selectedTab = value);
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem(
+                                      value: "All",
+                                      child: Text('All'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Active",
+                                      child: Text('Active'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Disabled",
+                                      child: Text('Disabled'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "Pending",
+                                      child: Text('Pending'),
+                                    ),
+                                  ],
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
+                                        Icon(
+                                          Icons.tune,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
                                         Text(
-                                          "Records",
+                                          "Filter",
                                           style: AppFonts.roboto(
                                             fontSize: fsMain - 3,
                                             height: 20 / 14,
                                             fontWeight: FontWeight.w600,
                                             color: colorScheme.onSurface,
                                           ),
-                                          maxLines: 2,                                        ),
-                                        SizedBox(width: spacing / 2),
-                                        Icon(
-                                          Icons.keyboard_arrow_down,
-                                          size: iconSize,
-                                          color: colorScheme.onSurface,
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: cellWidth,
-                            child: InkWell(
-                              onTap: _loadAdmins,
-                              borderRadius: BorderRadius.circular(12),
-                              splashColor: Colors.transparent,
-                              highlightColor: Colors.transparent,
-                              hoverColor: Colors.transparent,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: padding,
-                                  vertical: spacing,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.onSurface
-                                        .withOpacity(0.1),
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.refresh,
-                                      size: iconSize,
-                                      color: colorScheme.onSurface,
+                              ),
+                              SizedBox(
+                                width: cellWidth,
+                                child: InkWell(
+                                  onTap: _openRecordsSheet,
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  hoverColor: Colors.transparent,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
                                     ),
-                                    SizedBox(width: spacing / 2),
-                                    Text(
-                                      "Refresh",
-                                      style: AppFonts.roboto(
-                                        fontSize: fsMain - 3,
-                                        height: 20 / 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
                                       ),
                                     ),
-                                  ],
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              "Records",
+                                              style: AppFonts.roboto(
+                                                fontSize: fsMain - 3,
+                                                height: 20 / 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                              maxLines: 2,
+                                            ),
+                                            SizedBox(width: spacing / 2),
+                                            Icon(
+                                              Icons.keyboard_arrow_down,
+                                              size: iconSize,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  SizedBox(height: padding),
-                  if (showNoData)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: padding),
-                      child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(cardPadding),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _adminsLoadFailed
-                                    ? "Couldn't load admins."
-                                    : "No admins found",
-                                style: AppFonts.roboto(
-                                  fontSize: fsSecondary,
-                                  height: 16 / 12,
-                                  color: colorScheme.onSurface.withOpacity(0.8),
-                                  fontWeight: FontWeight.w600,
+                              SizedBox(
+                                width: cellWidth,
+                                child: InkWell(
+                                  onTap: _loadAdmins,
+                                  borderRadius: BorderRadius.circular(12),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  hoverColor: Colors.transparent,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: padding,
+                                      vertical: spacing,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: colorScheme.onSurface
+                                            .withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.refresh,
+                                          size: iconSize,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        SizedBox(width: spacing / 2),
+                                        Text(
+                                          "Refresh",
+                                          style: AppFonts.roboto(
+                                            fontSize: fsMain - 3,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            if (_adminsLoadFailed)
-                              TextButton(
-                                onPressed: _loadAdmins,
-                                child: const Text('Retry'),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (_loadingAdmins)
-                    ...List<Widget>.generate(
-                      3,
-                      (_) => _buildAdminSkeletonCard(
-                        padding: padding,
-                        spacing: spacing,
-                        cardPadding: cardPadding,
-                        screenWidth: screenWidth,
-                        bodyFs: bodyFs,
-                        smallFs: smallFs,
-                      ),
-                    ),
-                  if (!showNoData && !_loadingAdmins)
-                    ListView.builder(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredAdmins.length,
-                      itemBuilder: (context, index) {
-                        final admin = filteredAdmins[index];
-                        final statusLabel = admin["status"].toString();
-                        final statusLower = statusLabel.toLowerCase();
-                        final isPending = statusLower.contains('pending');
-                        final isPositive =
-                            statusLower.contains('verified') ||
-                            statusLower.contains('active');
-                        final statusColor = isPending
-                            ? Colors.orange
-                            : (isPositive ? Colors.green : colorScheme.error);
-                        final statusBg = statusColor.withOpacity(0.2);
-
-                        return Container(
-                          margin: EdgeInsets.only(bottom: padding),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
                               ),
                             ],
+                          );
+                        },
+                      ),
+                      SizedBox(height: padding),
+                      if (showNoData)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: padding),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(cardPadding),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _adminsLoadFailed
+                                        ? "Couldn't load admins."
+                                        : "No admins found",
+                                    style: AppFonts.roboto(
+                                      fontSize: fsSecondary,
+                                      height: 16 / 12,
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.8,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (_adminsLoadFailed)
+                                  TextButton(
+                                    onPressed: _loadAdmins,
+                                    child: const Text('Retry'),
+                                  ),
+                              ],
+                            ),
                           ),
-                          child: Material(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(25),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(25),
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        hoverColor: Colors.transparent,
-                        onTap: () => _openAdminDetails(admin),
-                              child: Padding(
-                                padding: EdgeInsets.all(cardPadding),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+                        ),
+                      if (_loadingAdmins)
+                        ...List<Widget>.generate(
+                          3,
+                          (_) => _buildAdminSkeletonCard(
+                            padding: padding,
+                            spacing: spacing,
+                            cardPadding: cardPadding,
+                            screenWidth: screenWidth,
+                            bodyFs: bodyFs,
+                            smallFs: smallFs,
+                          ),
+                        ),
+                      if (!showNoData && !_loadingAdmins)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredAdmins.length,
+                          itemBuilder: (context, index) {
+                            final admin = filteredAdmins[index];
+                            final statusLabel = admin["status"].toString();
+                            final statusLower = statusLabel.toLowerCase();
+                            final isPending = statusLower.contains('pending');
+                            final isPositive =
+                                statusLower.contains('verified') ||
+                                statusLower.contains('active');
+                            final statusColor = isPending
+                                ? Colors.orange
+                                : (isPositive
+                                      ? Colors.green
+                                      : colorScheme.error);
+                            final statusBg = statusColor.withOpacity(0.2);
+
+                            return Container(
+                              margin: EdgeInsets.only(bottom: padding),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(25),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(25),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  hoverColor: Colors.transparent,
+                                  onTap: () => _openAdminDetails(admin),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(cardPadding),
+                                    child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        CircleAvatar(
-                                          backgroundColor:
-                                              colorScheme.surface,
-                                          radius:
-                                              AdaptiveUtils.getAvatarSize(
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor:
+                                                  colorScheme.surface,
+                                              radius:
+                                                  AdaptiveUtils.getAvatarSize(
                                                     screenWidth,
                                                   ) /
                                                   2,
-                                          foregroundColor:
-                                              colorScheme.onSurface,
-                                          child: Container(
-                                            width:
-                                                AdaptiveUtils.getAvatarSize(
-                                                  screenWidth,
+                                              foregroundColor:
+                                                  colorScheme.onSurface,
+                                              child: Container(
+                                                width:
+                                                    AdaptiveUtils.getAvatarSize(
+                                                      screenWidth,
+                                                    ),
+                                                height:
+                                                    AdaptiveUtils.getAvatarSize(
+                                                      screenWidth,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.surface,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: colorScheme.onSurface
+                                                        .withOpacity(0.12),
+                                                  ),
                                                 ),
-                                            height:
-                                                AdaptiveUtils.getAvatarSize(
-                                                  screenWidth,
-                                                ),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface,
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: colorScheme.onSurface
-                                                    .withOpacity(0.12),
-                                              ),
-                                            ),
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              admin["initials"],
-                                              style: AppFonts.roboto(
-                                                color:
-                                                    colorScheme.onSurface,
-                                                fontSize:
-                                                    AdaptiveUtils
-                                                        .getFsAvatarFontSize(
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  admin["initials"],
+                                                  style: AppFonts.roboto(
+                                                    color:
+                                                        colorScheme.onSurface,
+                                                    fontSize:
+                                                        AdaptiveUtils.getFsAvatarFontSize(
                                                           screenWidth,
                                                         ),
-                                                fontWeight: FontWeight.bold,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            SizedBox(width: spacing * 2),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(
+                                                        Icons
+                                                            .person_outline_rounded,
+                                                        size: iconSize,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      SizedBox(width: spacing),
+                                                      Expanded(
+                                                        child: InkWell(
+                                                          onTap: () =>
+                                                              _openAdminDetails(
+                                                                admin,
+                                                              ),
+                                                          child: Text(
+                                                            _safeText(
+                                                              admin["name"]
+                                                                  ?.toString(),
+                                                              fallback: '—',
+                                                            ),
+                                                            style: AppFonts.roboto(
+                                                              fontSize: fsMain,
+                                                              height: 20 / 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: colorScheme
+                                                                  .onSurface,
+                                                            ),
+                                                            softWrap: true,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: spacing / 2),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.person_rounded,
+                                                        size: iconSize,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      SizedBox(width: spacing),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _displayUsername(
+                                                            admin["username"]
+                                                                ?.toString(),
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize:
+                                                                fsSecondary,
+                                                            height: 16 / 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                          softWrap: true,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: spacing / 2),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        CupertinoIcons.mail,
+                                                        size: iconSize,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      SizedBox(width: spacing),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _safeText(
+                                                            admin["email"]
+                                                                ?.toString(),
+                                                            fallback: '—',
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize:
+                                                                fsSecondary,
+                                                            height: 16 / 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                          softWrap: true,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: spacing / 2),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        CupertinoIcons.phone,
+                                                        size: iconSize,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      SizedBox(width: spacing),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _safeText(
+                                                            admin["phone"]
+                                                                ?.toString(),
+                                                            fallback: '—',
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize:
+                                                                fsSecondary,
+                                                            height: 16 / 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: spacing / 2),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.apartment,
+                                                        size: iconSize,
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                      ),
+                                                      SizedBox(width: spacing),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _safeText(
+                                                            admin["company"]
+                                                                ?.toString(),
+                                                            fallback: '—',
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize:
+                                                                fsSecondary,
+                                                            height: 16 / 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: colorScheme
+                                                                .onSurface
+                                                                .withOpacity(
+                                                                  0.7,
+                                                                ),
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            Align(
+                                              alignment: Alignment.topRight,
+                                              child: Transform.scale(
+                                                scale: 0.75,
+                                                child: Switch(
+                                                  value: admin["active"],
+                                                  onChanged:
+                                                      _statusSubmittingAdminIds
+                                                          .contains(
+                                                            admin['id']
+                                                                    ?.toString() ??
+                                                                '',
+                                                          )
+                                                      ? null
+                                                      : (v) =>
+                                                            _toggleAdminStatus(
+                                                              admin: admin,
+                                                              isActive: v,
+                                                            ),
+                                                  activeThumbColor:
+                                                      colorScheme.onPrimary,
+                                                  activeTrackColor:
+                                                      colorScheme.primary,
+                                                  inactiveThumbColor:
+                                                      colorScheme.onPrimary,
+                                                  inactiveTrackColor:
+                                                      colorScheme.primary
+                                                          .withOpacity(0.3),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        SizedBox(width: spacing * 2),
-                                        Expanded(
+                                        SizedBox(height: spacing * 1.5),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: padding,
+                                            vertical: spacing,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.surface,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: colorScheme.onSurface
+                                                  .withOpacity(0.1),
+                                            ),
+                                          ),
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons
-                                                        .person_outline_rounded,
-                                                    size: iconSize,
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.7),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Expanded(
-                                                    child: InkWell(
-                                                      onTap: () =>
-                                                          _openAdminDetails(
-                                                        admin,
-                                                      ),
-                                                      child: Text(
-                                                        _safeText(
-                                                          admin["name"]
-                                                              ?.toString(),
-                                                          fallback: '—',
+                                              Text(
+                                                "Location",
+                                                style: AppFonts.roboto(
+                                                  fontSize: fsMeta,
+                                                  height: 14 / 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: colorScheme.onSurface
+                                                      .withOpacity(0.6),
+                                                ),
+                                              ),
+                                              SizedBox(height: spacing / 2),
+                                              Text(
+                                                _safeText(
+                                                  admin["location"]?.toString(),
+                                                  fallback: '—',
+                                                ),
+                                                style: AppFonts.roboto(
+                                                  fontSize: fsSecondary,
+                                                  height: 16 / 12,
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: spacing),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final double gap = spacing;
+                                            final double cellWidth =
+                                                (constraints.maxWidth - gap) /
+                                                2;
+                                            return Wrap(
+                                              spacing: gap,
+                                              runSpacing: gap,
+                                              children: [
+                                                SizedBox(
+                                                  width: cellWidth,
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: padding,
+                                                          vertical: spacing - 2,
                                                         ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          colorScheme.surface,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.1),
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.visibility,
+                                                              size: iconSize,
+                                                              color: colorScheme
+                                                                  .onSurface
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                            ),
+                                                            SizedBox(
+                                                              width: spacing,
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                "Usage",
+                                                                style: AppFonts.roboto(
+                                                                  fontSize:
+                                                                      fsMeta,
+                                                                  height:
+                                                                      14 / 11,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: colorScheme
+                                                                      .onSurface
+                                                                      .withOpacity(
+                                                                        0.7,
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        SizedBox(
+                                                          height: spacing,
+                                                        ),
+                                                        Text(
+                                                          _safeText(
+                                                            admin["credits"]
+                                                                ?.toString(),
+                                                            fallback: '—',
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize: fsMain,
+                                                            height: 20 / 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: colorScheme
+                                                                .onSurface,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  width: cellWidth,
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: padding,
+                                                          vertical: spacing - 2,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          colorScheme.surface,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.1),
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.schedule,
+                                                              size: iconSize,
+                                                              color: colorScheme
+                                                                  .onSurface
+                                                                  .withOpacity(
+                                                                    0.7,
+                                                                  ),
+                                                            ),
+                                                            SizedBox(
+                                                              width: spacing,
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                "Recent login",
+                                                                style: AppFonts.roboto(
+                                                                  fontSize:
+                                                                      fsMeta,
+                                                                  height:
+                                                                      14 / 11,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: colorScheme
+                                                                      .onSurface
+                                                                      .withOpacity(
+                                                                        0.7,
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        SizedBox(
+                                                          height: spacing,
+                                                        ),
+                                                        Text(
+                                                          _safeText(
+                                                            admin["recentLogin"]
+                                                                ?.toString(),
+                                                            fallback: '—',
+                                                          ),
+                                                          style: AppFonts.roboto(
+                                                            fontSize: fsMain,
+                                                            height: 20 / 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: colorScheme
+                                                                .onSurface,
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(height: spacing),
+                                        GestureDetector(
+                                          onTap: () =>
+                                              _confirmLoginAsAdmin(admin),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: padding,
+                                              vertical: spacing * 1.6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.primary,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.login,
+                                                  size: iconSize,
+                                                  color: colorScheme.onPrimary,
+                                                ),
+                                                SizedBox(width: spacing),
+                                                _loginSubmittingAdminIds
+                                                        .contains(
+                                                          admin['id']
+                                                                  ?.toString() ??
+                                                              '',
+                                                        )
+                                                    ? const AppShimmer(
+                                                        width: 16,
+                                                        height: 16,
+                                                        radius: 8,
+                                                      )
+                                                    : Text(
+                                                        "Login",
                                                         style: AppFonts.roboto(
                                                           fontSize: fsMain,
                                                           height: 20 / 14,
                                                           fontWeight:
                                                               FontWeight.w600,
                                                           color: colorScheme
-                                                              .onSurface,
+                                                              .onPrimary,
                                                         ),
-                                                        softWrap: true,
+                                                        maxLines: 2,
                                                       ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: spacing / 2),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.person_rounded,
-                                                    size: iconSize,
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.7),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Expanded(
-                                                      child: Text(
-                                                        _displayUsername(
-                                                          admin["username"]
-                                                              ?.toString(),
-                                                        ),
-                                                        style:
-                                                            AppFonts.roboto(
-                                                          fontSize: fsSecondary,
-                                                          height: 16 / 12,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: colorScheme
-                                                              .onSurface
-                                                              .withOpacity(0.7),
-                                                        ),
-                                                      softWrap: true,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: spacing / 2),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    CupertinoIcons.mail,
-                                                    size: iconSize,
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.7),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Expanded(
-                                                    child: Text(
-                                                      _safeText(
-                                                        admin["email"]
-                                                            ?.toString(),
-                                                        fallback: '—',
-                                                      ),
-                                                      style: AppFonts.roboto(
-                                                        fontSize: fsSecondary,
-                                                        height: 16 / 12,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.7),
-                                                      ),
-                                                      softWrap: true,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: spacing / 2),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    CupertinoIcons.phone,
-                                                    size: iconSize,
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.7),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Expanded(
-                                                    child: Text(
-                                                      _safeText(
-                                                        admin["phone"]
-                                                            ?.toString(),
-                                                        fallback: '—',
-                                                      ),
-                                                      style: AppFonts.roboto(
-                                                        fontSize: fsSecondary,
-                                                        height: 16 / 12,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.7),
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: spacing / 2),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.apartment,
-                                                    size: iconSize,
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.7),
-                                                  ),
-                                                  SizedBox(width: spacing),
-                                                  Expanded(
-                                                    child: Text(
-                                                      _safeText(
-                                                        admin["company"]
-                                                            ?.toString(),
-                                                        fallback: '—',
-                                                      ),
-                                                      style: AppFonts.roboto(
-                                                        fontSize: fsSecondary,
-                                                        height: 16 / 12,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.7),
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        SizedBox(width: spacing),
-                                        Align(
-                                          alignment: Alignment.topRight,
-                                          child: Transform.scale(
-                                            scale: 0.75,
-                                            child: Switch(
-                                              value: admin["active"],
-                                              onChanged:
-                                                  _statusSubmittingAdminIds
-                                                          .contains(
-                                                admin['id']?.toString() ?? '',
-                                              )
-                                                      ? null
-                                                      : (v) =>
-                                                          _toggleAdminStatus(
-                                                            admin: admin,
-                                                            isActive: v,
-                                                          ),
-                                              activeThumbColor:
-                                                  colorScheme.onPrimary,
-                                              activeTrackColor:
-                                                  colorScheme.primary,
-                                              inactiveThumbColor:
-                                                  colorScheme.onPrimary,
-                                              inactiveTrackColor:
-                                                  colorScheme.primary
-                                                      .withOpacity(0.3),
+                                              ],
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: spacing * 1.5),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: padding,
-                                        vertical: spacing,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.surface,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: colorScheme.onSurface
-                                              .withOpacity(0.1),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            "Location",
-                                            style: AppFonts.roboto(
-                                              fontSize: fsMeta,
-                                              height: 14 / 11,
-                                              fontWeight: FontWeight.w500,
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.6),
-                                            ),
-                                          ),
-                                          SizedBox(height: spacing / 2),
-                                          Text(
-                                            _safeText(
-                                              admin["location"]?.toString(),
-                                              fallback: '—',
-                                            ),
-                                            style: AppFonts.roboto(
-                                              fontSize: fsSecondary,
-                                              height: 16 / 12,
-                                              color: colorScheme.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: spacing),
-                                    LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final double gap = spacing;
-                                        final double cellWidth =
-                                            (constraints.maxWidth - gap) / 2;
-                                        return Wrap(
-                                          spacing: gap,
-                                          runSpacing: gap,
-                                          children: [
-                                            SizedBox(
-                                              width: cellWidth,
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: padding,
-                                                  vertical: spacing - 2,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.surface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.1),
-                                                  ),
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.visibility,
-                                                          size: iconSize,
-                                                          color: colorScheme
-                                                              .onSurface
-                                                              .withOpacity(0.7),
-                                                        ),
-                                                        SizedBox(
-                                                          width: spacing,
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            "Usage",
-                                                            style:
-                                                                AppFonts.roboto(
-                                                              fontSize: fsMeta,
-                                                              height: 14 / 11,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color: colorScheme
-                                                                  .onSurface
-                                                                  .withOpacity(
-                                                                    0.7,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(
-                                                      height: spacing,
-                                                    ),
-                                                    Text(
-                                                      _safeText(
-                                                        admin["credits"]
-                                                            ?.toString(),
-                                                        fallback: '—',
-                                                      ),
-                                                      style: AppFonts.roboto(
-                                                        fontSize: fsMain,
-                                                        height: 20 / 14,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: colorScheme
-                                                            .onSurface,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: cellWidth,
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: padding,
-                                                  vertical: spacing - 2,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.surface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: colorScheme.onSurface
-                                                        .withOpacity(0.1),
-                                                  ),
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.schedule,
-                                                          size: iconSize,
-                                                          color: colorScheme
-                                                              .onSurface
-                                                              .withOpacity(0.7),
-                                                        ),
-                                                        SizedBox(
-                                                          width: spacing,
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            "Recent login",
-                                                            style:
-                                                                AppFonts.roboto(
-                                                              fontSize: fsMeta,
-                                                              height: 14 / 11,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color: colorScheme
-                                                                  .onSurface
-                                                                  .withOpacity(
-                                                                    0.7,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(
-                                                      height: spacing,
-                                                    ),
-                                                    Text(
-                                                      _safeText(
-                                                        admin["recentLogin"]
-                                                            ?.toString(),
-                                                        fallback: '—',
-                                                      ),
-                                                      style: AppFonts.roboto(
-                                                        fontSize: fsMain,
-                                                        height: 20 / 14,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: colorScheme
-                                                            .onSurface,
-                                                      ),
-                                                      maxLines: 2,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                    SizedBox(height: spacing),
-                                    GestureDetector(
-                                      onTap: () => _confirmLoginAsAdmin(admin),
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: padding,
-                                          vertical: spacing * 1.6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primary,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.login,
-                                              size: iconSize,
-                                              color: colorScheme.onPrimary,
-                                            ),
-                                            SizedBox(width: spacing),
-                                            _loginSubmittingAdminIds.contains(
-                                                  admin['id']?.toString() ??
-                                                      '',
-                                                )
-                                                ? const AppShimmer(
-                                                    width: 16,
-                                                    height: 16,
-                                                    radius: 8,
-                                                  )
-                                                : Text(
-                                                    "Login",
-                                                    style: AppFonts.roboto(
-                                                      fontSize: fsMain,
-                                                      height: 20 / 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          colorScheme.onPrimary,
-                                                    ),
-                                                    maxLines: 2,
-                                                  ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
 
-            SizedBox(height: padding * 2),
+                SizedBox(height: padding * 2),
               ],
             ),
           ),

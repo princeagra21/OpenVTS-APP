@@ -15,8 +15,11 @@ class OpenVtsButton extends StatelessWidget {
     this.variant = OpenVtsButtonVariant.primary,
     this.size = OpenVtsButtonSize.medium,
     this.leading,
+    this.leadingIcon,
     this.trailing,
-    this.expand = true,
+    this.expand,
+    this.expanded,
+    this.height,
   });
 
   final String label;
@@ -25,10 +28,24 @@ class OpenVtsButton extends StatelessWidget {
   final OpenVtsButtonVariant variant;
   final OpenVtsButtonSize size;
   final IconData? leading;
+  // Legacy alias used by core widgets and older screens.
+  final IconData? leadingIcon;
   final IconData? trailing;
-  final bool expand;
+  final bool? expand;
+  // Legacy alias used by core widgets and older screens.
+  final bool? expanded;
+  // Legacy explicit height override used by core widgets.
+  final double? height;
+
+  bool get _isLegacyLayoutHinted {
+    return height != null || leadingIcon != null || expanded != null;
+  }
 
   double get _height {
+    if (height != null) {
+      return height!;
+    }
+
     switch (size) {
       case OpenVtsButtonSize.small:
         return 40;
@@ -107,6 +124,8 @@ class OpenVtsButton extends StatelessWidget {
   }
 
   Widget _child(BuildContext context) {
+    final IconData? resolvedLeading = leading ?? leadingIcon;
+
     if (loading) {
       return SizedBox(
         height: 18,
@@ -119,8 +138,8 @@ class OpenVtsButton extends StatelessWidget {
     }
 
     final rowChildren = <Widget>[];
-    if (leading != null) {
-      rowChildren.add(Icon(leading, size: OpenVtsIconSizes.md));
+    if (resolvedLeading != null) {
+      rowChildren.add(Icon(resolvedLeading, size: OpenVtsIconSizes.md));
       rowChildren.add(const SizedBox(width: OpenVtsSpacing.sm));
     }
 
@@ -142,6 +161,9 @@ class OpenVtsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool resolvedExpand =
+        expand ?? expanded ?? (_isLegacyLayoutHinted ? false : true);
+
     final button = switch (variant) {
       OpenVtsButtonVariant.primary ||
       OpenVtsButtonVariant.danger => ElevatedButton(
@@ -161,7 +183,7 @@ class OpenVtsButton extends StatelessWidget {
       ),
     };
 
-    if (!expand) return button;
+    if (!resolvedExpand) return button;
     return SizedBox(width: double.infinity, child: button);
   }
 }

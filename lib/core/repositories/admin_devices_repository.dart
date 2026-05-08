@@ -29,7 +29,7 @@ class AdminDevicesRepository {
     if (limit != null) query['limit'] = limit;
 
     final res = await api.get(
-      ApiPaths.path('/admin/devices'),
+      AdminApiPaths.devices,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -59,7 +59,7 @@ class AdminDevicesRepository {
   Future<Result<List<DeviceTypeOption>>> getDeviceTypes({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/devicestypes'), cancelToken: cancelToken);
+    final res = await api.get(PublicApiPaths.deviceTypes, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -84,7 +84,7 @@ class AdminDevicesRepository {
   }
 
   Future<Result<List<SimOption>>> getSims({CancelToken? cancelToken}) async {
-    final res = await api.get(ApiPaths.path('/admin/simcards'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.simcards, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -111,7 +111,7 @@ class AdminDevicesRepository {
   Future<Result<List<SimOption>>> getQuickSimCards({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/quicksimcards'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.quickSimcards, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -139,7 +139,7 @@ class AdminDevicesRepository {
     String deviceId, {
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/admin/devices/$deviceId'), cancelToken: cancelToken);
+    final res = await api.get(AdminApiPaths.deviceDetails(deviceId), cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -200,7 +200,7 @@ class AdminDevicesRepository {
     }
 
     final res = await api.post(
-      ApiPaths.path('/admin/devices'),
+      AdminApiPaths.devices,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -240,7 +240,7 @@ class AdminDevicesRepository {
     }
 
     final res = await api.post(
-      ApiPaths.path('/admin/deviceandsim'),
+      AdminApiPaths.deviceAndSim,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -274,7 +274,7 @@ class AdminDevicesRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/devices/$deviceId'),
+      AdminApiPaths.deviceDetails(deviceId),
       data: payload,
       cancelToken: cancelToken,
     );

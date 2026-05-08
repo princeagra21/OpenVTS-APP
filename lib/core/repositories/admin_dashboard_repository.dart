@@ -20,7 +20,7 @@ class AdminDashboardRepository {
     }
 
     final res = await api.get(
-      ApiPaths.path('/admin/dashboard/summary'),
+      AdminApiPaths.dashboardSummary,
       queryParameters: query,
       cancelToken: cancelToken,
     );

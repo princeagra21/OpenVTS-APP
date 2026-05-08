@@ -15,7 +15,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/sharetracklinks'),
+      UserApiPaths.shareTrackLinks,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -43,7 +43,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/vehicles'),
+      UserApiPaths.vehicles,
       queryParameters: const {'limit': 100},
       cancelToken: cancelToken,
     );
@@ -81,7 +81,7 @@ class UserShareTrackLinksRepository {
     };
 
     final primary = await api.post(
-      ApiPaths.path('/user/sharetracklinks'),
+      UserApiPaths.shareTrackLinks,
       data: primaryPayload,
       cancelToken: cancelToken,
     );
@@ -105,7 +105,7 @@ class UserShareTrackLinksRepository {
           'isHistory': isHistory,
         };
         final fallback = await api.post(
-          ApiPaths.path('/user/sharetracklinks'),
+          UserApiPaths.shareTrackLinks,
           data: fallbackPayload,
           cancelToken: cancelToken,
         );
@@ -134,7 +134,7 @@ class UserShareTrackLinksRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/user/sharetracklinks/$id'),
+      UserApiPaths.shareTrackLinkDetails(id),
       data: {'isActive': isActive, 'active': isActive},
       cancelToken: cancelToken,
     );
@@ -148,7 +148,7 @@ class UserShareTrackLinksRepository {
 
   Future<Result<void>> deleteLink(String id, {CancelToken? cancelToken}) async {
     final res = await api.delete(
-      ApiPaths.path('/user/sharetracklinks/$id'),
+      UserApiPaths.shareTrackLinkDetails(id),
       cancelToken: cancelToken,
     );
     return res.when(

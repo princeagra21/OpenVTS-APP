@@ -38,7 +38,8 @@ The app uses Dart defines (see `AppConfig.fromDartDefine()`):
 - `API_BASE_URL`
 
 ## Conventions
-- UI text styles use `GoogleFonts.roboto`
+- UI tokens and core components are centralized in `lib/design_system/theme` and `lib/design_system/components`
+- Typography is provided by `OpenVtsTypography` (Satoshi family) via the centralized `OpenVtsTheme`
 - Layout sizing via `AdaptiveUtils` and `AppUtils`
 - Data fetching via repository classes in `lib/core/repositories`
 

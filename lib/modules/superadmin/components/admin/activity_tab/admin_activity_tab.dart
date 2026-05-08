@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
@@ -58,7 +58,7 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
       _api ??= ApiClientProvider.create();
 
       final res = await _api!.get(
-        ApiPaths.path('/superadmin/admin/${widget.adminId}/activitylogs'),
+        SuperadminApiPaths.adminActivityLogs(widget.adminId),
         queryParameters: const {'limit': 20},
         cancelToken: _token,
       );
@@ -1161,3 +1161,4 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
     );
   }
 }
+

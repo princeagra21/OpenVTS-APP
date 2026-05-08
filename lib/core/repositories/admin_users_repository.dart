@@ -53,7 +53,7 @@ class AdminUsersRepository {
     };
 
     final res = await api.post(
-      ApiPaths.path('/admin/users'),
+      AdminApiPaths.users,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -86,7 +86,7 @@ class AdminUsersRepository {
     query['rk'] = DateTime.now().millisecondsSinceEpoch;
 
     final res = await api.get(
-      ApiPaths.path('/admin/users'),
+      AdminApiPaths.users,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -118,7 +118,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/users/$userId'),
+      AdminApiPaths.userDetails(userId),
       cancelToken: cancelToken,
     );
 
@@ -136,7 +136,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/userlogin/$userId'),
+      AdminApiPaths.userLogin(userId),
       cancelToken: cancelToken,
     );
 
@@ -163,7 +163,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/linkvehicles/$userId'),
+      AdminApiPaths.linkVehicles(userId),
       cancelToken: cancelToken,
     );
 
@@ -189,7 +189,7 @@ class AdminUsersRepository {
       failure: (err) async {
         // Backward-compatible fallback for APIs that expect query param form.
         final fallback = await api.get(
-          ApiPaths.path('/admin/linkvehicles'),
+          AdminApiPaths.linkVehiclesBase,
           queryParameters: <String, dynamic>{'userId': userId},
           cancelToken: cancelToken,
         );
@@ -250,14 +250,14 @@ class AdminUsersRepository {
     }
 
     final first = await parseResult(
-      api.get(ApiPaths.path('/admin/unlinkvehicles'), cancelToken: cancelToken),
+      api.get(AdminApiPaths.unlinkVehicles, cancelToken: cancelToken),
     );
     if (first is Success<List<AdminVehicleListItem>>) return first;
 
     if (userId != null && userId.trim().isNotEmpty) {
       final byPath = await parseResult(
         api.get(
-          ApiPaths.path('/admin/unlinkvehicles/$userId'),
+          AdminApiPaths.unlinkVehiclesByUser(userId),
           cancelToken: cancelToken,
         ),
       );
@@ -265,7 +265,7 @@ class AdminUsersRepository {
 
       final byQuery = await parseResult(
         api.get(
-          ApiPaths.path('/admin/unlinkvehicles'),
+          AdminApiPaths.unlinkVehicles,
           queryParameters: <String, dynamic>{'userId': userId},
           cancelToken: cancelToken,
         ),
@@ -282,7 +282,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/admin/linkusers/$vehicleId'),
+      AdminApiPaths.linkUsers(vehicleId),
       data: <String, dynamic>{'userId': int.tryParse(userId) ?? userId},
       cancelToken: cancelToken,
     );
@@ -298,7 +298,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/users/unlinkeddrivers/$userId'),
+      AdminApiPaths.userUnlinkedDrivers(userId),
       cancelToken: cancelToken,
     );
 
@@ -330,7 +330,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/documents/$userId'),
+      AdminApiPaths.documents(userId),
       cancelToken: cancelToken,
     );
 
@@ -361,7 +361,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/documenttypes/USER'),
+      PublicApiPaths.documentTypesForUser,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -421,7 +421,7 @@ class AdminUsersRepository {
       ),
     });
     final res = await api.post(
-      ApiPaths.path('/admin/uploaddoc'),
+      AdminApiPaths.uploadDoc,
       data: form,
       cancelToken: cancelToken,
       options: Options(
@@ -466,7 +466,7 @@ class AdminUsersRepository {
         ),
     };
     final res = await api.patch(
-      ApiPaths.path('/admin/uploaddoc/$documentId'),
+      AdminApiPaths.uploadDocById(documentId),
       data: FormData.fromMap(data),
       cancelToken: cancelToken,
       options: Options(
@@ -485,7 +485,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      ApiPaths.path('/admin/uploaddoc/$documentId'),
+      AdminApiPaths.uploadDocById(documentId),
       cancelToken: cancelToken,
     );
     return res.when(
@@ -499,7 +499,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/tickets'),
+      AdminApiPaths.tickets,
       queryParameters: <String, dynamic>{'userId': userId},
       cancelToken: cancelToken,
     );
@@ -532,7 +532,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/payments'),
+      AdminApiPaths.payments,
       queryParameters: <String, dynamic>{
         'page': 1,
         'limit': 1000,
@@ -570,7 +570,7 @@ class AdminUsersRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/admin/users/$userId'),
+      AdminApiPaths.userDetails(userId),
       data: <String, dynamic>{'isActive': isActive},
       cancelToken: cancelToken,
     );
@@ -630,7 +630,7 @@ class AdminUsersRepository {
   }) async {
     final rk = DateTime.now().millisecondsSinceEpoch;
     final res = await api.get(
-      ApiPaths.path('/admin/linkvehicles/$userId'),
+      AdminApiPaths.linkVehicles(userId),
       queryParameters: {'rk': rk},
       cancelToken: cancelToken,
     );
@@ -669,7 +669,7 @@ class AdminUsersRepository {
     };
 
     final res = await api.post(
-      ApiPaths.path('/admin/payments/renew'),
+      AdminApiPaths.paymentsRenew,
       data: payload,
       cancelToken: cancelToken,
     );

@@ -21,7 +21,7 @@ class WhiteLabelRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/superadmin/whitelabel'),
+      SuperadminApiPaths.whiteLabel,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -54,7 +54,7 @@ class WhiteLabelRepository {
     };
 
     final res = await api.patch(
-      ApiPaths.path('/superadmin/whitelabel'),
+      SuperadminApiPaths.whiteLabel,
       data: FormData.fromMap(fields),
       cancelToken: cancelToken,
       options: Options(contentType: 'multipart/form-data'),
@@ -77,7 +77,7 @@ class WhiteLabelRepository {
     });
 
     final res = await api.post(
-      ApiPaths.path('/superadmin/upload/2'),
+      SuperadminApiPaths.uploadById('2'),
       data: form,
       cancelToken: cancelToken,
       options: Options(contentType: 'multipart/form-data'),

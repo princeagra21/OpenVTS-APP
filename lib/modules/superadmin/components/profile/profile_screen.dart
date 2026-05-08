@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_profile.dart';
 import 'package:open_vts/core/models/superadmin_recent_user.dart';
@@ -7,7 +8,6 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/modules/superadmin/components/profile/widget/profile_company_box.dart';
 import 'package:open_vts/modules/superadmin/components/profile/widget/profile_delete_box.dart';
 import 'package:open_vts/modules/superadmin/components/profile/widget/profile_info_boxes.dart';
@@ -148,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<String> _readRoleFromToken() async {
-    final token = await TokenStorage.defaultInstance().readAccessToken();
+    final token = await AppContainer.instance.sessionService.readAccessToken();
     if (token == null || token.trim().isEmpty) return '';
     return AuthRepository.extractRole(null, token: token)?.trim() ?? '';
   }
@@ -243,7 +243,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) {
         final cs = Theme.of(ctx).colorScheme;
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('Delete Profile?'),
           content: const Text(
             'This action is permanent and cannot be undone. All your data will be removed.',

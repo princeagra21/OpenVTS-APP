@@ -18,7 +18,7 @@ class ApiConfigRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/superadmin/softwareconfig'),
+      SuperadminApiPaths.softwareConfig,
       cancelToken: cancelToken,
     );
     return res.when(
@@ -32,7 +32,7 @@ class ApiConfigRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/superadmin/softwareconfig'),
+      SuperadminApiPaths.softwareConfig,
       data: payload,
       cancelToken: cancelToken,
     );

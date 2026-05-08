@@ -1,5 +1,5 @@
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -46,7 +46,9 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Future<void> _logout() async {
     await PushNotificationsService.instance.unregisterForLogout();
-    await TokenStorage.defaultInstance().clear();
+    final sessionService = AppContainer.instance.sessionService;
+    await sessionService.logout();
+    await sessionService.clearSession();
     if (!mounted) return;
     context.go(AppRoutes.login);
   }

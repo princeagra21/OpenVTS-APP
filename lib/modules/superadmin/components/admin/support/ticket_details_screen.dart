@@ -4,12 +4,10 @@ import 'package:open_vts/core/theme/app_fonts.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/ticket_message_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/file_picker_helper.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
@@ -100,7 +98,9 @@ String _normalizeTicketStatus(String raw) {
   if (s.contains('close')) return 'Closed';
   if (s.contains('answer') || s.contains('resolve')) return 'Answered';
   if (s.contains('hold')) return 'Hold';
-  if (s.contains('process') || s.contains('progress') || s.contains('pending')) {
+  if (s.contains('process') ||
+      s.contains('progress') ||
+      s.contains('pending')) {
     return 'In Process';
   }
   if (s.contains('open') || s.contains('new')) return 'Open';
@@ -172,11 +172,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
     return item.senderName == 'You';
   }
-  final List<String> statusOptions = [
-    "Open",
-    "In Process",
-    "Closed",
-  ];
+
+  final List<String> statusOptions = ["Open", "In Process", "Closed"];
   bool _sending = false;
   bool _updatingStatus = false;
   bool _loadingDetails = false;
@@ -287,10 +284,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   Color _chatAccentBackground(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Color.alphaBlend(
-      cs.primary.withValues(alpha: 0.18),
-      cs.surface,
-    );
+    return Color.alphaBlend(cs.primary.withValues(alpha: 0.18), cs.surface);
   }
 
   Color _chatAccentForeground(BuildContext context) {
@@ -316,10 +310,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         painter: _ChatPatternPainter(
           color: cs.onSurface.withValues(alpha: 0.035),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: child,
-        ),
+        child: Padding(padding: const EdgeInsets.all(8), child: child),
       ),
     );
   }
@@ -339,9 +330,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.22),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.22)),
       ),
       child: Row(
         children: [
@@ -490,7 +479,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         final prev = index > 0 ? messages[index - 1] : null;
         final currentDate = _dateLabelForMessage(msg);
         final prevDate = prev == null ? '' : _dateLabelForMessage(prev);
-        final showDateSeparator = currentDate.isNotEmpty && currentDate != prevDate;
+        final showDateSeparator =
+            currentDate.isNotEmpty && currentDate != prevDate;
 
         return Column(
           children: [
@@ -521,8 +511,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Align(
-                alignment:
-                    isOutgoing ? Alignment.centerRight : Alignment.centerLeft,
+                alignment: isOutgoing
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minWidth: bubbleMinWidth,
@@ -549,14 +540,13 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       children: [
                         Text(
                           msg.content,
-                          textAlign:
-                              isOutgoing ? TextAlign.right : TextAlign.left,
+                          textAlign: isOutgoing
+                              ? TextAlign.right
+                              : TextAlign.left,
                           style: AppFonts.roboto(
                             fontSize: bodyFs - 0.5,
                             fontWeight: FontWeight.w500,
-                            color: isOutgoing
-                                ? accentFg
-                                : baseText,
+                            color: isOutgoing ? accentFg : baseText,
                           ),
                         ),
                         if (msg.attachmentName.trim().isNotEmpty) ...[
@@ -586,9 +576,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   Icon(
                                     Icons.attach_file,
                                     size: 14,
-                                    color: isOutgoing
-                                        ? accentFg
-                                        : mutedText,
+                                    color: isOutgoing ? accentFg : mutedText,
                                   ),
                                   const SizedBox(width: 6),
                                   Flexible(
@@ -641,9 +629,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (!mounted) return;
     if (file == null) return;
     if (file.bytes.length > 5 * 1024 * 1024) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Max file size is 5MB.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Max file size is 5MB.')));
       return;
     }
     setState(() => _attachment = file);
@@ -723,9 +711,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       res.when(
         success: (payload) {
           final detailMap = (payload['data'] is Map)
-            ? Map<String, dynamic>.from((payload['data'] as Map).cast())
-            : payload;
-          final adminIdRaw = (detailMap['adminUserId'] ?? detailMap['adminId'])
+              ? Map<String, dynamic>.from((payload['data'] as Map).cast())
+              : payload;
+          final adminIdRaw =
+              (detailMap['adminUserId'] ?? detailMap['adminId'])
                   ?.toString()
                   .trim() ??
               '';
@@ -779,16 +768,19 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             _loadingDetails = false;
             _detailsErrorShown = false;
             _detailTitle = rawTitle.isNotEmpty ? rawTitle : _detailTitle;
-            _detailCategory =
-                rawCategory.isNotEmpty ? rawCategory : _detailCategory;
-            _detailPriority =
-                rawPriority.isNotEmpty ? rawPriority : _detailPriority;
-            _detailStatus =
-                normalizedStatus.isNotEmpty ? normalizedStatus : _detailStatus;
-            _detailFromName =
-                fromName.isNotEmpty ? fromName : _detailFromName;
-            _detailFromEmail =
-                fromEmail.isNotEmpty ? fromEmail : _detailFromEmail;
+            _detailCategory = rawCategory.isNotEmpty
+                ? rawCategory
+                : _detailCategory;
+            _detailPriority = rawPriority.isNotEmpty
+                ? rawPriority
+                : _detailPriority;
+            _detailStatus = normalizedStatus.isNotEmpty
+                ? normalizedStatus
+                : _detailStatus;
+            _detailFromName = fromName.isNotEmpty ? fromName : _detailFromName;
+            _detailFromEmail = fromEmail.isNotEmpty
+                ? fromEmail
+                : _detailFromEmail;
             if (normalizedStatus.isNotEmpty) {
               if (!statusOptions.contains(normalizedStatus)) {
                 statusOptions.insert(0, normalizedStatus);
@@ -798,8 +790,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             _adminIdentifier = adminIdRaw.isNotEmpty
                 ? adminIdRaw
                 : (widget.ticket.numericId.isNotEmpty
-                        ? widget.ticket.numericId
-                        : widget.ticket.id);
+                      ? widget.ticket.numericId
+                      : widget.ticket.id);
             _messages
               ..clear()
               ..addAll(nextMessages);
@@ -1002,7 +994,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -1030,12 +1024,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   }
 
   Future<void> _openFullscreenChat() async {
-    final String fromName = (_detailFromName != null &&
-            _detailFromName!.trim().isNotEmpty)
+    final String fromName =
+        (_detailFromName != null && _detailFromName!.trim().isNotEmpty)
         ? _detailFromName!.trim()
         : (widget.ticket.owner.isNotEmpty
-            ? widget.ticket.owner
-            : (widget.ticket.name.isNotEmpty ? widget.ticket.name : '—'));
+              ? widget.ticket.owner
+              : (widget.ticket.name.isNotEmpty ? widget.ticket.name : '—'));
     final String fromDate = _formatDateTimeDisplay(
       widget.ticket.updated.isNotEmpty
           ? widget.ticket.updated
@@ -1076,8 +1070,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 18,
-                                backgroundColor:
-                                    colorScheme.onSurface.withValues(alpha: 0.06),
+                                backgroundColor: colorScheme.onSurface
+                                    .withValues(alpha: 0.06),
                                 child: Text(
                                   fromName.isNotEmpty
                                       ? fromName[0].toUpperCase()
@@ -1085,7 +1079,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   style: AppFonts.roboto(
                                     fontSize: bodyFs - 1,
                                     fontWeight: FontWeight.w700,
-                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                    color: colorScheme.onSurface.withValues(
+                                      alpha: 0.7,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1130,14 +1126,18 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                       shape: BoxShape.circle,
                                       color: colorScheme.surface,
                                       border: Border.all(
-                                        color: colorScheme.outline.withValues(alpha: 0.22),
+                                        color: colorScheme.outline.withValues(
+                                          alpha: 0.22,
+                                        ),
                                       ),
                                     ),
                                     alignment: Alignment.center,
                                     child: Icon(
                                       Icons.close_fullscreen,
                                       size: 18,
-                                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                                      color: colorScheme.onSurface.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1166,7 +1166,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             onChangedForParent: () {
                               if (mounted) {
                                 setModalState(() {});
-                                _scrollToLatest(_fullscreenChatScrollController);
+                                _scrollToLatest(
+                                  _fullscreenChatScrollController,
+                                );
                               }
                             },
                           ),
@@ -1196,14 +1198,14 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final double bodyFs = 14 + scale;
     final double secondaryFs = 12 + scale;
     final double metaFs = 11 + scale;
-    final String fromName = (_detailFromName != null &&
-            _detailFromName!.trim().isNotEmpty)
+    final String fromName =
+        (_detailFromName != null && _detailFromName!.trim().isNotEmpty)
         ? _detailFromName!.trim()
         : (widget.ticket.owner.isNotEmpty
-            ? widget.ticket.owner
-            : (widget.ticket.name.isNotEmpty ? widget.ticket.name : '—'));
-    final String fromEmail = (_detailFromEmail != null &&
-            _detailFromEmail!.trim().isNotEmpty)
+              ? widget.ticket.owner
+              : (widget.ticket.name.isNotEmpty ? widget.ticket.name : '—'));
+    final String fromEmail =
+        (_detailFromEmail != null && _detailFromEmail!.trim().isNotEmpty)
         ? _detailFromEmail!.trim()
         : '—';
     final String fromDate = _formatDateTimeDisplay(
@@ -1338,7 +1340,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             color: Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: colorScheme.onSurface.withValues(alpha: 0.12),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
                             ),
                           ),
                           child: Column(
@@ -1350,8 +1354,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   fontSize: metaFs,
                                   height: 14 / 11,
                                   fontWeight: FontWeight.w600,
-                                  color:
-                                      colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -1373,8 +1378,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   fontSize: secondaryFs,
                                   height: 16 / 12,
                                   fontWeight: FontWeight.w500,
-                                  color:
-                                      colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1392,7 +1398,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         else
                           DropdownButtonFormField<String>(
                             decoration: _dropdownDecoration(context),
-                            initialValue: statusOptions.contains(selectedDropdownStatus)
+                            initialValue:
+                                statusOptions.contains(selectedDropdownStatus)
                                 ? selectedDropdownStatus
                                 : null,
                             items: statusOptions
@@ -1455,82 +1462,84 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor:
-                                  colorScheme.onSurface.withValues(alpha: 0.06),
-                              child: Text(
-                                fromName.isNotEmpty
-                                    ? fromName[0].toUpperCase()
-                                    : '—',
-                                style: AppFonts.roboto(
-                                  fontSize: bodyFs,
-                                  height: 20 / 14,
-                                  fontWeight: FontWeight.w700,
-                                  color:
-                                      colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Text(
-                                    fromName,
-                                    style: AppFonts.roboto(
-                                      fontSize: bodyFs,
-                                      height: 20 / 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: colorScheme.onSurface
+                                        .withValues(alpha: 0.06),
+                                    child: Text(
+                                      fromName.isNotEmpty
+                                          ? fromName[0].toUpperCase()
+                                          : '—',
+                                      style: AppFonts.roboto(
+                                        fontSize: bodyFs,
+                                        height: 20 / 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    fromDate,
-                                    style: AppFonts.roboto(
-                                      fontSize: secondaryFs,
-                                      height: 16 / 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          fromName,
+                                          style: AppFonts.roboto(
+                                            fontSize: bodyFs,
+                                            height: 20 / 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          fromDate,
+                                          style: AppFonts.roboto(
+                                            fontSize: secondaryFs,
+                                            height: 16 / 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Open fullscreen chat',
+                                    onPressed: _openFullscreenChat,
+                                    icon: Container(
+                                      height: 34,
+                                      width: 34,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Icon(
+                                        Icons.open_in_full,
+                                        size: 18,
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            IconButton(
-                              tooltip: 'Open fullscreen chat',
-                              onPressed: _openFullscreenChat,
-                              icon: Container(
-                                height: 34,
-                                width: 34,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: colorScheme.onSurface.withValues(alpha: 
-                                    0.06,
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.open_in_full,
-                                  size: 18,
-                                  color: colorScheme.onSurface.withValues(alpha: 
-                                    0.8,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               SizedBox(
                                 height: normalPreviewHeight,
                                 child: _buildChatSurface(

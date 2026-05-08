@@ -12,7 +12,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class RecordManualPaymentScreen extends StatefulWidget {
   const RecordManualPaymentScreen({super.key});
@@ -678,3 +678,4 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
     );
   }
 }
+

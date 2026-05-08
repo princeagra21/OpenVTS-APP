@@ -236,7 +236,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
       _api ??= ApiClientProvider.create();
       final creditsValue = action == 'deduct' ? -amount : amount;
       final res = await _api!.post(
-        ApiPaths.path('/superadmin/assigncredits/${widget.adminId}'),
+        SuperadminApiPaths.assignCredits(widget.adminId),
         data: {
           'credits': creditsValue.toString(),
           'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',

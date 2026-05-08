@@ -1,6 +1,6 @@
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/theme/open_vts_colors.dart';
+import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 // screens/server/server_status_screen.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -2546,3 +2546,4 @@ class _MonitoringRowData {
     required this.status,
   });
 }
+

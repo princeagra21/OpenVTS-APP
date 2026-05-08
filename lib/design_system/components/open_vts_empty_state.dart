@@ -8,14 +8,17 @@ class OpenVtsEmptyState extends StatelessWidget {
   const OpenVtsEmptyState({
     super.key,
     required this.title,
-    required this.message,
+    this.message,
+    this.description,
     this.icon = Icons.inbox_outlined,
     this.actionLabel,
     this.onAction,
   });
 
   final String title;
-  final String message;
+  final String? message;
+  // Legacy alias used by core widget API.
+  final String? description;
   final IconData icon;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -23,6 +26,10 @@ class OpenVtsEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final String? resolvedMessage =
+        (message ?? description)?.trim().isNotEmpty == true
+        ? (message ?? description)!.trim()
+        : null;
 
     return OpenVtsCard(
       child: Column(
@@ -39,12 +46,14 @@ class OpenVtsEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium),
           ),
-          const SizedBox(height: OpenVtsSpacing.xs),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium),
-          ),
+          if (resolvedMessage != null) ...[
+            const SizedBox(height: OpenVtsSpacing.xs),
+            Text(
+              resolvedMessage,
+              textAlign: TextAlign.center,
+              style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium),
+            ),
+          ],
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: OpenVtsSpacing.lg),
             OpenVtsButton(label: actionLabel!, onPressed: onAction),

@@ -64,7 +64,7 @@ class VehicleDetailsRepository {
     CancelToken? cancelToken,
   }) async {
     final result = await _delegate.api.patch(
-      ApiPaths.path('/user/vehicles/$vehicleId/config'),
+      UserApiPaths.vehicleConfig(vehicleId),
       data: payload,
       cancelToken: cancelToken,
     );

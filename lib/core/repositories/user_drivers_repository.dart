@@ -13,7 +13,7 @@ class UserDriversRepository {
   Future<Result<List<AdminDriverListItem>>> getDrivers({
     CancelToken? cancelToken,
   }) async {
-    final res = await api.get(ApiPaths.path('/user/drivers'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.drivers, cancelToken: cancelToken);
 
     return res.when(
       success: (data) {
@@ -48,7 +48,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.post(
-      ApiPaths.path('/user/drivers'),
+      UserApiPaths.drivers,
       data: payload,
       cancelToken: cancelToken,
     );
@@ -67,7 +67,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/user/drivers/$driverId'),
+      UserApiPaths.driverDetails(driverId),
       cancelToken: cancelToken,
     );
 
@@ -83,7 +83,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.delete(
-      ApiPaths.path('/user/drivers/$driverId'),
+      UserApiPaths.driverDetails(driverId),
       data: <String, dynamic>{'driverId': driverId},
       cancelToken: cancelToken,
     );
@@ -100,7 +100,7 @@ class UserDriversRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.patch(
-      ApiPaths.path('/user/drivers/$driverId'),
+      UserApiPaths.driverDetails(driverId),
       data: payload,
       cancelToken: cancelToken,
     );

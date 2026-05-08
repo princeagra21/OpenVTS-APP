@@ -32,7 +32,7 @@ class AdminTransactionsRepository {
     if (to != null && to.trim().isNotEmpty) query['to'] = to.trim();
 
     final res = await api.get(
-      ApiPaths.path('/admin/transactions'),
+      AdminApiPaths.transactions,
       queryParameters: query.isEmpty ? null : query,
       cancelToken: cancelToken,
     );
@@ -65,7 +65,7 @@ class AdminTransactionsRepository {
     CancelToken? cancelToken,
   }) async {
     final res = await api.get(
-      ApiPaths.path('/admin/transactions/analytics'),
+      AdminApiPaths.transactionsAnalytics,
       cancelToken: cancelToken,
     );
 

@@ -15,7 +15,7 @@ class UserRepository {
   Future<Result<Profile>> getProfile({CancelToken? cancelToken}) async {
     // If your backend doesn't have `/user/profile`, adjust this to a known endpoint
     // from the Postman collection.
-    final res = await api.get(ApiPaths.path('/user/profile'), cancelToken: cancelToken);
+    final res = await api.get(UserApiPaths.profile, cancelToken: cancelToken);
 
     return res.when(
       success: (data) => Result.ok(Profile(_coerceMap(data))),
