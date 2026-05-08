@@ -998,12 +998,12 @@ class _MapScreenState extends State<MapScreen>
   ) {
     final typeSlug = _vehicleBaseTypeSlug(point);
     final statusKey = _normalizedStatusKey(status);
-    return 'assets/images/vehicle_icons_status/${typeSlug}_$statusKey.png';
+    return 'assets/images/vehicleicons/${typeSlug}${statusKey}.png';
   }
 
   String _vehicleBaseAssetPath(MapVehiclePoint point) {
     final typeSlug = _vehicleBaseTypeSlug(point);
-    return 'assets/images/vehicle_icons_named/$typeSlug.png';
+    return 'assets/images/vehicleicons/${typeSlug}White.png';
   }
 
   @override

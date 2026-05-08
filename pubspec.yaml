@@ -55,15 +55,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/image/logo.jpeg
-    - assets/image/logo.png
-    - assets/image/marker_green.png
-    - assets/image/
-    - assets/images/logos/
-    - assets/images/vehicle_icons_named/
-    - assets/images/vehicle_icons_status/
-    - assets/images/login/login_globe_orbit.png
     - assets/images/
+    - assets/fonts/
 
   # Fonts
   fonts:
@@ -84,15 +77,15 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path_android: "assets/image/logo.png"
-  image_path_ios: "assets/image/logo.png"
+  image_path_android: "assets/images/logo.png"
+  image_path_ios: "assets/images/logo.png"
   adaptive_icon_background: "#194EE5"
-  adaptive_icon_foreground: "assets/image/logo.png"
+  adaptive_icon_foreground: "assets/images/logo.png"
 
 # Native splash screen - top-level
 flutter_native_splash:
   color: "#194EE5"
-  image: assets/image/logo.png
+  image: assets/images/logo.png
   android: true
   ios: true
   web: false

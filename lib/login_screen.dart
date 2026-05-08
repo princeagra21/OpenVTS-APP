@@ -13,7 +13,6 @@ import 'package:fleet_stack/core/storage/token_storage.dart';
 import 'package:fleet_stack/core/config/server_configuration_sheet.dart';
 import 'package:fleet_stack/core/utils/app_logo.dart';
 import 'package:fleet_stack/modules/superadmin/utils/adaptive_utils.dart';
-import 'package:fleet_stack/widgets/animated_orbit_login_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -243,263 +242,220 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Reusable minimal InputDecoration
-  InputDecoration _minimalDecoration(
-    BuildContext context, {
-    String? hint,
-    bool isPassword = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      hintText: hint,
-      hintStyle: GoogleFonts.inter(
-        color: colorScheme.onSurface.withValues(alpha: 0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(
-          MediaQuery.of(context).size.width,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      prefixIconConstraints: const BoxConstraints(minWidth: 48),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.primary.withValues(alpha: 0.1),
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.primary.withValues(alpha: 0.1),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-      ),
-      suffixIcon: isPassword
-          ? IconButton(
-              onPressed: () {
-                setState(() => _obscurePassword = !_obscurePassword);
-              },
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                color: colorScheme.primary,
-              ),
-            )
-          : null,
-    );
-  }
-
   Widget _buildLoginForm(ColorScheme colorScheme, double labelSize) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final logoAsset = AppLogo.assetFor(context);
 
-    Widget inputField({
-      required String label,
-      required TextEditingController controller,
-      required String hint,
-      required IconData icon,
-      TextInputType? keyboardType,
-      bool obscure = false,
-      bool password = false,
-    }) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: labelSize,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.2),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              obscureText: obscure,
-              style: GoogleFonts.inter(
-                fontSize: labelSize,
-                color: colorScheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: GoogleFonts.inter(
-                  color: colorScheme.onSurface.withValues(alpha: 0.45),
-                  fontSize: labelSize,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 18,
-                ),
-                prefixIcon: Icon(
-                  icon,
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                suffixIcon: password
-                    ? IconButton(
-                        onPressed: () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 0),
-        Center(
-          child: Image.asset(
-            logoAsset,
-            width: (MediaQuery.of(context).size.width * 0.5).clamp(160, 230),
-            fit: BoxFit.contain,
-            gaplessPlayback: true,
-            errorBuilder: (_, __, ___) {
-              final alt = isDark
-                  ? 'assets/images/logos/open_vts_logo_dark.png'
-                  : 'assets/images/logos/open_vts_logo_light.png';
-              return Image.asset(
-                alt,
-                width: (MediaQuery.of(context).size.width * 0.5).clamp(
-                  160,
-                  230,
-                ),
-                fit: BoxFit.contain,
-                gaplessPlayback: true,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/image/logo.png',
-                  width: (MediaQuery.of(context).size.width * 0.42).clamp(
-                    120,
-                    180,
-                  ),
-                  fit: BoxFit.contain,
-                ),
-              );
-            },
+        // Hero-style title
+        Text(
+          'Track Without Limits',
+          style: GoogleFonts.roboto(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+            letterSpacing: -0.5,
           ),
-        ),
-        const SizedBox(height: 28),
-        inputField(
-          label: 'Email or Username',
-          controller: _emailController,
-          hint: 'Enter your email',
-          icon: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 18),
-        inputField(
-          label: 'Password',
-          controller: _passwordController,
-          hint: 'Enter your password',
-          icon: Icons.lock_outline,
-          obscure: _obscurePassword,
-          password: true,
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _isForgot = true;
-              });
-            },
-            child: Text(
-              "Forgot Password?",
-              style: GoogleFonts.inter(
-                fontSize: labelSize - 2,
-                color: colorScheme.onSurface.withValues(alpha: 0.75),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+        Text(
+          'Powered by You',
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black.withOpacity(0.7),
           ),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(height: 40),
+        // Glassmorphism container for form
+        Container(
           width: double.infinity,
-          child: GestureDetector(
-            onTap: _isLoggingIn ? null : _submitLogin,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: _isLoggingIn
-                  ? const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Row(
-                      children: [
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Text(
-                            "Login",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: labelSize + 1,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ],
+            ],
+          ),
+          child: Column(
+            children: [
+              // Logo
+              Image.asset(
+                logoAsset,
+                width: 380,
+                height: 60,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 24),
+              // Email field
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Email or Username',
+                  labelStyle: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
                     ),
-            ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    color: Colors.black.withOpacity(0.5),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Password field
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  labelStyle: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.lock_outline,
+                    color: Colors.black.withOpacity(0.5),
+                    size: 20,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: Colors.black.withOpacity(0.5),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Forgot password
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isForgot = true;
+                    });
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black.withOpacity(0.7),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Login button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoggingIn ? null : _submitLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoggingIn
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Login',
+                          style: GoogleFonts.roboto(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -512,129 +468,161 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Header with Close
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Forgot Password',
-              style: GoogleFonts.inter(
-                fontSize: labelSize + 4,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isForgot = false;
-                  _forgotPasswordMessage = null;
-                });
-              },
-              child: Icon(
-                Icons.close,
-                size: 28,
-                color: colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
+        Text(
+          'Reset Password',
+          style: GoogleFonts.roboto(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+            letterSpacing: -0.5,
+          ),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          'Enter your email to reset',
-          style: GoogleFonts.inter(
-            fontSize: labelSize - 2,
-            color: colorScheme.onSurface.withValues(alpha: 0.7),
+          'Enter your email to receive reset instructions',
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black.withOpacity(0.7),
           ),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 32),
-
-        // Email Field
-        TextField(
-          controller: _emailController,
-          keyboardType: TextInputType.text,
-          style: GoogleFonts.inter(
-            fontSize: labelSize,
-            color: colorScheme.onSurface,
+        const SizedBox(height: 40),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          decoration: _minimalDecoration(context, hint: "Email or username")
-              .copyWith(
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                  color: colorScheme.primary,
-                  size: 22,
+          child: Column(
+            children: [
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.text,
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Email or Username',
+                  labelStyle: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    color: Colors.black.withOpacity(0.5),
+                    size: 20,
+                  ),
                 ),
               ),
-        ),
-        const SizedBox(height: 32),
-
-        // Buttons
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isForgot = false;
-                    _forgotPasswordMessage = null;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Cancel",
-                      style: GoogleFonts.inter(
-                        fontSize: labelSize,
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isForgot = false;
+                            _forgotPasswordMessage = null;
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Colors.grey.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.roboto(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: _isForgotSubmitting ? null : _submitForgotPassword,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: _isForgotSubmitting
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            "Proceed",
-                            style: GoogleFonts.inter(
-                              fontSize: labelSize,
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isForgotSubmitting ? null : _submitForgotPassword,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: 0,
+                        ),
+                        child: _isForgotSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(
+                                'Proceed',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -644,99 +632,167 @@ class _LoginScreenState extends State<LoginScreen> {
     final message =
         _forgotPasswordMessage ??
         'If an account with that identifier exists, a password reset link has been sent.';
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Check Your Email',
-              style: GoogleFonts.inter(
-                fontSize: labelSize + 4,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isForgot = false;
-                  _forgotPasswordMessage = null;
-                });
-              },
-              child: Icon(
-                Icons.close,
-                size: 28,
-                color: colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
         Text(
-          message,
-          style: GoogleFonts.inter(
-            fontSize: labelSize - 1,
-            color: colorScheme.onSurface.withValues(alpha: 0.75),
-            height: 1.4,
+          'Check Your Email',
+          style: GoogleFonts.roboto(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+            letterSpacing: -0.5,
           ),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 8),
+        Text(
+          'We\'ve sent reset instructions to your email',
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black.withOpacity(0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 40),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: colorScheme.primary.withValues(alpha: 0.15),
-            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.mark_email_read_outlined, color: colorScheme.primary),
-              const SizedBox(height: 12),
               Text(
-                'We have sent instructions if the account exists.',
-                style: GoogleFonts.inter(
-                  fontSize: labelSize - 1,
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
+                message,
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black.withOpacity(0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.mark_email_read_outlined,
+                      color: Colors.black.withOpacity(0.6),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Check your inbox and spam folder',
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isForgot = false;
+                      _forgotPasswordMessage = null;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Back to Sign In',
+                    style: GoogleFonts.roboto(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 28),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _isForgot = false;
-              _forgotPasswordMessage = null;
-            });
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(16),
+      ],
+    );
+  }
+
+  Widget _buildEarthFooter() {
+    return SizedBox(
+      height: 150,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          // Outer ring
+          ClipPath(
+            clipper: _EarthClipper(),
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.8),
+                  width: 4,
+                ),
+                shape: BoxShape.circle,
+              ),
             ),
-            child: Center(
-              child: Text(
-                'Back to Sign In',
-                style: GoogleFonts.inter(
-                  fontSize: labelSize,
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
+          ),
+          // Inner image
+          ClipPath(
+            clipper: _EarthClipper(),
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/background-full.png'),
+                  fit: BoxFit.cover,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.withOpacity(0.4),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -752,12 +808,23 @@ class _LoginScreenState extends State<LoginScreen> {
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: const Color(0xFFF4F6F8),
+        backgroundColor: const Color(0xFFF3F4F6),
         body: Stack(
           children: [
-            const Positioned.fill(
-              child: IgnorePointer(child: AnimatedOrbitLoginBackground()),
+            // Full background image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/background-full.png',
+                fit: BoxFit.cover,
+              ),
             ),
+            // Semi-transparent white overlay for premium depth
+            Positioned.fill(
+              child: Container(
+                color: Colors.white.withOpacity(0.75),
+              ),
+            ),
+            // Settings icon
             Positioned(
               top: 18,
               right: 22,
@@ -765,9 +832,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: IconButton(
                   onPressed: _openServerConfiguration,
                   tooltip: 'Server configuration',
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.settings_rounded,
-                    color: colorScheme.onSurface,
+                    color: Colors.black,
+                    size: 24,
                   ),
                 ),
               ),
@@ -777,7 +845,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 builder: (context, constraints) {
                   final h = constraints.maxHeight;
                   final isSmallHeight = h < 700;
-                  return Center(
+                  return SizedBox.expand(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 430),
                       child: Padding(
@@ -789,9 +857,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? const Offset(0, -0.10)
                               : Offset.zero,
                           child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               SizedBox(
-                                height: isSmallHeight ? h * 0.12 : h * 0.16,
+                                height: isSmallHeight ? h * 0.15 : h * 0.20,
                               ),
                               PageTransitionSwitcher(
                                 duration: const Duration(milliseconds: 500),
@@ -810,15 +880,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? _buildForgotForm(colorScheme, labelSize)
                                     : Container(
                                         key: const ValueKey('login'),
-                                        padding: const EdgeInsets.only(
-                                          bottom: 16,
-                                        ),
                                         child: _buildLoginForm(
                                           colorScheme,
                                           labelSize,
                                         ),
                                       ),
                               ),
+                              const Spacer(),
+                              _buildEarthFooter(),
                             ],
                           ),
                         ),
@@ -833,6 +902,29 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+class _EarthClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    // Start from bottom left
+    path.moveTo(0, size.height);
+    // Arc to bottom right (semicircle)
+    path.arcToPoint(
+      Offset(size.width, size.height),
+      radius: Radius.circular(size.width / 2),
+      clockwise: false,
+    );
+    // Line back to bottom left
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
 class _EnableNotificationsDialog extends StatelessWidget {
