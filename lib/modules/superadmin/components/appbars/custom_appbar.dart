@@ -1,6 +1,6 @@
-﻿import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/features/shell/open_vts_app_bar.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -11,7 +11,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.icons,
     this.onIconTaps,
     this.enableBellBadge = true,
-    this.notificationPathPrefix = AppRoutes.superadminNotifications,
+    this.notificationPathPrefix = AppRoutePaths.superadminNotifications,
     this.showLeftAvatar = true,
     this.showRightAvatar = false,
     required this.leftAvatarText,

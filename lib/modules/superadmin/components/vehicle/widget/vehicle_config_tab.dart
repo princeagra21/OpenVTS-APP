@@ -180,7 +180,7 @@ class _VehicleConfigTabState extends State<VehicleConfigTab> {
     setState(() => _saving = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final payload = VehicleConfigUpdate(
         speedMultiplier: speed,

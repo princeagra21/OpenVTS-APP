@@ -85,7 +85,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     _submitToken = token;
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminProfileRepository(api: _api!);
 
       final result = await _repo!.updatePassword(

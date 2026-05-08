@@ -84,7 +84,7 @@ class _AdministratorDetailsScreenState
     setState(() => _headerLoading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminProfile(widget.id, cancelToken: token);

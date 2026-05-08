@@ -77,7 +77,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     setState(() => _loadingPricingPlans = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final capRes = await _repo!.canAccessAdminPricingPlans(
@@ -137,7 +137,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     }
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getPricingPlans(cancelToken: token);

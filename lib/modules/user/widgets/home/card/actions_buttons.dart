@@ -1,4 +1,4 @@
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 // components/fleet/actions_buttons.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class ActionsButtons extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(btnRadius),
                 onTap: () {
-                  context.push(AppRoutes.userNotifications);
+                  context.push(AppRoutePaths.userNotifications);
                 },
                 splashColor: colorScheme.onPrimary.withOpacity(0.12),
                 child: Padding(
@@ -73,7 +73,7 @@ class ActionsButtons extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(btnRadius),
                 onTap: () {
-                  context.push(AppRoutes.userTransactions);
+                  context.push(AppRoutePaths.userTransactions);
                 },
                 splashColor: colorScheme.primary.withOpacity(0.08),
                 child: Container(

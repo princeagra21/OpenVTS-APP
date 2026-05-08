@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -60,7 +60,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   AdminTransactionsRepository? _repo;
 
   AdminTransactionsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminTransactionsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -124,7 +124,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _openRecordTransaction() async {
-    final result = await context.push(AppRoutes.adminPaymentsAdd);
+    final result = await context.push(AppRoutePaths.adminPaymentsAdd);
     if (!mounted) return;
     if (result == true) {
       _loadTransactions();
@@ -277,7 +277,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     if (parsedIso != null) return parsedIso;
 
     final datePart = value.split(',').first.trim();
-    final slash = datePart.split(AppRoutes.root);
+    final slash = datePart.split(AppRoutePaths.root);
     if (slash.length == 3) {
       final d = int.tryParse(slash[0]);
       final m = int.tryParse(slash[1]);

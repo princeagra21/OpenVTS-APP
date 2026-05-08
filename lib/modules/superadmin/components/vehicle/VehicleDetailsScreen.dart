@@ -114,7 +114,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     setState(() => _loadingDetails = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getVehicleDetails(widget.id, cancelToken: token);

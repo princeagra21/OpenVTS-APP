@@ -78,7 +78,7 @@ class _VehicleMapTabState extends State<VehicleMapTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getVehicleLocation(imei, cancelToken: token);
 

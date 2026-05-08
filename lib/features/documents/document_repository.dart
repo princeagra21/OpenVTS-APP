@@ -45,7 +45,7 @@ abstract class DocumentRepositoryAdapter {
 
 class AdminDocumentRepositoryAdapter implements DocumentRepositoryAdapter {
   AdminDocumentRepositoryAdapter({ApiClient? api})
-    : _repo = AdminUsersRepository(api: api ?? ApiClientProvider.create());
+    : _repo = AdminUsersRepository(api: api ?? ApiClientProvider.shared());
 
   final AdminUsersRepository _repo;
 
@@ -119,7 +119,7 @@ class AdminDocumentRepositoryAdapter implements DocumentRepositoryAdapter {
 
 class SuperadminDocumentRepositoryAdapter implements DocumentRepositoryAdapter {
   SuperadminDocumentRepositoryAdapter({ApiClient? api})
-    : _repo = SuperadminRepository(api: api ?? ApiClientProvider.create());
+    : _repo = SuperadminRepository(api: api ?? ApiClientProvider.shared());
 
   final SuperadminRepository _repo;
 

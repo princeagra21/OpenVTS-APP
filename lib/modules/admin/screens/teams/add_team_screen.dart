@@ -54,7 +54,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

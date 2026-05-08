@@ -15,7 +15,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class SubUserDetailsScreen extends StatefulWidget {
   final String userId;
@@ -62,13 +62,13 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }
 
   UserVehiclesRepository _vehiclesRepo() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return UserVehiclesRepository(api: _apiClient!);
   }
 
@@ -372,7 +372,7 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
                     ? null
                     : () async {
                         final result = await context.push(
-                          AppRoutes.userSubUsersEdit(widget.userId),
+                          AppRoutePaths.userSubUsersEdit(widget.userId),
                           extra: details,
                         );
                         if (result == true) {

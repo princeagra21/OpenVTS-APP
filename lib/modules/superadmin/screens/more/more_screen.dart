@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -50,7 +50,7 @@ class _MoreScreenState extends State<MoreScreen> {
     await sessionService.logout();
     await sessionService.clearSession();
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -116,37 +116,37 @@ class _MoreScreenState extends State<MoreScreen> {
       //   'title': 'Server',
       //   'subtitle': 'Status and setup',
       //   'icon': CupertinoIcons.settings,
-      //   'route': AppRoutes.superadminServer,
+      //   'route': AppRoutePaths.superadminServer,
       // },
       {
         'title': 'Calendar',
         'subtitle': 'Jobs and events',
         'icon': CupertinoIcons.calendar,
-        'route': AppRoutes.superadminCalendar,
+        'route': AppRoutePaths.superadminCalendar,
       },
       {
         'title': 'Support',
         'subtitle': 'Help center',
         'icon': CupertinoIcons.question_circle,
-        'route': AppRoutes.superadminSupport,
+        'route': AppRoutePaths.superadminSupport,
       },
       {
         'title': 'Setting',
         'subtitle': 'App and account',
         'icon': CupertinoIcons.settings_solid,
-        'route': AppRoutes.superadminSettings,
+        'route': AppRoutePaths.superadminSettings,
       },
       // {
       //   'title': 'SSL',
       //   'subtitle': 'Certificate & HTTPS',
       //   'icon': CupertinoIcons.lock_shield,
-      //   'route': AppRoutes.superadminSsl,
+      //   'route': AppRoutePaths.superadminSsl,
       // },
       {
         'title': 'Roles',
         'subtitle': 'Admin & permissions',
         'icon': CupertinoIcons.person_2_fill,
-        'route': AppRoutes.superadminRoles,
+        'route': AppRoutePaths.superadminRoles,
       },
     ];
 

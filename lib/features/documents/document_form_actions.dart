@@ -2,6 +2,7 @@ import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/models/superadmin_document_type.dart';
+import 'package:open_vts/design_system/components/open_vts_modal.dart';
 import 'package:open_vts/features/documents/widgets/document_type_selector.dart';
 
 class DocumentFormActions {
@@ -55,14 +56,9 @@ class DocumentFormActions {
     required SuperadminDocumentType? selectedDocType,
     required bool loadingDocTypes,
   }) {
-    return showModalBottomSheet<SuperadminDocumentType>(
+    return OpenVtsModal.showBottomSheet<SuperadminDocumentType>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (_) => DocumentTypeSelectionSheet(
+      child: DocumentTypeSelectionSheet(
         docTypes: docTypes,
         selectedDocType: selectedDocType,
         loadingDocTypes: loadingDocTypes,

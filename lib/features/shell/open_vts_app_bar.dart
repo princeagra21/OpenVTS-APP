@@ -82,7 +82,7 @@ class _OpenVtsAppBarState extends State<OpenVtsAppBar>
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
       pathPrefix: widget.notificationPathPrefix!,

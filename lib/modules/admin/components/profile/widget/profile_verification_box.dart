@@ -69,7 +69,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
     }
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminProfileRepository(api: _api!);
 
       final Result<void> result = channel == _VerificationChannel.email

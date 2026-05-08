@@ -76,7 +76,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
   }
 
   WhiteLabelRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= WhiteLabelRepository(api: _api!);
     return _repo!;
   }

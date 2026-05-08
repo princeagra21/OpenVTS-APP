@@ -1,4 +1,4 @@
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // login_screen.dart
@@ -43,13 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _openServerConfiguration() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await showModalBottomSheet<String>(
+    final result = await OpenVtsModal.showBottomSheet<String>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: OpenVtsColors.transparent,
-      builder: (_) => const ServerConfigurationSheet(),
+      child: const ServerConfigurationSheet(),
     );
 
     if (!mounted || result == null) return;
@@ -62,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _ => null,
     };
     if (message != null) {
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+      OpenVtsFeedback.success(context, message);
     }
   }
 
@@ -73,18 +69,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? _targetPathForRole(String? backendRole) {
     final normalized = (backendRole ?? '').trim().toLowerCase();
-    if (normalized.contains('super')) return AppRoutes.superadminHome;
-    if (normalized.contains('admin')) return AppRoutes.adminHome;
-    if (normalized.contains('user')) return AppRoutes.userHome;
+    if (normalized.contains('super')) return AppRoutePaths.superadminHome;
+    if (normalized.contains('admin')) return AppRoutePaths.adminHome;
+    if (normalized.contains('user')) return AppRoutePaths.userHome;
     if (normalized.contains('driver')) return null;
     return null;
   }
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    OpenVtsFeedback.error(context, message);
   }
 
   Future<void> _submitForgotPassword() async {
@@ -136,13 +130,18 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final enable = await showDialog<bool>(
+    final enable = await OpenVtsModal.showConfirmDialog(
       context: context,
-      builder: (_) => const _EnableNotificationsDialog(),
+      title: 'Enable notifications?',
+      message:
+          'You can turn this on now and change it later from Notifications.',
+      confirmLabel: 'Enable',
+      cancelLabel: 'Not now',
+      icon: Icons.notifications_active_outlined,
     );
     if (!mounted) return;
 
-    if (enable == true) {
+    if (enable) {
       final result = await service.enable();
       if (!mounted) return;
       result.when(
@@ -690,106 +689,4 @@ class _EarthClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-class _EnableNotificationsDialog extends StatelessWidget {
-  const _EnableNotificationsDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Dialog(
-      backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.notifications_active_outlined,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Enable notifications?',
-                    style: AppFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'You can turn this on now and change it later from Notifications.',
-              style: AppFonts.inter(
-                fontSize: 14,
-                height: 1.5,
-                color: colorScheme.onSurface.withValues(alpha: 0.72),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.onSurface,
-                      side: BorderSide(
-                        color: colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      'Not now',
-                      style: AppFonts.inter(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      'Enable',
-                      style: AppFonts.inter(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

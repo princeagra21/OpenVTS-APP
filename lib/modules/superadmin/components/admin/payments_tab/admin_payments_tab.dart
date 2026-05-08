@@ -58,7 +58,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
 
       final res = await _api!.get(
         SuperadminApiPaths.transactions,

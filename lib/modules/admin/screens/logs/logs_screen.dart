@@ -15,7 +15,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -38,7 +38,7 @@ class _LogsScreenState extends State<LogsScreen> {
   DateTimeRange? _dateRange;
 
   AdminLogsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminLogsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -119,7 +119,7 @@ class _LogsScreenState extends State<LogsScreen> {
 
     final commaParts = value.split(',');
     if (commaParts.isNotEmpty) {
-      final dateParts = commaParts.first.trim().split(AppRoutes.root);
+      final dateParts = commaParts.first.trim().split(AppRoutePaths.root);
       if (dateParts.length == 3) {
         final d = int.tryParse(dateParts[0]);
         final m = int.tryParse(dateParts[1]);
@@ -438,7 +438,7 @@ class _LogsScreenState extends State<LogsScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Logs & Activity',
         leadingIcon: Icons.list_alt,
-        onClose: () => context.go(AppRoutes.adminHome),
+        onClose: () => context.go(AppRoutePaths.adminHome),
       ),
       actionIcons: const [Icons.settings],
       showLeftAvatar: false,

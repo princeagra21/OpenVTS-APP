@@ -61,7 +61,7 @@ class _AdminDriverDetailsScreenState extends State<AdminDriverDetailsScreen> {
   AdminDriversRepository? _repo;
 
   AdminDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminDriversRepository(api: _apiClient!);
     return _repo!;
   }

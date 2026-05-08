@@ -56,7 +56,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
     setState(() => _loadingAdmins = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdmins(
@@ -984,7 +984,7 @@ class _NewTicketScreenState extends State<NewTicketScreen> {
                                           }
                                           setState(() => _submitting = true);
                                           try {
-                                            _api ??= ApiClientProvider.create();
+                                            _api ??= ApiClientProvider.shared();
                                             _repo ??= SuperadminRepository(
                                               api: _api!,
                                             );

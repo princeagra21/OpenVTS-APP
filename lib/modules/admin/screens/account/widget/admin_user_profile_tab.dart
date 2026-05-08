@@ -1222,7 +1222,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= AdminUsersRepository(api: _api!);
     return _repo!;
   }

@@ -72,7 +72,7 @@ class _ApplicationHeaderState extends State<ApplicationHeader> {
   _ApplicationSnapshot? _loadedSnapshot;
 
   AppPreferencesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AppPreferencesRepository(api: _apiClient!);
     return _repo!;
   }

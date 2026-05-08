@@ -1,6 +1,6 @@
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 // UPDATED: components/activity/recent_activity_box.dart
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -235,7 +235,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentVehicles = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentVehicles(cancelToken: token);
@@ -311,7 +311,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentTransactions = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentTransactions(
@@ -386,7 +386,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentUsers = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentUsers(cancelToken: token);
@@ -990,7 +990,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
               ),
               if (title == 'Transactions')
                 InkWell(
-                  onTap: () => context.push(AppRoutes.superadminPayments),
+                  onTap: () => context.push(AppRoutePaths.superadminPayments),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,

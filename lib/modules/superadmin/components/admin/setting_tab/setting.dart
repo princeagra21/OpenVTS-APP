@@ -1,7 +1,6 @@
 import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/admin_settings_tab.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_settings.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -102,8 +101,7 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
 
   Future<void> _ensureRepos() async {
     if (_api != null) return;
-    final config = AppConfig.fromDartDefine();
-    _api = ApiClientProvider.create(config: config);
+    _api = ApiClientProvider.shared();
     _superadminRepo = SuperadminRepository(api: _api!);
     _commonRepo = CommonRepository(api: _api!);
   }

@@ -669,7 +669,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       final dir = await _resolveDownloadDir();
       final fileName = _safeAttachmentName(message.attachmentName);
       final file = File('${dir.path}${Platform.pathSeparator}$fileName');
@@ -698,7 +698,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     setState(() => _loadingDetails = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getTicketDetails(
         widget.ticket.numericId.isNotEmpty
@@ -852,7 +852,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     });
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final internal = selectedLocalTab == 'Internal Note';
@@ -935,7 +935,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     });
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.updateTicketStatus(
         widget.ticket.numericId.isNotEmpty

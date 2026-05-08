@@ -69,7 +69,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
   }
 
   AdminDriversRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= AdminDriversRepository(api: _api!);
     return _repo!;
   }

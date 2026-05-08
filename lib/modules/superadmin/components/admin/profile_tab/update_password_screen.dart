@@ -76,7 +76,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.create();
+    _api = ApiClientProvider.shared();
     _repo = SuperadminRepository(api: _api!);
   }
 

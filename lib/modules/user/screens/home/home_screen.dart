@@ -14,7 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -41,16 +41,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
-      pathPrefix: AppRoutes.userNotifications,
+      pathPrefix: AppRoutePaths.userNotifications,
     );
     return _repo!;
   }
 
   UserProfileRepository _profileRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _profileRepo ??= UserProfileRepository(api: _apiClient!);
     return _profileRepo!;
   }
@@ -155,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     if (restoredToken != null && restoredToken.trim().isNotEmpty) {
       if (!mounted) return;
-      context.go(AppRoutes.adminHome);
+      context.go(AppRoutePaths.adminHome);
       return;
     }
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _showProfileMenu({
@@ -269,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'settings') {
-      context.push(AppRoutes.userSettings);
+      context.push(AppRoutePaths.userSettings);
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -320,57 +320,57 @@ class _HomeScreenState extends State<HomeScreen> {
       _HomeShortcut(
         label: 'Dashboard',
         icon: Symbols.finance,
-        route: AppRoutes.userDashboard,
+        route: AppRoutePaths.userDashboard,
       ),
       _HomeShortcut(
         label: 'Vehicles',
         icon: Symbols.sync_alt,
-        route: AppRoutes.userVehicles,
+        route: AppRoutePaths.userVehicles,
       ),
       _HomeShortcut(
         label: 'Maps',
         icon: Symbols.map,
-        route: AppRoutes.userMaps,
+        route: AppRoutePaths.userMaps,
       ),
       _HomeShortcut(
         label: 'Landmarks Studio',
         icon: Symbols.location_on,
-        route: AppRoutes.userGeofence,
+        route: AppRoutePaths.userGeofence,
       ),
       _HomeShortcut(
         label: 'Share Track Link',
         icon: Symbols.share,
-        route: AppRoutes.userShareTrack,
+        route: AppRoutePaths.userShareTrack,
       ),
       _HomeShortcut(
         label: 'Route Optimization',
         icon: Symbols.route,
-        route: AppRoutes.userRouteOptimization,
+        route: AppRoutePaths.userRouteOptimization,
       ),
       _HomeShortcut(
         label: 'Support',
         icon: Symbols.help,
-        route: AppRoutes.userSupport,
+        route: AppRoutePaths.userSupport,
       ),
       _HomeShortcut(
         label: 'Transactions',
         icon: Symbols.receipt_long,
-        route: AppRoutes.userTransactions,
+        route: AppRoutePaths.userTransactions,
       ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.brightness_5,
-        route: AppRoutes.userSettings,
+        route: AppRoutePaths.userSettings,
       ),
       _HomeShortcut(
         label: 'Accounts',
         icon: Symbols.group,
-        route: AppRoutes.userAccounts,
+        route: AppRoutePaths.userAccounts,
       ),
       _HomeShortcut(
         label: 'Notifications',
         icon: Symbols.notifications,
-        route: AppRoutes.userNotificationsPush,
+        route: AppRoutePaths.userNotificationsPush,
       ),
     ];
 
@@ -419,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     badgeText: _badgeText,
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
-                    onTap: () => context.push(AppRoutes.userNotifications),
+                    onTap: () => context.push(AppRoutePaths.userNotifications),
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
                   Builder(

@@ -67,7 +67,7 @@ class _RolesScreenState extends State<RolesScreen> {
   }
 
   SuperadminRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= SuperadminRepository(api: _apiClient!);
     return _repo!;
   }

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
@@ -320,7 +320,7 @@ class _UserScreenState extends State<UserScreen> {
             newToken,
           );
           if (!mounted) return;
-          context.go(AppRoutes.userHome);
+          context.go(AppRoutePaths.userHome);
         },
         failure: (err) {
           final message = err is ApiException
@@ -454,7 +454,7 @@ class _UserScreenState extends State<UserScreen> {
                           InkWell(
                             onTap: () async {
                               final created = await context.push<bool>(
-                                AppRoutes.adminUsersAdd,
+                                AppRoutePaths.adminUsersAdd,
                               );
                               if (created == true) {
                                 _loadUsers();
@@ -806,7 +806,7 @@ class _UserScreenState extends State<UserScreen> {
             child: AdminHomeAppBar(
               title: 'Users',
               leadingIcon: Icons.group,
-              onClose: () => context.go(AppRoutes.adminHome),
+              onClose: () => context.go(AppRoutePaths.adminHome),
             ),
           ),
         ],
@@ -985,7 +985,7 @@ class _UserScreenState extends State<UserScreen> {
           hoverColor: Colors.transparent,
           onTap: userId.isEmpty
               ? null
-              : () => context.push(AppRoutes.adminUsersDetails(userId)),
+              : () => context.push(AppRoutePaths.adminUsersDetails(userId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(
@@ -1030,7 +1030,7 @@ class _UserScreenState extends State<UserScreen> {
                             onTap: userId.isEmpty
                                 ? null
                                 : () => context.push(
-                                    AppRoutes.adminUsersDetails(userId),
+                                    AppRoutePaths.adminUsersDetails(userId),
                                   ),
                             child: Text(
                               name,

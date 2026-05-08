@@ -100,7 +100,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     setState(() => _loadingRecipients = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final res = await _repo!.searchRecipients(
@@ -359,7 +359,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     });
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final channel = _channels[0] ? 'EMAIL' : 'IN_APP';

@@ -49,7 +49,7 @@ class _AssignDriverScreenState extends State<AssignDriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= UserDriversRepository(api: _api!);
     return _repo!;
   }

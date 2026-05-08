@@ -110,13 +110,13 @@ class _AddSubUserScreenState extends State<AddSubUserScreen> {
   }
 
   CommonRepository _commonOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }
 
   UserSubUsersRepository _subUsersOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _subUsersRepo ??= UserSubUsersRepository(api: _api!);
     return _subUsersRepo!;
   }

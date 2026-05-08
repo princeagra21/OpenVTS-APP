@@ -15,7 +15,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -45,7 +45,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   ApiClient? _apiClient;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 
@@ -115,7 +115,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (_toDate != null) query['to'] = _toDate;
 
       final res = await api.get(
-        AppRoutes.adminPayments,
+        AppRoutePaths.adminPayments,
         queryParameters: query,
         cancelToken: token,
       );
@@ -238,7 +238,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final parsedIso = DateTime.tryParse(value);
     if (parsedIso != null) return parsedIso;
     final datePart = value.split(',').first.trim();
-    final slash = datePart.split(AppRoutes.root);
+    final slash = datePart.split(AppRoutePaths.root);
     if (slash.length == 3) {
       final d = int.tryParse(slash[0]);
       final m = int.tryParse(slash[1]);
@@ -518,7 +518,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () => context.push(AppRoutes.adminPaymentsAdd),
+                                onTap: () => context.push(AppRoutePaths.adminPaymentsAdd),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(

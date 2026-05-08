@@ -10,7 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -141,7 +141,7 @@ class _NotificationSettingsScreenState
           title: item.label,
           subtitle: item.subtitle,
           icon: CupertinoIcons.bell,
-          route: AppRoutes.userToggleEventType(
+          route: AppRoutePaths.userToggleEventType(
             Uri.encodeComponent(item.eventType),
           ),
           width: width,

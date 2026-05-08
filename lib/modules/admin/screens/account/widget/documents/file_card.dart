@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
 
 class FileCard extends StatelessWidget {
   final Map<String, dynamic>? document;
@@ -129,9 +130,7 @@ class FileCard extends StatelessWidget {
       fallback: '',
     );
     if (filePath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document file path is missing.')),
-      );
+      OpenVtsFeedback.error(context, 'Document file path is missing.');
       return;
     }
 
@@ -141,31 +140,27 @@ class FileCard extends StatelessWidget {
       if (uri != null) {
         final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!ok && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to open document.')),
-          );
+          OpenVtsFeedback.error(context, 'Unable to open document.');
         }
         return;
       }
     }
 
-    final normalizedBase = baseUrl.endsWith(AppRoutes.root)
+    final normalizedBase = baseUrl.endsWith(AppRoutePaths.root)
         ? baseUrl.substring(0, baseUrl.length - 1)
         : baseUrl;
-    final normalizedPath = filePath.startsWith(AppRoutes.root) ? filePath : '/$filePath';
+    final normalizedPath = filePath.startsWith(AppRoutePaths.root)
+        ? filePath
+        : '/$filePath';
     final uri = Uri.tryParse('$normalizedBase$normalizedPath');
     if (uri == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Invalid document URL.')));
+      OpenVtsFeedback.error(context, 'Invalid document URL.');
       return;
     }
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Unable to open document.')));
+      OpenVtsFeedback.error(context, 'Unable to open document.');
     }
   }
 
@@ -188,50 +183,29 @@ class FileCard extends StatelessWidget {
   ) async {
     final id = _safe(doc['id'], fallback: '');
     if (id.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Document id is missing.')));
+      OpenVtsFeedback.error(context, 'Document id is missing.');
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await OpenVtsModal.showConfirmDialog(
       context: context,
-      builder: (dialogContext) {
-        final cs = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: const Text('Delete document?'),
-          content: const Text('This document will be removed permanently.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: TextButton.styleFrom(foregroundColor: cs.error),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete document?',
+      message: 'This document will be removed permanently.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+      icon: Icons.delete_outline,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
-    final repo = AdminUsersRepository(
-      api: ApiClientProvider.create(),
-    );
+    final repo = AdminUsersRepository(api: ApiClientProvider.shared());
     final res = await repo.deleteDocumentFile(id);
     if (!context.mounted) return;
     if (res.isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document deleted successfully')),
-      );
+      OpenVtsFeedback.success(context, 'Document deleted successfully');
       await onChanged?.call();
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Couldn't delete document.")));
+    OpenVtsFeedback.error(context, "Couldn't delete document.");
   }
 
   @override

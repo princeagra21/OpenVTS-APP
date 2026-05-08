@@ -40,7 +40,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
   AdminSupportRepository? _repo;
 
   AdminSupportRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminSupportRepository(api: _apiClient!);
     return _repo!;
   }

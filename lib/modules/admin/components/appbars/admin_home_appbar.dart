@@ -1,7 +1,7 @@
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class AdminHomeAppBar extends StatelessWidget {
   final String title;
@@ -78,7 +78,7 @@ class AdminHomeAppBar extends StatelessWidget {
                       if (router.canPop()) {
                         context.pop();
                       } else {
-                        context.go(AppRoutes.adminHome);
+                        context.go(AppRoutePaths.adminHome);
                       }
                     },
                 padding: EdgeInsets.zero,

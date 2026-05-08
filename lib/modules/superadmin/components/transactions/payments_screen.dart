@@ -67,7 +67,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     setState(() => _loadingAdmins = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getAdmins(
         page: 1,
@@ -117,7 +117,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     setState(() => _loadingTransactions = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       String? adminId;

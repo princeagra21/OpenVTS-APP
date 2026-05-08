@@ -23,7 +23,7 @@ import 'package:open_vts/modules/superadmin/components/vehicle/vehicle_screen.da
 import 'package:open_vts/modules/superadmin/components/vehicle/widget/add_new_vehicle.dart';
 import 'package:open_vts/modules/superadmin/screens/admin/add_new_admin.dart';
 import 'package:open_vts/modules/superadmin/screens/admin/administrator_details_screen.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/modules/superadmin/screens/admin/admins_screen.dart'
     show AdminScreen;
 import 'package:open_vts/modules/superadmin/screens/dashboard/dashboard_screen.dart';
@@ -35,21 +35,21 @@ import 'package:open_vts/modules/superadmin/screens/setting/superadmin_settings_
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> superAdminRoutes = [
-  GoRoute(path: AppRoutes.superadmin, builder: (_, __) => const HomeScreen()),
-  GoRoute(path: AppRoutes.superadminHome, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutePaths.superadmin, builder: (_, __) => const HomeScreen()),
+  GoRoute(path: AppRoutePaths.superadminHome, builder: (_, __) => const HomeScreen()),
   GoRoute(
-    path: AppRoutes.superadminDashboard,
+    path: AppRoutePaths.superadminDashboard,
     builder: (_, __) => const DashboardScreen(),
   ),
 
   /// ADMINS
-  GoRoute(path: AppRoutes.superadminAdmins, builder: (_, __) => const AdminScreen()),
+  GoRoute(path: AppRoutePaths.superadminAdmins, builder: (_, __) => const AdminScreen()),
   GoRoute(
-    path: AppRoutes.superadminAdminsAdd,
+    path: AppRoutePaths.superadminAdminsAdd,
     builder: (_, __) => const AddNewAdminScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminAdminsDetailsPattern,
+    path: AppRoutePaths.superadminAdminsDetailsPattern,
     name: 'superadminAdminDetails',
     builder: (context, state) {
       final id = state.pathParameters['id']!;
@@ -63,74 +63,74 @@ final List<GoRoute> superAdminRoutes = [
 
   /// SETTINGS
   GoRoute(
-    path: AppRoutes.superadminSettings,
+    path: AppRoutePaths.superadminSettings,
     builder: (_, __) => const SuperAdminSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminProfile,
+    path: AppRoutePaths.superadminProfile,
     builder: (_, __) => const ProfileScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminBranding,
+    path: AppRoutePaths.superadminBranding,
     builder: (_, __) => const BrandingScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminWhiteLabel,
+    path: AppRoutePaths.superadminWhiteLabel,
     builder: (_, __) => const BrandingSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminApiConfig,
+    path: AppRoutePaths.superadminApiConfig,
     builder: (_, __) => const ApiConfigSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminApplicationSettings,
+    path: AppRoutePaths.superadminApplicationSettings,
     builder: (_, __) => const ApplicationSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminLocalization,
+    path: AppRoutePaths.superadminLocalization,
     builder: (_, __) => const LocalizationSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminEmailSettings,
+    path: AppRoutePaths.superadminEmailSettings,
     builder: (_, __) => const EmailTemplateSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminSmtpSettings,
+    path: AppRoutePaths.superadminSmtpSettings,
     builder: (_, __) => const SmtpConfigSettingsScreen(),
   ),
 
   /// PAYMENT
   GoRoute(
-    path: AppRoutes.superadminPayments,
+    path: AppRoutePaths.superadminPayments,
     builder: (_, __) => const PaymentsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminPaymentGateway,
+    path: AppRoutePaths.superadminPaymentGateway,
     builder: (_, __) => const PaymentGatewaySettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminPaymentGatewayDetailsPattern,
+    path: AppRoutePaths.superadminPaymentGatewayDetailsPattern,
     builder: (context, state) {
       final gatewayId = state.pathParameters['id']!;
       return PaymentGatewayDetailsScreen(gatewayId: gatewayId);
     },
   ),
   GoRoute(
-    path: AppRoutes.superadminTransactionsRecordManual,
+    path: AppRoutePaths.superadminTransactionsRecordManual,
     builder: (_, __) => const RecordManualPaymentScreen(),
   ),
 
   /// ACTIVITY / NOTIFICATION
   GoRoute(
-    path: AppRoutes.superadminNotificationSettings,
+    path: AppRoutePaths.superadminNotificationSettings,
     builder: (_, __) => const PushNotificationTemplateSettingsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminNotifications,
+    path: AppRoutePaths.superadminNotifications,
     builder: (_, __) => const SuperadminNotificationsScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminAllActivities,
+    path: AppRoutePaths.superadminAllActivities,
     builder: (context, state) {
       final type = (state.extra as Map?)?['type'] ?? 'Transactions';
       return AllActivitiesScreen(activityType: type);
@@ -139,15 +139,15 @@ final List<GoRoute> superAdminRoutes = [
 
   /// VEHICLES
   GoRoute(
-    path: AppRoutes.superadminVehicles,
+    path: AppRoutePaths.superadminVehicles,
     builder: (_, __) => const VehicleScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminVehiclesAdd,
+    path: AppRoutePaths.superadminVehiclesAdd,
     builder: (_, __) => const AddVehicleScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminVehiclesDetailsPattern,
+    path: AppRoutePaths.superadminVehiclesDetailsPattern,
     name: 'superadminVehicleDetails',
     builder: (context, state) {
       final id = state.pathParameters['id']!;
@@ -157,26 +157,26 @@ final List<GoRoute> superAdminRoutes = [
 
   /// SYSTEM
   GoRoute(
-    path: AppRoutes.superadminCalendar,
+    path: AppRoutePaths.superadminCalendar,
     builder: (_, __) => const EventCalendarScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminServer,
+    path: AppRoutePaths.superadminServer,
     builder: (_, __) => const ServerStatusScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminSsl,
+    path: AppRoutePaths.superadminSsl,
     builder: (_, __) => const SSLManagementScreen(),
   ),
-  GoRoute(path: AppRoutes.superadminRoles, builder: (_, __) => const RolesScreen()),
+  GoRoute(path: AppRoutePaths.superadminRoles, builder: (_, __) => const RolesScreen()),
   GoRoute(
-    path: AppRoutes.superadminUserPolicy,
+    path: AppRoutePaths.superadminUserPolicy,
     builder: (_, __) => const PolicyEditScreen(),
   ),
   GoRoute(
-    path: AppRoutes.superadminSupport,
+    path: AppRoutePaths.superadminSupport,
     builder: (_, __) => const SupportScreen(),
   ),
-  GoRoute(path: AppRoutes.superadminMore, builder: (_, __) => const MoreScreen()),
-  GoRoute(path: AppRoutes.superadminMap, builder: (_, __) => const MapScreen()),
+  GoRoute(path: AppRoutePaths.superadminMore, builder: (_, __) => const MoreScreen()),
+  GoRoute(path: AppRoutePaths.superadminMap, builder: (_, __) => const MapScreen()),
 ];

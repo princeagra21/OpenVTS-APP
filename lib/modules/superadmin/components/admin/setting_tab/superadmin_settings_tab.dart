@@ -38,7 +38,7 @@ class _SuperadminSettingsTabState extends State<SuperadminSettingsTab> {
   _Snapshot? _loadedSnapshot;
 
   AppPreferencesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AppPreferencesRepository(api: _apiClient!);
     return _repo!;
   }

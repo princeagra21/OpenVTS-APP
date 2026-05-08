@@ -34,7 +34,7 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
   late Map<String, dynamic> plan;
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }

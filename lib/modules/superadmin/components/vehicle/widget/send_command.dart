@@ -114,7 +114,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
     setState(() => _loadingRefs = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final optionsRes = await _repo!.getCommandOptions(
@@ -217,7 +217,7 @@ class _SendCommandsTabState extends State<SendCommandsTab> {
     setState(() => _sending = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final code = _selectedOption?.code.isNotEmpty == true

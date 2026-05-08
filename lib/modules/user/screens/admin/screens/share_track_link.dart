@@ -16,7 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class ShareTrackScreen extends StatefulWidget {
   const ShareTrackScreen({super.key});
@@ -76,7 +76,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
   }
 
   UserShareTrackLinksRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserShareTrackLinksRepository(api: _apiClient!);
     return _repo!;
   }
@@ -173,7 +173,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
     if (segments.isNotEmpty && segments.last.toLowerCase() == 'api') {
       segments.removeLast();
     }
-    final path = segments.isEmpty ? '' : '/${segments.join(AppRoutes.root)}';
+    final path = segments.isEmpty ? '' : '/${segments.join(AppRoutePaths.root)}';
     return '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}$path';
   }
 
@@ -551,7 +551,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
                           InkWell(
                             onTap: () async {
                               final result =
-                                  await context.push(AppRoutes.userShareTrackAdd);
+                                  await context.push(AppRoutePaths.userShareTrackAdd);
                               if (result == true) {
                                 _loadLinks();
                               }
@@ -904,7 +904,7 @@ class _ShareTrackScreenState extends State<ShareTrackScreen> {
             child: UserHomeAppBar(
               title: 'Share Track',
               leadingIcon: Icons.share_outlined,
-              onClose: () => context.go(AppRoutes.userHome),
+              onClose: () => context.go(AppRoutePaths.userHome),
             ),
           ),
         ],

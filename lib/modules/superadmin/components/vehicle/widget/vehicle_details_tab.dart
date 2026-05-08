@@ -852,7 +852,7 @@ class _DeleteVehicleBoxState extends State<DeleteVehicleBox> {
     setState(() => _submitting = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.deleteVehicle(

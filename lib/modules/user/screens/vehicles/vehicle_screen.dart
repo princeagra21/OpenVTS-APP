@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -52,7 +52,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   UserVehiclesRepository? _repo;
 
   UserVehiclesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserVehiclesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -1167,7 +1167,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
             child: UserHomeAppBar(
               title: 'Vehicles',
               leadingIcon: Symbols.sync_alt,
-              onClose: () => context.go(AppRoutes.userHome),
+              onClose: () => context.go(AppRoutePaths.userHome),
             ),
           ),
         ],
@@ -1246,7 +1246,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
           hoverColor: Colors.transparent,
           onTap: vehicleId.isEmpty
               ? null
-              : () => context.push(AppRoutes.userVehiclesDetails(vehicleId)),
+              : () => context.push(AppRoutePaths.userVehiclesDetails(vehicleId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(

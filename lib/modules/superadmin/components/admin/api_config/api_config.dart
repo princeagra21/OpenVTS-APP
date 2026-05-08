@@ -134,7 +134,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
   }
 
   ApiConfigRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= ApiConfigRepository(api: _api!);
     return _repo!;
   }

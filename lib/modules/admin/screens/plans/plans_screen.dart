@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class PlansScreen extends StatefulWidget {
   const PlansScreen({super.key});
@@ -39,7 +39,7 @@ class _PlansScreenState extends State<PlansScreen> {
   List<PricingPlan> _plans = const <PricingPlan>[];
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }
@@ -170,7 +170,7 @@ class _PlansScreenState extends State<PlansScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Plans',
         leadingIcon: Icons.widgets,
-        onClose: () => context.go(AppRoutes.adminHome),
+        onClose: () => context.go(AppRoutePaths.adminHome),
       ),
       actionIcons: const [],
       showLeftAvatar: false,
@@ -365,7 +365,7 @@ class _PlansScreenState extends State<PlansScreen> {
                         borderRadius: BorderRadius.circular(12),
                         onTap: () async {
                           final res = await context.push(
-                            AppRoutes.adminPlansAdd,
+                            AppRoutePaths.adminPlansAdd,
                           );
                           if (res == true && mounted) {
                             _loadPlans();
@@ -586,7 +586,7 @@ class _PlansScreenState extends State<PlansScreen> {
                                                 onSelected: (String value) async {
                                                   if (value == 'edit') {
                                                     final res = await context.push(
-                                                      AppRoutes.adminPlansEdit(
+                                                      AppRoutePaths.adminPlansEdit(
                                                         plan.id.toString(),
                                                       ),
                                                       extra: plan.raw,

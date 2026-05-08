@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:device_preview/device_preview.dart';
 import 'package:open_vts/core/auth/route_guard.dart';
@@ -123,16 +123,16 @@ Future<String> _resolveInitialLocation() async {
   final storage = AppContainer.instance.tokenStorage;
   final token = await storage.readAccessToken();
 
-  if (token == null || token.trim().isEmpty) return AppRoutes.onboarding;
+  if (token == null || token.trim().isEmpty) return AppRoutePaths.onboarding;
 
   if (_isTokenExpired(token)) {
     await storage.clear();
-    return AppRoutes.onboarding;
+    return AppRoutePaths.onboarding;
   }
 
   final role = _extractRoleFromToken(token);
   final targetPath = _targetPathForRole(role);
-  if (targetPath == AppRoutes.login) {
+  if (targetPath == AppRoutePaths.login) {
     await storage.clear();
   }
   return targetPath;
@@ -148,24 +148,24 @@ Future<String?> _routeRedirect(
   final hasToken = token != null && token.trim().isNotEmpty;
 
   if (!hasToken) {
-    return RouteGuard.isPublicRoute(path) ? null : AppRoutes.login;
+    return RouteGuard.isPublicRoute(path) ? null : AppRoutePaths.login;
   }
 
   final trimmedToken = token!.trim();
 
   if (_isTokenExpired(trimmedToken)) {
     await storage.clear();
-    return path == AppRoutes.onboarding
-        ? AppRoutes.onboarding
-        : AppRoutes.login;
+    return path == AppRoutePaths.onboarding
+        ? AppRoutePaths.onboarding
+        : AppRoutePaths.login;
   }
 
   final role = _extractRoleFromToken(trimmedToken);
   final targetPath = _targetPathForRole(role);
 
-  if (targetPath == AppRoutes.login) {
+  if (targetPath == AppRoutePaths.login) {
     await storage.clear();
-    return AppRoutes.login;
+    return AppRoutePaths.login;
   }
 
   if (RouteGuard.isPublicRoute(path)) {
@@ -188,11 +188,11 @@ GoRouter buildRouter(String initialLocation) => GoRouter(
     /// 🌍 GLOBAL ROUTES
     /// ======================
     GoRoute(
-      path: AppRoutes.onboarding,
+      path: AppRoutePaths.onboarding,
       builder: (_, __) => const OnboardingScreen(),
     ),
-    GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
-    GoRoute(path: AppRoutes.root, builder: (_, __) => const LoginScreen()),
+    GoRoute(path: AppRoutePaths.login, builder: (_, __) => const LoginScreen()),
+    GoRoute(path: AppRoutePaths.root, builder: (_, __) => const LoginScreen()),
 
     /// ======================
     /// 👑 SUPERADMIN ROUTES
@@ -426,7 +426,7 @@ class _MyAppState extends State<MyApp> {
     _sessionExpiredSub = SessionExpiredBus.stream.listen((_) async {
       await AppContainer.instance.tokenStorage.clear();
       if (!mounted) return;
-      widget.router.go(AppRoutes.login);
+      widget.router.go(AppRoutePaths.login);
       final now = DateTime.now();
       final last = _lastSessionNoticeAt;
       if (last == null || now.difference(last).inSeconds >= 2) {

@@ -11,7 +11,7 @@ import 'package:open_vts/core/services/push_notifications_service.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 /// All infrastructure instances must be created here or by a repository provider.
-/// Do not create ApiClient inside screens.
+/// Do not create ApiClient instances in screens. Use AppContainer.instance.apiClient or injected repositories.
 class AppContainer {
   AppContainer._({
     required this.appConfig,

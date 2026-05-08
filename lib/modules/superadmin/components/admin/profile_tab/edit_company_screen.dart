@@ -121,7 +121,7 @@ class _EditCompanyScreenState extends State<EditCompanyScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= SuperadminRepository(api: _api!);
   }
 

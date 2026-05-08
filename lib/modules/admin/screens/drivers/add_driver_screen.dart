@@ -99,7 +99,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   void _ensureRepos() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
     _usersRepo ??= AdminUsersRepository(api: _api!);
     _driversRepo ??= UserDriversRepository(api: _api!);

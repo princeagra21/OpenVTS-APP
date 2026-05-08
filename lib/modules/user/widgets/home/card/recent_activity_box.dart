@@ -4,7 +4,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;
@@ -214,7 +214,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
                 ],
               ),
               InkWell(
-                onTap: () => context.push(AppRoutes.userNotifications),
+                onTap: () => context.push(AppRoutePaths.userNotifications),
                 child: Text(
                   'View all',
                   style: AppFonts.inter(

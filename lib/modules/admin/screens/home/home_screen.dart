@@ -14,7 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -41,16 +41,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
-      pathPrefix: AppRoutes.adminNotifications,
+      pathPrefix: AppRoutePaths.adminNotifications,
     );
     return _repo!;
   }
 
   AdminProfileRepository _profileRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _profileRepo ??= AdminProfileRepository(api: _apiClient!);
     return _profileRepo!;
   }
@@ -155,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     if (restoredToken != null && restoredToken.trim().isNotEmpty) {
       if (!mounted) return;
-      context.go(AppRoutes.superadminHome);
+      context.go(AppRoutePaths.superadminHome);
       return;
     }
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _showProfileMenu({
@@ -268,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
-      context.push(AppRoutes.adminSettings);
+      context.push(AppRoutePaths.adminSettings);
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -319,77 +319,77 @@ class _HomeScreenState extends State<HomeScreen> {
       _HomeShortcut(
         label: 'Dashboard',
         icon: Symbols.finance,
-        route: AppRoutes.adminDashboard,
+        route: AppRoutePaths.adminDashboard,
       ),
       _HomeShortcut(
         label: 'Users',
         icon: Symbols.group,
-        route: AppRoutes.adminUsers,
+        route: AppRoutePaths.adminUsers,
       ),
       _HomeShortcut(
         label: 'Vehicles',
         icon: Symbols.sync_alt,
-        route: AppRoutes.adminVehicles,
+        route: AppRoutePaths.adminVehicles,
       ),
       _HomeShortcut(
         label: 'Drivers',
         icon: Symbols.badge,
-        route: AppRoutes.adminDrivers,
+        route: AppRoutePaths.adminDrivers,
       ),
       _HomeShortcut(
         label: 'Team',
         icon: Symbols.groups,
-        route: AppRoutes.adminTeams,
+        route: AppRoutePaths.adminTeams,
       ),
       _HomeShortcut(
         label: 'Inventory',
         icon: Symbols.inventory_2,
-        route: AppRoutes.adminInventory,
+        route: AppRoutePaths.adminInventory,
       ),
       _HomeShortcut(
         label: 'Maps',
         icon: Symbols.map,
-        route: AppRoutes.adminMap,
+        route: AppRoutePaths.adminMap,
       ),
       _HomeShortcut(
         label: 'Transactions',
         icon: Symbols.receipt_long,
-        route: AppRoutes.adminTransactions,
+        route: AppRoutePaths.adminTransactions,
       ),
       _HomeShortcut(
         label: 'Payments',
         icon: Symbols.credit_card,
-        route: AppRoutes.adminPayments,
+        route: AppRoutePaths.adminPayments,
       ),
       _HomeShortcut(
         label: 'Support',
         icon: Symbols.help,
-        route: AppRoutes.adminSupport,
+        route: AppRoutePaths.adminSupport,
       ),
       _HomeShortcut(
         label: 'Calendar',
         icon: Symbols.date_range,
-        route: AppRoutes.adminCalendar,
+        route: AppRoutePaths.adminCalendar,
       ),
       _HomeShortcut(
         label: 'Logs',
         icon: Symbols.list_alt,
-        route: AppRoutes.adminLogs,
+        route: AppRoutePaths.adminLogs,
       ),
       _HomeShortcut(
         label: 'Plans',
         icon: Symbols.widgets,
-        route: AppRoutes.adminPlans,
+        route: AppRoutePaths.adminPlans,
       ),
       // _HomeShortcut(
       //   label: 'Roles',
       //   icon: Symbols.admin_panel_settings,
-      //   route: AppRoutes.adminRoles,
+      //   route: AppRoutePaths.adminRoles,
       // ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.brightness_5,
-        route: AppRoutes.adminSettings,
+        route: AppRoutePaths.adminSettings,
       ),
     ];
 
@@ -439,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
                     onTap: () async {
-                      await context.push(AppRoutes.adminNotifications);
+                      await context.push(AppRoutePaths.adminNotifications);
                       if (!mounted) return;
                       _loadUnreadCount();
                     },

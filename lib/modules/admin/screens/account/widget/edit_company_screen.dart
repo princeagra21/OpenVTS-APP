@@ -120,7 +120,7 @@ class _AdminEditCompanyScreenState extends State<AdminEditCompanyScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= AdminProfileRepository(api: _api!);
   }
 

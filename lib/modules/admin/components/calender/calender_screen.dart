@@ -12,7 +12,7 @@ import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_calendar_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -285,7 +285,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
     setState(() => _loadingDay = true);
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarDayDetails(date: key);
       if (!mounted) return;
@@ -437,7 +437,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarEvents(
         from: _fmtDate(_monthStart(anyDateInMonth)),
@@ -540,9 +540,9 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     final adminId = e.adminId.trim();
     String? route;
     if (vehicleId.isNotEmpty) {
-      route = AppRoutes.superadminVehiclesDetails(vehicleId);
+      route = AppRoutePaths.superadminVehiclesDetails(vehicleId);
     } else if (adminId.isNotEmpty) {
-      route = AppRoutes.superadminAdminsDetails(adminId);
+      route = AppRoutePaths.superadminAdminsDetails(adminId);
     }
     if (route == null) return;
 

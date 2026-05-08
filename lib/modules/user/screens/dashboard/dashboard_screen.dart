@@ -17,7 +17,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -56,7 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   UserHomeRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= UserHomeRepository(api: _api!);
     return _repo!;
   }
@@ -706,7 +706,7 @@ class _RecentVehiclesSection extends StatelessWidget {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push(AppRoutes.userVehicles),
+                onTap: () => context.push(AppRoutePaths.userVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

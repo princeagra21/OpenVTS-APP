@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 import 'package:open_vts/features/documents/document_form_actions.dart';
 import 'package:open_vts/features/documents/document_form_controller.dart';
 import 'package:open_vts/features/documents/document_models.dart';
@@ -131,16 +132,13 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(
-          label: 'Retry',
-          onPressed: () {
-            unawaited(_retryLoadDocumentTypes());
-          },
-        ),
-      ),
+    OpenVtsFeedback.error(
+      context,
+      message,
+      actionLabel: 'Retry',
+      onAction: () {
+        unawaited(_retryLoadDocumentTypes());
+      },
     );
   }
 
@@ -148,9 +146,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    OpenVtsFeedback.info(context, message);
   }
 
   @override

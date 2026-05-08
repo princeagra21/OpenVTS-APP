@@ -33,7 +33,7 @@ class _SSLManagementScreenState extends State<SSLManagementScreen> {
   SuperadminRepository? _repo;
 
   SuperadminRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= SuperadminRepository(api: _apiClient!);
     return _repo!;
   }

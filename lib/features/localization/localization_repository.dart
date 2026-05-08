@@ -19,7 +19,7 @@ class LocalizationRepository {
     LocalizationRole role, {
     ApiClient? api,
   }) {
-    final resolvedApi = api ?? ApiClientProvider.create();
+    final resolvedApi = api ?? ApiClientProvider.shared();
     final commonRepository = CommonRepository(api: resolvedApi);
 
     final adapter = switch (role) {

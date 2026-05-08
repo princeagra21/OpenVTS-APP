@@ -1,7 +1,7 @@
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 // components/admin/edit_admin_profile_screen.dart
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -138,7 +138,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     if (text.startsWith('http://') || text.startsWith('https://')) return text;
     final base = AppConfig.fromDartDefine().baseUrl.trim();
     if (base.isEmpty) return text;
-    if (text.startsWith(AppRoutes.root)) return '$base$text';
+    if (text.startsWith(AppRoutePaths.root)) return '$base$text';
     return '$base/$text';
   }
 
@@ -286,7 +286,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.create();
+    _api = ApiClientProvider.shared();
     _commonRepo = CommonRepository(api: _api!);
     _profileRepo = AdminProfileRepository(api: _api!);
     _adminRepo = AdminRepository(api: _api!);

@@ -17,7 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class DriverScreen extends StatefulWidget {
   final bool embedded;
@@ -65,7 +65,7 @@ class _DriverScreenState extends State<DriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
@@ -308,7 +308,7 @@ class _DriverScreenState extends State<DriverScreen> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final result = await context.push(AppRoutes.userDriversAdd);
+                      final result = await context.push(AppRoutePaths.userDriversAdd);
                       if (result == true) {
                         _loadDrivers();
                       }
@@ -635,7 +635,7 @@ class _DriverScreenState extends State<DriverScreen> {
             child: UserHomeAppBar(
               title: 'Drivers',
               leadingIcon: Icons.badge_outlined,
-              onClose: () => context.go(AppRoutes.userHome),
+              onClose: () => context.go(AppRoutePaths.userHome),
             ),
           ),
         ],
@@ -686,7 +686,7 @@ class _DriverScreenState extends State<DriverScreen> {
             hoverColor: Colors.transparent,
             onTap: () async {
               await context.push(
-                AppRoutes.userDriversDetails(driver.id),
+                AppRoutePaths.userDriversDetails(driver.id),
                 extra: driver,
               );
               if (!mounted) return;

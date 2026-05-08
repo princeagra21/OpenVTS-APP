@@ -16,7 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class SubUserScreen extends StatefulWidget {
   final bool embedded;
@@ -63,7 +63,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }
@@ -302,7 +302,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final result = await context.push(AppRoutes.userSubUsersAdd);
+                      final result = await context.push(AppRoutePaths.userSubUsersAdd);
                       if (result == true) {
                         _loadSubUsers();
                       }
@@ -628,7 +628,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             child: UserHomeAppBar(
               title: 'Sub-users',
               leadingIcon: Icons.person_outline,
-              onClose: () => context.go(AppRoutes.userHome),
+              onClose: () => context.go(AppRoutePaths.userHome),
             ),
           ),
         ],
@@ -679,7 +679,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
             hoverColor: Colors.transparent,
             onTap: () async {
               await context.push(
-                AppRoutes.userSubUsersDetails(subUser.id),
+                AppRoutePaths.userSubUsersDetails(subUser.id),
                 extra: subUser,
               );
               if (!mounted) return;
@@ -831,7 +831,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
                   InkWell(
                     onTap: () async {
                       await context.push(
-                        AppRoutes.userSubUsersDetails(subUser.id),
+                        AppRoutePaths.userSubUsersDetails(subUser.id),
                         extra: subUser,
                       );
                       if (!mounted) return;

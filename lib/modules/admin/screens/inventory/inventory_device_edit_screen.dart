@@ -57,7 +57,7 @@ class _InventoryDeviceEditScreenState extends State<InventoryDeviceEditScreen> {
   bool _initialIsActive = true;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

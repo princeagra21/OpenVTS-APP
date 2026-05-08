@@ -107,7 +107,7 @@ class _EditDriverProfileScreenState extends State<EditDriverProfileScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }

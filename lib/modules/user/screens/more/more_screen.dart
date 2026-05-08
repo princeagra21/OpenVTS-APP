@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -53,11 +53,11 @@ class _MoreScreenState extends State<MoreScreen> {
     if (!mounted) return;
     if (restoredToken != null && restoredToken.trim().isNotEmpty) {
       if (!mounted) return;
-      context.go(AppRoutes.adminHome);
+      context.go(AppRoutePaths.adminHome);
       return;
     }
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -125,26 +125,26 @@ class _MoreScreenState extends State<MoreScreen> {
         'title': 'Profile',
         'subtitle': 'View & edit your profile',
         'icon': CupertinoIcons.person,
-        'route': AppRoutes.userProfile,
+        'route': AppRoutePaths.userProfile,
       },
       {
         'title': 'Notifications',
         'subtitle': 'Manage alerts & pushes',
         'icon': CupertinoIcons.bell,
-        'route': AppRoutes.userNotificationSettings,
+        'route': AppRoutePaths.userNotificationSettings,
       },
       // Hidden from More until User report-generation APIs are confirmed.
       // {
       //   'title': 'Generate Report',
       //   'subtitle': 'Create custom reports',
       //   'icon': CupertinoIcons.doc_chart,
-      //   'route': AppRoutes.userGenerateReport,
+      //   'route': AppRoutePaths.userGenerateReport,
       // },
       {
         'title': 'Localization',
         'subtitle': 'Language & regional settings',
         'icon': CupertinoIcons.globe,
-        'route': AppRoutes.userLocalization,
+        'route': AppRoutePaths.userLocalization,
       },
     ];
 

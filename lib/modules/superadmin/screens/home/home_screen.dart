@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
@@ -17,7 +16,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -60,18 +59,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   RoleNotificationsRepository _notificationsRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _notificationsRepo ??= RoleNotificationsRepository(
       api: _apiClient!,
-      pathPrefix: AppRoutes.superadminNotifications,
+      pathPrefix: AppRoutePaths.superadminNotifications,
     );
     return _notificationsRepo!;
   }
 
   void _ensureRepo() {
     if (_apiClient != null) return;
-    final config = AppConfig.fromDartDefine();
-    _apiClient = ApiClientProvider.create(config: config);
+    _apiClient = ApiClientProvider.shared();
     _repo = SuperadminRepository(api: _apiClient!);
     _baseUrl = _apiClient!.dio.options.baseUrl.trim();
   }
@@ -175,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await sessionService.logout();
     await sessionService.clearSession();
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _showProfileMenu({
@@ -288,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || selected == null) return;
     if (selected == 'profile') {
-      context.push(AppRoutes.superadminSettings);
+      context.push(AppRoutePaths.superadminSettings);
     } else if (selected == 'logout') {
       await _confirmLogout();
     }
@@ -316,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return value;
     }
     if (_baseUrl.isEmpty) return '';
-    if (value.startsWith(AppRoutes.root)) return '$_baseUrl$value';
+    if (value.startsWith(AppRoutePaths.root)) return '$_baseUrl$value';
     return '$_baseUrl/$value';
   }
 
@@ -409,47 +407,47 @@ class _HomeScreenState extends State<HomeScreen> {
       _HomeShortcut(
         label: 'Dashboard',
         icon: Symbols.finance,
-        route: AppRoutes.superadminDashboard,
+        route: AppRoutePaths.superadminDashboard,
       ),
       _HomeShortcut(
         label: 'Administrators',
         icon: Symbols.verified_user,
-        route: AppRoutes.superadminAdmins,
+        route: AppRoutePaths.superadminAdmins,
       ),
       _HomeShortcut(
         label: 'Vehicles',
         icon: Symbols.sync_alt,
-        route: AppRoutes.superadminVehicles,
+        route: AppRoutePaths.superadminVehicles,
       ),
       _HomeShortcut(
         label: 'Map',
         icon: Symbols.map,
-        route: AppRoutes.superadminMap,
+        route: AppRoutePaths.superadminMap,
       ),
       _HomeShortcut(
         label: 'Calendar',
         icon: Symbols.date_range,
-        route: AppRoutes.superadminCalendar,
+        route: AppRoutePaths.superadminCalendar,
       ),
       _HomeShortcut(
         label: 'Server',
         icon: Symbols.dns,
-        route: AppRoutes.superadminServer,
+        route: AppRoutePaths.superadminServer,
       ),
       _HomeShortcut(
         label: 'Support',
         icon: Symbols.help,
-        route: AppRoutes.superadminSupport,
+        route: AppRoutePaths.superadminSupport,
       ),
       _HomeShortcut(
         label: 'Payments',
         icon: Symbols.credit_card,
-        route: AppRoutes.superadminPayments,
+        route: AppRoutePaths.superadminPayments,
       ),
       _HomeShortcut(
         label: 'Settings',
         icon: Symbols.brightness_5,
-        route: AppRoutes.superadminSettings,
+        route: AppRoutePaths.superadminSettings,
       ),
     ];
 
@@ -499,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     showBadge: _unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
                     onTap: () =>
-                        context.push(AppRoutes.superadminNotifications),
+                        context.push(AppRoutePaths.superadminNotifications),
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
                   Row(

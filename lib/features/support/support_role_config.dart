@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/features/support/support_permissions.dart';
 
 enum SupportRole { admin, user, superadmin }
@@ -25,7 +25,7 @@ class SupportRoleConfigs {
   static const admin = SupportRoleConfig(
     role: SupportRole.admin,
     title: 'Support Inbox',
-    homeRoute: AppRoutes.adminHome,
+    homeRoute: AppRoutePaths.adminHome,
     permissions: SupportPermissions(
       canViewMyTicketsTab: true,
       canUpdateStatus: true,
@@ -38,7 +38,7 @@ class SupportRoleConfigs {
   static const user = SupportRoleConfig(
     role: SupportRole.user,
     title: 'Support Inbox',
-    homeRoute: AppRoutes.userHome,
+    homeRoute: AppRoutePaths.userHome,
     permissions: SupportPermissions(
       canViewMyTicketsTab: false,
       canUpdateStatus: false,
@@ -51,7 +51,7 @@ class SupportRoleConfigs {
   static const superadmin = SupportRoleConfig(
     role: SupportRole.superadmin,
     title: 'Support Inbox',
-    homeRoute: AppRoutes.superadminHome,
+    homeRoute: AppRoutePaths.superadminHome,
     permissions: SupportPermissions(
       canViewMyTicketsTab: false,
       canUpdateStatus: true,

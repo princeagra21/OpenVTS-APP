@@ -41,7 +41,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
   bool _assigning = false;
 
   AdminUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminUsersRepository(api: _apiClient!);
     return _repo!;
   }

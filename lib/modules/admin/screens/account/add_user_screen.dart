@@ -63,7 +63,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   CancelToken? _prefixesToken;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

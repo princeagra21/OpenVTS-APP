@@ -48,7 +48,7 @@ class _VehicleStatusBoxState extends State<VehicleStatusBox> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getTotalCounts(cancelToken: token);

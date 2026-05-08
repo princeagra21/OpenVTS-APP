@@ -5,7 +5,7 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/design_system/components/open_vts_card.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
 import 'package:open_vts/features/localization/localization_controller.dart';
 import 'package:open_vts/features/localization/localization_repository.dart';
 import 'package:open_vts/features/localization/localization_role_config.dart';
@@ -78,20 +78,15 @@ class _LocalizationScreenState extends State<LocalizationScreen> {
       return;
     }
 
-    final picked = await showModalBottomSheet<ReferenceOption>(
+    final picked = await OpenVtsModal.showBottomSheet<ReferenceOption>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        final colorScheme = Theme.of(sheetContext).colorScheme;
-        final searchController = TextEditingController();
-        String query = '';
+      child: Builder(
+        builder: (sheetContext) {
+          final colorScheme = Theme.of(sheetContext).colorScheme;
+          final searchController = TextEditingController();
+          String query = '';
 
-        return SafeArea(
-          child: SizedBox(
+          return SizedBox(
             height: MediaQuery.of(sheetContext).size.height * 0.72,
             child: StatefulBuilder(
               builder: (context, setSheetState) {
@@ -168,9 +163,9 @@ class _LocalizationScreenState extends State<LocalizationScreen> {
                 );
               },
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
 
     if (picked != null) {
@@ -179,9 +174,7 @@ class _LocalizationScreenState extends State<LocalizationScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    OpenVtsFeedback.info(context, message);
   }
 
   @override

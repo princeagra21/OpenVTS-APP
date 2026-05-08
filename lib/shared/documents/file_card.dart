@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 
 class FileCard extends StatelessWidget {
   final Map<String, dynamic>? document;
@@ -119,9 +120,7 @@ class FileCard extends StatelessWidget {
       fallback: '',
     );
     if (filePath.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document file path is missing.')),
-      );
+      OpenVtsFeedback.error(context, 'Document file path is missing.');
       return;
     }
 
@@ -131,9 +130,7 @@ class FileCard extends StatelessWidget {
       if (uri != null) {
         final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!ok && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to open document.')),
-          );
+          OpenVtsFeedback.error(context, 'Unable to open document.');
         }
         return;
       }
@@ -145,17 +142,13 @@ class FileCard extends StatelessWidget {
     final normalizedPath = filePath.startsWith('/') ? filePath : '/$filePath';
     final uri = Uri.tryParse('$normalizedBase$normalizedPath');
     if (uri == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Invalid document URL.')));
+      OpenVtsFeedback.error(context, 'Invalid document URL.');
       return;
     }
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Unable to open document.')));
+      OpenVtsFeedback.error(context, 'Unable to open document.');
     }
   }
 

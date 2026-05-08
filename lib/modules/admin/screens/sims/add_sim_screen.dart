@@ -45,7 +45,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
   AdminSimCardsRepository? _repo;
 
   AdminSimCardsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminSimCardsRepository(api: _apiClient!);
     return _repo!;
   }

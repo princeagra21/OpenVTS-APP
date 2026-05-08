@@ -63,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminProfileRepository(api: _api!);
 
       final res = await _repo!.getMyProfile(cancelToken: token);

@@ -231,7 +231,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
     setState(() => _loadingVehicles = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       if (kDebugMode) {

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -43,7 +43,7 @@ class _SimScreenState extends State<SimScreen> {
   AdminSimCardsRepository? _repo;
 
   AdminSimCardsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminSimCardsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -138,7 +138,7 @@ class _SimScreenState extends State<SimScreen> {
   }
 
   Future<void> _openAddSim() async {
-    final created = await context.push(AppRoutes.adminSimsAdd);
+    final created = await context.push(AppRoutePaths.adminSimsAdd);
     if (!mounted) return;
     if (created == true) {
       _loadSimCards();
@@ -258,7 +258,7 @@ class _SimScreenState extends State<SimScreen> {
                   subtitle: 'Switch between device and sim cards.',
                   onTabSelected: (tab) {
                     if (tab == 'Device') {
-                      context.go(AppRoutes.adminInventory);
+                      context.go(AppRoutePaths.adminInventory);
                     }
                   },
                 ),
@@ -638,7 +638,7 @@ class _SimScreenState extends State<SimScreen> {
             child: AdminHomeAppBar(
               title: 'SIM Inventory',
               leadingIcon: Icons.sim_card,
-              onClose: () => context.go(AppRoutes.adminHome),
+              onClose: () => context.go(AppRoutePaths.adminHome),
             ),
           ),
         ],

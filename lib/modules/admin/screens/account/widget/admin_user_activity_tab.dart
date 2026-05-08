@@ -55,7 +55,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
 
       final res = await _api!.get(
         AdminApiPaths.userActivityLogs(widget.userId),

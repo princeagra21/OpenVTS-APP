@@ -21,7 +21,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -158,7 +158,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentVehicles(cancelToken: _cancelToken);
       if (!mounted) return;
@@ -330,7 +330,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push(AppRoutes.superadminVehicles),
+                onTap: () => context.push(AppRoutePaths.superadminVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -521,7 +521,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentTransactions(
         limit: 5,
@@ -704,7 +704,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push(AppRoutes.superadminPayments),
+                onTap: () => context.push(AppRoutePaths.superadminPayments),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -906,7 +906,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentUsers(cancelToken: _cancelToken);
       if (!mounted) return;

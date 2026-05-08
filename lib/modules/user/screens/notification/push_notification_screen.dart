@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/user_notification_preferences.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -278,7 +278,7 @@ class _PushNotificationScreenState extends State<PushNotificationScreen> {
               child: UserHomeAppBar(
                 title: 'Notifications',
                 leadingIcon: Icons.notifications_outlined,
-                onClose: () => context.go(AppRoutes.userHome),
+                onClose: () => context.go(AppRoutePaths.userHome),
               ),
             ),
           ),

@@ -17,7 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminDashboardRepository(api: _api!);
 
       final res = await _repo!.getAdminDashboardSummary(cancelToken: token);
@@ -145,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loadingVehiclesPreview = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _vehicleRepo ??= AdminVehicleRepository(api: _api!);
 
       final listRes = await _vehicleRepo!.getVehiclePreviewList(
@@ -551,7 +551,7 @@ class _RecentVehiclesSection extends StatelessWidget {
               ),
               const Spacer(),
               InkWell(
-                onTap: () => context.push(AppRoutes.adminVehicles),
+                onTap: () => context.push(AppRoutePaths.adminVehicles),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

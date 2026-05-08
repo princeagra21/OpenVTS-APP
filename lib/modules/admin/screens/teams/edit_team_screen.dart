@@ -62,7 +62,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

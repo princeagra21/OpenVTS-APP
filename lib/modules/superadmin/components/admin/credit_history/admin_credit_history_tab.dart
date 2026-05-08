@@ -97,7 +97,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     }
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getCreditLogs(
@@ -162,7 +162,7 @@ class _AdminCreditHistoryTabState extends State<AdminCreditHistoryTab> {
     final token = CancelToken();
     _profileToken = token;
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminProfile(

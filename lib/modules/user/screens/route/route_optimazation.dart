@@ -20,7 +20,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import '../../layout/app_layout.dart';
 
@@ -131,7 +131,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   }
 
   UserRoutesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserRoutesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -986,7 +986,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                   title: 'Route Optimization',
                   leadingIcon: Icons.route_outlined,
                   borderRadius: 0,
-                  onClose: () => context.go(AppRoutes.userHome),
+                  onClose: () => context.go(AppRoutePaths.userHome),
                 ),
               ),
               Positioned(

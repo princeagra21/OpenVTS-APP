@@ -69,7 +69,7 @@ class _ShareTrackAddScreenState extends State<ShareTrackAddScreen> {
   }
 
   UserShareTrackLinksRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserShareTrackLinksRepository(api: _apiClient!);
     return _repo!;
   }

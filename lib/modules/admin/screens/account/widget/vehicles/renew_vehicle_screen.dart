@@ -49,7 +49,7 @@ class _RenewVehicleScreenState extends State<RenewVehicleScreen> {
   bool _submitting = false;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

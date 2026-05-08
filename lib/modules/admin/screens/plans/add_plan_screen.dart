@@ -30,7 +30,7 @@ class _AddPlanScreenState extends State<AddPlanScreen> {
   bool _submitting = false;
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }

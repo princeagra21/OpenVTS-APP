@@ -41,7 +41,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
   AdminTeamsRepository? _repo;
 
   AdminTeamsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminTeamsRepository(api: _apiClient!);
     return _repo!;
   }

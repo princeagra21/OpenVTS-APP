@@ -17,7 +17,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -86,7 +86,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final id = admin['id']?.toString() ?? '';
     if (id.isEmpty) return;
     final changed = await context.push<bool>(
-      AppRoutes.superadminAdminsDetails(id),
+      AppRoutePaths.superadminAdminsDetails(id),
       extra: admin['active'] == true || admin['status'] == true,
     );
     if (changed == true) {
@@ -173,7 +173,7 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdmins(
@@ -296,7 +296,7 @@ class _AdminScreenState extends State<AdminScreen> {
       _statusSubmittingAdminIds.add(adminId);
     });
 
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= SuperadminRepository(api: _api!);
 
     _statusTokensByAdminId[adminId]?.cancel('New toggle');
@@ -356,7 +356,7 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() {});
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.loginAsAdmin(adminId);
@@ -365,7 +365,7 @@ class _AdminScreenState extends State<AdminScreen> {
         success: (token) async {
           await AppContainer.instance.sessionService.startImpersonation(token);
           if (!mounted) return;
-          context.go(AppRoutes.adminHome);
+          context.go(AppRoutePaths.adminHome);
         },
         failure: (err) {
           final msg = err is ApiException
@@ -488,7 +488,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           InkWell(
                             onTap: () async {
                               final created = await context.push(
-                                AppRoutes.superadminAdminsAdd,
+                                AppRoutePaths.superadminAdminsAdd,
                               );
                               if (created == true) {
                                 _loadAdmins();
@@ -1431,7 +1431,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
                 } else {
-                  context.go(AppRoutes.superadminHome);
+                  context.go(AppRoutePaths.superadminHome);
                 }
               },
             ),

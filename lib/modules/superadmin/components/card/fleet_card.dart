@@ -94,7 +94,7 @@ class _FleetOverviewBoxState extends State<FleetOverviewBox> {
     setState(() => _loadingCounts = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getTotalCounts(cancelToken: token);

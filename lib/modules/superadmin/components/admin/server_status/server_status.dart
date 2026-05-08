@@ -331,7 +331,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final overviewRes = await _repo!.getServerOverviewRaw(cancelToken: token);

@@ -13,7 +13,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class SuperadminNotificationsScreen extends StatefulWidget {
   const SuperadminNotificationsScreen({super.key});
@@ -100,10 +100,10 @@ class _SuperadminNotificationsScreenState
   }
 
   RoleNotificationsRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
       api: _api!,
-      pathPrefix: AppRoutes.superadminNotifications,
+      pathPrefix: AppRoutePaths.superadminNotifications,
     );
     return _repo!;
   }

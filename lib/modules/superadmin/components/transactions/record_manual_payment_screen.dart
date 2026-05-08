@@ -60,7 +60,7 @@ class _RecordManualPaymentScreenState extends State<RecordManualPaymentScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.create();
+    _api = ApiClientProvider.shared();
     _repo = SuperadminRepository(api: _api!);
   }
 

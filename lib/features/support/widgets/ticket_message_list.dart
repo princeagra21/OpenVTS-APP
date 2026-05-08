@@ -3,9 +3,14 @@ import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/features/support/support_models.dart';
 
 class TicketMessageList extends StatelessWidget {
-  const TicketMessageList({super.key, required this.messages});
+  const TicketMessageList({
+    super.key,
+    required this.messages,
+    this.onAttachmentTap,
+  });
 
   final List<SupportTicketMessage> messages;
+  final ValueChanged<SupportTicketMessage>? onAttachmentTap;
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +66,21 @@ class TicketMessageList extends StatelessWidget {
               ),
               if (msg.attachmentName.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(
-                  msg.attachmentName,
-                  style: AppFonts.roboto(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: cs.primary,
+                InkWell(
+                  onTap: onAttachmentTap == null
+                      ? null
+                      : () => onAttachmentTap!(msg),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      msg.attachmentName,
+                      style: AppFonts.roboto(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: cs.primary,
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -53,11 +53,11 @@ class _MoreScreenState extends State<MoreScreen> {
     if (!mounted) return;
     if (restoredToken != null && restoredToken.trim().isNotEmpty) {
       if (!mounted) return;
-      context.go(AppRoutes.superadminHome);
+      context.go(AppRoutePaths.superadminHome);
       return;
     }
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    context.go(AppRoutePaths.login);
   }
 
   Future<void> _confirmLogout() async {
@@ -164,19 +164,19 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'User',
           'subtitle': 'Manage users',
           'icon': CupertinoIcons.person,
-          'route': AppRoutes.adminUsers,
+          'route': AppRoutePaths.adminUsers,
         },
         {
           'title': 'Vehicle',
           'subtitle': 'Fleet vehicles',
           'icon': CupertinoIcons.bus,
-          'route': AppRoutes.adminVehicles,
+          'route': AppRoutePaths.adminVehicles,
         },
         {
           'title': 'Drivers',
           'subtitle': 'Driver profiles',
           'icon': CupertinoIcons.person_crop_square,
-          'route': AppRoutes.adminDrivers,
+          'route': AppRoutePaths.adminDrivers,
         },
       ],
       'Asset': [
@@ -184,13 +184,13 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Devices',
           'subtitle': 'Tracking hardware',
           'icon': CupertinoIcons.device_phone_portrait,
-          'route': AppRoutes.adminDevices,
+          'route': AppRoutePaths.adminDevices,
         },
         {
           'title': 'Sim Card',
           'subtitle': 'Network connectivity',
           'icon': Icons.sim_card_outlined,
-          'route': AppRoutes.adminSims,
+          'route': AppRoutePaths.adminSims,
         },
       ],
       'Finance': [
@@ -198,7 +198,7 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Transaction History',
           'subtitle': 'All transactions',
           'icon': CupertinoIcons.doc_text,
-          'route': AppRoutes.adminTransactions,
+          'route': AppRoutePaths.adminTransactions,
         },
       ],
       'Others': [
@@ -206,19 +206,19 @@ class _MoreScreenState extends State<MoreScreen> {
           'title': 'Support',
           'subtitle': 'Help center',
           'icon': CupertinoIcons.question_circle,
-          'route': AppRoutes.adminSupport,
+          'route': AppRoutePaths.adminSupport,
         },
         {
           'title': 'Calendar',
           'subtitle': 'Schedules',
           'icon': CupertinoIcons.calendar,
-          'route': AppRoutes.adminCalendar,
+          'route': AppRoutePaths.adminCalendar,
         },
         {
           'title': 'Logs',
           'subtitle': 'System activity',
           'icon': CupertinoIcons.list_bullet,
-          'route': AppRoutes.adminLogs,
+          'route': AppRoutePaths.adminLogs,
         },
       ],
     };

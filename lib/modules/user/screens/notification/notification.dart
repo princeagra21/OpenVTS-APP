@@ -12,7 +12,7 @@ import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -97,10 +97,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   RoleNotificationsRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
       api: _api!,
-      pathPrefix: AppRoutes.userNotifications,
+      pathPrefix: AppRoutePaths.userNotifications,
     );
     return _repo!;
   }

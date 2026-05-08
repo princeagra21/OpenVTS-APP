@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -57,7 +57,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   AdminVehiclesRepository? _repo;
 
   AdminVehiclesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminVehiclesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -914,7 +914,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
                           InkWell(
                             onTap: () async {
                               final created =
-                                  await context.push<bool>(AppRoutes.adminVehiclesAdd);
+                                  await context.push<bool>(AppRoutePaths.adminVehiclesAdd);
                               if (created == true) {
                                 _loadVehicles();
                               }
@@ -1271,7 +1271,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
             child: AdminHomeAppBar(
               title: 'Vehicles',
               leadingIcon: Symbols.sync_alt,
-              onClose: () => context.go(AppRoutes.adminHome),
+              onClose: () => context.go(AppRoutePaths.adminHome),
             ),
           ),
         ],
@@ -1350,7 +1350,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
           hoverColor: Colors.transparent,
           onTap: vehicleId.isEmpty
               ? null
-              : () => context.push(AppRoutes.adminVehiclesDetails(vehicleId)),
+              : () => context.push(AppRoutePaths.adminVehiclesDetails(vehicleId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(

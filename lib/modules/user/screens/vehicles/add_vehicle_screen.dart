@@ -63,13 +63,13 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   }
 
   CommonRepository _commonOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }
 
   UserVehiclesRepository _vehiclesOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _vehiclesRepo ??= UserVehiclesRepository(api: _api!);
     return _vehiclesRepo!;
   }

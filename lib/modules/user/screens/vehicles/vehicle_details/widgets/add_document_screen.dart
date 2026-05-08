@@ -5,6 +5,7 @@ import 'package:open_vts/core/models/superadmin_document_type.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_components.dart';
 
 class UserVehicleAddDocumentScreen extends StatefulWidget {
   const UserVehicleAddDocumentScreen({
@@ -36,7 +37,8 @@ class UserVehicleAddDocumentScreen extends StatefulWidget {
       _UserVehicleAddDocumentScreenState();
 }
 
-class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScreen> {
+class _UserVehicleAddDocumentScreenState
+    extends State<UserVehicleAddDocumentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -51,7 +53,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
   @override
   void initState() {
     super.initState();
-    _selectedDocType = widget.docTypes.isNotEmpty ? widget.docTypes.first : null;
+    _selectedDocType = widget.docTypes.isNotEmpty
+        ? widget.docTypes.first
+        : null;
   }
 
   @override
@@ -64,7 +68,7 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    OpenVtsFeedback.error(context, message);
   }
 
   Future<void> _pickExpiryDate() async {
@@ -84,8 +88,11 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
 
     final date = result.first!;
     setState(() {
-      _selectedExpiryAt =
-          DateTime(date.year, date.month, date.day).toUtc().toIso8601String();
+      _selectedExpiryAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+      ).toUtc().toIso8601String();
       _selectedExpiryLabel =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     });
@@ -127,26 +134,21 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
 
   Future<void> _openDocumentTypePicker() async {
     final searchController = TextEditingController();
-    await showModalBottomSheet<void>(
+    await OpenVtsModal.showBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final query = searchController.text.trim().toLowerCase();
-            final filtered = widget.docTypes.where((docType) {
-              if (query.isEmpty) return true;
-              return docType.name.toLowerCase().contains(query) ||
-                  docType.docFor.toLowerCase().contains(query);
-            }).toList();
+      child: Builder(
+        builder: (context) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              final query = searchController.text.trim().toLowerCase();
+              final filtered = widget.docTypes.where((docType) {
+                if (query.isEmpty) return true;
+                return docType.name.toLowerCase().contains(query) ||
+                    docType.docFor.toLowerCase().contains(query);
+              }).toList();
 
-            return SafeArea(
-              child: Padding(
+              return Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -187,7 +189,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                               child: Text(
                                 'No document types found',
                                 style: AppFonts.roboto(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                               ),
                             )
@@ -197,10 +201,12 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                   const SizedBox(height: 6),
                               itemBuilder: (_, index) {
                                 final item = filtered[index];
-                                final selected = _selectedDocType?.id == item.id;
+                                final selected =
+                                    _selectedDocType?.id == item.id;
                                 return ListTile(
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
                                   title: Text(
                                     item.name,
                                     style: AppFonts.roboto(
@@ -212,11 +218,16 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                         ? '—'
                                         : item.docFor.toUpperCase(),
                                     style: AppFonts.roboto(
-                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                      color: colorScheme.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
                                     ),
                                   ),
                                   trailing: selected
-                                      ? Icon(Icons.check, color: colorScheme.primary)
+                                      ? Icon(
+                                          Icons.check,
+                                          color: colorScheme.primary,
+                                        )
                                       : null,
                                   onTap: () {
                                     setState(() => _selectedDocType = item);
@@ -228,11 +239,11 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          );
+        },
+      ),
     );
     searchController.dispose();
   }
@@ -245,16 +256,22 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
       hintText: hint,
       hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withValues(alpha: 0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.1)),
+        borderSide: BorderSide(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.1)),
+        borderSide: BorderSide(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -362,7 +379,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: colorScheme.onSurface.withValues(alpha: 0.12),
+                            color: colorScheme.onSurface.withValues(
+                              alpha: 0.12,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -389,27 +408,38 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: colorScheme.onSurface.withValues(alpha: 0.12),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
                             ),
                           ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  _selectedDocType?.name ?? 'Select document type',
+                                  _selectedDocType?.name ??
+                                      'Select document type',
                                   style: AppFonts.roboto(
                                     fontSize: labelSize,
                                     color: _selectedDocType == null
-                                        ? colorScheme.onSurface.withValues(alpha: 0.5)
+                                        ? colorScheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          )
                                         : colorScheme.onSurface,
                                   ),
                                 ),
                               ),
                               widget.loadingDocTypes
-                                  ? const AppShimmer(width: 16, height: 16, radius: 8)
+                                  ? const AppShimmer(
+                                      width: 16,
+                                      height: 16,
+                                      radius: 8,
+                                    )
                                   : Icon(
                                       Icons.expand_more,
-                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                      color: colorScheme.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
                                     ),
                             ],
                           ),
@@ -440,7 +470,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: colorScheme.onSurface.withValues(alpha: 0.12),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
                             ),
                           ),
                           child: Row(
@@ -451,7 +483,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                   style: AppFonts.roboto(
                                     fontSize: labelSize,
                                     color: _selectedExpiryLabel == null
-                                        ? colorScheme.onSurface.withValues(alpha: 0.5)
+                                        ? colorScheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          )
                                         : colorScheme.onSurface,
                                   ),
                                 ),
@@ -471,7 +505,8 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                           _sectionLabel(context, 'Visible To Admin', width),
                           Switch.adaptive(
                             value: _isVisible,
-                            onChanged: (value) => setState(() => _isVisible = value),
+                            onChanged: (value) =>
+                                setState(() => _isVisible = value),
                           ),
                         ],
                       ),
@@ -512,7 +547,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: colorScheme.onSurface.withValues(alpha: 0.12),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
                             ),
                             color: colorScheme.surface,
                           ),
@@ -525,7 +562,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                   fontSize: labelSize,
                                   fontWeight: FontWeight.w600,
                                   color: _selectedFile == null
-                                      ? colorScheme.onSurface.withValues(alpha: 0.6)
+                                      ? colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        )
                                       : colorScheme.onSurface,
                                 ),
                               ),
@@ -534,7 +573,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                 'JPG, JPEG, PNG, PDF, DOC, DOCX, WEBP (max 5.0 MB per file)',
                                 style: AppFonts.roboto(
                                   fontSize: labelSize - 4,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.55),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.55,
+                                  ),
                                 ),
                               ),
                             ],
@@ -546,9 +587,13 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: _uploading ? null : () => Navigator.pop(context),
+                              onTap: _uploading
+                                  ? null
+                                  : () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
@@ -571,7 +616,9 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                             child: GestureDetector(
                               onTap: _uploading ? null : _upload,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(16),
@@ -583,9 +630,10 @@ class _UserVehicleAddDocumentScreenState extends State<UserVehicleAddDocumentScr
                                           height: 18,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              colorScheme.onPrimary,
-                                            ),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  colorScheme.onPrimary,
+                                                ),
                                           ),
                                         )
                                       : Text(

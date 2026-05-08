@@ -45,7 +45,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   AdminDevicesRepository? _repo;
 
   AdminDevicesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminDevicesRepository(api: _apiClient!);
     return _repo!;
   }

@@ -1,6 +1,6 @@
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 // UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
@@ -175,7 +175,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   DateTime? _parseInputDate(String value) {
-    final parts = value.trim().split(AppRoutes.root);
+    final parts = value.trim().split(AppRoutePaths.root);
     if (parts.length != 3) return null;
     final d = int.tryParse(parts[0]);
     final m = int.tryParse(parts[1]);
@@ -351,7 +351,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= SuperadminRepository(api: _api!);
   }
 
@@ -1202,7 +1202,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
                       ),
                       GestureDetector(
                         onTap: () => context.push(
-                          AppRoutes.superadminTransactionsRecordManual,
+                          AppRoutePaths.superadminTransactionsRecordManual,
                         ),
                         child: Container(
                           padding: EdgeInsets.symmetric(

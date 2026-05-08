@@ -61,7 +61,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   }
 
   UserProfileRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= UserProfileRepository(api: _api!);
     return _repo!;
   }

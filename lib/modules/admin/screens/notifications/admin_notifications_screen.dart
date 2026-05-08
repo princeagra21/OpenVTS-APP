@@ -101,7 +101,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminNotificationsRepository(api: _api!);
 
       final res = await _repo!.getNotifications(cancelToken: token);
@@ -225,7 +225,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       _repo ??= AdminNotificationsRepository(
         api:
             _api ??
-            ApiClientProvider.create(),
+            ApiClientProvider.shared(),
       );
 
       final res = await _repo!.markRead(item.id, cancelToken: token);
@@ -277,7 +277,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       _repo ??= AdminNotificationsRepository(
         api:
             _api ??
-            ApiClientProvider.create(),
+            ApiClientProvider.shared(),
       );
 
       final res = await _repo!.markAllRead(cancelToken: token);

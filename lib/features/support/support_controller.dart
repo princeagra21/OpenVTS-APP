@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:open_vts/features/support/support_models.dart';
 import 'package:open_vts/features/support/support_repository.dart';
 import 'package:open_vts/features/support/support_role_config.dart';
 
 class SupportController extends ChangeNotifier {
-  SupportController({required this.config, required this.repository});
+  SupportController({required this.config, required this.repository}) {
+    searchController.addListener(_onSearchChanged);
+  }
 
   final SupportRoleConfig config;
   final SupportRepositoryAdapter repository;
@@ -105,9 +107,14 @@ class SupportController extends ChangeNotifier {
     return status;
   }
 
+  void _onSearchChanged() {
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _loadToken?.cancel('SupportController disposed');
+    searchController.removeListener(_onSearchChanged);
     searchController.dispose();
     super.dispose();
   }

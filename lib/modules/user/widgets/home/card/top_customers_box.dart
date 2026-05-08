@@ -4,7 +4,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class TopCustomersBox extends StatelessWidget {
   final bool loading;
@@ -169,7 +169,7 @@ class TopCustomersBox extends StatelessWidget {
                 ),
               ),
               InkWell(
-                onTap: () => context.push(AppRoutes.userVehicles),
+                onTap: () => context.push(AppRoutePaths.userVehicles),
                 child: Text(
                   'View all',
                   style: AppFonts.inter(

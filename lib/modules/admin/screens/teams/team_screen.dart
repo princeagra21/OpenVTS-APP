@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -44,7 +44,7 @@ class _TeamScreenState extends State<TeamScreen> {
   AdminTeamsRepository? _repo;
 
   AdminTeamsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminTeamsRepository(api: _apiClient!);
     return _repo!;
   }
@@ -328,7 +328,7 @@ class _TeamScreenState extends State<TeamScreen> {
                           ),
                           InkWell(
                             onTap: () async {
-                              final created = await context.push(AppRoutes.adminTeamsAdd);
+                              final created = await context.push(AppRoutePaths.adminTeamsAdd);
                               if (created == true && mounted) {
                                 _loadTeams();
                               }
@@ -683,7 +683,7 @@ class _TeamScreenState extends State<TeamScreen> {
             child: AdminHomeAppBar(
               title: 'Team',
               leadingIcon: Icons.groups,
-              onClose: () => context.go(AppRoutes.adminHome),
+              onClose: () => context.go(AppRoutePaths.adminHome),
             ),
           ),
         ],
@@ -848,7 +848,7 @@ class _TeamScreenState extends State<TeamScreen> {
           hoverColor: Colors.transparent,
           onTap: teamId.isEmpty
               ? null
-              : () => context.push(AppRoutes.adminTeamsDetails(teamId)),
+              : () => context.push(AppRoutePaths.adminTeamsDetails(teamId)),
           child: Padding(
             padding: EdgeInsets.all(cardPadding),
             child: Column(
@@ -1059,7 +1059,7 @@ class _TeamScreenState extends State<TeamScreen> {
                   borderRadius: BorderRadius.circular(12),
                   onTap: teamId.isEmpty
                       ? null
-                      : () => context.push(AppRoutes.adminTeamsDetails(teamId)),
+                      : () => context.push(AppRoutePaths.adminTeamsDetails(teamId)),
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(

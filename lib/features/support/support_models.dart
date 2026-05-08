@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:open_vts/core/utils/file_picker_helper.dart';
 
 enum SupportListScope { all, mine }
 
@@ -86,6 +87,7 @@ class SupportCreateTicketDraft {
     this.priority,
     this.userId,
     this.adminId,
+    this.attachments = const <PickedFilePayload>[],
   });
 
   final String title;
@@ -94,4 +96,5 @@ class SupportCreateTicketDraft {
   final String? priority;
   final String? userId;
   final String? adminId;
+  final List<PickedFilePayload> attachments;
 }

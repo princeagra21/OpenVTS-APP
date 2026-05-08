@@ -107,7 +107,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
 
     _repo ??= AdminUsersRepository(api: _api!);
 

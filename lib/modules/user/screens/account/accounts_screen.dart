@@ -7,7 +7,7 @@ import 'package:open_vts/modules/user/screens/drivers/driver_screen.dart';
 import 'package:open_vts/modules/user/screens/sub_users/sub_user_screen.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
@@ -76,7 +76,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             child: UserHomeAppBar(
               title: 'Accounts',
               leadingIcon: Icons.group_outlined,
-              onClose: () => context.go(AppRoutes.userHome),
+              onClose: () => context.go(AppRoutePaths.userHome),
             ),
           ),
         ],

@@ -78,7 +78,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
     _submitToken = token;
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
 
       final res = await _api!.post(
         AdminApiPaths.updateUserPassword(widget.userId),

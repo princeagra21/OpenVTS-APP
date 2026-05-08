@@ -93,13 +93,13 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
 
   CommonRepository _commonRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }

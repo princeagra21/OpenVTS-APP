@@ -56,7 +56,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   }
 
   VehicleDetailsRepository _buildFeatureRepository() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _baseRepository ??= UserVehiclesRepository(api: _apiClient!);
     return VehicleDetailsRepository(delegate: _baseRepository!);
   }

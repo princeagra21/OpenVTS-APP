@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -47,7 +47,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   AdminDevicesRepository? _repo;
 
   AdminDevicesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminDevicesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -208,7 +208,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     final parsed = DateTime.tryParse(text);
     if (parsed != null) return parsed;
 
-    final parts = text.split(AppRoutes.root);
+    final parts = text.split(AppRoutePaths.root);
     if (parts.length == 3) {
       final d = int.tryParse(parts[0]);
       final m = int.tryParse(parts[1]);
@@ -229,7 +229,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Future<void> _openAddDevice() async {
-    final result = await context.push(AppRoutes.adminDevicesAdd);
+    final result = await context.push(AppRoutePaths.adminDevicesAdd);
     if (!mounted) return;
     if (result == true) {
       _loadDevices();

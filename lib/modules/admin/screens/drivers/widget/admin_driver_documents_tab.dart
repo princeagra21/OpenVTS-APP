@@ -4,6 +4,7 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_drivers_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/documents/file_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -18,7 +19,8 @@ class AdminDriverDocumentsTab extends StatefulWidget {
   const AdminDriverDocumentsTab({super.key, required this.driverId});
 
   @override
-  State<AdminDriverDocumentsTab> createState() => _AdminDriverDocumentsTabState();
+  State<AdminDriverDocumentsTab> createState() =>
+      _AdminDriverDocumentsTabState();
 }
 
 class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
@@ -57,7 +59,8 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
   }
 
   Map<String, dynamic> _mapDoc(AdminDocumentItem d) {
-    final rawFileName = (d.raw['fileName'] ?? d.raw['filename'] ?? '').toString();
+    final rawFileName = (d.raw['fileName'] ?? d.raw['filename'] ?? '')
+        .toString();
     final rawTitle = (d.raw['title'] ?? '').toString();
     return <String, dynamic>{
       "id": d.id,
@@ -103,7 +106,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminDriversRepository(api: _api!);
 
       final res = await _repo!.getDriverDocuments(
@@ -134,15 +137,16 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
           });
           if (_errorShown) return;
           _errorShown = true;
-          final msg = (err is ApiException &&
+          final msg =
+              (err is ApiException &&
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view documents.'
               : "Couldn't load documents.";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(msg),
-              action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
-            ),
+          OpenVtsFeedback.error(
+            context,
+            msg,
+            actionLabel: 'Retry',
+            onAction: _loadDocs,
           );
         },
       );
@@ -155,11 +159,11 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       });
       if (_errorShown) return;
       _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Couldn't load documents."),
-          action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
-        ),
+      OpenVtsFeedback.error(
+        context,
+        "Couldn't load documents.",
+        actionLabel: 'Retry',
+        onAction: _loadDocs,
       );
     }
   }
@@ -179,13 +183,16 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
 
     final query = _searchController.text.trim().toLowerCase();
     final filteredFiles = _files.where((file) {
-      final matchesSearch = query.isEmpty ||
+      final matchesSearch =
+          query.isEmpty ||
           file['fileName'].toString().toLowerCase().contains(query) ||
           file['type'].toString().toLowerCase().contains(query) ||
           file['status'].toString().toLowerCase().contains(query) ||
           file['expiryDate'].toString().toLowerCase().contains(query) ||
           file['uploadedDate'].toString().toLowerCase().contains(query) ||
-          (file['tags'] as List<String>).any((tag) => tag.toLowerCase().contains(query));
+          (file['tags'] as List<String>).any(
+            (tag) => tag.toLowerCase().contains(query),
+          );
       final matchesTab = switch (_selectedTab) {
         'All' => true,
         'Valid' => file['_valid'] == true,
@@ -234,7 +241,9 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: colorScheme.onSurface.withOpacity(0.1)),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withOpacity(0.1),
+                  ),
                 ),
                 child: TextField(
                   controller: _searchController,
@@ -251,11 +260,18 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
                       fontSize: fsSecondary,
                       height: 16 / 12,
                     ),
-                    prefixIcon: Icon(CupertinoIcons.search, size: iconSize, color: colorScheme.onSurface),
+                    prefixIcon: Icon(
+                      CupertinoIcons.search,
+                      size: iconSize,
+                      color: colorScheme.onSurface,
+                    ),
                     filled: true,
                     fillColor: Colors.transparent,
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: hp, vertical: hp),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: hp,
+                      vertical: hp,
+                    ),
                   ),
                 ),
               ),
@@ -268,22 +284,49 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
                     spacing: gap,
                     runSpacing: gap,
                     children: [
-                      _filterButton(context, cellWidth, hp, spacing, iconSize, fsMain, colorScheme),
-                      _recordsButton(context, cellWidth, hp, spacing, iconSize, fsMain, colorScheme),
-                      _uploadButton(context, cellWidth, hp, spacing, iconSize, fsMain, colorScheme),
+                      _filterButton(
+                        context,
+                        cellWidth,
+                        hp,
+                        spacing,
+                        iconSize,
+                        fsMain,
+                        colorScheme,
+                      ),
+                      _recordsButton(
+                        context,
+                        cellWidth,
+                        hp,
+                        spacing,
+                        iconSize,
+                        fsMain,
+                        colorScheme,
+                      ),
+                      _uploadButton(
+                        context,
+                        cellWidth,
+                        hp,
+                        spacing,
+                        iconSize,
+                        fsMain,
+                        colorScheme,
+                      ),
                     ],
                   );
                 },
               ),
               const SizedBox(height: 16),
               if (_loading)
-                ...List<Widget>.generate(3, (_) => _buildFileSkeleton(colorScheme)),
-              if (showEmpty && !_loadFailed)
-                _emptyState(colorScheme),
-              if (showEmpty && _loadFailed)
-                _errorState(colorScheme),
+                ...List<Widget>.generate(
+                  3,
+                  (_) => _buildFileSkeleton(colorScheme),
+                ),
+              if (showEmpty && !_loadFailed) _emptyState(colorScheme),
+              if (showEmpty && _loadFailed) _errorState(colorScheme),
               if (!showEmpty && !_loading)
-                ...visibleFiles.map((file) => FileCard(document: file, onChanged: _loadDocs)),
+                ...visibleFiles.map(
+                  (file) => FileCard(document: file, onChanged: _loadDocs),
+                ),
             ],
           ),
         ),
@@ -291,38 +334,82 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
     );
   }
 
-  Widget _filterButton(BuildContext context, double width, double hp, double spacing, double iconSize, double fs, ColorScheme cs) {
+  Widget _filterButton(
+    BuildContext context,
+    double width,
+    double hp,
+    double spacing,
+    double iconSize,
+    double fs,
+    ColorScheme cs,
+  ) {
     return SizedBox(
       width: width,
       child: PopupMenuButton<String>(
-        onSelected: (value) { if (_selectedTab != value) setState(() => _selectedTab = value); },
+        onSelected: (value) {
+          if (_selectedTab != value) setState(() => _selectedTab = value);
+        },
         itemBuilder: (context) => const [
           PopupMenuItem(value: 'All', child: Text('All')),
           PopupMenuItem(value: 'Valid', child: Text('Valid')),
           PopupMenuItem(value: 'Warning', child: Text('Warning')),
           PopupMenuItem(value: 'Expired', child: Text('Expired')),
         ],
-        child: _buttonContainer(cs, hp, spacing, iconSize, fs, 'Filter', Icons.tune),
+        child: _buttonContainer(
+          cs,
+          hp,
+          spacing,
+          iconSize,
+          fs,
+          'Filter',
+          Icons.tune,
+        ),
       ),
     );
   }
 
-  Widget _recordsButton(BuildContext context, double width, double hp, double spacing, double iconSize, double fs, ColorScheme cs) {
+  Widget _recordsButton(
+    BuildContext context,
+    double width,
+    double hp,
+    double spacing,
+    double iconSize,
+    double fs,
+    ColorScheme cs,
+  ) {
     return SizedBox(
       width: width,
       child: PopupMenuButton<int>(
-        onSelected: (value) { if (_pageSize != value) setState(() => _pageSize = value); },
+        onSelected: (value) {
+          if (_pageSize != value) setState(() => _pageSize = value);
+        },
         itemBuilder: (context) => const [
           PopupMenuItem(value: 10, child: Text('10')),
           PopupMenuItem(value: 25, child: Text('25')),
           PopupMenuItem(value: 50, child: Text('50')),
         ],
-        child: _buttonContainer(cs, hp, spacing, iconSize, fs, 'Records', Icons.keyboard_arrow_down),
+        child: _buttonContainer(
+          cs,
+          hp,
+          spacing,
+          iconSize,
+          fs,
+          'Records',
+          Icons.keyboard_arrow_down,
+        ),
       ),
     );
   }
 
-  Widget _uploadButton(BuildContext context, double width, double hp, double spacing, double iconSize, double fs, ColorScheme cs) {
+  Widget _uploadButton(
+    BuildContext context,
+    double width,
+    double hp,
+    double spacing,
+    double iconSize,
+    double fs,
+    ColorScheme cs,
+  ) {
     return SizedBox(
       width: width,
       child: InkWell(
@@ -339,12 +426,28 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
           if (updated == true) await _loadDocs();
         },
         borderRadius: BorderRadius.circular(12),
-        child: _buttonContainer(cs, hp, spacing, iconSize, fs, 'Upload', Icons.upload_outlined),
+        child: _buttonContainer(
+          cs,
+          hp,
+          spacing,
+          iconSize,
+          fs,
+          'Upload',
+          Icons.upload_outlined,
+        ),
       ),
     );
   }
 
-  Widget _buttonContainer(ColorScheme cs, double hp, double spacing, double iconSize, double fs, String label, IconData icon) {
+  Widget _buttonContainer(
+    ColorScheme cs,
+    double hp,
+    double spacing,
+    double iconSize,
+    double fs,
+    String label,
+    IconData icon,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: hp, vertical: spacing),
       decoration: BoxDecoration(
@@ -357,7 +460,14 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
         children: [
           Icon(icon, size: iconSize, color: cs.onSurface),
           SizedBox(width: spacing / 2),
-          Text(label, style: AppFonts.roboto(fontSize: fs, fontWeight: FontWeight.w600, color: cs.onSurface)),
+          Text(
+            label,
+            style: AppFonts.roboto(
+              fontSize: fs,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+            ),
+          ),
         ],
       ),
     );
@@ -372,14 +482,34 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: cs.surfaceContainerHighest),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('No documents found', style: AppFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          Text(
+            'No documents found',
+            style: AppFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('Upload a document to see it listed here.', style: AppFonts.roboto(fontSize: 12, height: 1.45, color: cs.onSurface.withOpacity(0.68))),
+          Text(
+            'Upload a document to see it listed here.',
+            style: AppFonts.roboto(
+              fontSize: 12,
+              height: 1.45,
+              color: cs.onSurface.withOpacity(0.68),
+            ),
+          ),
         ],
       ),
     );
@@ -390,7 +520,15 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       padding: const EdgeInsets.only(top: 14),
       child: Row(
         children: [
-          Expanded(child: Text("Couldn't load documents.", style: AppFonts.roboto(fontSize: 14, color: cs.onSurface.withOpacity(0.75)))),
+          Expanded(
+            child: Text(
+              "Couldn't load documents.",
+              style: AppFonts.roboto(
+                fontSize: 14,
+                color: cs.onSurface.withOpacity(0.75),
+              ),
+            ),
+          ),
           TextButton(onPressed: _loadDocs, child: const Text('Retry')),
         ],
       ),
@@ -405,7 +543,13 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,

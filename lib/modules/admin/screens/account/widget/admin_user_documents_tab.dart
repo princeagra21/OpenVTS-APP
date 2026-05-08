@@ -7,6 +7,7 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 import 'package:open_vts/features/documents/document_form_screen.dart';
 import 'package:open_vts/modules/admin/screens/account/widget/documents/file_card.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -105,7 +106,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= AdminUsersRepository(api: _api!);
 
       final res = await _repo!.getUserDocuments(
@@ -143,11 +144,11 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                   (err.statusCode == 401 || err.statusCode == 403))
               ? 'Not authorized to view documents.'
               : "Couldn't load documents.";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(msg),
-              action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
-            ),
+          OpenVtsFeedback.error(
+            context,
+            msg,
+            actionLabel: 'Retry',
+            onAction: _loadDocs,
           );
         },
       );
@@ -160,11 +161,11 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
       });
       if (_errorShown) return;
       _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Couldn't load documents."),
-          action: SnackBarAction(label: 'Retry', onPressed: _loadDocs),
-        ),
+      OpenVtsFeedback.error(
+        context,
+        "Couldn't load documents.",
+        actionLabel: 'Retry',
+        onAction: _loadDocs,
       );
     }
   }
@@ -466,7 +467,9 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colorScheme.surfaceContainerHighest),
+                    border: Border.all(
+                      color: colorScheme.surfaceContainerHighest,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.06),

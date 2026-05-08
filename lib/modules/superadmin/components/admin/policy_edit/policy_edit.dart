@@ -66,7 +66,7 @@ class _PolicyEditScreenState extends State<PolicyEditScreen> {
   }
 
   UserPolicyRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserPolicyRepository(api: _apiClient!);
     return _repo!;
   }

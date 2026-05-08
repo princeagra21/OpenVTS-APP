@@ -271,7 +271,7 @@ class _ProfileTabState extends State<ProfileTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdminProfile(
@@ -340,7 +340,7 @@ class _ProfileTabState extends State<ProfileTab> {
     setState(() => _statusSubmitting = true);
     final currentActive = _activeOverride ?? profile.isActive;
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.updateAdminStatus(
         widget.adminId,

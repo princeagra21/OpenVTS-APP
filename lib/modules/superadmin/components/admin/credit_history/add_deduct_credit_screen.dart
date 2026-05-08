@@ -233,7 +233,7 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
     _token = token;
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       final creditsValue = action == 'deduct' ? -amount : amount;
       final res = await _api!.post(
         SuperadminApiPaths.assignCredits(widget.adminId),

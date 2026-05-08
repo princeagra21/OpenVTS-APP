@@ -141,7 +141,7 @@ class _VehicleLogsTabState extends State<VehicleLogsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.create();
+      _api ??= ApiClientProvider.shared();
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getVehicleLogs(

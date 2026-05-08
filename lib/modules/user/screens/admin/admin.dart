@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -95,43 +95,43 @@ class _AdminScreenState extends State<AdminScreen> {
         'title': 'Share Track Link',
         'subtitle': 'Generate & share live link',
         'icon': CupertinoIcons.link,
-        'route': AppRoutes.userShareTrack,
+        'route': AppRoutePaths.userShareTrack,
       },
       {
         'title': 'Route Optimization',
         'subtitle': 'Optimize routes & stops',
         'icon': Icons.alt_route,
-        'route': AppRoutes.userRouteOptimization,
+        'route': AppRoutePaths.userRouteOptimization,
       },
       {
         'title': 'Vehicles',
         'subtitle': 'Manage fleet vehicles',
         'icon': CupertinoIcons.bus,
-        'route': AppRoutes.userVehicles,
+        'route': AppRoutePaths.userVehicles,
       },
       {
         'title': 'Drivers',
         'subtitle': 'Driver profiles & licenses',
         'icon': CupertinoIcons.person_crop_square,
-        'route': AppRoutes.userDrivers,
+        'route': AppRoutePaths.userDrivers,
       },
       {
         'title': 'Sub-users',
         'subtitle': 'Create & manage sub users',
         'icon': CupertinoIcons.person_2,
-        'route': AppRoutes.userSubUsers,
+        'route': AppRoutePaths.userSubUsers,
       },
       {
         'title': 'Support',
         'subtitle': 'Help center & tickets',
         'icon': CupertinoIcons.question_circle,
-        'route': AppRoutes.userSupport,
+        'route': AppRoutePaths.userSupport,
       },
       {
         'title': 'Transactions',
         'subtitle': 'Payment & billing history',
         'icon': CupertinoIcons.doc_text,
-        'route': AppRoutes.userTransactions,
+        'route': AppRoutePaths.userTransactions,
       },
     ];
 

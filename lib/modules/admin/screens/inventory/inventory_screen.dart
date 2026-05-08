@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
@@ -43,7 +43,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   AdminDevicesRepository? _repo;
 
   AdminDevicesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminDevicesRepository(api: _apiClient!);
     return _repo!;
   }
@@ -138,7 +138,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _openAddInventory() async {
-    final created = await context.push(AppRoutes.adminInventoryAdd);
+    final created = await context.push(AppRoutePaths.adminInventoryAdd);
     if (!mounted) return;
     if (created == true) {
       _loadDevices();
@@ -153,7 +153,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ).showSnackBar(const SnackBar(content: Text('Device ID not found.')));
       return;
     }
-    final updated = await context.push(AppRoutes.adminInventoryDevice(id), extra: item.raw);
+    final updated = await context.push(AppRoutePaths.adminInventoryDevice(id), extra: item.raw);
     if (!mounted) return;
     if (updated == true) {
       _loadDevices();
@@ -282,7 +282,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   subtitle: 'Switch between device and sim inventory.',
                   onTabSelected: (tab) {
                     if (tab == 'Sim') {
-                      context.go(AppRoutes.adminSims);
+                      context.go(AppRoutePaths.adminSims);
                     }
                   },
                 ),
@@ -662,7 +662,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: AdminHomeAppBar(
               title: 'Inventory',
               leadingIcon: Icons.inventory_2,
-              onClose: () => context.go(AppRoutes.adminHome),
+              onClose: () => context.go(AppRoutePaths.adminHome),
             ),
           ),
         ],

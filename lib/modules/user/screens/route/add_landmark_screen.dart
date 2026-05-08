@@ -78,7 +78,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     return _api!;
   }
 

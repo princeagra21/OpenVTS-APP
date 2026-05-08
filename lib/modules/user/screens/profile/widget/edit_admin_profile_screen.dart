@@ -120,13 +120,13 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
   }
 
   UserProfileRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _repo ??= UserProfileRepository(api: _api!);
     return _repo!;
   }
 
   CommonRepository _commonRepoOrCreate() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }

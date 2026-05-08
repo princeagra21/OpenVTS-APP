@@ -45,7 +45,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final api = ApiClientProvider.create();
+    final api = ApiClientProvider.shared();
     final repo = AdminVehiclesRepository(api: api);
     
     final usersRes = await AdminUsersRepository(api: api).getUsers(limit: 100);
@@ -85,7 +85,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final api = ApiClientProvider.create();
+    final api = ApiClientProvider.shared();
     final repo = AdminVehiclesRepository(api: api);
 
     final result = await repo.createVehicle(

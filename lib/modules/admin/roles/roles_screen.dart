@@ -4,7 +4,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class RolesScreen extends StatefulWidget {
   const RolesScreen({super.key});
@@ -154,7 +154,7 @@ class _RolesScreenState extends State<RolesScreen> {
       customTopBar: AdminHomeAppBar(
         title: 'Role Permissions',
         leadingIcon: Icons.admin_panel_settings,
-        onClose: () => context.go(AppRoutes.adminHome),
+        onClose: () => context.go(AppRoutePaths.adminHome),
       ),
       actionIcons: const [],
       leftAvatarText: 'FS',

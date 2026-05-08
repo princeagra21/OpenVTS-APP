@@ -837,7 +837,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
     _superadminRepo ??= SuperadminRepository(api: _api!);
   }
@@ -973,7 +973,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _countriesToken = token;
     setState(() => _loadingCountries = true);
 
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCountries(cancelToken: token);
@@ -1015,7 +1015,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _statesToken = token;
     setState(() => _loadingStates = true);
 
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getStates(countryCode, cancelToken: token);
@@ -1039,7 +1039,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _citiesToken = token;
     setState(() => _loadingCities = true);
 
-    _api ??= ApiClientProvider.create();
+    _api ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCities(

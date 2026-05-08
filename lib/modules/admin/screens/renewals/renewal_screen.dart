@@ -1,5 +1,5 @@
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 // screens/renewals/renewals_screen.dart
 import 'package:open_vts/shared/widgets/small_box.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
@@ -916,31 +916,31 @@ class _RenewalsScreenState extends State<RenewalsScreen>
                                 switch (value) {
                                   case 'renew':
                                     context.push(
-                                      AppRoutes.adminRenewalsRenew,
+                                      AppRoutePaths.adminRenewalsRenew,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'collect':
                                     context.push(
-                                      AppRoutes.adminRenewalsCollect,
+                                      AppRoutePaths.adminRenewalsCollect,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'extend':
                                     context.push(
-                                      AppRoutes.adminRenewalsExtend,
+                                      AppRoutePaths.adminRenewalsExtend,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'suspend':
                                     context.push(
-                                      AppRoutes.adminRenewalsSuspend,
+                                      AppRoutePaths.adminRenewalsSuspend,
                                       extra: selectedDevices,
                                     );
                                     break;
                                   case 'reminder':
                                     context.push(
-                                      AppRoutes.adminRenewalsReminder,
+                                      AppRoutePaths.adminRenewalsReminder,
                                       extra: selectedDevices,
                                     );
 

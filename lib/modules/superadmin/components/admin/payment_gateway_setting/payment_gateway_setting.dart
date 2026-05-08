@@ -3,7 +3,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class PaymentGatewaySettingsScreen extends StatelessWidget {
   const PaymentGatewaySettingsScreen({super.key});
@@ -356,7 +356,7 @@ class _PaymentGatewayBoxState extends State<PaymentGatewayBox> {
       child: GestureDetector(
         onTap: () {
           // Navigate to payment gateway detail page
-          context.push(AppRoutes.superadminPaymentGatewayDetails(widget.id));
+          context.push(AppRoutePaths.superadminPaymentGatewayDetails(widget.id));
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

@@ -16,7 +16,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class InventoryAddScreen extends StatefulWidget {
   const InventoryAddScreen({super.key});
@@ -53,7 +53,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
   bool _errorShown = false;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 
@@ -491,7 +491,7 @@ class _InventoryAddScreenState extends State<InventoryAddScreen> {
                   subtitle: 'Create Device or SIM card.',
                   onTabSelected: (tab) {
                     if (tab == 'Sim') {
-                      context.go(AppRoutes.adminSimsAdd);
+                      context.go(AppRoutePaths.adminSimsAdd);
                       return;
                     }
                     setState(() => _selectedTab = tab);

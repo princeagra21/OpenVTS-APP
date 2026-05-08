@@ -16,7 +16,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/navigation/app_routes.dart';
+import 'package:open_vts/app/router/app_route_paths.dart';
 
 class DriverDetailsScreen extends StatefulWidget {
   final String driverId;
@@ -63,13 +63,13 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
 
   CommonRepository _commonOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }
@@ -383,7 +383,7 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
                     ? null
                     : () async {
                         final result = await context.push(
-                          AppRoutes.userDriversEdit(widget.driverId),
+                          AppRoutePaths.userDriversEdit(widget.driverId),
                           extra: _details,
                         );
                         if (result == true) {

@@ -53,7 +53,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
   VoidCallback? _refreshVehiclesSheet;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     return _apiClient!;
   }
 

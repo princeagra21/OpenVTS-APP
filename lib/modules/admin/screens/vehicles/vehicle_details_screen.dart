@@ -75,7 +75,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   ];
 
   AdminVehiclesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.create();
+    _apiClient ??= ApiClientProvider.shared();
     _repo ??= AdminVehiclesRepository(api: _apiClient!);
     return _repo!;
   }
