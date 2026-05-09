@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/models/superadmin_document_type.dart';
-import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 
 class DocumentTypeSelectorField extends StatelessWidget {
   const DocumentTypeSelectorField({
@@ -22,18 +22,14 @@ class DocumentTypeSelectorField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Document Type *',
-          style: AppFonts.roboto(
-            fontSize: 12 * (screenWidth / 420).clamp(0.9, 1.0),
-            height: 16 / 12,
-            fontWeight: FontWeight.w600,
-            color: cs.onSurface.withValues(alpha: 0.7),
-          ),
+          style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -51,8 +47,7 @@ class DocumentTypeSelectorField extends StatelessWidget {
                 Expanded(
                   child: Text(
                     selectedType?.name ?? 'Select document type',
-                    style: AppFonts.roboto(
-                      fontSize: labelSize,
+                    style: textTheme.bodyMedium?.copyWith(
                       color: selectedType == null
                           ? cs.onSurface.withValues(alpha: 0.5)
                           : cs.onSurface,
@@ -104,6 +99,7 @@ class _DocumentTypeSelectionSheetState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final query = _searchController.text.trim().toLowerCase();
     final filtered = widget.docTypes.where((item) {
       if (query.isEmpty) return true;
@@ -128,22 +124,17 @@ class _DocumentTypeSelectionSheetState
             const SizedBox(height: 12),
             Text(
               'Select Document Type',
-              style: AppFonts.roboto(
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: cs.onSurface,
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            OpenVtsTextField(
               controller: _searchController,
               onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Search document type...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
+              hintText: 'Search document type...',
+              prefixIcon: const Icon(Icons.search),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -162,7 +153,7 @@ class _DocumentTypeSelectionSheetState
                   ? Center(
                       child: Text(
                         'No document types found',
-                        style: AppFonts.roboto(
+                        style: textTheme.bodyMedium?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
@@ -180,13 +171,15 @@ class _DocumentTypeSelectionSheetState
                           ),
                           title: Text(
                             item.name,
-                            style: AppFonts.roboto(fontWeight: FontWeight.w600),
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           subtitle: Text(
                             item.docFor.isEmpty
                                 ? '—'
                                 : item.docFor.toUpperCase(),
-                            style: AppFonts.roboto(
+                            style: textTheme.bodySmall?.copyWith(
                               color: cs.onSurface.withValues(alpha: 0.6),
                             ),
                           ),

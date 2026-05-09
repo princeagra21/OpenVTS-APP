@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum SettingsSectionId { profile, localization, settings, security, account, theme }
+enum SettingsSectionId { profile, localization, settings }
 
 class SettingsSectionModel {
   const SettingsSectionModel({

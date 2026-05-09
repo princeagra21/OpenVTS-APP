@@ -120,27 +120,14 @@ class _LocalizationScreenState extends State<LocalizationScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextField(
+                      OpenVtsTextField(
                         controller: searchController,
                         onChanged: (value) =>
                             setSheetState(() => query = value),
-                        decoration: InputDecoration(
-                          hintText: 'Search language',
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
+                        hintText: 'Search language',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -363,33 +350,7 @@ class _CoordinateField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          style: AppFonts.roboto(
-            fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 2,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.3),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-            ),
-          ),
-        ),
+        OpenVtsTextField(controller: controller),
       ],
     );
   }

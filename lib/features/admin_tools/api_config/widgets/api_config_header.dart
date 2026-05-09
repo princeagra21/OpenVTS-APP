@@ -15,6 +15,20 @@ class ApiConfigHeader extends StatefulWidget {
 }
 
 class _ApiConfigHeaderState extends State<ApiConfigHeader> {
+  static const List<String> _providerOptions = [
+    'OSM Nominatim(FREE - No key)',
+    'Google map (Paid - 5\$/100req)',
+    'HERE Map(FREE - 250K/Month)',
+    'TomTom(FREE - 250o/day)',
+    'MapBox(FREE - 100/Month)',
+    'Location IQ(FREE - 1000/day)',
+  ];
+
+  static const List<String> _modelOptions = [
+    'GPT-4 TURBO (Recommended)',
+    'GPT-4',
+  ];
+
   late final TextEditingController firebaseApiKeyController;
   late final TextEditingController firebaseAuthDomainController;
   late final TextEditingController firebaseProjectIdController;
@@ -50,18 +64,40 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
 
   void _initializeControllers() {
     final config = widget.controller.state.config;
-    firebaseApiKeyController = TextEditingController(text: config.firebaseApiKey);
-    firebaseAuthDomainController = TextEditingController(text: config.firebaseAuthDomain);
-    firebaseProjectIdController = TextEditingController(text: config.firebaseProjectId);
-    firebaseStorageBucketController = TextEditingController(text: config.firebaseStorageBucket);
-    firebaseMessagingSenderIdController = TextEditingController(text: config.firebaseMessagingSenderId);
+    firebaseApiKeyController = TextEditingController(
+      text: config.firebaseApiKey,
+    );
+    firebaseAuthDomainController = TextEditingController(
+      text: config.firebaseAuthDomain,
+    );
+    firebaseProjectIdController = TextEditingController(
+      text: config.firebaseProjectId,
+    );
+    firebaseStorageBucketController = TextEditingController(
+      text: config.firebaseStorageBucket,
+    );
+    firebaseMessagingSenderIdController = TextEditingController(
+      text: config.firebaseMessagingSenderId,
+    );
     firebaseAppIdController = TextEditingController(text: config.firebaseAppId);
-    firebaseMeasurementIdController = TextEditingController(text: config.firebaseMeasurementId);
-    reverseGeoApiKeyController = TextEditingController(text: config.geocodingApiKey);
-    userAgentController = TextEditingController(text: config.geocodingUserAgent);
-    googleClientIdController = TextEditingController(text: config.googleClientId);
-    googleClientSecretController = TextEditingController(text: config.googleClientSecret);
-    googleRedirectUrlController = TextEditingController(text: config.googleRedirectUrl);
+    firebaseMeasurementIdController = TextEditingController(
+      text: config.firebaseMeasurementId,
+    );
+    reverseGeoApiKeyController = TextEditingController(
+      text: config.geocodingApiKey,
+    );
+    userAgentController = TextEditingController(
+      text: config.geocodingUserAgent,
+    );
+    googleClientIdController = TextEditingController(
+      text: config.googleClientId,
+    );
+    googleClientSecretController = TextEditingController(
+      text: config.googleClientSecret,
+    );
+    googleRedirectUrlController = TextEditingController(
+      text: config.googleRedirectUrl,
+    );
     openAiApiKeyController = TextEditingController(text: config.openaiApiKey);
     openAiOrgIdController = TextEditingController(text: config.openaiOrgId);
     selectedProvider = _providerUiValue(config.geocodingProvider);
@@ -87,12 +123,43 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
   }
 
   void _onControllerChange() {
-    // Update controllers if config changes
     final config = widget.controller.state.config;
-    if (firebaseApiKeyController.text != config.firebaseApiKey) {
-      firebaseApiKeyController.text = config.firebaseApiKey;
-    }
-    // Update other controllers similarly...
+    _setControllerText(firebaseApiKeyController, config.firebaseApiKey);
+    _setControllerText(firebaseAuthDomainController, config.firebaseAuthDomain);
+    _setControllerText(firebaseProjectIdController, config.firebaseProjectId);
+    _setControllerText(
+      firebaseStorageBucketController,
+      config.firebaseStorageBucket,
+    );
+    _setControllerText(
+      firebaseMessagingSenderIdController,
+      config.firebaseMessagingSenderId,
+    );
+    _setControllerText(firebaseAppIdController, config.firebaseAppId);
+    _setControllerText(
+      firebaseMeasurementIdController,
+      config.firebaseMeasurementId,
+    );
+    _setControllerText(reverseGeoApiKeyController, config.geocodingApiKey);
+    _setControllerText(userAgentController, config.geocodingUserAgent);
+    _setControllerText(googleClientIdController, config.googleClientId);
+    _setControllerText(googleClientSecretController, config.googleClientSecret);
+    _setControllerText(googleRedirectUrlController, config.googleRedirectUrl);
+    _setControllerText(openAiApiKeyController, config.openaiApiKey);
+    _setControllerText(openAiOrgIdController, config.openaiOrgId);
+
+    selectedProvider = _providerUiValue(config.geocodingProvider);
+    selectedModel = _openAiUiModel(config.openaiModel);
+    maxTokens = config.openaiMaxTokens;
+    if (mounted) setState(() {});
+  }
+
+  void _setControllerText(TextEditingController controller, String value) {
+    if (controller.text == value) return;
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
   }
 
   String _providerApiValue(String label) {
@@ -125,9 +192,17 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
     return 'gpt-4o';
   }
 
-  void _updateConfig() {
+  void _updateConfig({
+    bool? firebaseEnabled,
+    bool? geocodingEnabled,
+    bool? geocodingProviderActive,
+    bool? googleSsoEnabled,
+    bool? openaiEnabled,
+    int? openaiMaxTokens,
+  }) {
+    final current = widget.controller.state.config;
     final newConfig = ApiConfigModel(
-      firebaseEnabled: widget.controller.state.config.firebaseEnabled,
+      firebaseEnabled: firebaseEnabled ?? current.firebaseEnabled,
       firebaseApiKey: firebaseApiKeyController.text,
       firebaseAuthDomain: firebaseAuthDomainController.text,
       firebaseProjectId: firebaseProjectIdController.text,
@@ -135,20 +210,21 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
       firebaseMessagingSenderId: firebaseMessagingSenderIdController.text,
       firebaseAppId: firebaseAppIdController.text,
       firebaseMeasurementId: firebaseMeasurementIdController.text,
-      geocodingEnabled: widget.controller.state.config.geocodingEnabled,
+      geocodingEnabled: geocodingEnabled ?? current.geocodingEnabled,
       geocodingProvider: _providerApiValue(selectedProvider),
       geocodingApiKey: reverseGeoApiKeyController.text,
       geocodingUserAgent: userAgentController.text,
-      geocodingProviderActive: widget.controller.state.config.geocodingProviderActive,
-      googleSsoEnabled: widget.controller.state.config.googleSsoEnabled,
+      geocodingProviderActive:
+          geocodingProviderActive ?? current.geocodingProviderActive,
+      googleSsoEnabled: googleSsoEnabled ?? current.googleSsoEnabled,
       googleClientId: googleClientIdController.text,
       googleClientSecret: googleClientSecretController.text,
       googleRedirectUrl: googleRedirectUrlController.text,
-      openaiEnabled: widget.controller.state.config.openaiEnabled,
+      openaiEnabled: openaiEnabled ?? current.openaiEnabled,
       openaiApiKey: openAiApiKeyController.text,
       openaiOrgId: openAiOrgIdController.text,
       openaiModel: _openAiApiModel(selectedModel),
-      openaiMaxTokens: maxTokens,
+      openaiMaxTokens: openaiMaxTokens ?? maxTokens,
     );
     widget.controller.updateConfig(newConfig);
   }
@@ -249,10 +325,264 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
             _buildLoadingShimmer(width),
           ] else ...[
             const SizedBox(height: 24),
-            // Add form fields here
-            Text('Form fields would go here'),
+            _buildConfigForm(context, width),
+            if (state.errorMessage != null) ...[
+              const SizedBox(height: 16),
+              _buildMessage(context, state.errorMessage!, colorScheme.error),
+            ],
+            if (state.lastSaveAt != null) ...[
+              const SizedBox(height: 16),
+              _buildMessage(
+                context,
+                'Saved ${TimeOfDay.fromDateTime(state.lastSaveAt!).format(context)}',
+                Colors.green,
+              ),
+            ],
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildConfigForm(BuildContext context, double width) {
+    final config = widget.controller.state.config;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSection(
+          context,
+          title: 'Firebase',
+          children: [
+            _buildSwitchField(
+              title: 'Enable Firebase',
+              value: config.firebaseEnabled,
+              onChanged: (value) => _updateConfig(firebaseEnabled: value),
+            ),
+            _buildTextField(
+              'API Key',
+              firebaseApiKeyController,
+              obscureText: true,
+            ),
+            _buildTextField('Auth Domain', firebaseAuthDomainController),
+            _buildTextField('Project ID', firebaseProjectIdController),
+            _buildTextField('Storage Bucket', firebaseStorageBucketController),
+            _buildTextField(
+              'Messaging Sender ID',
+              firebaseMessagingSenderIdController,
+            ),
+            _buildTextField('App ID', firebaseAppIdController),
+            _buildTextField('Measurement ID', firebaseMeasurementIdController),
+          ],
+        ),
+        _buildSection(
+          context,
+          title: 'Reverse Geocoding',
+          children: [
+            _buildSwitchField(
+              title: 'Enable Geocoding',
+              value: config.geocodingEnabled,
+              onChanged: (value) => _updateConfig(geocodingEnabled: value),
+            ),
+            _buildDropdown(
+              label: 'Provider',
+              value: selectedProvider,
+              options: _providerOptions,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => selectedProvider = value);
+                _updateConfig();
+              },
+            ),
+            _buildSwitchField(
+              title: 'Provider Active',
+              value: config.geocodingProviderActive,
+              onChanged: (value) =>
+                  _updateConfig(geocodingProviderActive: value),
+            ),
+            _buildTextField(
+              'API Key',
+              reverseGeoApiKeyController,
+              obscureText: true,
+            ),
+            _buildTextField('User Agent', userAgentController),
+          ],
+        ),
+        _buildSection(
+          context,
+          title: 'Google SSO',
+          children: [
+            _buildSwitchField(
+              title: 'Enable Google SSO',
+              value: config.googleSsoEnabled,
+              onChanged: (value) => _updateConfig(googleSsoEnabled: value),
+            ),
+            _buildTextField('Client ID', googleClientIdController),
+            _buildTextField(
+              'Client Secret',
+              googleClientSecretController,
+              obscureText: true,
+            ),
+            _buildTextField('Redirect URL', googleRedirectUrlController),
+          ],
+        ),
+        _buildSection(
+          context,
+          title: 'OpenAI',
+          children: [
+            _buildSwitchField(
+              title: 'Enable OpenAI',
+              value: config.openaiEnabled,
+              onChanged: (value) => _updateConfig(openaiEnabled: value),
+            ),
+            _buildTextField(
+              'API Key',
+              openAiApiKeyController,
+              obscureText: true,
+            ),
+            _buildTextField('Organization ID', openAiOrgIdController),
+            _buildDropdown(
+              label: 'Model',
+              value: selectedModel,
+              options: _modelOptions,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => selectedModel = value);
+                _updateConfig();
+              },
+            ),
+            _buildTokenLimitField(context),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required List<Widget> children,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppFonts.roboto(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...children,
+          const SizedBox(height: 4),
+          Divider(color: colorScheme.outlineVariant.withOpacity(0.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchField({
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool obscureText = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        onChanged: (_) => _updateConfig(),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final selected = options.contains(value) ? value : options.first;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        value: selected,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        items: options
+            .map(
+              (option) => DropdownMenuItem(value: option, child: Text(option)),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildTokenLimitField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Max Tokens: $maxTokens',
+          style: AppFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        Slider(
+          value: maxTokens.clamp(256, 8192).toDouble(),
+          min: 256,
+          max: 8192,
+          divisions: 31,
+          label: maxTokens.toString(),
+          onChanged: (value) {
+            final next = value.round();
+            setState(() => maxTokens = next);
+            _updateConfig(openaiMaxTokens: next);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMessage(BuildContext context, String message, Color color) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        message,
+        style: AppFonts.roboto(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -263,11 +593,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
         5,
         (index) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: AppShimmer(
-            width: width * 0.8,
-            height: 20,
-            radius: 4,
-          ),
+          child: AppShimmer(width: width * 0.8, height: 20, radius: 4),
         ),
       ),
     );

@@ -1,6 +1,5 @@
 import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/theme/app_fonts.dart';
 // login_screen.dart
 import 'dart:async';
 
@@ -232,26 +231,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginForm(ColorScheme colorScheme, double labelSize) {
     final logoAsset = AppLogo.assetFor(context);
+    final textTheme = Theme.of(context).textTheme;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           'Track Without Limits',
-          style: AppFonts.roboto(
-            fontSize: 28,
+          style: textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: colorScheme.onSurface,
-            letterSpacing: -0.5,
+            letterSpacing: 0,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Powered by You',
-          style: AppFonts.roboto(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
+          style: textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
@@ -316,8 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: Text(
                     'Forgot Password?',
-                    style: AppFonts.roboto(
-                      fontSize: 14,
+                    style: textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: colorScheme.primary,
                     ),
@@ -338,6 +334,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildForgotForm(ColorScheme colorScheme, double labelSize) {
+    final textTheme = Theme.of(context).textTheme;
+
     if (_forgotPasswordMessage != null) {
       return _buildCheckEmailView(colorScheme, labelSize);
     }
@@ -347,20 +345,17 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           'Reset Password',
-          style: AppFonts.roboto(
-            fontSize: 28,
+          style: textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: colorScheme.onSurface,
-            letterSpacing: -0.5,
+            letterSpacing: 0,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Enter your email to receive reset instructions',
-          style: AppFonts.roboto(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
+          style: textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
@@ -419,6 +414,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildCheckEmailView(ColorScheme colorScheme, double labelSize) {
+    final textTheme = Theme.of(context).textTheme;
     final message =
         _forgotPasswordMessage ??
         'If an account with that identifier exists, a password reset link has been sent.';
@@ -428,20 +424,17 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           'Check Your Email',
-          style: AppFonts.roboto(
-            fontSize: 28,
+          style: textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: colorScheme.onSurface,
-            letterSpacing: -0.5,
+            letterSpacing: 0,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'We\'ve sent reset instructions to your email',
-          style: AppFonts.roboto(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
+          style: textTheme.bodyLarge?.copyWith(
             color: colorScheme.onSurface.withOpacity(0.7),
           ),
           textAlign: TextAlign.center,
@@ -457,9 +450,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 message,
-                style: AppFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.8),
                   height: 1.4,
                 ),
@@ -486,8 +477,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Text(
                         'Check your inbox and spam folder',
-                        style: AppFonts.roboto(
-                          fontSize: 14,
+                        style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurface,
                         ),

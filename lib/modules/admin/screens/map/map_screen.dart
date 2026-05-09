@@ -1,4 +1,4 @@
-import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/shared/map/open_vts_map_repository.dart';
@@ -20,11 +20,9 @@ class MapScreen extends StatelessWidget {
       showBottomBar: false,
       horizontalPadding: 0.0,
       child: OpenVtsMapScreen(
-        repositoryBuilder: (apiClient) {
-          return AdminMapTelemetryAdapter(
-            repository: AdminVehiclesRepository(api: apiClient),
-          );
-        },
+        repository: AdminMapTelemetryAdapter(
+          repository: AppContainer.instance.adminVehiclesRepository,
+        ),
         appBarBuilder: (context) {
           return const AdminHomeAppBar(
             title: 'Map',

@@ -15,6 +15,8 @@ class SettingsProfileSection extends StatelessWidget {
     required this.actionHandler,
     required this.onEditProfile,
     required this.onUpdatePassword,
+    required this.onViewStateChanged,
+    required this.onRetryProfile,
   });
 
   final SettingsRole role;
@@ -24,47 +26,49 @@ class SettingsProfileSection extends StatelessWidget {
   final SettingsActionHandler actionHandler;
   final VoidCallback onEditProfile;
   final VoidCallback onUpdatePassword;
+  final ValueChanged<SettingsViewState> onViewStateChanged;
+  final VoidCallback onRetryProfile;
 
   @override
   Widget build(BuildContext context) {
     final onEmailVerify = switch (role) {
       SettingsRole.admin => () => actionHandler.sendAndVerifyAdminOtp(
-            context,
-            VerifyChannel.email,
-            viewState,
-            (state) {}, // This would be handled by state management
-          ),
+        context,
+        VerifyChannel.email,
+        viewState,
+        onViewStateChanged,
+      ),
       SettingsRole.user => () => actionHandler.sendAndVerifyUserOtp(
-            context,
-            VerifyChannel.email,
-            viewState,
-            (state) {},
-          ),
+        context,
+        VerifyChannel.email,
+        viewState,
+        onViewStateChanged,
+      ),
       SettingsRole.superadmin => () => actionHandler.requestEmailOtp(
-            context,
-            viewState,
-            (state) {},
-          ),
+        context,
+        viewState,
+        (state) {},
+      ),
     };
 
     final onPhoneVerify = switch (role) {
       SettingsRole.admin => () => actionHandler.sendAndVerifyAdminOtp(
-            context,
-            VerifyChannel.whatsapp,
-            viewState,
-            (state) {},
-          ),
+        context,
+        VerifyChannel.whatsapp,
+        viewState,
+        onViewStateChanged,
+      ),
       SettingsRole.user => () => actionHandler.sendAndVerifyUserOtp(
-            context,
-            VerifyChannel.whatsapp,
-            viewState,
-            (state) {},
-          ),
+        context,
+        VerifyChannel.whatsapp,
+        viewState,
+        onViewStateChanged,
+      ),
       SettingsRole.superadmin => () => actionHandler.requestWhatsappOtp(
-            context,
-            viewState,
-            (state) {},
-          ),
+        context,
+        viewState,
+        (state) {},
+      ),
     };
 
     final showSuperadminRequestActions = role == SettingsRole.superadmin;
@@ -82,13 +86,9 @@ class SettingsProfileSection extends StatelessWidget {
           phoneActionVisibleWhenVerified: showSuperadminRequestActions,
           emailActionLoading: viewState.emailOtpLoading,
           phoneActionLoading: viewState.whatsappOtpLoading,
-          errorMessage: null, // This would come from controller
-          onRetry: () {}, // This would trigger controller.loadProfile
+          errorMessage: viewState.errorMessage,
+          onRetry: onRetryProfile,
         ),
-        if (role == SettingsRole.superadmin) ...[
-          const SizedBox(height: 16),
-          // _PushDiagnosticsCard would go here
-        ],
       ],
     );
   }

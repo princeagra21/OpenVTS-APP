@@ -54,10 +54,7 @@ class VehicleDetailsBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
           ),
-          _VehicleHeader(
-            vehicle: vehicle,
-            onClose: onClose,
-          ),
+          _VehicleHeader(vehicle: vehicle, onClose: onClose),
           Expanded(
             child: ListView(
               controller: scrollController,
@@ -94,10 +91,7 @@ class _VehicleHeader extends StatelessWidget {
   final MapVehiclePoint? vehicle;
   final VoidCallback onClose;
 
-  const _VehicleHeader({
-    required this.vehicle,
-    required this.onClose,
-  });
+  const _VehicleHeader({required this.vehicle, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +126,14 @@ class _VehicleHeader extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     _StatusBadge(label: status, color: statusColor),
-                    _HeaderMeta(icon: Icons.speed_rounded, label: _speedText(vehicle)),
-                    _HeaderMeta(icon: Icons.power_settings_new_rounded, label: _ignitionText(vehicle)),
+                    _HeaderMeta(
+                      icon: Icons.speed_rounded,
+                      label: _speedText(vehicle),
+                    ),
+                    _HeaderMeta(
+                      icon: Icons.power_settings_new_rounded,
+                      label: _ignitionText(vehicle),
+                    ),
                   ],
                 ),
               ],
@@ -141,7 +141,10 @@ class _VehicleHeader extends StatelessWidget {
           ),
           IconButton(
             onPressed: onClose,
-            icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black),
+            icon: Icon(
+              Icons.close,
+              color: isDark ? Colors.white : Colors.black,
+            ),
           ),
         ],
       ),
@@ -187,7 +190,9 @@ class _VehicleSummaryRow extends StatelessWidget {
             children: List.generate(cards.length, (index) {
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: index == cards.length - 1 ? 0 : 10),
+                  padding: EdgeInsets.only(
+                    right: index == cards.length - 1 ? 0 : 10,
+                  ),
                   child: _SummaryCard(data: cards[index]),
                 ),
               );
@@ -286,13 +291,7 @@ class _VehicleDetailsTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    const tabs = [
-      'Vehicle Details',
-      'Logs',
-      'Replay',
-      'Events',
-      'Sensors',
-    ];
+    const tabs = ['Vehicle Details', 'Logs', 'Replay', 'Events', 'Sensors'];
 
     return SizedBox(
       height: 44,
@@ -308,9 +307,14 @@ class _VehicleDetailsTabBar extends StatelessWidget {
                 onTap: () => onTabChanged(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? Colors.black : cs.onSurface.withValues(alpha: 0.04),
+                    color: selected
+                        ? Colors.black
+                        : cs.onSurface.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: selected
@@ -348,9 +352,9 @@ class _VehicleDetailsTabContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (selectedTabIndex != 0) {
-      final placeholder = switch (selectedTabIndex) {
+      final emptyState = switch (selectedTabIndex) {
         1 => 'No logs available',
-        2 => 'Replay feature coming soon',
+        2 => 'No replay data available',
         3 => 'No events available',
         _ => 'No sensor data available',
       };
@@ -358,11 +362,13 @@ class _VehicleDetailsTabContent extends StatelessWidget {
         padding: const EdgeInsets.only(top: 12),
         child: Center(
           child: Text(
-            placeholder,
+            emptyState,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.62),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -381,7 +387,9 @@ class _VehicleDetailsTabContent extends StatelessWidget {
           child: Text(
             'No vehicle selected',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -408,14 +416,16 @@ class _VehicleDetailsTabContent extends StatelessWidget {
 
     final columns = [<Widget>[], <Widget>[], <Widget>[]];
     for (var i = 0; i < fields.length; i++) {
-      columns[i % 3].add(Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: _VehicleDetailRow(
-          icon: fields[i].icon,
-          label: fields[i].label,
-          value: fields[i].value,
+      columns[i % 3].add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _VehicleDetailRow(
+            icon: fields[i].icon,
+            label: fields[i].label,
+            value: fields[i].value,
+          ),
         ),
-      ));
+      );
     }
 
     return Row(
@@ -699,22 +709,99 @@ List<_VehicleField> _vehicleFields(MapVehiclePoint? vehicle) {
   }
 
   return [
-    _VehicleField(icon: Icons.badge_outlined, label: 'Vehicle Number', value: getField([vehicle?.plateNumber, raw['vehicleNumber'], raw['name'], raw['vehicleName']])),
-    _VehicleField(icon: Icons.memory_outlined, label: 'IMEI', value: getField([vehicle?.imei, raw['deviceImei'], raw['imeiNumber']])),
-    _VehicleField(icon: Icons.confirmation_number_outlined, label: 'Plate Number', value: getField([vehicle?.plateNumber, raw['plateNumber'], raw['registrationNumber']])),
-    _VehicleField(icon: Icons.directions_car_outlined, label: 'VIN Number', value: getField([raw['vin'], raw['vinNumber'], raw['vinNo']])),
-    _VehicleField(icon: Icons.ev_station_outlined, label: 'Vehicle Type', value: getField([raw['vehicleType'], raw['type'], raw['vehicle_type']])),
-    _VehicleField(icon: Icons.sensors_outlined, label: 'Status', value: getField([vehicle?.status, raw['motion'], raw['state']])),
-    _VehicleField(icon: Icons.power_settings_new_rounded, label: 'Ignition', value: _ignitionText(vehicle)),
-    _VehicleField(icon: Icons.speed_rounded, label: 'Speed', value: _speedText(vehicle)),
-    _VehicleField(icon: Icons.satellite_alt_rounded, label: 'Satellites', value: _satelliteText(vehicle)),
-    _VehicleField(icon: Icons.location_on_outlined, label: 'Lat / Long', value: _latLng(vehicle)),
-    _VehicleField(icon: Icons.place_outlined, label: 'Address', value: getField([raw['fullAddress'], raw['address'], raw['addressLine']])),
-    _VehicleField(icon: Icons.timeline_rounded, label: 'Today Distance', value: getField([raw['todayDistance'], raw['distanceToday'], raw['drivenKm']])),
-    _VehicleField(icon: Icons.route_outlined, label: 'Odometer', value: getField([raw['odometer'], raw['odometerKm']])),
-    _VehicleField(icon: Icons.schedule_rounded, label: 'Today Engine Hours', value: getField([raw['todayEngineHours'], raw['engineHoursToday']])),
-    _VehicleField(icon: Icons.schedule_send_rounded, label: 'Total Engine Hours', value: getField([raw['totalEngineHours'], raw['engineHours']])),
-    _VehicleField(icon: Icons.update_rounded, label: 'Last Updated', value: _lastUpdatedText(vehicle)),
+    _VehicleField(
+      icon: Icons.badge_outlined,
+      label: 'Vehicle Number',
+      value: getField([
+        vehicle?.plateNumber,
+        raw['vehicleNumber'],
+        raw['name'],
+        raw['vehicleName'],
+      ]),
+    ),
+    _VehicleField(
+      icon: Icons.memory_outlined,
+      label: 'IMEI',
+      value: getField([vehicle?.imei, raw['deviceImei'], raw['imeiNumber']]),
+    ),
+    _VehicleField(
+      icon: Icons.confirmation_number_outlined,
+      label: 'Plate Number',
+      value: getField([
+        vehicle?.plateNumber,
+        raw['plateNumber'],
+        raw['registrationNumber'],
+      ]),
+    ),
+    _VehicleField(
+      icon: Icons.directions_car_outlined,
+      label: 'VIN Number',
+      value: getField([raw['vin'], raw['vinNumber'], raw['vinNo']]),
+    ),
+    _VehicleField(
+      icon: Icons.ev_station_outlined,
+      label: 'Vehicle Type',
+      value: getField([raw['vehicleType'], raw['type'], raw['vehicle_type']]),
+    ),
+    _VehicleField(
+      icon: Icons.sensors_outlined,
+      label: 'Status',
+      value: getField([vehicle?.status, raw['motion'], raw['state']]),
+    ),
+    _VehicleField(
+      icon: Icons.power_settings_new_rounded,
+      label: 'Ignition',
+      value: _ignitionText(vehicle),
+    ),
+    _VehicleField(
+      icon: Icons.speed_rounded,
+      label: 'Speed',
+      value: _speedText(vehicle),
+    ),
+    _VehicleField(
+      icon: Icons.satellite_alt_rounded,
+      label: 'Satellites',
+      value: _satelliteText(vehicle),
+    ),
+    _VehicleField(
+      icon: Icons.location_on_outlined,
+      label: 'Lat / Long',
+      value: _latLng(vehicle),
+    ),
+    _VehicleField(
+      icon: Icons.place_outlined,
+      label: 'Address',
+      value: getField([raw['fullAddress'], raw['address'], raw['addressLine']]),
+    ),
+    _VehicleField(
+      icon: Icons.timeline_rounded,
+      label: 'Today Distance',
+      value: getField([
+        raw['todayDistance'],
+        raw['distanceToday'],
+        raw['drivenKm'],
+      ]),
+    ),
+    _VehicleField(
+      icon: Icons.route_outlined,
+      label: 'Odometer',
+      value: getField([raw['odometer'], raw['odometerKm']]),
+    ),
+    _VehicleField(
+      icon: Icons.schedule_rounded,
+      label: 'Today Engine Hours',
+      value: getField([raw['todayEngineHours'], raw['engineHoursToday']]),
+    ),
+    _VehicleField(
+      icon: Icons.schedule_send_rounded,
+      label: 'Total Engine Hours',
+      value: getField([raw['totalEngineHours'], raw['engineHours']]),
+    ),
+    _VehicleField(
+      icon: Icons.update_rounded,
+      label: 'Last Updated',
+      value: _lastUpdatedText(vehicle),
+    ),
   ];
 }
 
@@ -737,26 +824,42 @@ String _vehicleStatus(MapVehiclePoint? vehicle) {
 
 Color _statusColor(String value) {
   final normalized = value.trim().toLowerCase();
-  if (normalized.contains('run') || normalized.contains('move')) return Colors.green;
-  if (normalized.contains('stop') || normalized.contains('park')) return Colors.redAccent;
+  if (normalized.contains('run') || normalized.contains('move')) {
+    return Colors.green;
+  }
+  if (normalized.contains('stop') || normalized.contains('park')) {
+    return Colors.redAccent;
+  }
   if (normalized.contains('idle')) return Colors.orange;
-  if (normalized.contains('inactive') || normalized.contains('offline')) return Colors.grey;
+  if (normalized.contains('inactive') || normalized.contains('offline')) {
+    return Colors.grey;
+  }
   return Colors.black;
 }
 
 String _speedText(MapVehiclePoint? vehicle) {
   final speed = vehicle?.speed;
   if (speed == null) return '–';
-  return speed % 1 == 0 ? '${speed.toStringAsFixed(0)} km/h' : '${speed.toStringAsFixed(1)} km/h';
+  return speed % 1 == 0
+      ? '${speed.toStringAsFixed(0)} km/h'
+      : '${speed.toStringAsFixed(1)} km/h';
 }
 
 String _ignitionText(MapVehiclePoint? vehicle) {
   final ignition = vehicle?.ignition.trim().toLowerCase() ?? '';
   if (ignition.isEmpty) return '–';
-  if (ignition == 'true' || ignition == '1' || ignition == 'on' || ignition == 'yes' || ignition == 'active') {
+  if (ignition == 'true' ||
+      ignition == '1' ||
+      ignition == 'on' ||
+      ignition == 'yes' ||
+      ignition == 'active') {
     return 'ON';
   }
-  if (ignition == 'false' || ignition == '0' || ignition == 'off' || ignition == 'no' || ignition == 'inactive') {
+  if (ignition == 'false' ||
+      ignition == '0' ||
+      ignition == 'off' ||
+      ignition == 'no' ||
+      ignition == 'inactive') {
     return 'OFF';
   }
   return ignition.toUpperCase();

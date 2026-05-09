@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_landmarks_repository.dart';
@@ -170,7 +169,9 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
 
   String _subtitleForPoi(Map<String, dynamic> poi) {
     final category = (poi['category'] ?? '').toString().trim();
-    final tolerance = _asDouble(poi['toleranceMeters'] ?? poi['tolerance_meters']);
+    final tolerance = _asDouble(
+      poi['toleranceMeters'] ?? poi['tolerance_meters'],
+    );
     final parts = <String>[];
     if (category.isNotEmpty) parts.add(category);
     if (tolerance != null) parts.add('Tolerance ${tolerance.round()} m');
@@ -180,8 +181,11 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
   String _subtitleForGeofence(Map<String, dynamic> g) {
     final type = (g['type'] ?? g['geodata']?['kind'] ?? '').toString().trim();
     final radius = _asDouble(g['radius'] ?? g['geodata']?['radiusM']);
-    final tolerance =
-        _asDouble(g['toleranceMeters'] ?? g['tolerance_meters'] ?? g['geodata']?['toleranceM']);
+    final tolerance = _asDouble(
+      g['toleranceMeters'] ??
+          g['tolerance_meters'] ??
+          g['geodata']?['toleranceM'],
+    );
     final normalized = _friendlyType(type);
     final parts = <String>[normalized];
     if (radius != null) {
@@ -204,7 +208,9 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
       case 'RECTANGLE':
         return 'Rectangle';
       default:
-        return value.isEmpty ? 'Geofence' : value[0] + value.substring(1).toLowerCase();
+        return value.isEmpty
+            ? 'Geofence'
+            : value[0] + value.substring(1).toLowerCase();
     }
   }
 
@@ -223,7 +229,9 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
 
     final coords = poi['coordinates'];
     final lat = _asDouble(coords is Map ? coords['lat'] : null);
-    final lng = _asDouble(coords is Map ? coords['lon'] ?? coords['lng'] : null);
+    final lng = _asDouble(
+      coords is Map ? coords['lon'] ?? coords['lng'] : null,
+    );
     if (lat == null || lng == null) return null;
 
     final title = (poi['name'] ?? '').toString().trim();
@@ -282,15 +290,20 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
         }
 
         if (points.isNotEmpty) {
-          final avgLat = points.map((p) => p[0]).reduce((a, b) => a + b) / points.length;
-          final avgLng = points.map((p) => p[1]).reduce((a, b) => a + b) / points.length;
+          final avgLat =
+              points.map((p) => p[0]).reduce((a, b) => a + b) / points.length;
+          final avgLng =
+              points.map((p) => p[1]).reduce((a, b) => a + b) / points.length;
           lat = avgLat;
           lng = avgLng;
         }
       }
     }
 
-    final type = (g['type'] ?? geodata?['kind'] ?? '').toString().trim().toUpperCase();
+    final type = (g['type'] ?? geodata?['kind'] ?? '')
+        .toString()
+        .trim()
+        .toUpperCase();
     if (type == 'LINE' && geodata is Map && geodata['geometry'] is Map) {
       final coords = geodata['geometry']['coordinates'];
       if (coords is List && coords.isNotEmpty) {
@@ -367,7 +380,8 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
   Widget _buildSelectedPresetTile(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final title = _selectedPreset?.title;
-    final subtitle = _selectedPreset?.subtitle ?? 'POIs and geofences from your account';
+    final subtitle =
+        _selectedPreset?.subtitle ?? 'POIs and geofences from your account';
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: _loadingPresets && _presets.isEmpty ? null : _openPresetPicker,
@@ -400,7 +414,10 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title ?? (_loadingPresets ? 'Loading locations...' : 'Choose location (lat/lng presets)'),
+                    title ??
+                        (_loadingPresets
+                            ? 'Loading locations...'
+                            : 'Choose location (lat/lng presets)'),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface,
@@ -411,10 +428,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -510,7 +524,9 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                           children: [
                             Text(
                               'Select Icon',
-                              style: AppFonts.inter(fontWeight: FontWeight.w600),
+                              style: AppFonts.inter(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Wrap(
@@ -518,14 +534,17 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
                               children: _iconOptions.map((icon) {
                                 final sel = icon == _selectedIcon;
                                 return GestureDetector(
-                                  onTap: () => setState(() => _selectedIcon = icon),
+                                  onTap: () =>
+                                      setState(() => _selectedIcon = icon),
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: sel ? cs.primary : cs.surface,
                                       border: Border.all(
-                                        color: cs.outline.withValues(alpha: 0.3),
+                                        color: cs.outline.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                                     ),
                                     child: Icon(
@@ -601,7 +620,8 @@ class _RouteLocationPickerSheet extends StatefulWidget {
   });
 
   @override
-  State<_RouteLocationPickerSheet> createState() => _RouteLocationPickerSheetState();
+  State<_RouteLocationPickerSheet> createState() =>
+      _RouteLocationPickerSheetState();
 }
 
 class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
@@ -650,7 +670,10 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                     : Colors.blue.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: preset.type == 'poi' ? cs.primary : Colors.blue),
+              child: Icon(
+                icon,
+                color: preset.type == 'poi' ? cs.primary : Colors.blue,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -669,10 +692,7 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                   const SizedBox(height: 4),
                   Text(
                     preset.subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -688,9 +708,15 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
   IconData _iconForPoi(RouteLocationPreset preset) {
     final slug = (preset.iconSlug ?? '').trim().toLowerCase();
     final subtitle = preset.subtitle.toLowerCase();
-    if (slug.contains('flag') || subtitle.contains('yard')) return Icons.flag_rounded;
-    if (slug.contains('home') || subtitle.contains('home')) return Icons.home_rounded;
-    if (slug.contains('store') || subtitle.contains('shop')) return Icons.store_rounded;
+    if (slug.contains('flag') || subtitle.contains('yard')) {
+      return Icons.flag_rounded;
+    }
+    if (slug.contains('home') || subtitle.contains('home')) {
+      return Icons.home_rounded;
+    }
+    if (slug.contains('store') || subtitle.contains('shop')) {
+      return Icons.store_rounded;
+    }
     if (slug.contains('star')) return Icons.star_rounded;
     return Icons.location_on_rounded;
   }
@@ -704,13 +730,17 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
     return Icons.map_outlined;
   }
 
-  Widget _buildLoadingPlaceholder() {
+  Widget _buildLoadingSkeleton() {
     return Column(
       children: List.generate(
         4,
         (index) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: const AppShimmer(width: double.infinity, height: 72, radius: 16),
+          child: const AppShimmer(
+            width: double.infinity,
+            height: 72,
+            radius: 16,
+          ),
         ),
       ),
     );
@@ -720,8 +750,9 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final groupedPois = _filteredPresets.where((p) => p.type == 'poi').toList();
-    final groupedGeofences =
-        _filteredPresets.where((p) => p.type == 'geofence').toList();
+    final groupedGeofences = _filteredPresets
+        .where((p) => p.type == 'geofence')
+        .toList();
     final hasItems = groupedPois.isNotEmpty || groupedGeofences.isNotEmpty;
 
     return Container(
@@ -783,17 +814,27 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                             icon: const Icon(Icons.close_rounded),
                           ),
                     filled: true,
-                    fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+                    fillColor: cs.surfaceContainerHighest.withValues(
+                      alpha: 0.45,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
               if (widget.loading && widget.presets.isEmpty)
-                Expanded(child: Padding(padding: const EdgeInsets.all(16), child: _buildLoadingPlaceholder()))
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildLoadingSkeleton(),
+                  ),
+                )
               else
                 Expanded(
                   child: ListView(
@@ -808,7 +849,10 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.red,
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -840,7 +884,9 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        ...groupedPois.map((preset) => _buildSheetCard(context, preset)),
+                        ...groupedPois.map(
+                          (preset) => _buildSheetCard(context, preset),
+                        ),
                         const SizedBox(height: 16),
                       ],
                       if (groupedGeofences.isNotEmpty) ...[
@@ -853,14 +899,18 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        ...groupedGeofences.map((preset) => _buildSheetCard(context, preset)),
+                        ...groupedGeofences.map(
+                          (preset) => _buildSheetCard(context, preset),
+                        ),
                         const SizedBox(height: 16),
                       ],
                       if (!hasItems)
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+                            color: cs.surfaceContainerHighest.withValues(
+                              alpha: 0.45,
+                            ),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -880,4 +930,3 @@ class _RouteLocationPickerSheetState extends State<_RouteLocationPickerSheet> {
     );
   }
 }
-

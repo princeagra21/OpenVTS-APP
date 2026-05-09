@@ -1,3 +1,4 @@
+import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/features/vehicles/vehicle_permissions.dart';
 
 /// Configuration for vehicle features based on role
@@ -74,9 +75,12 @@ class VehicleRoleConfig {
     }
   }
 
-  static String _superadminRouteBuilder(String vehicleId) => '/superadmin/vehicles/$vehicleId';
-  static String _adminRouteBuilder(String vehicleId) => '/admin/vehicles/$vehicleId';
-  static String _userRouteBuilder(String vehicleId) => '/user/vehicles/$vehicleId';
+  static String _superadminRouteBuilder(String vehicleId) =>
+      AppRoutePaths.superadminVehiclesDetails(vehicleId);
+  static String _adminRouteBuilder(String vehicleId) =>
+      AppRoutePaths.adminVehiclesDetails(vehicleId);
+  static String _userRouteBuilder(String vehicleId) =>
+      AppRoutePaths.userVehiclesDetails(vehicleId);
 }
 
 /// Vehicle list request parameters

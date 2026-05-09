@@ -35,15 +35,24 @@ import 'package:open_vts/modules/superadmin/screens/setting/superadmin_settings_
 import 'package:go_router/go_router.dart';
 
 final List<GoRoute> superAdminRoutes = [
-  GoRoute(path: AppRoutePaths.superadmin, builder: (_, __) => const HomeScreen()),
-  GoRoute(path: AppRoutePaths.superadminHome, builder: (_, __) => const HomeScreen()),
+  GoRoute(
+    path: AppRoutePaths.superadmin,
+    builder: (_, __) => const HomeScreen(),
+  ),
+  GoRoute(
+    path: AppRoutePaths.superadminHome,
+    builder: (_, __) => const HomeScreen(),
+  ),
   GoRoute(
     path: AppRoutePaths.superadminDashboard,
     builder: (_, __) => const DashboardScreen(),
   ),
 
   /// ADMINS
-  GoRoute(path: AppRoutePaths.superadminAdmins, builder: (_, __) => const AdminScreen()),
+  GoRoute(
+    path: AppRoutePaths.superadminAdmins,
+    builder: (_, __) => const AdminScreen(),
+  ),
   GoRoute(
     path: AppRoutePaths.superadminAdminsAdd,
     builder: (_, __) => const AddNewAdminScreen(),
@@ -54,10 +63,7 @@ final List<GoRoute> superAdminRoutes = [
     builder: (context, state) {
       final id = state.pathParameters['id']!;
       final initialActive = state.extra is bool ? state.extra as bool : null;
-      return AdministratorDetailsScreen(
-        id: id,
-        initialActive: initialActive,
-      );
+      return AdministratorDetailsScreen(id: id, initialActive: initialActive);
     },
   ),
 
@@ -162,13 +168,16 @@ final List<GoRoute> superAdminRoutes = [
   ),
   GoRoute(
     path: AppRoutePaths.superadminServer,
-    builder: (_, __) => const ServerStatusScreen(),
+    builder: (_, __) => const ServerStatusSettingsScreen(),
   ),
   GoRoute(
     path: AppRoutePaths.superadminSsl,
     builder: (_, __) => const SSLManagementScreen(),
   ),
-  GoRoute(path: AppRoutePaths.superadminRoles, builder: (_, __) => const RolesScreen()),
+  GoRoute(
+    path: AppRoutePaths.superadminRoles,
+    builder: (_, __) => const RolesScreen(),
+  ),
   GoRoute(
     path: AppRoutePaths.superadminUserPolicy,
     builder: (_, __) => const PolicyEditScreen(),
@@ -177,6 +186,12 @@ final List<GoRoute> superAdminRoutes = [
     path: AppRoutePaths.superadminSupport,
     builder: (_, __) => const SupportScreen(),
   ),
-  GoRoute(path: AppRoutePaths.superadminMore, builder: (_, __) => const MoreScreen()),
-  GoRoute(path: AppRoutePaths.superadminMap, builder: (_, __) => const MapScreen()),
+  GoRoute(
+    path: AppRoutePaths.superadminMore,
+    builder: (_, __) => const MoreScreen(),
+  ),
+  GoRoute(
+    path: AppRoutePaths.superadminMap,
+    builder: (_, __) => const MapScreen(),
+  ),
 ];

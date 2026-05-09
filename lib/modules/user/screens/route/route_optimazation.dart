@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/user_route_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_routes_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
@@ -19,7 +18,6 @@ import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
 import '../../layout/app_layout.dart';
@@ -108,7 +106,6 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   IconData _pendingIcon = Icons.location_on;
   String? _activeAddMode;
 
-  ApiClient? _apiClient;
   UserRoutesRepository? _repo;
   CancelToken? _loadToken;
   CancelToken? _saveToken;
@@ -131,8 +128,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   }
 
   UserRoutesRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
-    _repo ??= UserRoutesRepository(api: _apiClient!);
+    _repo ??= AppContainer.instance.userRoutesRepository;
     return _repo!;
   }
 
@@ -261,7 +257,9 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
   }
 
   void _fitRoute() {
-    final points = _route.isNotEmpty ? _route : _waypoints.map((w) => w.point).toList();
+    final points = _route.isNotEmpty
+        ? _route
+        : _waypoints.map((w) => w.point).toList();
     if (points.isEmpty) return;
 
     if (points.length == 1) {
@@ -277,14 +275,17 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     final lats = points.map((p) => p.latitude).toList();
     final lngs = points.map((p) => p.longitude).toList();
     final bounds = LatLngBounds(
-      LatLng(lats.reduce((a, b) => a < b ? a : b), lngs.reduce((a, b) => a < b ? a : b)),
-      LatLng(lats.reduce((a, b) => a > b ? a : b), lngs.reduce((a, b) => a > b ? a : b)),
+      LatLng(
+        lats.reduce((a, b) => a < b ? a : b),
+        lngs.reduce((a, b) => a < b ? a : b),
+      ),
+      LatLng(
+        lats.reduce((a, b) => a > b ? a : b),
+        lngs.reduce((a, b) => a > b ? a : b),
+      ),
     );
     _mapController.fitCamera(
-      CameraFit.bounds(
-        bounds: bounds,
-        padding: const EdgeInsets.all(48),
-      ),
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(48)),
     );
   }
 
@@ -347,9 +348,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
               : (isDark ? cs.surface.withValues(alpha: 0.82) : Colors.white),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected
-                ? Colors.black
-                : cs.outline.withValues(alpha: 0.12),
+            color: selected ? Colors.black : cs.outline.withValues(alpha: 0.12),
           ),
           boxShadow: [
             BoxShadow(
@@ -362,11 +361,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? Colors.white : cs.onSurface,
-            ),
+            Icon(icon, size: 16, color: selected ? Colors.white : cs.onSurface),
             const SizedBox(width: 6),
             Text(
               label,
@@ -921,8 +916,7 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate:
-                        _selectedTileOption.urlTemplate,
+                    urlTemplate: _selectedTileOption.urlTemplate,
                     subdomains: _selectedTileOption.subdomains,
                     userAgentPackageName: 'com.openvts.app',
                   ),
@@ -1004,24 +998,36 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                           label: 'Landmark',
                           selected: _activeAddMode == 'landmark',
                           onPressed:
-                              (_loading || _saving || _deleting || _isOptimizing)
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
                               ? null
                               : () async {
                                   setState(() => _activeAddMode = 'landmark');
                                   await _handleAdd('landmark', context);
-                                  if (mounted) setState(() => _activeAddMode = null);
+                                  if (mounted) {
+                                    setState(() => _activeAddMode = null);
+                                  }
                                 },
                         ),
                         const SizedBox(width: 10),
                         _buildToolChip(
                           icon: Icons.touch_app,
                           label: 'Map location',
-                          selected: _activeAddMode == 'map_location' || _isPickingFromMap,
+                          selected:
+                              _activeAddMode == 'map_location' ||
+                              _isPickingFromMap,
                           onPressed:
-                              (_loading || _saving || _deleting || _isOptimizing)
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
                               ? null
                               : () async {
-                                  setState(() => _activeAddMode = 'map_location');
+                                  setState(
+                                    () => _activeAddMode = 'map_location',
+                                  );
                                   await _handleAdd('map_location', context);
                                   if (mounted && !_isPickingFromMap) {
                                     setState(() => _activeAddMode = null);
@@ -1034,12 +1040,17 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                           label: 'Insert lat/lng',
                           selected: _activeAddMode == 'lat_lng',
                           onPressed:
-                              (_loading || _saving || _deleting || _isOptimizing)
+                              (_loading ||
+                                  _saving ||
+                                  _deleting ||
+                                  _isOptimizing)
                               ? null
                               : () async {
                                   setState(() => _activeAddMode = 'lat_lng');
                                   await _handleAdd('lat_lng', context);
-                                  if (mounted) setState(() => _activeAddMode = null);
+                                  if (mounted) {
+                                    setState(() => _activeAddMode = null);
+                                  }
                                 },
                         ),
                       ],
@@ -1086,10 +1097,12 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
                         width: 44,
                         height: 44,
                         borderRadiusValue: _isMoreMenuOpen ? 0 : 9,
-                        backgroundColor:
-                            _isMoreMenuOpen ? Colors.transparent : null,
-                        borderColorOverride:
-                            _isMoreMenuOpen ? Colors.transparent : null,
+                        backgroundColor: _isMoreMenuOpen
+                            ? Colors.transparent
+                            : null,
+                        borderColorOverride: _isMoreMenuOpen
+                            ? Colors.transparent
+                            : null,
                         showShadow: !_isMoreMenuOpen,
                         showBorder: !_isMoreMenuOpen,
                         blurSigma: _isMoreMenuOpen ? 0 : 2.5,
@@ -1144,4 +1157,3 @@ class _RouteOptimizationScreenState extends State<RouteOptimizationScreen> {
     );
   }
 }
-

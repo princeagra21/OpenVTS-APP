@@ -1,4 +1,7 @@
-import 'package:open_vts/features/support/support_models.dart';
+import 'package:open_vts/core/models/admin_list_item.dart';
+import 'package:open_vts/core/models/admin_user_list_item.dart';
+import 'package:open_vts/core/utils/file_picker_helper.dart';
+import 'package:open_vts/features/support/support_role_config.dart';
 
 class NewTicketValidators {
   static String? validateTitle(String? value, SupportRole role) {

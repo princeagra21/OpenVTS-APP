@@ -1,109 +1,143 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:open_vts/core/auth/auth_token_parser.dart';
 import 'package:open_vts/core/auth/session_expired_bus.dart';
 import 'package:open_vts/core/network/api_paths.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 class RefreshTokenInterceptor extends Interceptor {
+  static const String retriedAfterRefreshKey = 'retriedAfterRefresh';
+  static const String skipAuthRefreshKey = 'skipAuthRefresh';
+
   final TokenStorageBase tokenStorage;
   final Dio dio;
 
-  RefreshTokenInterceptor({
-    required this.tokenStorage,
-    required this.dio,
-  });
+  RefreshTokenInterceptor({required this.tokenStorage, required this.dio});
 
-  Completer<void>? _refreshCompleter;
+  Future<String>? _refreshFuture;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401 && _shouldRetry(err.requestOptions)) {
-      try {
-        final newToken = await _refreshToken();
-        if (newToken != null) {
-          // Retry the request with new token
-          final options = err.requestOptions;
-          options.headers['Authorization'] = 'Bearer $newToken';
-          final response = await dio.fetch(options);
-          handler.resolve(response);
-          return;
-        } else {
-          // No refresh token, logout
-          await _logout();
-        }
-      } catch (_) {
-        // Refresh failed, logout
-        await _logout();
-      }
-    } else if (err.response?.statusCode == 401) {
-      // Shouldn't retry, logout
-      await _logout();
+    if (err.response?.statusCode != 401) {
+      handler.next(err);
+      return;
     }
 
-    // For 403 or other errors, just pass through
+    final options = err.requestOptions;
+    if (_shouldSkipRefresh(options)) {
+      handler.next(err);
+      return;
+    }
+
+    if (_wasRetriedAfterRefresh(options)) {
+      await _expireSession();
+      handler.next(err);
+      return;
+    }
+
+    try {
+      final newToken = await _refreshToken();
+      final response = await _retryWithNewToken(options, newToken);
+      handler.resolve(response);
+      return;
+    } on DioException catch (retryErr) {
+      if (_wasRetriedAfterRefresh(retryErr.requestOptions)) {
+        handler.next(retryErr);
+        return;
+      }
+      await _expireSession();
+    } catch (_) {
+      await _expireSession();
+    }
+
     handler.next(err);
   }
 
-  bool _shouldRetry(RequestOptions options) {
-    final path = options.path.toLowerCase();
-    // Do not refresh for auth endpoints
-    if (path == AuthApiPaths.login ||
+  bool _shouldSkipRefresh(RequestOptions options) {
+    if (options.extra[skipAuthRefreshKey] == true) return true;
+
+    final path = _normalizedPath(options.path);
+    return path == AuthApiPaths.login ||
         path == AuthApiPaths.forgotPassword ||
-        path == AuthApiPaths.refreshToken) {
-      return false;
-    }
-    return true;
+        path == AuthApiPaths.refreshToken;
   }
 
-  Future<String?> _refreshToken() async {
-    // Single-flight: if already refreshing, wait
-    if (_refreshCompleter != null) {
-      await _refreshCompleter!.future;
-      // After wait, read the new token
-      return await tokenStorage.readAccessToken();
-    }
-
-    _refreshCompleter = Completer<void>();
-
-    try {
-      final refreshToken = await tokenStorage.readRefreshToken();
-      if (refreshToken == null || refreshToken.trim().isEmpty) {
-        return null;
-      }
-
-      final response = await dio.post(
-        AuthApiPaths.refreshToken,
-        data: {'refresh_token': refreshToken},
-        options: Options(
-          headers: {'Authorization': null}, // No auth for refresh
-        ),
-      );
-
-      final data = response.data;
-      final newAccessToken = data['access_token'] as String?;
-      final newRefreshToken = data['refresh_token'] as String?;
-
-      if (newAccessToken != null && newAccessToken.trim().isNotEmpty) {
-        await tokenStorage.writeAccessToken(newAccessToken);
-        if (newRefreshToken != null && newRefreshToken.trim().isNotEmpty) {
-          await tokenStorage.writeRefreshToken(newRefreshToken);
-        }
-        _refreshCompleter!.complete();
-        return newAccessToken;
-      } else {
-        throw Exception('Invalid refresh response');
-      }
-    } catch (e) {
-      _refreshCompleter!.completeError(e);
-      rethrow;
-    } finally {
-      _refreshCompleter = null;
-    }
+  bool _wasRetriedAfterRefresh(RequestOptions options) {
+    return options.extra[retriedAfterRefreshKey] == true;
   }
 
-  Future<void> _logout() async {
+  Future<String> _refreshToken() {
+    final inFlight = _refreshFuture;
+    if (inFlight != null) return inFlight;
+
+    late final Future<String> refresh;
+    refresh = _performRefresh().whenComplete(() {
+      if (identical(_refreshFuture, refresh)) {
+        _refreshFuture = null;
+      }
+    });
+    _refreshFuture = refresh;
+    return refresh;
+  }
+
+  Future<String> _performRefresh() async {
+    final refreshToken = (await tokenStorage.readRefreshToken())?.trim();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw const _RefreshTokenUnavailable();
+    }
+
+    final response = await dio.post<dynamic>(
+      AuthApiPaths.refreshToken,
+      data: {'refresh_token': refreshToken},
+      options: Options(
+        headers: const <String, dynamic>{
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        extra: const <String, dynamic>{skipAuthRefreshKey: true},
+      ),
+    );
+
+    final newAccessToken = AuthTokenParser.extractAccessToken(response.data);
+    if (newAccessToken == null || newAccessToken.trim().isEmpty) {
+      throw const FormatException('Refresh response did not contain a token');
+    }
+
+    final normalizedAccessToken = newAccessToken.trim();
+    await tokenStorage.writeAccessToken(normalizedAccessToken);
+
+    final newRefreshToken = AuthTokenParser.extractRefreshToken(response.data);
+    if (newRefreshToken != null && newRefreshToken.trim().isNotEmpty) {
+      await tokenStorage.writeRefreshToken(newRefreshToken.trim());
+    }
+
+    return normalizedAccessToken;
+  }
+
+  Future<Response<dynamic>> _retryWithNewToken(
+    RequestOptions options,
+    String accessToken,
+  ) {
+    options.extra[retriedAfterRefreshKey] = true;
+    options.headers['Authorization'] = 'Bearer $accessToken';
+    return dio.fetch<dynamic>(options);
+  }
+
+  String _normalizedPath(String path) {
+    final parsed = Uri.tryParse(path);
+    final value = parsed?.hasScheme == true ? parsed!.path : path;
+    final withoutQuery = value.split('?').first.trim().toLowerCase();
+    if (withoutQuery.isEmpty) return '/';
+    return withoutQuery.startsWith('/') ? withoutQuery : '/$withoutQuery';
+  }
+
+  Future<void> _expireSession() async {
     await tokenStorage.clear();
     SessionExpiredBus.emit();
   }
+}
+
+class _RefreshTokenUnavailable implements Exception {
+  const _RefreshTokenUnavailable();
 }

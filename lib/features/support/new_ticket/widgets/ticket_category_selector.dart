@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/features/support/support_models.dart';
+import 'package:open_vts/features/support/support_role_config.dart';
 
 class TicketCategorySelector extends StatelessWidget {
   const TicketCategorySelector({
@@ -55,9 +55,7 @@ class TicketCategorySelector extends StatelessWidget {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: selectedCategory,
-        decoration: const InputDecoration(
-          labelText: 'Category',
-        ),
+        decoration: const InputDecoration(labelText: 'Category'),
         items: _categoryOptions
             .map(
               (item) => DropdownMenuItem<String>(

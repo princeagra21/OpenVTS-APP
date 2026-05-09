@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/models/map_vehicle_point.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
@@ -21,15 +18,19 @@ import 'widgets/map_settings_sheet.dart';
 import 'widgets/map_visual_effects_sheet.dart';
 import 'widgets/status_vehicle_bottom_sheet.dart';
 import 'widgets/vehicle_details_bottom_sheet.dart';
+import 'widgets/vehicle_map_marker.dart';
+
+part 'open_vts_map_vehicle_helpers.dart';
+part 'open_vts_map_animation.dart';
 
 class OpenVtsMapScreen extends StatefulWidget {
   const OpenVtsMapScreen({
     super.key,
-    required this.repositoryBuilder,
+    required this.repository,
     this.appBarBuilder,
   });
 
-  final OpenVtsMapRepository Function(ApiClient apiClient) repositoryBuilder;
+  final OpenVtsMapRepository repository;
   final WidgetBuilder? appBarBuilder;
 
   @override
@@ -60,8 +61,6 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
   bool _loading = false;
   bool _errorShown = false;
   CancelToken? _token;
-  ApiClient? _api;
-  OpenVtsMapRepository? _repo;
   Timer? _refreshTimer;
   static const bool _liveRefreshEnabled = true;
   final Map<String, _AnimatedVehicleMarker> _vehicleMarkers = {};
@@ -124,10 +123,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-      _repo ??= widget.repositoryBuilder(_api!);
-
-      final res = await _repo!.getMapTelemetry(cancelToken: token);
+      final res = await widget.repository.getMapTelemetry(cancelToken: token);
       if (!mounted) return;
 
       res.when(
@@ -517,267 +513,6 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
     }).toList();
   }
 
-  bool _matchesVehicleSearch(MapVehiclePoint point, String query) {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    return _vehicleSearchText(point).contains(q);
-  }
-
-  String _vehicleSearchText(MapVehiclePoint point) {
-    final raw = point.raw;
-    final values = <String>[
-      _vehicleTitle(point),
-      _vehicleDisplayName(point),
-      point.plateNumber,
-      point.imei,
-      _rawText(raw, const [
-        'deviceImei',
-        'device_imei',
-        'deviceImeiNumber',
-        'device_imei_number',
-        'imeiNumber',
-      ]),
-      point.vehicleTypeName,
-      point.status,
-      normalizeMapVehicleStatus(point).label,
-      _vehicleAddressText(point),
-    ];
-    return values
-        .map((e) => e.trim().toLowerCase())
-        .where((e) => e.isNotEmpty)
-        .join(' ');
-  }
-
-  String _vehicleDisplayName(MapVehiclePoint point) {
-    final raw = point.raw;
-    final candidates = <String>[
-      _rawText(raw, const [
-        'vehicleName',
-        'vehicle_name',
-        'name',
-        'title',
-        'displayName',
-        'display_name',
-        'vehicleTitle',
-        'vehicle_title',
-      ]),
-      point.plateNumber,
-    ];
-    for (final candidate in candidates) {
-      final value = candidate.trim();
-      if (value.isNotEmpty) return value;
-    }
-    return _vehicleTitle(point);
-  }
-
-  String _rawText(Map<String, dynamic> raw, List<String> keys) {
-    for (final key in keys) {
-      final value = raw[key];
-      final text = value?.toString().trim() ?? '';
-      if (text.isNotEmpty) return text;
-    }
-    return '';
-  }
-
-  bool _isValidVehicleLocation(MapVehiclePoint vehicle) {
-    return vehicle.hasValidPoint &&
-        vehicle.lat.isFinite &&
-        vehicle.lng.isFinite &&
-        !(vehicle.lat == 0 && vehicle.lng == 0);
-  }
-
-  String _getStatusTitle(MapVehicleStatusFilter filter) => filter.label;
-
-  Color _getStatusColor(MapVehicleStatusFilter filter) {
-    switch (filter) {
-      case MapVehicleStatusFilter.running:
-        return Colors.green;
-      case MapVehicleStatusFilter.stop:
-        return Colors.redAccent;
-      case MapVehicleStatusFilter.idle:
-        return Colors.orange;
-      case MapVehicleStatusFilter.inactive:
-        return Colors.grey;
-      case MapVehicleStatusFilter.noData:
-        return Colors.black87;
-      case MapVehicleStatusFilter.all:
-        return Colors.black;
-    }
-  }
-
-  String _vehicleAddressText(MapVehiclePoint point) {
-    final raw = point.raw;
-    final values = <Object?>[
-      raw['fullAddress'],
-      raw['address'],
-      raw['addressLine'],
-      raw['location'],
-    ];
-    for (final value in values) {
-      final text = value?.toString().trim() ?? '';
-      if (text.isNotEmpty) return text;
-    }
-    return '';
-  }
-
-  String _formatLastSeen(MapVehiclePoint point) {
-    return _formatVehicleListLastUpdate(point);
-  }
-
-  String _formatSpeed(MapVehiclePoint point) {
-    return _formatVehicleListSpeed(point);
-  }
-
-  double? _vehicleSpeedKph(MapVehiclePoint vehicle) {
-    final raw = vehicle.raw;
-    final candidates = <Object?>[
-      raw['speedKph'],
-      raw['speed_kph'],
-      raw['speed'],
-      raw['currentSpeed'],
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speedKph'] : null,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speed_kph'] : null,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['speed'] : null,
-      raw['telemetry'] is Map
-          ? (raw['telemetry'] as Map)['currentSpeed']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['speedKph']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['speed_kph']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['speed']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['currentSpeed']
-          : null,
-    ];
-    for (final candidate in candidates) {
-      final parsed = candidate == null
-          ? null
-          : (candidate is num
-                ? candidate.toDouble()
-                : double.tryParse(candidate.toString()));
-      if (parsed != null) return parsed;
-    }
-    return vehicle.speedKph ?? vehicle.speed;
-  }
-
-  DateTime? _vehicleLastUpdateDateTime(MapVehiclePoint vehicle) {
-    final raw = vehicle.raw;
-    final candidates = <Object?>[
-      raw['serverTime'],
-      raw['server_time'],
-      raw['deviceTime'],
-      raw['device_time'],
-      raw['lastUpdate'],
-      raw['last_update'],
-      raw['updatedAt'],
-      raw['updated_at'],
-      raw['lastSeen'],
-      raw['lastSeenAt'],
-      raw['last_seen_at'],
-      raw['timestamp'],
-      raw['time'],
-      vehicle.updatedAt,
-      vehicle.serverTime,
-      vehicle.deviceTime,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['serverTime'] : null,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['server_time'] : null,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['deviceTime'] : null,
-      raw['telemetry'] is Map ? (raw['telemetry'] as Map)['device_time'] : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['serverTime']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['server_time']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['deviceTime']
-          : null,
-      raw['latestTelemetry'] is Map
-          ? (raw['latestTelemetry'] as Map)['device_time']
-          : null,
-    ];
-
-    for (final candidate in candidates) {
-      final dt = candidate == null
-          ? null
-          : (candidate is DateTime
-                ? candidate
-                : candidate is num
-                ? DateTime.fromMillisecondsSinceEpoch(
-                    candidate > 1000000000000
-                        ? candidate.toInt()
-                        : candidate.toInt() * 1000,
-                  )
-                : DateTime.tryParse(candidate.toString().trim()));
-      if (dt != null) return dt;
-    }
-    return null;
-  }
-
-  String _formatVehicleListSpeed(MapVehiclePoint vehicle) {
-    final speed = _vehicleSpeedKph(vehicle);
-    if (speed == null) return '0 km/h';
-    return '${speed.round()} km/h';
-  }
-
-  String _formatVehicleListLastUpdate(MapVehiclePoint vehicle) {
-    final dt = _vehicleLastUpdateDateTime(vehicle);
-    if (dt == null) return 'Unknown';
-
-    final local = dt.toLocal();
-    final diff = DateTime.now().difference(local);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour >= 12 ? 'PM' : 'AM';
-    return '${local.day.toString().padLeft(2, '0')} ${months[local.month - 1]} '
-        '${hour.toString().padLeft(2, '0')}:$minute $period';
-  }
-
-  String? _formatDistance(MapVehiclePoint point) {
-    final raw = point.raw;
-    final distance = raw['distance'] ?? raw['distanceKm'] ?? raw['drivenKm'];
-    if (distance == null) return null;
-    final parsed = double.tryParse(distance.toString());
-    if (parsed == null) return distance.toString();
-    final formatted = parsed % 1 == 0
-        ? parsed.toStringAsFixed(0)
-        : parsed.toStringAsFixed(1);
-    return '$formatted km';
-  }
-
-  String _vehicleTitle(MapVehiclePoint point) {
-    final title = point.plateNumber.trim();
-    if (title.isNotEmpty) return title;
-    final imei = point.imei.trim();
-    if (imei.isNotEmpty) return imei;
-    final id = point.vehicleId.trim();
-    if (id.isNotEmpty) return id;
-    return 'Vehicle';
-  }
-
   Future<MapVehiclePoint?> _showStatusVehiclesBottomSheet(
     MapVehicleStatusFilter filter,
   ) async {
@@ -906,7 +641,7 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
           builder: (context, scrollController) {
             return VehicleDetailsBottomSheet(
               vehicle: vehicle,
-              repository: _repo!,
+              repository: widget.repository,
               scrollController: scrollController,
               onClose: () => Navigator.of(sheetContext).pop(),
             );
@@ -918,84 +653,6 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
 
   void _handleSearchVehicleTap(MapVehiclePoint vehicle) {
     _focusVehicleOnMap(vehicle);
-  }
-
-  bool _shouldAnimateRipple(MapVehicleStatusFilter status, bool isSelected) {
-    if (isSelected) return true;
-    return status == MapVehicleStatusFilter.running;
-  }
-
-  Color _vehicleMarkerColor(MapVehiclePoint point, {required bool isSelected}) {
-    // We use status-specific colors even if selected for the dot/ripple,
-    // but the main theme might use a dark color for selection emphasis.
-    switch (normalizeMapVehicleStatus(point)) {
-      case MapVehicleStatusFilter.running:
-        return const Color(0xFF22C55E); // green
-      case MapVehicleStatusFilter.stop:
-        return const Color(0xFFEF4444); // red
-      case MapVehicleStatusFilter.idle:
-        return const Color(0xFFF59E0B); // amber/orange
-      case MapVehicleStatusFilter.inactive:
-        return const Color(0xFF6B7280); // gray
-      case MapVehicleStatusFilter.noData:
-        return const Color(0xFF374151); // dark gray
-      case MapVehicleStatusFilter.all:
-        return const Color(0xFF22C55E);
-    }
-  }
-
-  String _vehicleBaseTypeSlug(MapVehiclePoint point) {
-    final type = point.vehicleTypeName.toLowerCase().trim();
-    if (type.contains('sedan') || type.contains('saloon')) return 'sedan_car';
-    if (type.contains('suv') || type.contains('jeep')) return 'suv_car';
-    if (type.contains('pickup') ||
-        type.contains('fullback') ||
-        type.contains('hilux') ||
-        type.contains('double cab') ||
-        type.contains('ute')) {
-      return 'pickup_truck';
-    }
-    if (type.contains('tank')) return 'tanker_truck';
-    if (type.contains('box')) return 'box_truck';
-    if (type.contains('cargo') || type.contains('van')) return 'cargo_van';
-    if (type.contains('car')) return 'sedan_car';
-    if (type.contains('truck') ||
-        type.contains('lorry') ||
-        type.contains('lorri')) {
-      return 'pickup_truck';
-    }
-    return 'pickup_truck';
-  }
-
-  String _normalizedStatusKey(MapVehicleStatusFilter status) {
-    switch (status) {
-      case MapVehicleStatusFilter.running:
-        return 'running';
-      case MapVehicleStatusFilter.stop:
-        return 'stop';
-      case MapVehicleStatusFilter.idle:
-        return 'idle';
-      case MapVehicleStatusFilter.inactive:
-        return 'inactive';
-      case MapVehicleStatusFilter.noData:
-        return 'nodata';
-      case MapVehicleStatusFilter.all:
-        return 'nodata';
-    }
-  }
-
-  String _vehicleMarkerAssetPath(
-    MapVehiclePoint point,
-    MapVehicleStatusFilter status,
-  ) {
-    final typeSlug = _vehicleBaseTypeSlug(point);
-    final statusKey = _normalizedStatusKey(status);
-    return 'assets/images/vehicleicons/$typeSlug$statusKey.png';
-  }
-
-  String _vehicleBaseAssetPath(MapVehiclePoint point) {
-    final typeSlug = _vehicleBaseTypeSlug(point);
-    return 'assets/images/vehicleicons/${typeSlug}White.png';
   }
 
   @override
@@ -1404,291 +1061,6 @@ class _OpenVtsMapScreenState extends State<OpenVtsMapScreen>
           ),
         ),
       ),
-    );
-  }
-}
-
-class _AnimatedVehicleMarker {
-  _AnimatedVehicleMarker({required this.position, required this.bearing});
-
-  LatLng position;
-  double? bearing;
-  int token = 0;
-  AnimationController? controller;
-  Animation<LatLng>? animation;
-
-  LatLng get currentPosition => animation?.value ?? position;
-
-  int bumpToken() => ++token;
-
-  void stopAndDisposeController() {
-    controller?.stop();
-    controller?.dispose();
-    controller = null;
-    animation = null;
-  }
-}
-
-class LatLngTween extends Tween<LatLng> {
-  LatLngTween({required super.begin, required super.end});
-
-  @override
-  LatLng lerp(double t) {
-    final start = begin ?? end!;
-    final finish = end ?? begin!;
-    return LatLng(
-      start.latitude + (finish.latitude - start.latitude) * t,
-      start.longitude + (finish.longitude - start.longitude) * t,
-    );
-  }
-}
-
-class VehicleMapMarker extends StatelessWidget {
-  final String vehicleName;
-  final double bearing;
-  final Color markerColor;
-  final String markerAssetPath;
-  final String markerBaseAssetPath;
-  final bool showLabel;
-  final bool showRipple;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final MapVehicleStatusFilter status;
-
-  const VehicleMapMarker({
-    super.key,
-    required this.vehicleName,
-    required this.bearing,
-    required this.markerColor,
-    required this.markerAssetPath,
-    required this.markerBaseAssetPath,
-    required this.showLabel,
-    required this.showRipple,
-    required this.isSelected,
-    required this.onTap,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelBg = isDark
-        ? Colors.black.withValues(alpha: 0.70)
-        : Colors.white.withValues(alpha: 0.88);
-    final labelText = isDark ? Colors.white : Colors.black;
-    final showRipple = this.showRipple;
-
-    final vehicle = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Transform.rotate(
-              angle: (bearing * math.pi) / 180,
-              child: Image.asset(
-                markerAssetPath,
-                // NOTE: Asset has alpha transparency.
-                width: isSelected ? 60 : 56,
-                height: isSelected ? 60 : 56,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-                errorBuilder: (context, error, stackTrace) {
-                  AppLogger.debug(
-                    'Vehicle asset failed: $markerAssetPath => $error',
-                  );
-                  return Image.asset(
-                    markerBaseAssetPath,
-                    width: isSelected ? 60 : 56,
-                    height: isSelected ? 60 : 56,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (context, baseError, baseStackTrace) {
-                      AppLogger.debug(
-                        'Base vehicle asset failed: $markerBaseAssetPath => $baseError',
-                      );
-                      return Icon(
-                        Icons.local_shipping_rounded,
-                        size: isSelected ? 32 : 28,
-                        color: markerColor,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            // Status Dot
-            Positioned(
-              right: isSelected ? 4 : 8,
-              bottom: isSelected ? 4 : 8,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: markerColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (showLabel) ...[
-          const SizedBox(width: 6),
-          Container(
-            constraints: const BoxConstraints(maxWidth: 88),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: labelBg,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.black.withValues(alpha: 0.08),
-              ),
-            ),
-            child: Text(
-              vehicleName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: labelText,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: showLabel ? 168 : 84,
-        height: 84,
-        child: VehicleRippleMarker(
-          showRipple: showRipple,
-          isSelected: isSelected,
-          rippleColor: markerColor,
-          child: vehicle,
-        ),
-      ),
-    );
-  }
-}
-
-class VehicleRippleMarker extends StatelessWidget {
-  final Widget child;
-  final bool showRipple;
-  final bool isSelected;
-  final Color rippleColor;
-
-  const VehicleRippleMarker({
-    super.key,
-    required this.child,
-    required this.showRipple,
-    this.isSelected = false,
-    this.rippleColor = const Color(0xFF4DA3FF),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!showRipple) {
-      return child;
-    }
-    return _AnimatedVehicleRipple(
-      isSelected: isSelected,
-      rippleColor: rippleColor,
-      child: child,
-    );
-  }
-}
-
-class _AnimatedVehicleRipple extends StatefulWidget {
-  final Widget child;
-  final bool isSelected;
-  final Color rippleColor;
-
-  const _AnimatedVehicleRipple({
-    required this.child,
-    required this.isSelected,
-    required this.rippleColor,
-  });
-
-  @override
-  State<_AnimatedVehicleRipple> createState() => _AnimatedVehicleRippleState();
-}
-
-class _AnimatedVehicleRippleState extends State<_AnimatedVehicleRipple>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1650),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildRipple(double progress, Color color) {
-    final size = lerpDouble(26, 58, progress)!;
-    final opacity = lerpDouble(0.28, 0.0, progress)!;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: opacity),
-        border: Border.all(
-          color: color.withValues(alpha: opacity * 0.75),
-          width: 1,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rippleColor = widget.rippleColor;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final p1 = _controller.value;
-        final p2 = (_controller.value + 0.5) % 1.0;
-
-        return SizedBox(
-          width: 84,
-          height: 84,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              _buildRipple(p1, rippleColor),
-              _buildRipple(p2, rippleColor),
-              // NOTE: Vehicle marker assets must be PNGs with alpha transparency.
-              // Any baked-in white/gray background in the asset will show as a rectangle.
-              widget.child,
-            ],
-          ),
-        );
-      },
     );
   }
 }

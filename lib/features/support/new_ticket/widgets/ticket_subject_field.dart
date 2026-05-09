@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/features/support/support_models.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
+import 'package:open_vts/features/support/support_role_config.dart';
 
 class TicketSubjectField extends StatelessWidget {
   const TicketSubjectField({
@@ -13,13 +14,11 @@ class TicketSubjectField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return OpenVtsTextField(
       controller: controller,
       maxLength: role == SupportRole.superadmin ? 30 : 60,
-      decoration: const InputDecoration(
-        labelText: 'Title',
-        hintText: 'Brief description of the issue',
-      ),
+      labelText: 'Title',
+      hintText: 'Brief description of the issue',
     );
   }
 }

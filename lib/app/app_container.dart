@@ -1,19 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
+import 'package:open_vts/core/repositories/admin_transactions_repository.dart';
+import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
 import 'package:open_vts/core/session/session_service.dart';
 import 'package:open_vts/core/repositories/admin_profile_repository.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
 import 'package:open_vts/core/repositories/push_token_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/repositories/user_landmarks_repository.dart';
 import 'package:open_vts/core/repositories/user_notification_preferences_repository.dart';
 import 'package:open_vts/core/repositories/user_profile_repository.dart';
+import 'package:open_vts/core/repositories/user_routes_repository.dart';
+import 'package:open_vts/core/repositories/user_transactions_repository.dart';
+import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 /// All infrastructure instances must be created here or by a repository provider.
-/// Do not create ApiClient instances in screens. Use AppContainer.instance.apiClient or injected repositories.
+/// Do not create ApiClient instances in screens. Use injected repositories.
 class AppContainer {
   AppContainer._({
     required this.appConfig,
@@ -24,8 +30,14 @@ class AppContainer {
     required this.pushNotificationsService,
     required this.userNotificationPreferencesRepository,
     required this.adminUsersRepository,
+    required this.adminVehiclesRepository,
+    required this.adminTransactionsRepository,
     required this.adminProfileRepository,
     required this.superadminRepository,
+    required this.userVehiclesRepository,
+    required this.userLandmarksRepository,
+    required this.userRoutesRepository,
+    required this.userTransactionsRepository,
     required this.userProfileRepository,
   });
 
@@ -61,8 +73,14 @@ class AppContainer {
       userNotificationPreferencesRepository:
           UserNotificationPreferencesRepository(api: apiClient),
       adminUsersRepository: AdminUsersRepository(api: apiClient),
+      adminVehiclesRepository: AdminVehiclesRepository(api: apiClient),
+      adminTransactionsRepository: AdminTransactionsRepository(api: apiClient),
       adminProfileRepository: AdminProfileRepository(api: apiClient),
       superadminRepository: SuperadminRepository(api: apiClient),
+      userVehiclesRepository: UserVehiclesRepository(api: apiClient),
+      userLandmarksRepository: UserLandmarksRepository(api: apiClient),
+      userRoutesRepository: UserRoutesRepository(api: apiClient),
+      userTransactionsRepository: UserTransactionsRepository(api: apiClient),
       userProfileRepository: UserProfileRepository(api: apiClient),
     );
 
@@ -94,7 +112,13 @@ class AppContainer {
   final UserNotificationPreferencesRepository
   userNotificationPreferencesRepository;
   final AdminUsersRepository adminUsersRepository;
+  final AdminVehiclesRepository adminVehiclesRepository;
+  final AdminTransactionsRepository adminTransactionsRepository;
   final AdminProfileRepository adminProfileRepository;
   final SuperadminRepository superadminRepository;
+  final UserVehiclesRepository userVehiclesRepository;
+  final UserLandmarksRepository userLandmarksRepository;
+  final UserRoutesRepository userRoutesRepository;
+  final UserTransactionsRepository userTransactionsRepository;
   final UserProfileRepository userProfileRepository;
 }

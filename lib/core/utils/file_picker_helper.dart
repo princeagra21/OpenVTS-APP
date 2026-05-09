@@ -9,7 +9,7 @@ class PickedFilePayload {
   const PickedFilePayload({required this.filename, required this.bytes});
 }
 
-/// Placeholder helper for multipart upload flows.
+/// Helper for multipart upload flows.
 ///
 /// Keeps file picking out of the repository logic while still providing a
 /// ready-to-use shape (`bytes` + `filename`) for `MultipartFile.fromBytes(...)`.

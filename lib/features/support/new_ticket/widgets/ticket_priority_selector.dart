@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/features/support/support_models.dart';
+import 'package:open_vts/features/support/support_role_config.dart';
 
 class TicketPrioritySelector extends StatelessWidget {
   const TicketPrioritySelector({
@@ -40,9 +40,7 @@ class TicketPrioritySelector extends StatelessWidget {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: selectedPriority,
-        decoration: const InputDecoration(
-          labelText: 'Priority',
-        ),
+        decoration: const InputDecoration(labelText: 'Priority'),
         items: _priorityOptions
             .map(
               (item) => DropdownMenuItem<String>(

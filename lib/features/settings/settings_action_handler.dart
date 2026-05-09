@@ -11,8 +11,8 @@ import 'package:open_vts/core/services/push_notifications_service.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/design_system/components/open_vts_components.dart';
+import 'package:open_vts/features/settings/settings_content_controller.dart';
 import 'package:open_vts/features/settings/settings_content_state.dart';
-import 'package:open_vts/features/settings/settings_controller.dart';
 import 'package:open_vts/features/settings/settings_role_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,7 +29,7 @@ class SettingsActionHandler {
   });
 
   final SettingsRole role;
-  final SettingsController controller;
+  final SettingsContentController controller;
   final AdminProfileRepository? adminRepo;
   final UserProfileRepository? userRepo;
   final SuperadminRepository? superadminRepo;
@@ -49,24 +49,21 @@ class SettingsActionHandler {
       VerifyChannel.whatsapp => 'Verify WhatsApp',
     };
 
-    final verified = await showModalBottomSheet<bool>(
+    final verified = await OpenVtsModal.showFormSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => _OtpVerifySheet(
+      child: _OtpVerifySheet(
         title: title,
         onVerify: (code, token) async {
           final repo = adminRepo!;
           final result = switch (channel) {
             VerifyChannel.email => await repo.verifyEmailOtp(
-                profile.id,
-                code,
-                cancelToken: token,
-              ),
-            VerifyChannel.whatsapp => await repo.verifyWhatsappOtp(
-                profile.id,
-                code,
-                cancelToken: token,
-              ),
+              code,
+              cancelToken: token,
+            ),
+            VerifyChannel.whatsapp => await repo.verifyPhoneOtp(
+              code,
+              cancelToken: token,
+            ),
           };
           return result.when(
             success: (_) => Result.ok(null),
@@ -95,24 +92,21 @@ class SettingsActionHandler {
       VerifyChannel.whatsapp => 'Verify WhatsApp',
     };
 
-    final verified = await showModalBottomSheet<bool>(
+    final verified = await OpenVtsModal.showFormSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => _OtpVerifySheet(
+      child: _OtpVerifySheet(
         title: title,
         onVerify: (code, token) async {
           final repo = userRepo!;
           final result = switch (channel) {
             VerifyChannel.email => await repo.verifyEmailOtp(
-                profile.id,
-                code,
-                cancelToken: token,
-              ),
-            VerifyChannel.whatsapp => await repo.verifyWhatsappOtp(
-                profile.id,
-                code,
-                cancelToken: token,
-              ),
+              code,
+              cancelToken: token,
+            ),
+            VerifyChannel.whatsapp => await repo.verifyPhoneOtp(
+              code,
+              cancelToken: token,
+            ),
           };
           return result.when(
             success: (_) => Result.ok(null),
@@ -139,8 +133,8 @@ class SettingsActionHandler {
     updateState(viewState.copyWith(emailOtpLoading: false));
 
     res.when(
-      success: (data) {
-        _showInfo(context, _responseMessage(data, fallback: 'Email OTP request sent.'));
+      success: (_) {
+        _showInfo(context, 'Email OTP request sent.');
       },
       failure: (err) {
         final msg = err is ApiException && err.message.trim().isNotEmpty
@@ -163,8 +157,8 @@ class SettingsActionHandler {
     updateState(viewState.copyWith(whatsappOtpLoading: false));
 
     res.when(
-      success: (data) {
-        _showInfo(context, _responseMessage(data, fallback: 'WhatsApp OTP request sent.'));
+      success: (_) {
+        _showInfo(context, 'WhatsApp OTP request sent.');
       },
       failure: (err) {
         final msg = err is ApiException && err.message.trim().isNotEmpty
@@ -176,15 +170,17 @@ class SettingsActionHandler {
   }
 
   Future<void> loadPushState() async {
-    final state = await PushNotificationsService.instance.getStatus();
-    // This would be handled by the state management
+    await PushNotificationsService.instance.getStatus();
   }
 
   Future<void> openNotificationSettings(BuildContext context) async {
     final uri = Uri.parse('app-settings:');
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (ok) return;
-    _showInfo(context, 'Open your device settings and allow notifications for this app.');
+    _showInfo(
+      context,
+      'Open your device settings and allow notifications for this app.',
+    );
   }
 
   Future<void> handlePushRegister(
@@ -199,16 +195,24 @@ class SettingsActionHandler {
 
     res.when(
       success: (state) {
-        updateState(viewState.copyWith(pushState: state, pushActionLoading: false));
+        updateState(
+          viewState.copyWith(
+            pushState: state.registered,
+            pushActionLoading: false,
+          ),
+        );
         _showSuccess(context, 'Push enabled.');
       },
       failure: (err) async {
         updateState(viewState.copyWith(pushActionLoading: false));
         final msg = err is ApiException
-            ? (err.message.isNotEmpty ? err.message : 'Push could not be enabled.')
+            ? (err.message.isNotEmpty
+                  ? err.message
+                  : 'Push could not be enabled.')
             : 'Push could not be enabled.';
         _showError(context, msg);
-        if (err is ApiException && err.message.toLowerCase().contains('permission')) {
+        if (err is ApiException &&
+            err.message.toLowerCase().contains('permission')) {
           await _showPushPermissionDialog(context);
         }
       },
@@ -234,7 +238,9 @@ class SettingsActionHandler {
       failure: (err) {
         updateState(viewState.copyWith(pushActionLoading: false));
         final msg = err is ApiException
-            ? (err.message.isNotEmpty ? err.message : 'Push could not be disabled.')
+            ? (err.message.isNotEmpty
+                  ? err.message
+                  : 'Push could not be disabled.')
             : 'Push could not be disabled.';
         _showError(context, msg);
       },
@@ -257,14 +263,27 @@ class SettingsActionHandler {
   }
 
   Future<void> _showPushPermissionDialog(BuildContext context) async {
-    // Implementation would go here
-  }
-
-  String _responseMessage(dynamic data, {required String fallback}) {
-    if (data is Map && data['message'] is String) {
-      return data['message'];
-    }
-    return fallback;
+    if (!context.mounted) return;
+    await OpenVtsDialog.show<void>(
+      context: context,
+      title: 'Notification Permission',
+      message: 'Open device settings and allow notifications for this app.',
+      icon: Icons.notifications_active_outlined,
+      actions: [
+        OpenVtsDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        OpenVtsDialogAction(
+          label: 'Open Settings',
+          variant: OpenVtsButtonVariant.primary,
+          onPressed: () {
+            Navigator.of(context).pop();
+            openNotificationSettings(context);
+          },
+        ),
+      ],
+    );
   }
 }
 
@@ -382,12 +401,16 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
                 ),
                 InkWell(
                   borderRadius: BorderRadius.circular(10),
-                  onTap: _verifying ? null : () => Navigator.of(context).pop(false),
+                  onTap: _verifying
+                      ? null
+                      : () => Navigator.of(context).pop(false),
                   child: Container(
                     height: 34,
                     width: 34,
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(
+                        0.5,
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -413,7 +436,6 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
               controller: _otpController,
               hintText: 'Enter OTP',
               keyboardType: TextInputType.number,
-              maxLength: 6,
               enabled: !_verifying,
               onSubmitted: (_) => _verify(),
             ),
@@ -422,7 +444,7 @@ class _OtpVerifySheetState extends State<_OtpVerifySheet> {
               children: [
                 Expanded(
                   child: OpenVtsButton(
-                    text: 'Verify',
+                    label: 'Verify',
                     onPressed: _verifying ? null : _verify,
                     loading: _verifying,
                   ),

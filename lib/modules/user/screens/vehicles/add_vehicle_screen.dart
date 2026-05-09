@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
@@ -102,9 +103,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           if (error is ApiException && error.message.trim().isNotEmpty) {
             msg = error.message;
           }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+          OpenVtsFeedback.error(context, msg);
         },
       );
     } catch (_) {
@@ -112,9 +111,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       setState(() => _loadingRefs = false);
       if (_loadErrorShown) return;
       _loadErrorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load vehicle types.")),
-      );
+      OpenVtsFeedback.error(context, "Couldn't load vehicle types.");
     }
   }
 
@@ -141,9 +138,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
     final typeId = _selectedVehicleTypeId;
     if (typeId == null || typeId.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vehicle type is required.')),
-      );
+      OpenVtsFeedback.warning(context, 'Vehicle type is required.');
       return;
     }
 
@@ -187,17 +182,13 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           if (error is ApiException && error.message.trim().isNotEmpty) {
             msg = error.message;
           }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
+          OpenVtsFeedback.error(context, msg);
         },
       );
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Couldn't add vehicle.")));
+      OpenVtsFeedback.error(context, "Couldn't add vehicle.");
     }
   }
 
@@ -408,30 +399,11 @@ class StylishTextField extends StatelessWidget {
         const SizedBox(height: 8),
         SizedBox(
           height: 55,
-          child: TextFormField(
+          child: OpenVtsTextField(
             controller: controller,
             validator: validator,
-            decoration: InputDecoration(
-              fillColor: cs.surface,
-              filled: true,
-              hintText: hint,
-              hintStyle: AppFonts.inter(
-                color: cs.onSurface.withOpacity(0.6),
-                fontSize: fs,
-              ),
-              prefixIcon: Icon(prefixIcon, color: cs.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: cs.primary, width: 2),
-              ),
-            ),
+            hintText: hint,
+            prefixIcon: Icon(prefixIcon, color: cs.primary),
           ),
         ),
       ],
@@ -518,4 +490,3 @@ class StylishDropdown extends StatelessWidget {
     );
   }
 }
-

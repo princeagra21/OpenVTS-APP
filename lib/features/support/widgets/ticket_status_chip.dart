@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/design_system/components/open_vts_status_chip.dart';
 
 class TicketStatusChip extends StatelessWidget {
   const TicketStatusChip({super.key, required this.status});
@@ -8,33 +8,17 @@ class TicketStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final normalized = _normalize(status);
-    final color = switch (normalized) {
-      'open' => cs.primary,
-      'in_process' => Colors.orange,
-      'answered' => Colors.green,
-      'hold' => Colors.purple,
-      'closed' => cs.error,
-      _ => cs.onSurfaceVariant,
+    final tone = switch (normalized) {
+      'open' => OpenVtsStatusTone.info,
+      'in_process' => OpenVtsStatusTone.warning,
+      'answered' => OpenVtsStatusTone.success,
+      'hold' => OpenVtsStatusTone.neutral,
+      'closed' => OpenVtsStatusTone.danger,
+      _ => OpenVtsStatusTone.neutral,
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Text(
-        _label(status),
-        style: AppFonts.roboto(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
+    return OpenVtsStatusChip(label: _label(status), tone: tone, compact: true);
   }
 
   String _normalize(String raw) {

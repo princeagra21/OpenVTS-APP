@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -7,6 +6,9 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/user_profile_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
+import 'package:open_vts/design_system/components/open_vts_modal.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
@@ -88,35 +90,6 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     _cityController.dispose();
     _pincodeController.dispose();
     super.dispose();
-  }
-
-  InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      hintText: hint,
-      hintStyle: AppFonts.inter(
-        color: colorScheme.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(
-          MediaQuery.of(context).size.width,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      prefixIconConstraints: const BoxConstraints(minWidth: 48),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-      ),
-    );
   }
 
   UserProfileRepository _repoOrCreate() {
@@ -280,16 +253,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       MediaQuery.of(context).size.width,
     );
 
-    return showModalBottomSheet<T>(
+    return OpenVtsModal.showBottomSheet<T>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: SizedBox(
+      child: Builder(
+        builder: (ctx) {
+          return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.72,
             child: StatefulBuilder(
               builder: (context, setSheetState) {
@@ -334,26 +302,14 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      TextField(
+                      OpenVtsTextField(
                         controller: searchController,
                         onChanged: (value) =>
                             setSheetState(() => query = value),
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
+                        hintText: 'Search',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: colorScheme.onSurface.withOpacity(0.5),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -396,9 +352,9 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 );
               },
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -489,12 +445,14 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
         'addressLine': _addressController.text.trim(),
       if ((_selectedStateOption?.value ?? _stateController.text.trim())
           .isNotEmpty)
-        'stateCode': _selectedStateOption?.value ?? _stateController.text.trim(),
+        'stateCode':
+            _selectedStateOption?.value ?? _stateController.text.trim(),
       if ((_selectedCountryOption?.isoCode ?? _countryController.text.trim())
           .isNotEmpty)
         'countryCode':
             _selectedCountryOption?.isoCode ?? _countryController.text.trim(),
-      if ((_selectedCityOption?.label ?? _cityController.text.trim()).isNotEmpty)
+      if ((_selectedCityOption?.label ?? _cityController.text.trim())
+          .isNotEmpty)
         'cityName': _selectedCityOption?.label ?? _cityController.text.trim(),
       if (_pincodeController.text.trim().isNotEmpty)
         'pincode': _pincodeController.text.trim(),
@@ -509,9 +467,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     result.when(
       success: (_) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+        OpenVtsFeedback.success(context, 'Profile updated');
         Navigator.pop(context, true);
       },
       failure: (error) {
@@ -521,9 +477,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
         final msg = error is ApiException && error.message.trim().isNotEmpty
             ? error.message
             : "Couldn't update profile.";
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        OpenVtsFeedback.error(context, msg);
       },
     );
   }
@@ -579,39 +533,24 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      TextField(
+                      OpenVtsTextField(
                         controller: _nameController,
-                        style: AppFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Full Name',
+                        prefixIcon: Icon(
+                          Icons.person_outline,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration:
-                            _minimalDecoration(
-                              context,
-                              hint: "Full Name",
-                            ).copyWith(
-                              prefixIcon: Icon(
-                                Icons.person_outline,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _emailController,
-                        style: AppFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Email',
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration: _minimalDecoration(context, hint: "Email")
-                            .copyWith(
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -637,7 +576,8 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                                   inputDecoration: InputDecoration(
                                     hintText: 'Search',
                                     filled: true,
-                                    fillColor: colorScheme.surfaceContainerHighest
+                                    fillColor: colorScheme
+                                        .surfaceContainerHighest
                                         .withOpacity(0.3),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(16),
@@ -680,147 +620,100 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: AppFonts.inter(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              hintText: 'Phone Number',
+                              prefixIcon: Icon(
+                                Icons.phone_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: "Phone Number",
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.phone_outlined,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                  ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _addressController,
-                        style: AppFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Address',
+                        prefixIcon: Icon(
+                          Icons.location_on_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration: _minimalDecoration(context, hint: "Address")
-                            .copyWith(
-                              prefixIcon: Icon(
-                                Icons.location_on_outlined,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _countryController,
                         readOnly: true,
                         onTap: _pickCountry,
-                        style: AppFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: _loadingCountries
+                            ? 'Loading countries...'
+                            : 'Select country',
+                        prefixIcon: Icon(
+                          Icons.public,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: _loadingCountries
-                              ? 'Loading countries...'
-                              : 'Select country',
-                        ).copyWith(
-                          prefixIcon: Icon(
-                            Icons.public,
-                            color: colorScheme.primary,
-                            size: 22,
-                          ),
-                          suffixIcon: Icon(
-                            Icons.keyboard_arrow_down,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                        suffixIcon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _stateController,
                               readOnly: true,
                               onTap: _pickState,
-                              style: AppFonts.inter(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              hintText: _loadingStates
+                                  ? 'Loading states...'
+                                  : 'Select state',
+                              prefixIcon: Icon(
+                                Icons.flag_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration: _minimalDecoration(
-                                context,
-                                hint: _loadingStates
-                                    ? 'Loading states...'
-                                    : 'Select state',
-                              ).copyWith(
-                                prefixIcon: Icon(
-                                  Icons.flag_outlined,
-                                  color: colorScheme.primary,
-                                  size: 22,
-                                ),
-                                suffixIcon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                              suffixIcon: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _cityController,
                               readOnly: true,
                               onTap: _pickCity,
-                              style: AppFonts.inter(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              hintText: _loadingCities
+                                  ? 'Loading cities...'
+                                  : 'Select city',
+                              prefixIcon: Icon(
+                                Icons.location_city_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration: _minimalDecoration(
-                                context,
-                                hint: _loadingCities
-                                    ? 'Loading cities...'
-                                    : 'Select city',
-                              ).copyWith(
-                                prefixIcon: Icon(
-                                  Icons.location_city_outlined,
-                                  color: colorScheme.primary,
-                                  size: 22,
-                                ),
-                                suffixIcon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
+                              suffixIcon: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _pincodeController,
                         keyboardType: TextInputType.number,
-                        style: AppFonts.inter(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
-                        ),
-                        decoration: _minimalDecoration(
-                          context,
-                          hint: "Pincode",
-                        ).copyWith(
-                          prefixIcon: Icon(
-                            Icons.pin_drop_outlined,
-                            color: colorScheme.primary,
-                            size: 22,
-                          ),
+                        hintText: 'Pincode',
+                        prefixIcon: Icon(
+                          Icons.pin_drop_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -862,4 +755,3 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     );
   }
 }
-

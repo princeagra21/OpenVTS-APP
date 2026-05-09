@@ -3,6 +3,7 @@ import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/features/admin_tools/server_status/server_status_controller.dart';
+import 'package:open_vts/features/admin_tools/server_status/server_status_models.dart';
 
 class ServerHealthSummary extends StatelessWidget {
   const ServerHealthSummary({super.key, required this.controller});
@@ -58,7 +59,9 @@ class ServerHealthSummary extends StatelessWidget {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: state.isLoading ? null : () => controller.loadStatus(),
+                onPressed: state.isLoading
+                    ? null
+                    : () => controller.loadStatus(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   padding: EdgeInsets.symmetric(
@@ -97,8 +100,161 @@ class ServerHealthSummary extends StatelessWidget {
           ),
           if (state.status != null) ...[
             const SizedBox(height: 24),
-            _buildHealthIndicator(state.status!.overallHealth, width),
+            _buildStatusContent(state.status!, width, colorScheme),
           ],
+          if (state.errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              state.errorMessage!,
+              style: AppFonts.roboto(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.error,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusContent(
+    ServerStatusModel status,
+    double width,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHealthIndicator(status.overallHealth, width),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildMetricTile(
+              'CPU',
+              status.metrics.cpuUsage,
+              width,
+              colorScheme,
+            ),
+            _buildMetricTile(
+              'Memory',
+              status.metrics.memoryUsage,
+              width,
+              colorScheme,
+            ),
+            for (final entry in status.metrics.diskUsage.entries)
+              _buildMetricTile(
+                'Disk ${entry.key}',
+                entry.value,
+                width,
+                colorScheme,
+              ),
+          ],
+        ),
+        if (status.services.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(
+            'Services',
+            style: AppFonts.roboto(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) - 4,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...status.services.values.map(
+            (service) => _buildServiceRow(service, width, colorScheme),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMetricTile(
+    String label,
+    double value,
+    double width,
+    ColorScheme colorScheme,
+  ) {
+    final color = value >= 90
+        ? Colors.red
+        : value >= 75
+        ? Colors.orange
+        : Colors.green;
+
+    return SizedBox(
+      width: 150,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppFonts.roboto(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 6),
+          LinearProgressIndicator(
+            value: (value / 100).clamp(0, 1).toDouble(),
+            color: color,
+            backgroundColor: color.withOpacity(0.16),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${value.toStringAsFixed(1)}%',
+            style: AppFonts.roboto(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) - 6,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceRow(
+    ServiceStatus service,
+    double width,
+    ColorScheme colorScheme,
+  ) {
+    final color = switch (service.status) {
+      'healthy' => Colors.green,
+      'warning' => Colors.orange,
+      'error' => Colors.red,
+      _ => Colors.grey,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(Icons.circle, color: color, size: 10),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              service.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.roboto(
+                fontSize: AdaptiveUtils.getTitleFontSize(width) - 6,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Text(
+            service.status.toUpperCase(),
+            style: AppFonts.roboto(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

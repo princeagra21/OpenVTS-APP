@@ -49,7 +49,6 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
           children: [
             ServerHealthSummary(controller: _controller),
             const SizedBox(height: 24),
-            // Add more sections here
           ],
         ),
       ),

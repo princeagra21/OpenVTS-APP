@@ -5,9 +5,7 @@ import 'package:open_vts/core/repositories/api_config_repository.dart';
 import 'package:open_vts/features/admin_tools/api_config/api_config_models.dart';
 
 class ApiConfigController extends ChangeNotifier {
-  ApiConfigController({
-    required this.repository,
-  });
+  ApiConfigController({required this.repository});
 
   final ApiConfigRepository repository;
 
@@ -39,10 +37,7 @@ class ApiConfigController extends ChangeNotifier {
       result.when(
         success: (configMap) {
           final config = ApiConfigModel.fromMap(configMap);
-          _state = _state.copyWith(
-            config: config,
-            isLoading: false,
-          );
+          _state = _state.copyWith(config: config, isLoading: false);
         },
         failure: (error) {
           _state = _state.copyWith(
@@ -70,13 +65,13 @@ class ApiConfigController extends ChangeNotifier {
 
     try {
       final payload = _state.config.toMap();
-      final result = await repository.updateSoftwareConfig(payload, cancelToken: token);
+      final result = await repository.updateSoftwareConfig(
+        payload,
+        cancelToken: token,
+      );
       result.when(
         success: (_) {
-          _state = _state.copyWith(
-            isSaving: false,
-            lastSaveAt: DateTime.now(),
-          );
+          _state = _state.copyWith(isSaving: false, lastSaveAt: DateTime.now());
         },
         failure: (error) {
           _state = _state.copyWith(
@@ -110,20 +105,20 @@ class ApiConfigController extends ChangeNotifier {
     );
     notifyListeners();
 
-    try {
-      // Note: No dedicated test endpoints in API, so this is a placeholder
-      // In real implementation, you might need to add test endpoints or simulate
-      await Future.delayed(const Duration(seconds: 2)); // Simulate test
-
-      _state = _state.copyWith(
-        testStates: {..._state.testStates, service: false},
-      );
-    } catch (e) {
-      _state = _state.copyWith(
-        testStates: {..._state.testStates, service: false},
-        errorMessage: 'Test failed for $service',
-      );
-    }
+    final result = repository.unavailableTestApi();
+    result.when(
+      success: (_) {
+        _state = _state.copyWith(
+          testStates: {..._state.testStates, service: false},
+        );
+      },
+      failure: (error) {
+        _state = _state.copyWith(
+          testStates: {..._state.testStates, service: false},
+          errorMessage: error.toString(),
+        );
+      },
+    );
     notifyListeners();
   }
 

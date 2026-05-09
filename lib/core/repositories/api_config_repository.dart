@@ -91,6 +91,9 @@ class ApiConfigRepository {
     return level0;
   }
 
-  Result<void> unavailableTestApi() =>
-      Result.fail(const ApiException(message: 'Test API not available yet'));
+  Result<void> unavailableTestApi() => Result.fail(
+    const ApiException(
+      message: 'Connection-test endpoint is not exposed by the backend',
+    ),
+  );
 }

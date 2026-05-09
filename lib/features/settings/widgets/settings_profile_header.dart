@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/features/settings/settings_controller.dart';
-import 'package:open_vts/features/settings/widgets/settings_account_section.dart';
+import 'package:open_vts/features/settings/settings_section_model.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_actions.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_address.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_company.dart';
@@ -8,7 +7,6 @@ import 'package:open_vts/features/settings/widgets/settings_profile_error.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_identity.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_loading.dart';
 import 'package:open_vts/features/settings/widgets/settings_profile_verification_badges.dart';
-import 'package:open_vts/features/settings/widgets/settings_security_section.dart';
 import 'package:open_vts/features/settings/widgets/settings_section_card.dart';
 
 class SettingsProfileHeader extends StatelessWidget {
@@ -71,84 +69,70 @@ class SettingsProfileHeader extends StatelessWidget {
         children: [
           SettingsProfileActions(onEdit: onEdit, onPassword: onPassword),
           const SizedBox(height: 16),
-          SettingsAccountSection(
-            child: SettingsProfileIdentityCard(
-              name: profile.name,
-              username: profile.username,
-              verified: profile.verified,
-              imageUrl: profile.imageUrl,
-              loading: loading,
-            ),
+          SettingsProfileIdentityCard(
+            name: profile.name,
+            username: profile.username,
+            verified: profile.verified,
+            imageUrl: profile.imageUrl,
+            loading: loading,
           ),
           const SizedBox(height: 12),
-          SettingsAccountSection(
-            child: SettingsProfileDatesGrid(
-              loading: loading,
-              createdDate: profile.createdParts.isNotEmpty
-                  ? profile.createdParts[0]
-                  : '—',
-              createdTime: profile.createdParts.length > 1
-                  ? profile.createdParts[1]
-                  : '—',
-              updatedDate: profile.updatedParts.isNotEmpty
-                  ? profile.updatedParts[0]
-                  : '—',
-              updatedTime: profile.updatedParts.length > 1
-                  ? profile.updatedParts[1]
-                  : '—',
-            ),
+          SettingsProfileDatesGrid(
+            loading: loading,
+            createdDate: profile.createdParts.isNotEmpty
+                ? profile.createdParts[0]
+                : '-',
+            createdTime: profile.createdParts.length > 1
+                ? profile.createdParts[1]
+                : '-',
+            updatedDate: profile.updatedParts.isNotEmpty
+                ? profile.updatedParts[0]
+                : '-',
+            updatedTime: profile.updatedParts.length > 1
+                ? profile.updatedParts[1]
+                : '-',
           ),
           const SizedBox(height: 12),
-          SettingsSecuritySection(
-            child: SettingsProfileEmailCard(
-              email: profile.email,
-              verified: profile.emailVerified,
-              loading: loading,
-              onVerify: onEmailVerify,
-              showActionWhenVerified: emailActionVisibleWhenVerified,
-              actionLoading: emailActionLoading,
-            ),
+          SettingsProfileEmailCard(
+            email: profile.email,
+            verified: profile.emailVerified,
+            loading: loading,
+            onVerify: onEmailVerify,
+            showActionWhenVerified: emailActionVisibleWhenVerified,
+            actionLoading: emailActionLoading,
           ),
           const SizedBox(height: 12),
-          SettingsSecuritySection(
-            child: SettingsProfilePhoneCard(
-              phone: profile.phone,
-              verified: profile.phoneVerified,
-              loading: loading,
-              onVerify: onPhoneVerify,
-              showActionWhenVerified: phoneActionVisibleWhenVerified,
-              actionLoading: phoneActionLoading,
-            ),
+          SettingsProfilePhoneCard(
+            phone: profile.phone,
+            verified: profile.phoneVerified,
+            loading: loading,
+            onVerify: onPhoneVerify,
+            showActionWhenVerified: phoneActionVisibleWhenVerified,
+            actionLoading: phoneActionLoading,
           ),
           if (showWhatsapp) ...[
             const SizedBox(height: 12),
-            SettingsAccountSection(
-              child: SettingsProfileWhatsappCard(
-                phone: profile.whatsapp,
-                loading: loading,
-              ),
+            SettingsProfileWhatsappCard(
+              phone: profile.whatsapp,
+              loading: loading,
             ),
           ],
           const SizedBox(height: 12),
-          SettingsAccountSection(
-            child: SettingsProfileCompanyCard(
-              companyName: profile.companyName,
-              companyWebsite: profile.companyWebsite,
-              companyId: profile.companyId,
-              primaryColor: profile.primaryColor,
-              customDomain: profile.customDomain,
-              socialLabels: profile.socialLabels,
-              socialLinks: profile.socialLinks,
-              loading: loading,
-              onEditCompany: onEdit,
-            ),
+          SettingsProfileCompanyCard(
+            companyName: profile.companyName,
+            companyWebsite: profile.companyWebsite,
+            companyId: profile.companyId,
+            primaryColor: profile.primaryColor,
+            customDomain: profile.customDomain,
+            socialLabels: profile.socialLabels,
+            socialLinks: profile.socialLinks,
+            loading: loading,
+            onEditCompany: onEdit,
           ),
           const SizedBox(height: 12),
-          SettingsAccountSection(
-            child: SettingsProfileAddressCard(
-              address: profile.address,
-              loading: loading,
-            ),
+          SettingsProfileAddressCard(
+            address: profile.address,
+            loading: loading,
           ),
         ],
       ),

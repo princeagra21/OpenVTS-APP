@@ -8,14 +8,13 @@ import 'package:open_vts/design_system/components/open_vts_dialog.dart';
 
 void main() {
   group('Design System Smoke Tests', () {
-    testWidgets('OpenVtsButton builds without error', (WidgetTester tester) async {
+    testWidgets('OpenVtsButton builds without error', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: OpenVtsButton(
-              onPressed: () {},
-              child: const Text('Test Button'),
-            ),
+            body: OpenVtsButton(label: 'Test Button', onPressed: () {}),
           ),
         ),
       );
@@ -24,28 +23,24 @@ void main() {
       expect(find.byType(OpenVtsButton), findsOneWidget);
     });
 
-    testWidgets('OpenVtsTextField builds without error', (WidgetTester tester) async {
+    testWidgets('OpenVtsTextField builds without error', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: OpenVtsTextField(
-              hintText: 'Test hint',
-            ),
-          ),
+          home: Scaffold(body: OpenVtsTextField(hintText: 'Test hint')),
         ),
       );
 
       expect(find.byType(OpenVtsTextField), findsOneWidget);
     });
 
-    testWidgets('OpenVtsCard builds without error', (WidgetTester tester) async {
+    testWidgets('OpenVtsCard builds without error', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: OpenVtsCard(
-              child: const Text('Test content'),
-            ),
-          ),
+          home: Scaffold(body: OpenVtsCard(child: const Text('Test content'))),
         ),
       );
 
@@ -53,13 +48,16 @@ void main() {
       expect(find.byType(OpenVtsCard), findsOneWidget);
     });
 
-    testWidgets('OpenVtsFeedback.success shows snackbar', (WidgetTester tester) async {
+    testWidgets('OpenVtsFeedback.success shows snackbar', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => OpenVtsFeedback.success(context, 'Success message'),
+                onPressed: () =>
+                    OpenVtsFeedback.success(context, 'Success message'),
                 child: const Text('Show Success'),
               ),
             ),
@@ -73,13 +71,16 @@ void main() {
       expect(find.text('Success message'), findsOneWidget);
     });
 
-    testWidgets('OpenVtsFeedback.error shows snackbar', (WidgetTester tester) async {
+    testWidgets('OpenVtsFeedback.error shows snackbar', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => OpenVtsFeedback.error(context, 'Error message'),
+                onPressed: () =>
+                    OpenVtsFeedback.error(context, 'Error message'),
                 child: const Text('Show Error'),
               ),
             ),
@@ -93,7 +94,9 @@ void main() {
       expect(find.text('Error message'), findsOneWidget);
     });
 
-    testWidgets('OpenVtsDialog builds without error', (WidgetTester tester) async {
+    testWidgets('OpenVtsDialog builds without error', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -103,11 +106,11 @@ void main() {
                   context: context,
                   builder: (_) => OpenVtsDialog(
                     title: 'Test Dialog',
-                    content: const Text('Dialog content'),
+                    message: 'Dialog content',
                     actions: [
-                      OpenVtsButton(
+                      OpenVtsDialogAction(
+                        label: 'OK',
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
                       ),
                     ],
                   ),

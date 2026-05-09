@@ -264,24 +264,3 @@ class _AdministratorDetailsScreenState
     }
   }
 }
-
-// Temporary placeholder widget - replace with your actual content widgets
-class PlaceholderContent extends StatelessWidget {
-  final String label;
-
-  const PlaceholderContent({super.key, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 200,
-      color: Colors.grey[200],
-      child: Center(
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}

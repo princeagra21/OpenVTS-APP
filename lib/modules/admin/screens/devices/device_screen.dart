@@ -677,7 +677,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     required double cardPadding,
     required double hp,
   }) {
-    final isPlaceholder = device == null;
+    final isSkeletonRow = device == null;
     final deviceId = device?.id.trim() ?? '';
     final isUpdating = _updating[deviceId] == true;
 
@@ -872,14 +872,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       Transform.scale(
                         scale: 0.85,
                         child: IgnorePointer(
-                          ignoring: isPlaceholder || isUpdating,
+                          ignoring: isSkeletonRow || isUpdating,
                           child: Switch(
                             value: enabled,
                             activeThumbColor: colorScheme.onPrimary,
                             activeTrackColor: colorScheme.primary,
                             inactiveThumbColor: colorScheme.onSurfaceVariant,
-                            inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                            onChanged: isPlaceholder
+                            inactiveTrackColor:
+                                colorScheme.surfaceContainerHighest,
+                            onChanged: isSkeletonRow
                                 ? null
                                 : (v) => _toggleDeviceActive(device, v),
                           ),
@@ -896,4 +897,3 @@ class _DeviceScreenState extends State<DeviceScreen> {
     );
   }
 }
-

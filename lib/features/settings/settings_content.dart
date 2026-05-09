@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:open_vts/app/app_container.dart';
+import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -8,7 +9,6 @@ import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/features/settings/settings_action_handler.dart';
 import 'package:open_vts/features/settings/settings_content_controller.dart';
 import 'package:open_vts/features/settings/settings_content_state.dart';
-import 'package:open_vts/features/settings/settings_controller.dart';
 import 'package:open_vts/features/settings/settings_navigation_grid.dart';
 import 'package:open_vts/features/settings/settings_role_config.dart';
 import 'package:open_vts/features/settings/settings_route_resolver.dart';
@@ -18,9 +18,6 @@ import 'package:open_vts/features/settings/settings_section_router.dart';
 import 'package:open_vts/features/settings/sections/settings_application_section.dart';
 import 'package:open_vts/features/settings/sections/settings_localization_section.dart';
 import 'package:open_vts/features/settings/sections/settings_profile_section.dart';
-import 'package:open_vts/features/settings/sections/settings_security_section.dart';
-import 'package:open_vts/features/settings/sections/settings_account_section.dart';
-import 'package:open_vts/features/settings/sections/settings_theme_section.dart';
 
 class RoleAwareSettingsContent extends StatefulWidget {
   const RoleAwareSettingsContent({super.key, required this.role});
@@ -35,7 +32,6 @@ class RoleAwareSettingsContent extends StatefulWidget {
 class _RoleAwareSettingsContentState extends State<RoleAwareSettingsContent> {
   late final SettingsRoleConfig _config;
   late final SettingsContentController _controller;
-  late final SettingsActionHandler _actionHandler;
   late final SettingsSectionRouter _sectionRouter;
   late final SettingsProfileDataLoader _profileLoader;
 
@@ -62,15 +58,6 @@ class _RoleAwareSettingsContentState extends State<RoleAwareSettingsContent> {
       userRepo: userRepo,
       superadminRepo: superadminRepo,
     )..addListener(_handleControllerChange);
-
-    _actionHandler = SettingsActionHandler(
-      role: widget.role,
-      controller: _controller as SettingsController,
-      adminRepo: adminRepo,
-      userRepo: userRepo,
-      superadminRepo: superadminRepo,
-      adminOrUserProfile: _adminOrUserProfile,
-    );
 
     _sectionRouter = const SettingsSectionRouter();
 
@@ -107,15 +94,60 @@ class _RoleAwareSettingsContentState extends State<RoleAwareSettingsContent> {
   Future<void> _loadPushState() async {
     final state = await PushNotificationsService.instance.getStatus();
     if (!mounted) return;
-    setState(() => _viewState = _viewState.copyWith(pushState: state.enabledByUser));
+    setState(
+      () => _viewState = _viewState.copyWith(pushState: state.enabledByUser),
+    );
   }
 
-  void _onEditProfile() {
-    // Navigation logic would go here
+  SettingsActionHandler _buildActionHandler() {
+    return SettingsActionHandler(
+      role: widget.role,
+      controller: _controller,
+      adminRepo: AppContainer.instance.adminProfileRepository,
+      userRepo: AppContainer.instance.userProfileRepository,
+      superadminRepo: AppContainer.instance.superadminRepository,
+      adminOrUserProfile: _adminOrUserProfile is AdminProfile
+          ? _adminOrUserProfile as AdminProfile
+          : null,
+    );
   }
 
-  void _onUpdatePassword() {
-    // Navigation logic would go here
+  void _updateViewState(SettingsViewState state) {
+    if (!mounted) return;
+    setState(() => _viewState = state);
+  }
+
+  Future<void> _onEditProfile() async {
+    final profile = _controller.profile;
+    if (profile == null) {
+      OpenVtsFeedback.warning(context, 'Profile is still loading.');
+      return;
+    }
+
+    final changed = await SettingsRouteResolver.openEditProfile(
+      context: context,
+      role: widget.role,
+      profile: profile,
+      adminOrUserProfile: _adminOrUserProfile is AdminProfile
+          ? _adminOrUserProfile as AdminProfile
+          : null,
+    );
+    if (changed) await _controller.loadProfile();
+  }
+
+  Future<void> _onUpdatePassword() async {
+    final profile = _controller.profile;
+    if (profile == null) {
+      OpenVtsFeedback.warning(context, 'Profile is still loading.');
+      return;
+    }
+
+    final changed = await SettingsRouteResolver.openUpdatePassword(
+      context: context,
+      role: widget.role,
+      profile: profile,
+    );
+    if (changed) await _controller.loadProfile();
   }
 
   @override
@@ -199,20 +231,16 @@ class _RoleAwareSettingsContentState extends State<RoleAwareSettingsContent> {
           profile: profile!,
           loading: loading,
           viewState: _viewState,
-          actionHandler: _actionHandler,
+          actionHandler: _buildActionHandler(),
           onEditProfile: _onEditProfile,
           onUpdatePassword: _onUpdatePassword,
+          onViewStateChanged: _updateViewState,
+          onRetryProfile: _controller.loadProfile,
         );
       case SettingsSectionId.localization:
         return SettingsLocalizationSection(role: widget.role);
       case SettingsSectionId.settings:
         return SettingsApplicationSection(role: widget.role);
-      case SettingsSectionId.security:
-        return SettingsSecuritySection(role: widget.role);
-      case SettingsSectionId.account:
-        return SettingsAccountSection(role: widget.role);
-      case SettingsSectionId.theme:
-        return SettingsThemeSection(role: widget.role);
     }
   }
 }

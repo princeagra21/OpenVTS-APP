@@ -1,9 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 class MockTokenStorage implements TokenStorageBase {
@@ -50,20 +51,34 @@ class MockTokenStorage implements TokenStorageBase {
   }
 }
 
+class OkAdapter implements HttpClientAdapter {
+  final List<RequestOptions> requests = [];
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    return ResponseBody.fromString(
+      '{"ok":true}',
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+}
+
 void main() {
   late MockTokenStorage mockTokenStorage;
-  late ApiClient apiClient;
-  late Dio mockDio;
 
   setUp(() {
     mockTokenStorage = MockTokenStorage();
-    mockDio = Dio();
-    final config = AppConfig(environment: 'test', baseUrl: 'https://test.com');
-    apiClient = ApiClient._(mockDio, config, mockTokenStorage);
-  });
-
-  tearDown(() {
-    mockDio.close();
   });
 
   group('ApiClient auth tests', () {
@@ -118,21 +133,42 @@ void main() {
     });
 
     test('empty baseUrl creates error', () async {
-      final config = AppConfig(environment: 'test', baseUrl: '');
-      final emptyClient = ApiClient._(mockDio, config, mockTokenStorage);
+      const config = AppConfig(environment: AppEnvironment.dev, baseUrl: '');
+      final emptyClient = ApiClient(
+        config: config,
+        tokenStorage: mockTokenStorage,
+      );
 
       final result = await emptyClient.get('/test');
 
       expect(result.isFailure, isTrue);
-      expect(result.failure!.message, contains('API baseUrl is empty'));
+      expect(
+        result.error,
+        isA<ApiException>().having(
+          (error) => error.message,
+          'message',
+          contains('API baseUrl is empty'),
+        ),
+      );
     });
 
     test('absolute URLs work without baseUrl', () async {
-      final config = AppConfig(environment: 'test', baseUrl: '');
-      final absClient = ApiClient._(mockDio, config, mockTokenStorage);
+      const config = AppConfig(environment: AppEnvironment.dev, baseUrl: '');
+      final absClient = ApiClient(
+        config: config,
+        tokenStorage: mockTokenStorage,
+      );
+      final adapter = OkAdapter();
+      absClient.dio.httpClientAdapter = adapter;
 
-      // This would require mocking Dio to handle absolute URLs
-      expect(true, isTrue); // Placeholder
+      final result = await absClient.get('https://api.example.test/ping');
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data, {'ok': true});
+      expect(
+        adapter.requests.single.uri.toString(),
+        'https://api.example.test/ping',
+      );
     });
   });
 }

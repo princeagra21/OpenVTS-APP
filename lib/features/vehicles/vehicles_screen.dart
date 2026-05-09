@@ -6,13 +6,11 @@ import 'package:open_vts/features/vehicles/vehicle_repository.dart';
 import 'package:open_vts/features/vehicles/vehicle_role_config.dart';
 import 'package:open_vts/features/vehicles/widgets/vehicle_filter_bar.dart';
 import 'package:open_vts/features/vehicles/widgets/vehicle_list.dart';
+import 'package:go_router/go_router.dart';
 
 /// Shared vehicle list screen
 class VehiclesScreen extends StatefulWidget {
-  const VehiclesScreen({
-    super.key,
-    required this.config,
-  });
+  const VehiclesScreen({super.key, required this.config});
 
   final VehicleRoleConfig config;
 
@@ -86,11 +84,7 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
       itemCount: 10,
       itemBuilder: (context, index) => const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: AppShimmer(
-          width: double.infinity,
-          height: 120,
-          radius: 12,
-        ),
+        child: AppShimmer(width: double.infinity, height: 120, radius: 12),
       ),
     );
   }
@@ -122,8 +116,9 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
   }
 
   void _onVehicleTap(VehicleItem vehicle) {
-    // TODO: Navigate to vehicle details
-    // final route = widget.config.routeBuilder(vehicle.id);
-    // context.go(route);
+    final vehicleId = vehicle.id.trim();
+    if (vehicleId.isEmpty) return;
+
+    context.push(widget.config.routeBuilder(vehicleId));
   }
 }

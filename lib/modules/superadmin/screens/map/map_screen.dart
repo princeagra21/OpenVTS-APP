@@ -1,4 +1,4 @@
-import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/shared/map/open_vts_map_repository.dart';
@@ -19,11 +19,9 @@ class MapScreen extends StatelessWidget {
       showAppBar: false,
       horizontalPadding: 0.0,
       child: OpenVtsMapScreen(
-        repositoryBuilder: (apiClient) {
-          return SuperadminMapTelemetryAdapter(
-            repository: SuperadminRepository(api: apiClient),
-          );
-        },
+        repository: SuperadminMapTelemetryAdapter(
+          repository: AppContainer.instance.superadminRepository,
+        ),
         appBarBuilder: (context) {
           return const SuperAdminHomeAppBar(
             title: 'Map',

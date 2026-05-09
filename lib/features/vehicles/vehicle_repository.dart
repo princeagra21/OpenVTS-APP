@@ -1,146 +1,210 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
+import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/features/vehicles/vehicle_models.dart';
 import 'package:open_vts/features/vehicles/vehicle_permissions.dart';
 import 'package:open_vts/features/vehicles/vehicle_role_config.dart';
 
-/// Abstract repository for vehicle operations
 abstract class VehicleRepository {
-  /// Load vehicles list
-  Future<Result<List<VehicleItem>>> getVehicles(VehicleListRequest request, CancelToken cancelToken);
+  Future<Result<List<VehicleItem>>> getVehicles(
+    VehicleListRequest request,
+    CancelToken cancelToken,
+  );
 
-  /// Load vehicle telemetry for merging with list
-  Future<Result<List<Map<String, dynamic>>>> getTelemetry(CancelToken cancelToken);
-
-  /// Load vehicle details
-  Future<Result<VehicleItem>> getVehicleDetails(VehicleDetailsRequest request, CancelToken cancelToken);
-
-  /// Send command to vehicle
-  Future<Result<void>> sendCommand(String vehicleId, String command, Map<String, dynamic> params, CancelToken cancelToken);
-
-  /// Toggle vehicle active status
-  Future<Result<void>> toggleActive(String vehicleId, bool isActive, CancelToken cancelToken);
+  Future<Result<List<Map<String, dynamic>>>> getTelemetry(
+    CancelToken cancelToken,
+  );
 }
 
-/// Factory for creating role-specific repositories
 class VehicleRepositoryFactory {
   static VehicleRepository create(VehicleRole role) {
+    final container = AppContainer.instance;
     switch (role) {
       case VehicleRole.superadmin:
-        return _SuperadminVehicleRepository();
+        return _SuperadminVehicleRepository(container.superadminRepository);
       case VehicleRole.admin:
-        return _AdminVehicleRepository();
+        return _AdminVehicleRepository(
+          AdminVehiclesRepository(api: container.apiClient),
+        );
       case VehicleRole.user:
-        return _UserVehicleRepository();
+        return _UserVehicleRepository(
+          UserVehiclesRepository(api: container.apiClient),
+        );
     }
   }
 }
 
-/// Superadmin vehicle repository implementation
 class _SuperadminVehicleRepository implements VehicleRepository {
-  _SuperadminVehicleRepository();
+  const _SuperadminVehicleRepository(this._repository);
+
+  final SuperadminRepository _repository;
 
   @override
-  Future<Result<List<VehicleItem>>> getVehicles(VehicleListRequest request, CancelToken cancelToken) async {
-    // TODO: Implement superadmin vehicle loading
-    // This would use SuperadminRepository.getVehicles
-    throw UnimplementedError('Superadmin vehicle loading not yet implemented');
+  Future<Result<List<VehicleItem>>> getVehicles(
+    VehicleListRequest request,
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getVehicles(
+      page: request.page,
+      limit: request.limit,
+      cancelToken: cancelToken,
+    );
+
+    return result.when(
+      success: (items) => Result.ok(
+        _filterItems(
+          items.map((item) => VehicleItem(item.raw)).toList(),
+          request,
+        ),
+      ),
+      failure: (error) => Result.fail(error),
+    );
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> getTelemetry(CancelToken cancelToken) async {
-    // Superadmin doesn't merge telemetry in current implementation
-    return Result.ok([]);
-  }
-
-  @override
-  Future<Result<VehicleItem>> getVehicleDetails(VehicleDetailsRequest request, CancelToken cancelToken) async {
-    // TODO: Implement superadmin vehicle details
-    throw UnimplementedError('Superadmin vehicle details not yet implemented');
-  }
-
-  @override
-  Future<Result<void>> sendCommand(String vehicleId, String command, Map<String, dynamic> params, CancelToken cancelToken) async {
-    // TODO: Implement superadmin command sending
-    throw UnimplementedError('Superadmin command sending not yet implemented');
-  }
-
-  @override
-  Future<Result<void>> toggleActive(String vehicleId, bool isActive, CancelToken cancelToken) async {
-    // TODO: Implement superadmin toggle active
-    throw UnimplementedError('Superadmin toggle active not yet implemented');
+  Future<Result<List<Map<String, dynamic>>>> getTelemetry(
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getMapTelemetry(cancelToken: cancelToken);
+    return result.when(
+      success: (points) => Result.ok(points.map((point) => point.raw).toList()),
+      failure: (error) => Result.fail(error),
+    );
   }
 }
 
-/// Admin vehicle repository implementation
 class _AdminVehicleRepository implements VehicleRepository {
-  _AdminVehicleRepository();
+  const _AdminVehicleRepository(this._repository);
+
+  final AdminVehiclesRepository _repository;
 
   @override
-  Future<Result<List<VehicleItem>>> getVehicles(VehicleListRequest request, CancelToken cancelToken) async {
-    // TODO: Implement admin vehicle loading
-    // This would use AdminVehiclesRepository.getVehicles
-    throw UnimplementedError('Admin vehicle loading not yet implemented');
+  Future<Result<List<VehicleItem>>> getVehicles(
+    VehicleListRequest request,
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getVehicles(
+      search: request.search,
+      status: request.status,
+      page: request.page,
+      limit: request.limit,
+      cancelToken: cancelToken,
+    );
+
+    return result.when(
+      success: (items) => Result.ok(
+        _filterItems(
+          items.map((item) => VehicleItem(item.raw)).toList(),
+          request,
+        ),
+      ),
+      failure: (error) => Result.fail(error),
+    );
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> getTelemetry(CancelToken cancelToken) async {
-    // TODO: Implement admin telemetry loading
-    // This would use AdminVehiclesRepository.getTelemetry
-    throw UnimplementedError('Admin telemetry loading not yet implemented');
-  }
-
-  @override
-  Future<Result<VehicleItem>> getVehicleDetails(VehicleDetailsRequest request, CancelToken cancelToken) async {
-    // TODO: Implement admin vehicle details
-    throw UnimplementedError('Admin vehicle details not yet implemented');
-  }
-
-  @override
-  Future<Result<void>> sendCommand(String vehicleId, String command, Map<String, dynamic> params, CancelToken cancelToken) async {
-    // TODO: Implement admin command sending
-    throw UnimplementedError('Admin command sending not yet implemented');
-  }
-
-  @override
-  Future<Result<void>> toggleActive(String vehicleId, bool isActive, CancelToken cancelToken) async {
-    // TODO: Implement admin toggle active
-    throw UnimplementedError('Admin toggle active not yet implemented');
+  Future<Result<List<Map<String, dynamic>>>> getTelemetry(
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getTelemetry(cancelToken: cancelToken);
+    return result.when(
+      success: (points) => Result.ok(points.map((point) => point.raw).toList()),
+      failure: (error) => Result.fail(error),
+    );
   }
 }
 
-/// User vehicle repository implementation
 class _UserVehicleRepository implements VehicleRepository {
-  _UserVehicleRepository();
+  const _UserVehicleRepository(this._repository);
+
+  final UserVehiclesRepository _repository;
 
   @override
-  Future<Result<List<VehicleItem>>> getVehicles(VehicleListRequest request, CancelToken cancelToken) async {
-    // TODO: Implement user vehicle loading
-    // This would use UserVehiclesRepository.getVehicles
-    throw UnimplementedError('User vehicle loading not yet implemented');
+  Future<Result<List<VehicleItem>>> getVehicles(
+    VehicleListRequest request,
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getVehicles(
+      limit: request.limit,
+      cancelToken: cancelToken,
+    );
+
+    return result.when(
+      success: (items) => Result.ok(
+        _filterItems(
+          items.map((item) => VehicleItem(item.raw)).toList(),
+          request,
+        ),
+      ),
+      failure: (error) => Result.fail(error),
+    );
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> getTelemetry(CancelToken cancelToken) async {
-    // User doesn't have telemetry access
-    return Result.ok([]);
+  Future<Result<List<Map<String, dynamic>>>> getTelemetry(
+    CancelToken cancelToken,
+  ) async {
+    final result = await _repository.getMapTelemetry(cancelToken: cancelToken);
+    return result.when(
+      success: (points) => Result.ok(points.map((point) => point.raw).toList()),
+      failure: (error) => Result.fail(error),
+    );
   }
+}
 
-  @override
-  Future<Result<VehicleItem>> getVehicleDetails(VehicleDetailsRequest request, CancelToken cancelToken) async {
-    // TODO: Implement user vehicle details
-    throw UnimplementedError('User vehicle details not yet implemented');
-  }
+List<VehicleItem> _filterItems(
+  List<VehicleItem> items,
+  VehicleListRequest request,
+) {
+  final query = request.search?.trim().toLowerCase();
+  final status = request.status?.trim().toLowerCase();
 
-  @override
-  Future<Result<void>> sendCommand(String vehicleId, String command, Map<String, dynamic> params, CancelToken cancelToken) async {
-    // Users cannot send commands
-    return Result.fail(Exception('Command sending not allowed for users'));
-  }
+  return items.where((vehicle) {
+    if (query != null && query.isNotEmpty && !_matchesQuery(vehicle, query)) {
+      return false;
+    }
+    if (status != null &&
+        status.isNotEmpty &&
+        !_matchesStatus(vehicle, status)) {
+      return false;
+    }
+    return true;
+  }).toList();
+}
 
-  @override
-  Future<Result<void>> toggleActive(String vehicleId, bool isActive, CancelToken cancelToken) async {
-    // Users cannot toggle active status
-    return Result.fail(Exception('Toggle active not allowed for users'));
+bool _matchesQuery(VehicleItem vehicle, String query) {
+  return <String>[
+    vehicle.name,
+    vehicle.plateNumber,
+    vehicle.vin,
+    vehicle.imei,
+    vehicle.driverName,
+    vehicle.type,
+  ].any((value) => value.toLowerCase().contains(query));
+}
+
+bool _matchesStatus(VehicleItem vehicle, String status) {
+  final statusText = '${vehicle.status} ${vehicle.motion} ${vehicle.engine}'
+      .trim()
+      .toLowerCase();
+  switch (status) {
+    case 'active':
+      return vehicle.isActive || statusText.contains('active');
+    case 'inactive':
+      return !vehicle.isActive &&
+          (statusText.contains('inactive') || statusText.contains('disabled'));
+    case 'running':
+      return statusText.contains('running') ||
+          statusText.contains('moving') ||
+          statusText.contains('on');
+    case 'stopped':
+      return statusText.contains('stopped') ||
+          statusText.contains('idle') ||
+          statusText.contains('off');
+    default:
+      return statusText.contains(status);
   }
 }

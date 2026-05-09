@@ -11,8 +11,6 @@ import 'package:open_vts/features/support/support_repository.dart';
 import 'package:open_vts/features/support/support_role_config.dart';
 
 class NewTicketController extends ChangeNotifier {
-  late final NewTicketState _state;
-
   NewTicketController({
     required this.role,
     required this.config,
@@ -49,7 +47,7 @@ class NewTicketController extends ChangeNotifier {
   final AdminUserListItem? preSelectedUser;
   final bool forMyTickets;
 
-  NewTicketState _state;
+  late NewTicketState _state;
   NewTicketState get state => _state;
 
   final CancelToken _cancelToken = CancelToken();
@@ -98,6 +96,7 @@ class NewTicketController extends ChangeNotifier {
     return role == SupportRole.superadmin;
   }
 
+  @override
   void dispose() {
     _cancelToken.cancel('NewTicketController disposed');
     _state.titleController?.dispose();
@@ -117,10 +116,7 @@ class NewTicketController extends ChangeNotifier {
 
       result.when(
         success: (items) {
-          _state = _state.copyWith(
-            users: items,
-            loadingAssignees: false,
-          );
+          _state = _state.copyWith(users: items, loadingAssignees: false);
           notifyListeners();
         },
         failure: (error) {
@@ -149,10 +145,7 @@ class NewTicketController extends ChangeNotifier {
 
       result.when(
         success: (items) {
-          _state = _state.copyWith(
-            admins: items,
-            loadingAssignees: false,
-          );
+          _state = _state.copyWith(admins: items, loadingAssignees: false);
           notifyListeners();
         },
         failure: (error) {
@@ -242,13 +235,20 @@ class NewTicketController extends ChangeNotifier {
     final messageError = NewTicketValidators.validateMessage(message, role);
     if (messageError != null) return false;
 
-    final categoryError = NewTicketValidators.validateCategory(_state.selectedCategory);
+    final categoryError = NewTicketValidators.validateCategory(
+      _state.selectedCategory,
+    );
     if (categoryError != null) return false;
 
-    final priorityError = NewTicketValidators.validatePriority(_state.selectedPriority);
+    final priorityError = NewTicketValidators.validatePriority(
+      _state.selectedPriority,
+    );
     if (priorityError != null) return false;
 
-    final attachmentError = NewTicketValidators.validateAttachments(_state.attachments, role);
+    final attachmentError = NewTicketValidators.validateAttachments(
+      _state.attachments,
+      role,
+    );
     if (attachmentError != null) return false;
 
     _state = _state.copyWith(submitting: true);
@@ -259,12 +259,19 @@ class NewTicketController extends ChangeNotifier {
       message: message,
       category: _state.selectedCategory,
       priority: _state.selectedPriority,
-      userId: role == SupportRole.admin && !forMyTickets ? _state.selectedUser?.id : null,
+      userId: role == SupportRole.admin && !forMyTickets
+          ? _state.selectedUser?.id
+          : null,
       adminId: role == SupportRole.superadmin ? _state.selectedAdmin?.id : null,
-      attachments: showAttachmentSection ? _state.attachments : const <PickedFilePayload>[],
+      attachments: showAttachmentSection
+          ? _state.attachments
+          : const <PickedFilePayload>[],
     );
 
-    final result = await repository.createTicket(draft, cancelToken: _cancelToken);
+    final result = await repository.createTicket(
+      draft,
+      cancelToken: _cancelToken,
+    );
 
     _state = _state.copyWith(submitting: false);
     notifyListeners();

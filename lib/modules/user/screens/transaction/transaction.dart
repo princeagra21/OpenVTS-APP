@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_transaction_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/user_transactions_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
@@ -21,6 +19,11 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
+part 'transaction_helpers.dart';
+part 'transaction_export.dart';
+part 'transaction_widgets.dart';
+part 'transaction_build.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -49,12 +52,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
   CancelToken? _loadToken;
   Timer? _searchDebounce;
 
-  ApiClient? _apiClient;
   UserTransactionsRepository? _repo;
 
   UserTransactionsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
-    _repo ??= UserTransactionsRepository(api: _apiClient!);
+    _repo ??= AppContainer.instance.userTransactionsRepository;
     return _repo!;
   }
 
@@ -170,236 +171,66 @@ class _TransactionScreenState extends State<TransactionScreen> {
     }
   }
 
-  DateTime? _tryParseDate(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty) return null;
-
-    final parsedIso = DateTime.tryParse(value);
-    if (parsedIso != null) return parsedIso;
-
-    final datePart = value.split(',').first.trim();
-    final slash = datePart.split(AppRoutePaths.root);
-    if (slash.length == 3) {
-      final d = int.tryParse(slash[0]);
-      final m = int.tryParse(slash[1]);
-      final y = int.tryParse(slash[2]);
-      if (d != null && m != null && y != null) {
-        return DateTime(y, m, d);
-      }
-    }
-
-    return null;
-  }
-
-  String _formatDateTime(String raw) {
-    if (raw.trim().isEmpty) return '—';
-    try {
-      final dt = DateTime.parse(raw).toLocal();
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      final m = months[dt.month - 1];
-      final h = dt.hour.toString().padLeft(2, '0');
-      final min = dt.minute.toString().padLeft(2, '0');
-      return '${dt.day} $m ${dt.year} · $h:$min';
-    } catch (_) {
-      return '—';
-    }
-  }
-
-  String _safe(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return '—';
-    if (trimmed.toLowerCase() == 'null') return '—';
-    return trimmed;
-  }
-
-  String _formatCurrency(num value, {String currency = 'INR'}) {
-    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
-    final sign = value < 0 ? '-' : '';
-    final absValue = value.abs();
-    final fixed = absValue.toStringAsFixed(2);
-    final parts = fixed.split('.');
-    final intPart = parts[0];
-    final fracPart = parts[1];
-    final withCommas = intPart.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (m) => ',',
-    );
-    return '$sign$symbol$withCommas.$fracPart';
-  }
-
-  String _formatAmount(double? value, String currency) {
-    if (value == null) return '—';
-    final symbol = currency.toUpperCase() == 'INR' ? '₹' : '$currency ';
-    final isWhole = value % 1 == 0;
-    final formatted = isWhole
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(2);
-    return '$symbol$formatted';
-  }
-
-  String _formatInrCompact(double value) {
-    if (value <= 0) return '₹0';
-    if (value >= 10000000) {
-      return '₹${(value / 10000000).toStringAsFixed(1)}Cr';
-    }
-    if (value >= 100000) {
-      return '₹${(value / 100000).toStringAsFixed(1)}L';
-    }
-    if (value >= 1000) {
-      return '₹${(value / 1000).toStringAsFixed(1)}K';
-    }
-    return '₹${value.toStringAsFixed(0)}';
-  }
-
-  double _parseAmount(AdminTransactionItem t) {
-    return t.amount ?? 0;
-  }
-
-  String _titleCase(String value) {
-    final v = value.trim();
-    if (v.isEmpty) return '—';
-    return v
-        .toLowerCase()
-        .split(RegExp(r'[_\s]+'))
-        .where((p) => p.isNotEmpty)
-        .map((p) => p[0].toUpperCase() + p.substring(1))
-        .join(' ');
-  }
-
-  (String, IconData, Color) _statusMeta(String raw, ColorScheme cs) {
-    final s = raw.toLowerCase();
-    if (s.contains('success')) {
-      return ('SUCCESS', Icons.check_circle, cs.primary);
-    }
-    if (s.contains('pending') || s.contains('processing')) {
-      return ('PENDING', Icons.schedule, cs.primary.withOpacity(0.7));
-    }
-    if (s.contains('fail') || s.contains('decline')) {
-      return ('FAILED', Icons.cancel, cs.primary.withOpacity(0.5));
-    }
-    if (s.contains('refund')) {
-      return ('REFUNDED', Icons.reply, cs.primary.withOpacity(0.5));
-    }
-    return ('UNKNOWN', Icons.help_outline, cs.onSurface.withOpacity(0.6));
-  }
-
-  String _csvEscape(String value) {
-    final needsQuote =
-        value.contains(',') || value.contains('"') || value.contains('\n');
-    final cleaned = value.replaceAll('"', '""');
-    return needsQuote ? '"$cleaned"' : cleaned;
-  }
-
-  Future<void> _exportCsv(List<AdminTransactionItem> items) async {
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No transactions to export.')),
-      );
-      return;
-    }
-    final headers = [
-      'ID',
-      'Name',
-      'Email',
-      'Amount',
-      'Currency',
-      'Status',
-      'Payment Mode',
-      'Payment Type',
-      'Reference',
-      'Created At',
-    ];
-    final rows = <List<String>>[];
-    for (final t in items) {
-      final name = _transactionName(t);
-      final email = _transactionEmail(t);
-      rows.add([
-        t.id,
-        name,
-        email,
-        (t.amount ?? 0).toString(),
-        t.currency,
-        t.statusLabel,
-        t.raw['paymentMode']?.toString() ?? '',
-        t.raw['paymentType']?.toString() ?? '',
-        t.raw['reference']?.toString() ?? '',
-        t.createdAt,
-      ]);
-    }
-
-    final buffer = StringBuffer();
-    buffer.writeln(headers.map(_csvEscape).join(','));
-    for (final row in rows) {
-      buffer.writeln(row.map(_csvEscape).join(','));
-    }
-
-    final filename =
-        'transactions_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsString(buffer.toString());
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
-    );
-  }
-
-  void _showExportOptions(List<AdminTransactionItem> items) {
-    showModalBottomSheet<void>(
+  Future<void> _pickDateRangeFilter(
+    BuildContext context,
+    ColorScheme cs,
+    double scale,
+  ) async {
+    final chosen = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) {
-        final cs = Theme.of(context).colorScheme;
+      builder: (ctx) {
+        final items = ['Today', 'Last 7 days', 'Last 30 days', 'This month'];
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Text(
-                  'Export Transactions',
+                  'Select Date Range',
                   style: AppFonts.roboto(
-                    fontSize: AdaptiveUtils.getTitleFontSize(
-                          MediaQuery.of(context).size.width,
-                        ) +
-                        1,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.table_view_outlined),
-                  title: const Text('CSV'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _exportCsv(items);
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.picture_as_pdf_outlined),
-                  title: const Text('PDF'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _exportPdf(items);
-                  },
+                SizedBox(
+                  height: MediaQuery.of(ctx).size.height * 0.7,
+                  child: ListView.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, index) {
+                      final item = items[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        title: Text(
+                          item,
+                          style: AppFonts.roboto(
+                            fontSize: 14 * scale,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () => Navigator.pop(ctx, item),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -407,1437 +238,86 @@ class _TransactionScreenState extends State<TransactionScreen> {
         );
       },
     );
+    if (chosen != null) {
+      setState(() => _selectedRange = chosen);
+      _applyDateRange(chosen);
+      _loadTransactions();
+    }
   }
 
-  Future<void> _exportPdf(List<AdminTransactionItem> items) async {
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No transactions to export.')),
-      );
-      return;
-    }
-
-    final total = items.length;
-    final successCount =
-        items.where((t) => t.statusLabel.toLowerCase().contains('success')).length;
-    final pendingCount = items
-        .where((t) =>
-            t.statusLabel.toLowerCase().contains('pending') ||
-            t.statusLabel.toLowerCase().contains('processing'))
-        .length;
-    final failedCount = items
-        .where((t) =>
-            t.statusLabel.toLowerCase().contains('fail') ||
-            t.statusLabel.toLowerCase().contains('decline'))
-        .length;
-    final generatedAtText =
-        _formatDateTime(DateTime.now().toIso8601String()).replaceAll('\n', ' ');
-
-    final doc = pw.Document();
-
-    final headerStyle = pw.TextStyle(
-      fontSize: 16,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.black,
-    );
-    final labelStyle = pw.TextStyle(fontSize: 9, color: PdfColors.grey700);
-    final valueStyle = pw.TextStyle(
-      fontSize: 12,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.black,
-    );
-    final tableHeaderStyle = pw.TextStyle(
-      fontSize: 9,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.white,
-    );
-    final tableCellStyle = pw.TextStyle(fontSize: 8, color: PdfColors.black);
-
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        footer: (context) => pw.Container(
-          margin: const pw.EdgeInsets.only(top: 16),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'Generated from Open VTS User',
-                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-              pw.Text(
-                'Page ${context.pageNumber} of ${context.pagesCount}',
-                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-              ),
-            ],
-          ),
-        ),
-        build: (_) => [
-          pw.Container(
-            padding: const pw.EdgeInsets.all(16),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.white,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-              border: pw.Border.all(color: PdfColors.grey300),
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
+  Future<void> _pickStatusFilter(
+    BuildContext context,
+    ColorScheme cs,
+    double scale,
+  ) async {
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final items = ['All', 'Success', 'Pending', 'Failed'];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('Transactions Report', style: headerStyle),
-                    pw.SizedBox(height: 6),
-                    pw.Text('Status Filter', style: labelStyle),
-                    pw.Text(_statusFilter, style: pw.TextStyle(fontSize: 10)),
-                  ],
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text('Generated', style: labelStyle),
-                    pw.Text(generatedAtText, style: pw.TextStyle(fontSize: 10)),
-                    pw.SizedBox(height: 6),
-                    pw.Text('Total Records', style: labelStyle),
-                    pw.Text('$total', style: pw.TextStyle(fontSize: 10)),
-                  ],
+                const SizedBox(height: 12),
+                Text(
+                  'Filter Status',
+                  style: AppFonts.roboto(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: MediaQuery.of(ctx).size.height * 0.7,
+                  child: ListView.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, index) {
+                      final item = items[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        title: Text(
+                          item,
+                          style: AppFonts.roboto(
+                            fontSize: 14 * scale,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () => Navigator.pop(ctx, item),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
-          pw.SizedBox(height: 12),
-          pw.Row(
-            children: [
-              _pdfSummaryCard('Total', '$total', PdfColors.blue900, labelStyle, valueStyle),
-              pw.SizedBox(width: 8),
-              _pdfSummaryCard('Success', '$successCount', PdfColors.green800, labelStyle, valueStyle),
-              pw.SizedBox(width: 8),
-              _pdfSummaryCard('Pending', '$pendingCount', PdfColors.orange800, labelStyle, valueStyle),
-              pw.SizedBox(width: 8),
-              _pdfSummaryCard('Failed', '$failedCount', PdfColors.red800, labelStyle, valueStyle),
-            ],
-          ),
-          pw.SizedBox(height: 12),
-          _pdfTransactionsTable(items, tableHeaderStyle, tableCellStyle),
-        ],
-      ),
-    );
-
-    final filename =
-        'user_transactions_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final dir = await _resolveDownloadDir();
-    final file = File('${dir.path}${Platform.pathSeparator}$filename');
-    await file.writeAsBytes(await doc.save());
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Saved: ${file.path}'),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  }
-
-  pw.Widget _pdfSummaryCard(
-    String label,
-    String value,
-    PdfColor color,
-    pw.TextStyle labelStyle,
-    pw.TextStyle valueStyle,
-  ) {
-    return pw.Expanded(
-      child: pw.Container(
-        padding: const pw.EdgeInsets.all(12),
-        decoration: pw.BoxDecoration(
-          color: PdfColors.grey100,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-          border: pw.Border.all(color: PdfColors.grey300),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(label, style: labelStyle),
-            pw.SizedBox(height: 6),
-            pw.Text(value, style: valueStyle.copyWith(color: color)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  pw.Widget _pdfTransactionsTable(
-    List<AdminTransactionItem> items,
-    pw.TextStyle tableHeaderStyle,
-    pw.TextStyle tableCellStyle,
-  ) {
-    final headers = [
-      'Date',
-      'Name',
-      'Amount',
-      'Status',
-      'Mode',
-      'Reference',
-    ];
-
-    final data = items.map((t) {
-      final date = _formatDateTime(t.createdAt).replaceAll('\n', ' ');
-      final name = _transactionName(t);
-      final amount = _formatAmount(t.amount, t.currency);
-      final status = t.statusLabel;
-      final mode = _titleCase(t.raw['paymentMode']?.toString() ?? '—');
-      final reference = t.raw['reference']?.toString() ?? t.reference;
-      return [date, name, amount, status, mode, reference];
-    }).toList();
-
-    return pw.Table.fromTextArray(
-      headers: headers,
-      data: data,
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
-      headerStyle: tableHeaderStyle,
-      cellStyle: tableCellStyle,
-      headerAlignment: pw.Alignment.centerLeft,
-      cellAlignment: pw.Alignment.centerLeft,
-      rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
-      oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
-      cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(1.7),
-        1: const pw.FlexColumnWidth(1.8),
-        2: const pw.FlexColumnWidth(1.1),
-        3: const pw.FlexColumnWidth(1.0),
-        4: const pw.FlexColumnWidth(1.0),
-        5: const pw.FlexColumnWidth(2.4),
+        );
       },
     );
-  }
-
-  Future<Directory> _resolveDownloadDir() async {
-    if (Platform.isAndroid) {
-      final androidDir = Directory('/storage/emulated/0/Download');
-      if (await androidDir.exists()) return androidDir;
+    if (chosen != null) {
+      setState(() => _statusFilter = chosen);
+      _loadTransactions();
     }
-    if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-      final home =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-      if (home != null && home.trim().isNotEmpty) {
-        final dl = Directory('$home${Platform.pathSeparator}Downloads');
-        if (await dl.exists()) return dl;
-      }
-    }
-    return Directory.systemTemp;
-  }
-
-  Widget _summaryCard(
-    BuildContext context, {
-    required double width,
-    required String title,
-    required String value,
-    required double titleSize,
-    required double valueSize,
-    required IconData icon,
-    required double padding,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: width,
-      padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding - 2),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: AppFonts.roboto(
-                  fontSize: titleSize,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface.withOpacity(0.7),
-                ),
-              ),
-              Icon(icon, size: titleSize + 2, color: cs.onSurface),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: AppFonts.roboto(
-              fontSize: valueSize,
-              height: 24 / 18,
-              fontWeight: FontWeight.w800,
-              color: cs.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statusPill(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required Color color,
-    required double scale,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? cs.surfaceContainerHighest
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppFonts.roboto(
-              fontSize: 12 * scale,
-              height: 16 / 12,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface.withOpacity(0.75),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: AppFonts.roboto(
-              fontSize: 12 * scale,
-              height: 16 / 12,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _transactionName(AdminTransactionItem t) {
-    final raw = t.raw;
-    String? name;
-    if (raw['fromUser'] is Map) {
-      name = (raw['fromUser'] as Map)['name']?.toString();
-    }
-    if ((name ?? '').isEmpty && raw['user'] is Map) {
-      name = (raw['user'] as Map)['name']?.toString();
-    }
-    if ((name ?? '').isEmpty && raw['actor'] is Map) {
-      name = (raw['actor'] as Map)['name']?.toString();
-    }
-    if ((name ?? '').isEmpty) {
-      name = raw['fromUserName']?.toString();
-    }
-    if ((name ?? '').isEmpty) {
-      name = raw['name']?.toString();
-    }
-    return _safe(name ?? '—');
-  }
-
-  String _transactionEmail(AdminTransactionItem t) {
-    final raw = t.raw;
-    String? email;
-    if (raw['fromUser'] is Map) {
-      email = (raw['fromUser'] as Map)['email']?.toString();
-    }
-    if ((email ?? '').isEmpty && raw['user'] is Map) {
-      email = (raw['user'] as Map)['email']?.toString();
-    }
-    if ((email ?? '').isEmpty) {
-      email = raw['fromUserEmail']?.toString();
-    }
-    if ((email ?? '').isEmpty) {
-      email = raw['email']?.toString();
-    }
-    return _safe(email ?? '');
-  }
-
-  void _applyDateRange(String label) {
-    final now = DateTime.now();
-    DateTime from;
-    DateTime to;
-    if (label == 'Today') {
-      from = DateTime(now.year, now.month, now.day);
-      to = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    } else if (label == 'Last 7 days') {
-      from = now.subtract(const Duration(days: 6));
-      to = now;
-    } else if (label == 'Last 30 days') {
-      from = now.subtract(const Duration(days: 29));
-      to = now;
-    } else if (label == 'This month') {
-      from = DateTime(now.year, now.month, 1);
-      to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-    } else {
-      _fromDate = null;
-      _toDate = null;
-      return;
-    }
-    _fromDate = _dateOnly(from);
-    _toDate = _dateOnly(to);
-  }
-
-  String _dateOnly(DateTime dt) {
-    final y = dt.year.toString().padLeft(4, '0');
-    final m = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
   }
 
   @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final padding = AdaptiveUtils.getHorizontalPadding(width) + 6;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final cs = Theme.of(context).colorScheme;
-    final scale = (width / 420).clamp(0.9, 1.0);
-    final labelStyle = AppFonts.roboto(
-      fontSize: 12 * scale,
-      height: 16 / 12,
-      fontWeight: FontWeight.w600,
-      color: cs.onSurface.withOpacity(0.7),
-    );
-
-    final query = _searchController.text.trim().toLowerCase();
-    final allItems = _items ?? const <AdminTransactionItem>[];
-    final rangeStart =
-        _fromDate == null ? null : DateTime.tryParse(_fromDate!);
-    final rangeEnd = _toDate == null
-        ? null
-        : DateTime.tryParse(_toDate!)?.add(const Duration(hours: 23, minutes: 59, seconds: 59));
-
-    final filteredTransactions = allItems.where((t) {
-      final status = t.statusLabel.toLowerCase();
-      final matchesStatus = _statusFilter == 'All' ||
-          (_statusFilter == 'Success' && status.contains('success')) ||
-          (_statusFilter == 'Pending' &&
-              (status.contains('pending') || status.contains('processing'))) ||
-          (_statusFilter == 'Failed' && status.contains('fail'));
-      if (!matchesStatus) return false;
-      if (rangeStart != null || rangeEnd != null) {
-        final created = _tryParseDate(t.createdAt);
-        if (created == null) return false;
-        if (rangeStart != null && created.isBefore(rangeStart)) return false;
-        if (rangeEnd != null && created.isAfter(rangeEnd)) return false;
-      }
-      if (query.isEmpty) return true;
-      final name = _transactionName(t).toLowerCase();
-      final email = _transactionEmail(t).toLowerCase();
-      final reference = (t.raw['reference']?.toString() ?? '').toLowerCase();
-      return name.contains(query) ||
-          email.contains(query) ||
-          reference.contains(query);
-    }).toList();
-
-    final totalTxns = allItems.length;
-    final success = allItems.where((t) {
-      final s = t.statusLabel.toLowerCase();
-      return s.contains('success');
-    }).toList();
-    final pending = allItems.where((t) {
-      final s = t.statusLabel.toLowerCase();
-      return s.contains('pending') || s.contains('processing');
-    }).toList();
-    final failed = allItems.where((t) {
-      final s = t.statusLabel.toLowerCase();
-      return s.contains('fail') || s.contains('decline');
-    }).toList();
-    final revenue =
-        success.fold<double>(0, (sum, t) => sum + _parseAmount(t));
-    final successRate =
-        totalTxns == 0 ? 0 : ((success.length / totalTxns) * 100).round();
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? OpenVtsColors.panelDark
-          : OpenVtsColors.panelLight,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                padding,
-                topPadding + AppUtils.appBarHeightCustom + 28,
-                padding,
-                padding,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: cs.onSurface.withOpacity(0.1),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Transactions',
-                            style: AppUtils.headlineSmallBase.copyWith(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const SizedBox(height: 4),
-                          Text('Date Range', style: labelStyle),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () async {
-                              final chosen =
-                                  await showModalBottomSheet<String>(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: cs.surface,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                ),
-                                builder: (ctx) {
-                                  final items = [
-                                    'Today',
-                                    'Last 7 days',
-                                    'Last 30 days',
-                                    'This month',
-                                  ];
-                                  return SafeArea(
-                                    child: Padding(
-                                      padding:
-                                          const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 42,
-                                            height: 4,
-                                            decoration: BoxDecoration(
-                                              color: cs.onSurface
-                                                  .withOpacity(0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(2),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            'Select Date Range',
-                                            style: AppFonts.roboto(
-                                              fontWeight: FontWeight.w600,
-                                              color: cs.onSurface,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          SizedBox(
-                                            height: MediaQuery.of(ctx)
-                                                    .size
-                                                    .height *
-                                                0.7,
-                                            child: ListView.separated(
-                                              itemCount: items.length,
-                                              separatorBuilder: (_, __) =>
-                                                  const SizedBox(height: 8),
-                                              itemBuilder: (_, index) {
-                                                final item = items[index];
-                                                return ListTile(
-                                                  contentPadding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                  ),
-                                                  title: Text(
-                                                    item,
-                                                    style: AppFonts.roboto(
-                                                      fontSize: 14 * scale,
-                                                      height: 20 / 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  onTap: () =>
-                                                      Navigator.pop(ctx, item),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                              if (chosen != null) {
-                                setState(() => _selectedRange = chosen);
-                                _applyDateRange(chosen);
-                                _loadTransactions();
-                              }
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: cs.onSurface.withOpacity(0.12),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _selectedRange ?? 'Select range',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppFonts.roboto(
-                                        fontSize: 14 * scale,
-                                        height: 20 / 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: cs.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.expand_more,
-                                    color: cs.onSurface.withOpacity(0.6),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(
-                        AdaptiveUtils.getHorizontalPadding(width),
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: cs.onSurface.withOpacity(0.08),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Overview',
-                            style: AppUtils.headlineSmallBase.copyWith(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          SizedBox(
-                            height:
-                                AdaptiveUtils.getLeftSectionSpacing(width) + 8,
-                          ),
-                          if (_loading)
-                            const AppShimmer(
-                              width: double.infinity,
-                              height: 120,
-                              radius: 16,
-                            )
-                          else
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final spacing = AdaptiveUtils
-                                        .getLeftSectionSpacing(width) +
-                                    6;
-                                final maxWidth = constraints.maxWidth;
-                                final columns = 2;
-                                final totalSpacing = spacing * (columns - 1);
-                                final itemWidth =
-                                    (maxWidth - totalSpacing) / columns;
-                                final titleFontSize =
-                                    AdaptiveUtils.getTitleFontSize(width) + 1;
-                                final valueFontSize =
-                                    AdaptiveUtils.getSubtitleFontSize(width) + 4;
-                                return Wrap(
-                                  spacing: spacing,
-                                  runSpacing: spacing,
-                                  children: [
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'REVENUE',
-                                      value: _formatInrCompact(revenue),
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.payments,
-                                      padding: spacing,
-                                    ),
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'SUCCESSFUL',
-                                      value: '${success.length}',
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.check_circle,
-                                      padding: spacing,
-                                    ),
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'PENDING',
-                                      value: '${pending.length}',
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.schedule,
-                                      padding: spacing,
-                                    ),
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'FAILED',
-                                      value: '${failed.length}',
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.cancel,
-                                      padding: spacing,
-                                    ),
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'SUCCESS RATE',
-                                      value: '$successRate%',
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.percent,
-                                      padding: spacing,
-                                    ),
-                                    _summaryCard(
-                                      context,
-                                      width: itemWidth,
-                                      title: 'TOTAL TXNS',
-                                      value: '$totalTxns',
-                                      titleSize: titleFontSize,
-                                      valueSize: valueFontSize,
-                                      icon: Symbols.receipt_long,
-                                      padding: spacing,
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: cs.onSurface.withOpacity(0.1),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Transaction Status',
-                            style: AppUtils.headlineSmallBase.copyWith(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _statusPill(
-                                context,
-                                label: 'Success',
-                                value: '$successRate%',
-                                color: cs.primary,
-                                scale: scale,
-                              ),
-                              const SizedBox(width: 10),
-                              _statusPill(
-                                context,
-                                label: 'Pending',
-                                value:
-                                    '${totalTxns == 0 ? 0 : ((pending.length / totalTxns) * 100).round()}%',
-                                color: cs.primary.withOpacity(0.7),
-                                scale: scale,
-                              ),
-                              const SizedBox(width: 10),
-                              _statusPill(
-                                context,
-                                label: 'Failed',
-                                value:
-                                    '${totalTxns == 0 ? 0 : ((failed.length / totalTxns) * 100).round()}%',
-                                color: cs.primary.withOpacity(0.5),
-                                scale: scale,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(
-                              value: totalTxns == 0
-                                  ? 0
-                                  : (success.length / totalTxns).clamp(0, 1),
-                              minHeight: 8,
-                              backgroundColor: cs.onSurface.withOpacity(0.08),
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.primary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(color: cs.surfaceContainerHighest),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Transactions',
-                            style: AppUtils.headlineSmallBase.copyWith(
-                              fontSize:
-                                  AdaptiveUtils.getSubtitleFontSize(width) + 2,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            height:
-                                AdaptiveUtils.getHorizontalPadding(width) * 3.5,
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: cs.onSurface.withOpacity(0.1),
-                              ),
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              style: AppFonts.roboto(
-                                fontSize: 14 * scale,
-                                height: 20 / 14,
-                                color: cs.onSurface,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Search name, email, or reference',
-                                hintStyle: AppFonts.roboto(
-                                  color: cs.onSurface.withOpacity(0.5),
-                                  fontSize: 12 * scale,
-                                  height: 16 / 12,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  size: AdaptiveUtils.getIconSize(width),
-                                  color: cs.onSurface,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal:
-                                      AdaptiveUtils.getHorizontalPadding(width),
-                                  vertical:
-                                      AdaptiveUtils.getHorizontalPadding(width),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () async {
-                                    final chosen =
-                                        await showModalBottomSheet<String>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: cs.surface,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16),
-                                        ),
-                                      ),
-                                      builder: (ctx) {
-                                        final items = [
-                                          'All',
-                                          'Success',
-                                          'Pending',
-                                          'Failed',
-                                        ];
-                                        return SafeArea(
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                              16,
-                                              16,
-                                              16,
-                                              8,
-                                            ),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Container(
-                                                  width: 42,
-                                                  height: 4,
-                                                  decoration: BoxDecoration(
-                                                    color: cs.onSurface
-                                                        .withOpacity(0.2),
-                                                    borderRadius:
-                                                        BorderRadius.circular(2),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Text(
-                                                  'Filter Status',
-                                                  style: AppFonts.roboto(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: cs.onSurface,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 12),
-                                                SizedBox(
-                                                  height: MediaQuery.of(ctx)
-                                                          .size
-                                                          .height *
-                                                      0.7,
-                                                  child: ListView.separated(
-                                                    itemCount: items.length,
-                                                    separatorBuilder: (_, __) =>
-                                                        const SizedBox(
-                                                      height: 8,
-                                                    ),
-                                                    itemBuilder: (_, index) {
-                                                      final item = items[index];
-                                                      return ListTile(
-                                                        contentPadding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 6,
-                                                        ),
-                                                        title: Text(
-                                                          item,
-                                                          style:
-                                                              AppFonts.roboto(
-                                                            fontSize: 14 * scale,
-                                                            height: 20 / 14,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                        onTap: () =>
-                                                            Navigator.pop(
-                                                          ctx,
-                                                          item,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                    if (chosen != null) {
-                                      setState(() => _statusFilter = chosen);
-                                      _loadTransactions();
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: cs.onSurface.withOpacity(0.12),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.tune,
-                                            size: 16 * scale,
-                                            color: cs.onSurface.withOpacity(0.7),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Filter',
-                                            style: AppFonts.roboto(
-                                              fontSize: 12 * scale,
-                                              height: 16 / 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: cs.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: _loadTransactions,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: cs.onSurface.withOpacity(0.12),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.refresh,
-                                            size: 16 * scale,
-                                            color: cs.onSurface.withOpacity(0.7),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Refresh',
-                                            style: AppFonts.roboto(
-                                              fontSize: 12 * scale,
-                                              height: 16 / 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: cs.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _showExportOptions(
-                                    filteredTransactions,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: cs.onSurface.withOpacity(0.12),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.upload,
-                                          size: 16 * scale,
-                                          color: cs.onSurface.withOpacity(0.7),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Export',
-                                          style: AppFonts.roboto(
-                                            fontSize: 12 * scale,
-                                            height: 16 / 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: cs.onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ...filteredTransactions.map((t) {
-                            final name = _transactionName(t);
-                            final dateText = _formatDateTime(t.createdAt);
-                            final amount = _formatAmount(t.amount, t.currency);
-                            final (statusText, statusIcon, statusColor) =
-                                _statusMeta(t.statusLabel, cs);
-                            final mode = _titleCase(
-                              t.raw['paymentMode']?.toString() ?? '—',
-                            );
-                            final type = _titleCase(
-                              t.raw['paymentType']?.toString() ?? '—',
-                            );
-                            final reference = t.raw['reference']?.toString() ??
-                                t.reference;
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: cs.surface,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(14),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 40 * scale,
-                                          height: 40 * scale,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            color: Theme.of(context)
-                                                        .brightness ==
-                                                    Brightness.dark
-                                                ? cs.surfaceContainerHighest
-                                                : Colors.grey.shade50,
-                                            border: Border.all(
-                                              color:
-                                                  cs.outline.withOpacity(0.3),
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.person_outline,
-                                            size: 18 * scale,
-                                            color: cs.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                name,
-                                                style: AppFonts.roboto(
-                                                  fontSize: 14 * scale,
-                                                  height: 20 / 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: cs.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                dateText,
-                                                style: AppFonts.roboto(
-                                                  fontSize: 12 * scale,
-                                                  height: 16 / 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: cs.onSurface
-                                                      .withOpacity(0.6),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                              amount,
-                                              style: AppFonts.roboto(
-                                                fontSize: 14 * scale,
-                                                height: 20 / 14,
-                                                fontWeight: FontWeight.w700,
-                                                color: cs.onSurface,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                            .brightness ==
-                                                        Brightness.dark
-                                                    ? cs.surfaceContainerHighest
-                                                    : Colors.grey.shade50,
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    statusIcon,
-                                                    size: 14 * scale,
-                                                    color: statusColor,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    statusText,
-                                                    style: AppFonts.roboto(
-                                                      fontSize: 11 * scale,
-                                                      height: 14 / 11,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: statusColor,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: cs.onSurface
-                                                    .withOpacity(0.12),
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Mode',
-                                                  style: AppFonts.roboto(
-                                                    fontSize: 11 * scale,
-                                                    height: 14 / 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: cs.onSurface
-                                                        .withOpacity(0.6),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  mode,
-                                                  style: AppFonts.roboto(
-                                                    fontSize: 13 * scale,
-                                                    height: 18 / 13,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: cs.onSurface,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: cs.onSurface
-                                                    .withOpacity(0.12),
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Type',
-                                                  style: AppFonts.roboto(
-                                                    fontSize: 11 * scale,
-                                                    height: 14 / 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: cs.onSurface
-                                                        .withOpacity(0.6),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  type,
-                                                  style: AppFonts.roboto(
-                                                    fontSize: 13 * scale,
-                                                    height: 18 / 13,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: cs.onSurface,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: cs.onSurface.withOpacity(0.12),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '# Reference',
-                                            style: AppFonts.roboto(
-                                              fontSize: 11 * scale,
-                                              height: 14 / 11,
-                                              fontWeight: FontWeight.w500,
-                                              color: cs.onSurface
-                                                  .withOpacity(0.6),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            reference.isEmpty ? '—' : reference,
-                                            style: AppFonts.roboto(
-                                              fontSize: 13 * scale,
-                                              height: 18 / 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: cs.onSurface,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: padding,
-            right: padding,
-            top: 0,
-            child: Container(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? OpenVtsColors.panelDark
-                  : OpenVtsColors.panelLight,
-              child: const UserHomeAppBar(
-                title: 'Transactions',
-                leadingIcon: Icons.receipt_long,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  Widget build(BuildContext context) => _buildTransactionScreen(context);
 }
-
-

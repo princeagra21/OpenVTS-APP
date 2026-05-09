@@ -22,6 +22,17 @@ class SupportRoleConfig {
 class SupportRoleConfigs {
   const SupportRoleConfigs._();
 
+  static SupportRoleConfig forRole(SupportRole role) {
+    switch (role) {
+      case SupportRole.admin:
+        return admin;
+      case SupportRole.user:
+        return user;
+      case SupportRole.superadmin:
+        return superadmin;
+    }
+  }
+
   static const admin = SupportRoleConfig(
     role: SupportRole.admin,
     title: 'Support Inbox',

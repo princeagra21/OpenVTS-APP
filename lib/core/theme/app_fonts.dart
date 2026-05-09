@@ -1,4 +1,5 @@
-import 'dart:ui' show FontFeature, FontVariation, Locale, Shadow, TextLeadingDistribution;
+import 'dart:ui'
+    show FontFeature, FontVariation, Locale, Shadow, TextLeadingDistribution;
 
 import 'package:flutter/material.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
@@ -63,6 +64,8 @@ class AppFonts {
     );
   }
 
+  /// Use OpenVtsTypography or Theme text styles.
+  @Deprecated('Use OpenVtsTypography or Theme text styles.')
   static TextStyle roboto({
     bool? inherit,
     Color? color,

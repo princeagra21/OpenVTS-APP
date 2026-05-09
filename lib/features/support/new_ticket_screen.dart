@@ -656,28 +656,24 @@ class _SupportNewTicketScreenState extends State<SupportNewTicketScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    TextField(
+                    OpenVtsTextField(
                       controller: _titleController,
                       maxLength: _config.role == SupportRole.superadmin
                           ? 30
                           : 60,
-                      decoration: const InputDecoration(
-                        labelText: 'Title',
-                        hintText: 'Brief description of the issue',
-                      ),
+                      labelText: 'Title',
+                      hintText: 'Brief description of the issue',
                     ),
                     const SizedBox(height: 8),
-                    TextField(
+                    OpenVtsTextField(
                       controller: _messageController,
                       minLines: 4,
                       maxLines: 7,
                       maxLength: _config.role == SupportRole.superadmin
                           ? 1000
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Message',
-                        hintText: 'Describe the issue in detail',
-                      ),
+                      labelText: 'Message',
+                      hintText: 'Describe the issue in detail',
                     ),
                     if (_showAttachmentSection) ...[
                       const SizedBox(height: 12),

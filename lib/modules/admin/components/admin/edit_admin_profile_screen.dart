@@ -15,6 +15,9 @@ import 'package:open_vts/core/repositories/admin_repository.dart';
 import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
+import 'package:open_vts/design_system/components/open_vts_modal.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:flutter/material.dart';
 
 class EditAdminProfileScreen extends StatefulWidget {
@@ -237,35 +240,6 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
     _snackOnce('Profile picture removed (UI only for now)');
   }
 
-  InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.transparent,
-      hintText: hint,
-      hintStyle: AppFonts.roboto(
-        color: colorScheme.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(
-          MediaQuery.of(context).size.width,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      prefixIconConstraints: const BoxConstraints(minWidth: 48),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _countriesToken?.cancel('dispose');
@@ -294,7 +268,24 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   void _snackOnce(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    final text = msg.toLowerCase();
+    if (text.contains("couldn't") ||
+        text.contains('error') ||
+        text.contains('not authorized')) {
+      OpenVtsFeedback.error(context, msg);
+      return;
+    }
+    if (text.startsWith('please') ||
+        text.startsWith('select') ||
+        text.startsWith('no ')) {
+      OpenVtsFeedback.warning(context, msg);
+      return;
+    }
+    if (text.contains('updated')) {
+      OpenVtsFeedback.success(context, msg);
+      return;
+    }
+    OpenVtsFeedback.info(context, msg);
   }
 
   String _mobilePrefix() {
@@ -511,16 +502,11 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
       MediaQuery.of(context).size.width,
     );
 
-    return showModalBottomSheet<T>(
+    return OpenVtsModal.showBottomSheet<T>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: SizedBox(
+      child: Builder(
+        builder: (ctx) {
+          return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.72,
             child: StatefulBuilder(
               builder: (context, setSheetState) {
@@ -565,27 +551,14 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      TextField(
+                      OpenVtsTextField(
                         controller: searchController,
                         onChanged: (value) =>
                             setSheetState(() => query = value),
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest
-                              .withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
+                        hintText: 'Search',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: colorScheme.onSurface.withOpacity(0.5),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -628,9 +601,9 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 );
               },
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -956,39 +929,24 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      TextField(
+                      OpenVtsTextField(
                         controller: _nameController,
-                        style: AppFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Full Name',
+                        prefixIcon: Icon(
+                          Icons.person_outline,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration:
-                            _minimalDecoration(
-                              context,
-                              hint: 'Full Name',
-                            ).copyWith(
-                              prefixIcon: Icon(
-                                Icons.person_outline,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _emailController,
-                        style: AppFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Email',
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration: _minimalDecoration(context, hint: 'Email')
-                            .copyWith(
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -1025,150 +983,101 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
-                              style: AppFonts.roboto(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              hintText: 'Phone Number',
+                              prefixIcon: Icon(
+                                Icons.phone_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: 'Phone Number',
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.phone_outlined,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                  ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _addressController,
-                        style: AppFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        hintText: 'Address Line',
+                        prefixIcon: Icon(
+                          Icons.location_on_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration:
-                            _minimalDecoration(
-                              context,
-                              hint: 'Address Line',
-                            ).copyWith(
-                              prefixIcon: Icon(
-                                Icons.location_on_outlined,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                            ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _countryController,
                         readOnly: true,
-                        style: AppFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        onTap: _pickCountry,
+                        hintText: 'Country Code',
+                        prefixIcon: Icon(
+                          Icons.public,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration:
-                            _minimalDecoration(
-                              context,
-                              hint: 'Country Code',
-                            ).copyWith(
-                              prefixIcon: Icon(
-                                Icons.public,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: _pickCountry,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ),
+                        suffixIcon: IconButton(
+                          onPressed: _pickCountry,
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                      OpenVtsTextField(
                         controller: _stateController,
                         readOnly: true,
-                        style: AppFonts.roboto(
-                          fontSize: labelSize,
-                          color: colorScheme.onSurface,
+                        onTap: _pickState,
+                        hintText: 'State',
+                        prefixIcon: Icon(
+                          Icons.flag_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
                         ),
-                        decoration: _minimalDecoration(context, hint: 'State')
-                            .copyWith(
-                              prefixIcon: Icon(
-                                Icons.flag_outlined,
-                                color: colorScheme.primary,
-                                size: 22,
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: _pickState,
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ),
+                        suffixIcon: IconButton(
+                          onPressed: _pickState,
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _cityController,
                               readOnly: true,
-                              style: AppFonts.roboto(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              onTap: _pickCity,
+                              hintText: 'City',
+                              prefixIcon: Icon(
+                                Icons.location_city_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: 'City',
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.location_city_outlined,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                    suffixIcon: IconButton(
-                                      onPressed: _pickCity,
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ),
+                              suffixIcon: IconButton(
+                                onPressed: _pickCity,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
+                            child: OpenVtsTextField(
                               controller: _pincodeController,
                               keyboardType: TextInputType.number,
-                              style: AppFonts.roboto(
-                                fontSize: labelSize,
-                                color: colorScheme.onSurface,
+                              hintText: 'Pincode',
+                              prefixIcon: Icon(
+                                Icons.pin_drop_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
                               ),
-                              decoration:
-                                  _minimalDecoration(
-                                    context,
-                                    hint: 'Pincode',
-                                  ).copyWith(
-                                    prefixIcon: Icon(
-                                      Icons.pin_drop_outlined,
-                                      color: colorScheme.primary,
-                                      size: 22,
-                                    ),
-                                  ),
                             ),
                           ),
                         ],

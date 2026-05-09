@@ -1,4 +1,4 @@
-import 'package:open_vts/core/repositories/user_vehicles_repository.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:open_vts/shared/map/open_vts_map_repository.dart';
@@ -19,11 +19,9 @@ class MapScreen extends StatelessWidget {
       showAppBar: false,
       horizontalPadding: 0.0,
       child: OpenVtsMapScreen(
-        repositoryBuilder: (apiClient) {
-          return UserMapTelemetryAdapter(
-            repository: UserVehiclesRepository(api: apiClient),
-          );
-        },
+        repository: UserMapTelemetryAdapter(
+          repository: AppContainer.instance.userVehiclesRepository,
+        ),
         appBarBuilder: (context) {
           return const UserHomeAppBar(
             title: 'Map',

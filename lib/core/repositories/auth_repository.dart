@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:open_vts/core/auth/auth_token_parser.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_envelope.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -171,75 +172,11 @@ class AuthRepository {
   }
 
   static String? extractToken(Object? data) {
-    if (data is Map) {
-      return _extractTokenFromMap(data);
-    }
-    return null;
+    return AuthTokenParser.extractAccessToken(data);
   }
 
   static String? extractRefreshToken(Object? data) {
-    if (data is Map) {
-      return _extractRefreshTokenFromMap(data);
-    }
-    return null;
-  }
-
-  static String? _extractTokenFromMap(Map map) {
-    String? asToken(Object? v) {
-      if (v is String && v.trim().isNotEmpty) return v;
-      return null;
-    }
-
-    final direct = asToken(
-      map['token'] ?? map['accessToken'] ?? map['access_token'],
-    );
-    if (direct != null) return direct;
-
-    for (final key in const ['data', 'result', 'item', 'payload', 'response']) {
-      final nested = map[key];
-      if (nested is Map) {
-        final token = _extractTokenFromMap(nested);
-        if (token != null) return token;
-      } else if (nested is List) {
-        for (final item in nested) {
-          if (item is Map) {
-            final token = _extractTokenFromMap(item);
-            if (token != null) return token;
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  static String? _extractRefreshTokenFromMap(Map map) {
-    String? asToken(Object? v) {
-      if (v is String && v.trim().isNotEmpty) return v;
-      return null;
-    }
-
-    final direct = asToken(
-      map['refreshToken'] ?? map['refresh_token'] ?? map['refreshToken'],
-    );
-    if (direct != null) return direct;
-
-    for (final key in const ['data', 'result', 'item', 'payload', 'response']) {
-      final nested = map[key];
-      if (nested is Map) {
-        final token = _extractRefreshTokenFromMap(nested);
-        if (token != null) return token;
-      } else if (nested is List) {
-        for (final item in nested) {
-          if (item is Map) {
-            final token = _extractRefreshTokenFromMap(item);
-            if (token != null) return token;
-          }
-        }
-      }
-    }
-
-    return null;
+    return AuthTokenParser.extractRefreshToken(data);
   }
 
   static String? extractRole(Object? data, {String? token}) {

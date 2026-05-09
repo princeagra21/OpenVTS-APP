@@ -1,19 +1,17 @@
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/models/admin_quick_device.dart';
 import 'package:open_vts/core/models/vehicle_type.dart';
 import 'package:open_vts/core/models/pricing_plan.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/design_system/components/open_vts_feedback.dart';
+import 'package:open_vts/design_system/components/open_vts_modal.dart';
 import 'package:open_vts/design_system/components/open_vts_search_field.dart';
 import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:open_vts/design_system/theme/open_vts_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
-import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -51,18 +49,18 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     setState(() => _isLoading = true);
     final api = ApiClientProvider.shared();
     final repo = AdminVehiclesRepository(api: api);
-    
+
     final usersRes = await AdminUsersRepository(api: api).getUsers(limit: 100);
     final devicesRes = await repo.getQuickDevices();
     final vTypesRes = await repo.getVehicleTypes();
     final plansRes = await repo.getPricingPlans();
-    
+
     if (!mounted) return;
     usersRes.when(success: (u) => _users = u, failure: (_) {});
     devicesRes.when(success: (d) => _quickDevices = d, failure: (_) {});
     vTypesRes.when(success: (v) => _vehicleTypes = v, failure: (_) {});
     plansRes.when(success: (p) => _plans = p, failure: (_) {});
-    
+
     setState(() => _isLoading = false);
   }
 
@@ -108,7 +106,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         Navigator.pop(context, true);
       },
       failure: (err) {
-        OpenVtsFeedback.error(context, "Failed to add vehicle: ${err.toString()}");
+        OpenVtsFeedback.error(
+          context,
+          "Failed to add vehicle: ${err.toString()}",
+        );
       },
     );
   }
@@ -119,28 +120,21 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     required String Function(T item) labelFor,
   }) async {
     final cs = Theme.of(context).colorScheme;
-    final width = MediaQuery.of(context).size.width;
-    final fs = AdaptiveUtils.getTitleFontSize(width);
     final searchController = TextEditingController();
     String query = '';
 
-    return showModalBottomSheet<T>(
+    return OpenVtsModal.showBottomSheet<T>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: SizedBox(
+      child: Builder(
+        builder: (ctx) {
+          return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.72,
             child: StatefulBuilder(
               builder: (context, setSheetState) {
                 final filtered = items.where((item) {
-                  return labelFor(item)
-                      .toLowerCase()
-                      .contains(query.toLowerCase());
+                  return labelFor(
+                    item,
+                  ).toLowerCase().contains(query.toLowerCase());
                 }).toList();
 
                 return Padding(
@@ -153,7 +147,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium.copyWith(fontWeight: FontWeight.w700)),
+                              style: OpenVtsTypography.primary(
+                                OpenVtsTypography.headingMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                           InkWell(
@@ -194,7 +192,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: OpenVtsTypography.primary(OpenVtsTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                                style: OpenVtsTypography.primary(
+                                  OpenVtsTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                               onTap: () => Navigator.pop(ctx, item),
                             );
@@ -206,9 +208,9 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 );
               },
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -252,18 +254,29 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     setState(() => selectedPlan = picked.id.toString());
   }
 
-  Widget _buildSelectionField(String label, String value, String hint, IconData icon, VoidCallback onTap) {
+  Widget _buildSelectionField(
+    String label,
+    String value,
+    String hint,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     final w = MediaQuery.of(context).size.width;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600))),
+        Text(
+          label,
+          style: OpenVtsTypography.primary(
+            OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
         const SizedBox(height: 8),
         _SelectionField(
-            value: value.isEmpty ? hint : value,
-            icon: icon,
-            width: double.infinity,
-            onTap: onTap
+          value: value.isEmpty ? hint : value,
+          icon: icon,
+          width: double.infinity,
+          onTap: onTap,
         ),
       ],
     );
@@ -282,7 +295,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       backgroundColor: cs.surface,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding + 6, vertical: padding),
+          padding: EdgeInsets.symmetric(
+            horizontal: padding + 6,
+            vertical: padding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -291,7 +307,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 children: [
                   Text(
                     "Add Vehicle",
-                    style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium.copyWith(fontWeight: FontWeight.w700)),
+                    style: OpenVtsTypography.primary(
+                      OpenVtsTypography.headingMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
@@ -315,7 +335,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               const SizedBox(height: 8),
               Text(
                 "Register a new vehicle",
-                style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
+                style: OpenVtsTypography.secondary(
+                  OpenVtsTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -331,7 +355,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       children: [
                         _buildSelectionField(
                           "Select User *",
-                          _users.any((u) => u.id == selectedUser) ? _users.firstWhere((u) => u.id == selectedUser).fullName : "",
+                          _users.any((u) => u.id == selectedUser)
+                              ? _users
+                                    .firstWhere((u) => u.id == selectedUser)
+                                    .fullName
+                              : "",
                           "Search user...",
                           Icons.person,
                           _pickUser,
@@ -342,14 +370,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           children: [
                             Text(
                               "Vehicle Name *",
-                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                              style: OpenVtsTypography.primary(
+                                OpenVtsTypography.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             OpenVtsTextField(
                               hintText: "e.g. Red Truck",
                               controller: _nameController,
                               prefixIcon: Icon(Icons.directions_car_rounded),
-                              validator: (v) => v?.isEmpty == true ? "Required" : null,
+                              validator: (v) =>
+                                  v?.isEmpty == true ? "Required" : null,
                             ),
                           ],
                         ),
@@ -359,7 +392,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           children: [
                             Text(
                               "Plate No.",
-                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                              style: OpenVtsTypography.primary(
+                                OpenVtsTypography.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             OpenVtsTextField(
@@ -375,7 +412,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           children: [
                             Text(
                               "VIN",
-                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                              style: OpenVtsTypography.primary(
+                                OpenVtsTypography.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             OpenVtsTextField(
@@ -388,7 +429,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         const SizedBox(height: 16),
                         _buildSelectionField(
                           "Vehicle Type *",
-                          selectedVehicleType != null && _vehicleTypes.any((t) => t.id.toString() == selectedVehicleType) ? _vehicleTypes.firstWhere((t) => t.id.toString() == selectedVehicleType).name : "",
+                          selectedVehicleType != null &&
+                                  _vehicleTypes.any(
+                                    (t) =>
+                                        t.id.toString() == selectedVehicleType,
+                                  )
+                              ? _vehicleTypes
+                                    .firstWhere(
+                                      (t) =>
+                                          t.id.toString() ==
+                                          selectedVehicleType,
+                                    )
+                                    .name
+                              : "",
                           "Select type",
                           Icons.category,
                           _pickType,
@@ -404,7 +457,16 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         const SizedBox(height: 16),
                         _buildSelectionField(
                           "Plan *",
-                          selectedPlan != null && _plans.any((p) => p.id.toString() == selectedPlan) ? _plans.firstWhere((p) => p.id.toString() == selectedPlan).name : "",
+                          selectedPlan != null &&
+                                  _plans.any(
+                                    (p) => p.id.toString() == selectedPlan,
+                                  )
+                              ? _plans
+                                    .firstWhere(
+                                      (p) => p.id.toString() == selectedPlan,
+                                    )
+                                    .name
+                              : "",
                           "Select subscription plan",
                           Icons.subscriptions,
                           _pickPlan,
@@ -438,7 +500,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: OpenVtsTypography.primary(OpenVtsTypography.labelLarge.copyWith(fontWeight: FontWeight.w600)),
+                      style: OpenVtsTypography.primary(
+                        OpenVtsTypography.labelLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -463,13 +529,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                             width: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.onPrimary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                cs.onPrimary,
+                              ),
                             ),
                           )
                         : Text(
                             "Add Vehicle",
-                            style: OpenVtsTypography.primary(OpenVtsTypography.labelLarge.copyWith(fontWeight: FontWeight.w600, color: cs.onPrimary)),
+                            style: OpenVtsTypography.primary(
+                              OpenVtsTypography.labelLarge.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: cs.onPrimary,
+                              ),
+                            ),
                           ),
                   ),
                 ),
@@ -478,70 +550,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class StylishTextField extends StatelessWidget {
-  final String label;
-  final String hint;
-  final TextEditingController controller;
-  final IconData prefixIcon;
-  final String? Function(String?)? validator;
-  final double width;
-
-  const StylishTextField({
-    super.key,
-    required this.label,
-    required this.hint,
-    required this.controller,
-    required this.prefixIcon,
-    this.validator,
-    required this.width,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final fs = AdaptiveUtils.getTitleFontSize(width);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppFonts.inter(
-              fontWeight: FontWeight.w600, fontSize: fs),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 55,
-          child: TextFormField(
-            controller: controller,
-            validator: validator,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: AppFonts.inter(
-                color: cs.onSurface.withOpacity(0.6),
-                fontSize: fs,
-              ),
-              prefixIcon: Icon(prefixIcon, color: cs.primary),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide:
-                    BorderSide(color: cs.outline.withOpacity(0.3)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: cs.primary, width: 2),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -592,4 +600,3 @@ class _SelectionField extends StatelessWidget {
     );
   }
 }
-

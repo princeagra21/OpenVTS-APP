@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/file_picker_helper.dart';
-import 'package:open_vts/features/support/support_models.dart';
+import 'package:open_vts/features/support/support_role_config.dart';
 
 class TicketAttachmentPicker extends StatelessWidget {
   const TicketAttachmentPicker({
@@ -52,13 +52,8 @@ class TicketAttachmentPicker extends StatelessWidget {
             children: attachments.map((file) {
               return Chip(
                 label: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 200,
-                  ),
-                  child: Text(
-                    file.filename,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Text(file.filename, overflow: TextOverflow.ellipsis),
                 ),
                 deleteIcon: const Icon(Icons.close, size: 18),
                 onDeleted: submitting ? null : () => onRemove(file),

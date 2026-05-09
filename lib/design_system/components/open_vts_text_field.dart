@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/open_vts_theme.dart';
 
@@ -24,6 +25,9 @@ class OpenVtsTextField extends StatelessWidget {
     this.readOnly = false,
     this.maxLines = 1,
     this.minLines,
+    this.maxLength,
+    this.maxLengthEnforcement,
+    this.inputFormatters,
     this.validator,
     this.autofillHints,
     this.textCapitalization = TextCapitalization.none,
@@ -51,6 +55,9 @@ class OpenVtsTextField extends StatelessWidget {
   final bool readOnly;
   final int? maxLines;
   final int? minLines;
+  final int? maxLength;
+  final MaxLengthEnforcement? maxLengthEnforcement;
+  final List<TextInputFormatter>? inputFormatters;
   // Legacy validator support.
   final FormFieldValidator<String>? validator;
   final Iterable<String>? autofillHints;
@@ -76,6 +83,9 @@ class OpenVtsTextField extends StatelessWidget {
       readOnly: readOnly,
       maxLines: obscureText ? 1 : maxLines,
       minLines: minLines,
+      maxLength: maxLength,
+      maxLengthEnforcement: maxLengthEnforcement,
+      inputFormatters: inputFormatters,
       autofillHints: autofillHints,
       textCapitalization: textCapitalization,
       style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge),
