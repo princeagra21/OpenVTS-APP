@@ -5,7 +5,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/components/open_vts_components.dart';
@@ -199,7 +199,7 @@ class FileCard extends StatelessWidget {
     );
     if (!confirmed || !context.mounted) return;
 
-    final repo = SuperadminRepository(api: ApiClientProvider.shared());
+    final repo = SuperadminRepository(api: AppContainer.instance.apiClient);
     final res = await repo.deleteSuperadminFile(id);
     if (!context.mounted) return;
     if (res.isSuccess) {

@@ -1,6 +1,5 @@
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_log_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -13,7 +12,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
@@ -38,7 +37,7 @@ class _LogsScreenState extends State<LogsScreen> {
   DateTimeRange? _dateRange;
 
   AdminLogsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= AdminLogsRepository(api: _apiClient!);
     return _repo!;
   }

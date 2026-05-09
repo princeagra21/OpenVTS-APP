@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:country_picker/country_picker.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_driver_details.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -8,7 +7,7 @@ import 'package:open_vts/core/repositories/admin_drivers_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminDriverProfileTab extends StatefulWidget {
@@ -69,7 +68,7 @@ class _AdminDriverProfileTabState extends State<AdminDriverProfileTab> {
   }
 
   AdminDriversRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= AdminDriversRepository(api: _api!);
     return _repo!;
   }

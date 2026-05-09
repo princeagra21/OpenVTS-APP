@@ -34,7 +34,7 @@ class SupportTicketDetailsScreen extends StatefulWidget {
        _scope = SupportListScope.all,
        _ticket = _fromAdminTicket(ticket);
 
-  SupportTicketDetailsScreen.superadmin({
+  const SupportTicketDetailsScreen.superadmin({
     super.key,
     required SupportTicketSummary ticket,
   }) : _role = SupportRole.superadmin,

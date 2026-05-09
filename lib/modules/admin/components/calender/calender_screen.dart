@@ -1,16 +1,14 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME
 // EventCalendarScreen (Drop-in Replacement)
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_calendar_event_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_calendar_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
@@ -18,7 +16,6 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
@@ -285,7 +282,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
 
     setState(() => _loadingDay = true);
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarDayDetails(date: key);
       if (!mounted) return;
@@ -437,7 +434,7 @@ class _EventCalendarScreenState extends State<EventCalendarScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminCalendarRepository(api: _api!);
       final res = await _repo!.getCalendarEvents(
         from: _fmtDate(_monthStart(anyDateInMonth)),

@@ -1,4 +1,4 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/add_new_admin_screen.dart
 import 'package:country_picker/country_picker.dart';
@@ -837,7 +837,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
     _superadminRepo ??= SuperadminRepository(api: _api!);
   }
@@ -973,7 +973,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _countriesToken = token;
     setState(() => _loadingCountries = true);
 
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCountries(cancelToken: token);
@@ -1015,7 +1015,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _statesToken = token;
     setState(() => _loadingStates = true);
 
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getStates(countryCode, cancelToken: token);
@@ -1039,7 +1039,7 @@ class _AddNewAdminScreenState extends State<AddNewAdminScreen> {
     _citiesToken = token;
     setState(() => _loadingCities = true);
 
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
 
     final res = await _commonRepo!.getCities(

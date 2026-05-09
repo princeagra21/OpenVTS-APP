@@ -17,7 +17,6 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import '../../layout/app_layout.dart';
 import 'geofence_models.dart';
-import 'widgets/geofence_action_buttons.dart';
 
 part 'geofence_parser_helpers.dart';
 part 'geofence_more_menu.dart';

@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_pricing_plans_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class EditPlanScreen extends StatefulWidget {
@@ -34,7 +33,7 @@ class _EditPlanScreenState extends State<EditPlanScreen> {
   late Map<String, dynamic> plan;
 
   AdminPricingPlansRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= AdminPricingPlansRepository(api: _apiClient!);
     return _repo!;
   }

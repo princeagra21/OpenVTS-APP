@@ -528,7 +528,7 @@ class _ApiConfigHeaderState extends State<ApiConfigHeader> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: selected,
+        initialValue: selected,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: label,

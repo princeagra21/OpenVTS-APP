@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/features/support/new_ticket_screen.dart';
+import 'package:open_vts/features/support/new_ticket/new_ticket_screen.dart';
 
 class NewTicketScreen extends StatelessWidget {
   const NewTicketScreen({super.key});

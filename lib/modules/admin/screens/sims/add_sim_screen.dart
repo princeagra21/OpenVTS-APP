@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/sim_provider_option.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -7,7 +6,7 @@ import 'package:open_vts/core/repositories/admin_simcards_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddSimScreen extends StatefulWidget {
@@ -45,7 +44,7 @@ class _AddSimScreenState extends State<AddSimScreen> {
   AdminSimCardsRepository? _repo;
 
   AdminSimCardsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= AdminSimCardsRepository(api: _apiClient!);
     return _repo!;
   }

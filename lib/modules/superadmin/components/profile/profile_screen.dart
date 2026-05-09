@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_profile.dart';
 import 'package:open_vts/core/models/superadmin_recent_user.dart';
 import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
@@ -16,7 +15,6 @@ import 'package:open_vts/modules/superadmin/components/profile/widget/profile_se
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.shared();
+    _api = AppContainer.instance.apiClient;
     _repo = SuperadminRepository(api: _api!);
   }
 

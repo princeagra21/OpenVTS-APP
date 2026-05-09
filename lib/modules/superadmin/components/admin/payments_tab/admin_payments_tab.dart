@@ -1,26 +1,18 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_recent_transaction.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/payments_tab/add_admin_payment_record_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminPaymentsTab extends StatefulWidget {
   final String adminId;
   final String? adminName;
 
-  const AdminPaymentsTab({
-    super.key,
-    required this.adminId,
-    this.adminName,
-  });
+  const AdminPaymentsTab({super.key, required this.adminId, this.adminName});
 
   @override
   State<AdminPaymentsTab> createState() => _AdminPaymentsTabState();
@@ -30,7 +22,6 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
   bool _loading = false;
   bool _errorShown = false;
   CancelToken? _token;
-  ApiClient? _api;
 
   int _successCount = 0;
   int _pendingCount = 0;
@@ -58,23 +49,17 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-
-      final res = await _api!.get(
-        SuperadminApiPaths.transactions,
-        queryParameters: {
-          'adminId': widget.adminId,
-          'page': 1,
-          'limit': 50,
-          'rk': DateTime.now().millisecondsSinceEpoch,
-        },
-        cancelToken: token,
-      );
+      final res = await AppContainer.instance.superadminRepository
+          .getRecentTransactions(
+            adminId: widget.adminId,
+            page: 1,
+            limit: 50,
+            cancelToken: token,
+          );
       if (!mounted) return;
 
       res.when(
-        success: (data) {
-          final items = _extractTransactions(data);
+        success: (items) {
           int success = 0;
           int pending = 0;
           int failed = 0;
@@ -103,12 +88,12 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
           _errorShown = true;
           final msg = err is ApiException
               ? (err.message.isNotEmpty
-                  ? err.message
-                  : "Couldn't load payments.")
+                    ? err.message
+                    : "Couldn't load payments.")
               : "Couldn't load payments.";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
         },
       );
     } catch (_) {
@@ -116,46 +101,16 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
       setState(() => _loading = false);
       if (_errorShown) return;
       _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load payments.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load payments.")));
     }
-  }
-
-  List<SuperadminRecentTransaction> _extractTransactions(dynamic data) {
-    dynamic cursor = data;
-    if (cursor is Map && cursor['data'] is Map) {
-      cursor = cursor['data'];
-    }
-    if (cursor is Map && cursor['data'] is Map) {
-      cursor = cursor['data'];
-    }
-    if (cursor is Map && cursor['items'] is List) {
-      cursor = cursor['items'];
-    } else if (cursor is Map && cursor['transactions'] is List) {
-      cursor = cursor['transactions'];
-    }
-    final out = <SuperadminRecentTransaction>[];
-    if (cursor is List) {
-      for (final it in cursor) {
-        if (it is Map<String, dynamic>) {
-          out.add(SuperadminRecentTransaction(it));
-        } else if (it is Map) {
-          out.add(SuperadminRecentTransaction(Map<String, dynamic>.from(it)));
-        }
-      }
-    }
-    return out;
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const AppShimmer(
-        width: double.infinity,
-        height: 320,
-        radius: 12,
-      );
+      return const AppShimmer(width: double.infinity, height: 320, radius: 12);
     }
     final cs = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -379,10 +334,7 @@ class _AdminPaymentsTabState extends State<AdminPaymentsTab> {
     return Icons.help_outline;
   }
 
-  Widget _transactionRow(
-    BuildContext context,
-    SuperadminRecentTransaction t,
-  ) {
+  Widget _transactionRow(BuildContext context, SuperadminRecentTransaction t) {
     final cs = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
     final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;

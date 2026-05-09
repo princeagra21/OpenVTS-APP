@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/auth/session_expired_bus.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/interceptors/auth_interceptor.dart';

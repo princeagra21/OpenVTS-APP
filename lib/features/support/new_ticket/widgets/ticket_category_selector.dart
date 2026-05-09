@@ -54,7 +54,7 @@ class TicketCategorySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: DropdownButtonFormField<String>(
-        value: selectedCategory,
+        initialValue: selectedCategory,
         decoration: const InputDecoration(labelText: 'Category'),
         items: _categoryOptions
             .map(

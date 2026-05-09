@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _ensureRepo() {
     _repo ??= AppContainer.instance.superadminRepository;
-    _baseUrl = _repo!.api.dio.options.baseUrl.trim();
+    _baseUrl = AppContainer.instance.appConfig.baseUrl.trim();
   }
 
   Future<void> _loadAccessToken() async {

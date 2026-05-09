@@ -1,10 +1,9 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // lib/screens/notifications/notify_users_screen.dart
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_user_recipient.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -100,7 +99,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     setState(() => _loadingRecipients = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final res = await _repo!.searchRecipients(
@@ -359,7 +358,7 @@ class _NotifyUsersScreenState extends State<NotifyUsersScreen> {
     });
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminNotificationRepository(api: _api!);
 
       final channel = _channels[0] ? 'EMAIL' : 'IN_APP';

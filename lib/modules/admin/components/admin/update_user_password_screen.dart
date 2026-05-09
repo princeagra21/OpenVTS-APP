@@ -1,14 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
+import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 
 class UpdateUserPasswordScreen extends StatefulWidget {
   final String userId;
@@ -16,7 +13,8 @@ class UpdateUserPasswordScreen extends StatefulWidget {
   const UpdateUserPasswordScreen({super.key, required this.userId});
 
   @override
-  State<UpdateUserPasswordScreen> createState() => _UpdateUserPasswordScreenState();
+  State<UpdateUserPasswordScreen> createState() =>
+      _UpdateUserPasswordScreenState();
 }
 
 class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
@@ -30,7 +28,12 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
   bool _submitErrorShown = false;
   DateTime? _lastSubmitAt;
   CancelToken? _submitToken;
-  ApiClient? _api;
+  AdminUsersRepository? _repo;
+
+  AdminUsersRepository _repoOrCreate() {
+    _repo ??= AppContainer.instance.adminUsersRepository;
+    return _repo!;
+  }
 
   @override
   void dispose() {
@@ -61,9 +64,9 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
     }
     if (newPassword != confirmPassword) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
       return;
     }
 
@@ -78,11 +81,9 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
     _submitToken = token;
 
     try {
-      _api ??= ApiClientProvider.shared();
-
-      final res = await _api!.post(
-        AdminApiPaths.updateUserPassword(widget.userId),
-        data: <String, dynamic>{'newPassword': newPassword},
+      final res = await _repoOrCreate().updateUserPassword(
+        widget.userId,
+        newPassword,
         cancelToken: token,
       );
       if (!mounted) return;
@@ -91,9 +92,9 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
         success: (_) {
           if (!mounted) return;
           setState(() => _saving = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password updated')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Password updated')));
           Navigator.pop(context, true);
         },
         failure: (error) {
@@ -110,9 +111,9 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
               msg = error.message;
             }
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
         },
       );
     } catch (_) {
@@ -216,8 +217,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
                     ),
-                    onPressed: () =>
-                        setState(() => _obscureNew = !_obscureNew),
+                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
                 ),
               ),
@@ -247,11 +247,7 @@ class _UpdateUserPasswordScreenState extends State<UpdateUserPasswordScreen> {
               ),
               const Spacer(),
               if (_saving)
-                const AppShimmer(
-                  width: double.infinity,
-                  height: 48,
-                  radius: 16,
-                )
+                const AppShimmer(width: double.infinity, height: 48, radius: 16)
               else
                 SizedBox(
                   width: double.infinity,

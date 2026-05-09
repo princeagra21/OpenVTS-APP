@@ -7,7 +7,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/shared/components/custom_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class RouteLocationPreset {
@@ -77,7 +77,7 @@ class _AddLandmarkScreenState extends State<AddLandmarkScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     return _api!;
   }
 

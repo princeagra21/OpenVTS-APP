@@ -162,9 +162,9 @@ class OpenVtsFeedback {
               ),
         action: hasAction
             ? SnackBarAction(
-                label: actionLabel!,
+                label: actionLabel,
                 textColor: config.iconColor,
-                onPressed: onAction!,
+                onPressed: onAction,
               )
             : null,
       ),

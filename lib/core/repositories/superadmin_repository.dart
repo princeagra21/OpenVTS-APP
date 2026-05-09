@@ -1749,6 +1749,60 @@ class SuperadminRepository {
     );
   }
 
+  Future<Result<List<Map<String, dynamic>>>> getAdminActivityLogs(
+    String adminId, {
+    int? limit,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{};
+    if (limit != null) query['limit'] = limit;
+
+    final res = await api.get(
+      SuperadminApiPaths.adminActivityLogs(adminId),
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          extraKeys: const ['items', 'logs', 'activities'],
+        );
+        final items = <Map<String, dynamic>>[];
+        if (list != null) {
+          for (final item in list) {
+            if (item is Map<String, dynamic>) {
+              items.add(item);
+            } else if (item is Map) {
+              items.add(Map<String, dynamic>.from(item.cast()));
+            }
+          }
+        }
+        return Result.ok(items);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> assignCredits(
+    String adminId, {
+    required int credits,
+    required String activity,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      SuperadminApiPaths.assignCredits(adminId),
+      data: {'credits': credits.toString(), 'activity': activity},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<String>> loginAsAdmin(
     String adminId, {
     CancelToken? cancelToken,
@@ -1876,7 +1930,10 @@ class SuperadminRepository {
   }
 
   Future<Result<void>> requestEmailOtp({CancelToken? cancelToken}) async {
-    final res = await api.post(SuperadminApiPaths.profileVerifyEmailRequest, cancelToken: cancelToken);
+    final res = await api.post(
+      SuperadminApiPaths.profileVerifyEmailRequest,
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
@@ -1884,7 +1941,10 @@ class SuperadminRepository {
   }
 
   Future<Result<void>> requestWhatsappOtp({CancelToken? cancelToken}) async {
-    final res = await api.post(SuperadminApiPaths.profileVerifyWhatsappRequest, cancelToken: cancelToken);
+    final res = await api.post(
+      SuperadminApiPaths.profileVerifyWhatsappRequest,
+      cancelToken: cancelToken,
+    );
     return res.when(
       success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),

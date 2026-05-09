@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/user_subuser_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -13,7 +12,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -63,7 +62,7 @@ class _SubUserScreenState extends State<SubUserScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }

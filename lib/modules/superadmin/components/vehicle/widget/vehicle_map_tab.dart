@@ -1,14 +1,12 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 // components/vehicle/widget/vehicle_map_tab.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 
@@ -78,7 +76,7 @@ class _VehicleMapTabState extends State<VehicleMapTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getVehicleLocation(imei, cancelToken: token);
 

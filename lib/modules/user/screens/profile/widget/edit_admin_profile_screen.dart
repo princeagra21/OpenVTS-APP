@@ -11,7 +11,7 @@ import 'package:open_vts/design_system/components/open_vts_modal.dart';
 import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:country_picker/country_picker.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class EditAdminProfileScreen extends StatefulWidget {
@@ -93,13 +93,13 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
   }
 
   UserProfileRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= UserProfileRepository(api: _api!);
     return _repo!;
   }
 
   CommonRepository _commonRepoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }

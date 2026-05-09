@@ -1,13 +1,11 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/credit_history_tab.dart
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/admin/credit_history/add_deduct_credit_screen.dart';
 import 'package:open_vts/modules/superadmin/components/admin/credit_history/credit_history_details_screen.dart';
@@ -76,7 +74,7 @@ class _CreditHistoryTabState extends State<CreditHistoryTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getCreditLogs(

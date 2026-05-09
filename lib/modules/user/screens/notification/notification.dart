@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_notification_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -10,7 +9,7 @@ import 'package:open_vts/core/widgets/push_notification_banner.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/modules/user/layout/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
@@ -97,7 +96,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   RoleNotificationsRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= RoleNotificationsRepository(
       api: _api!,
       pathPrefix: AppRoutePaths.userNotifications,

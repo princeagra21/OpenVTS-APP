@@ -1,15 +1,13 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 // UPDATED: components/activity/recent_activity_box.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
 import 'package:open_vts/core/models/superadmin_recent_transaction.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -235,7 +233,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentVehicles = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentVehicles(cancelToken: token);
@@ -311,7 +309,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentTransactions = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentTransactions(
@@ -386,7 +384,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     setState(() => _loadingRecentUsers = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getRecentUsers(cancelToken: token);

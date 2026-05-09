@@ -6,7 +6,6 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/design_system/components/open_vts_components.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/features/support/new_ticket/new_ticket_controller.dart';
-import 'package:open_vts/features/support/new_ticket/new_ticket_state.dart';
 import 'package:open_vts/features/support/new_ticket/new_ticket_validators.dart';
 import 'package:open_vts/features/support/new_ticket/widgets/ticket_admin_selector.dart';
 import 'package:open_vts/features/support/new_ticket/widgets/ticket_attachment_picker.dart';

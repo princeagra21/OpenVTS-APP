@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_transaction_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
@@ -12,7 +10,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -41,13 +39,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   CancelToken? _loadToken;
   Timer? _searchDebounce;
-
-  ApiClient? _apiClient;
-
-  ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
-    return _apiClient!;
-  }
 
   @override
   void initState() {
@@ -90,8 +81,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void _showLoadErrorOnce(String message) {
     if (_errorShown || !mounted) return;
     _errorShown = true;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadPayments() async {
@@ -103,22 +95,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _loading = true);
 
     try {
-      final api = _apiOrCreate();
-      final query = <String, dynamic>{};
       final search = _searchController.text.trim();
-      if (search.isNotEmpty) query['search'] = search;
       final status = _statusQuery(_statusFilter);
-      if (status != null) query['status'] = status;
-      query['page'] = 1;
-      query['limit'] = 100;
-      if (_fromDate != null) query['from'] = _fromDate;
-      if (_toDate != null) query['to'] = _toDate;
-
-      final res = await api.get(
-        AppRoutePaths.adminPayments,
-        queryParameters: query,
-        cancelToken: token,
-      );
+      final res = await AppContainer.instance.adminTransactionsRepository
+          .getPayments(
+            search: search.isEmpty ? null : search,
+            status: status,
+            page: 1,
+            limit: 100,
+            from: _fromDate,
+            to: _toDate,
+            cancelToken: token,
+          );
 
       if (!mounted) return;
 
@@ -126,22 +114,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       Object? firstError;
 
       res.when(
-        success: (data) {
-          final list = _extractList(
-            data,
-            listKeys: const ['payments', 'transactions', 'items', 'data'],
-          );
-          items = list
-              .whereType<Map>()
-              .map(
-                (item) => AdminTransactionItem.fromRaw(
-                  item is Map<String, dynamic>
-                      ? item
-                      : Map<String, dynamic>.from(item.cast()),
-                ),
-              )
-              .toList();
-        },
+        success: (data) => items = data,
         failure: (err) {
           firstError ??= err;
         },
@@ -166,36 +139,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       });
       _showLoadErrorOnce("Couldn't load payments.");
     }
-  }
-
-  List _extractList(Object? data, {List<String> listKeys = const <String>[]}) {
-    final keys = <String>['data', 'items', 'result', 'results', ...listKeys];
-
-    List? walk(Object? node, int depth) {
-      if (depth > 6) return null;
-      if (node is List) return node;
-      if (node is! Map) return null;
-
-      final map = node is Map<String, dynamic>
-          ? node
-          : Map<String, dynamic>.from(node.cast());
-
-      for (final key in keys) {
-        final value = map[key];
-        if (value is List) return value;
-      }
-
-      for (final value in map.values) {
-        if (value is Map || value is List) {
-          final found = walk(value, depth + 1);
-          if (found != null) return found;
-        }
-      }
-
-      return null;
-    }
-
-    return walk(data, 0) ?? const [];
   }
 
   void _applyDateRange(String label) {
@@ -287,8 +230,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final cur = (currency ?? 'INR').toUpperCase();
     final symbol = cur == 'INR' ? '₹' : '$cur ';
     final isWhole = value % 1 == 0;
-    final formatted =
-        isWhole ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+    final formatted = isWhole
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(2);
     return '$symbol$formatted';
   }
 
@@ -310,7 +254,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (value.isEmpty) return value;
     return value
         .split('_')
-        .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .map(
+          (w) => w.isEmpty
+              ? w
+              : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 
@@ -370,9 +318,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _exportCsv(List<AdminTransactionItem> items) async {
     if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No payments to export.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No payments to export.')));
       return;
     }
     final buffer = StringBuffer();
@@ -386,8 +334,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ? (vehicleMap['name']?.toString() ?? '')
           : '';
       final planMap = t.raw['plan'];
-      final planName =
-          planMap is Map ? (planMap['name']?.toString() ?? '') : '';
+      final planName = planMap is Map
+          ? (planMap['name']?.toString() ?? '')
+          : '';
       final row = [
         _formatDateTime(t.createdAt),
         _csvEscape(_paymentName(t)),
@@ -404,14 +353,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       buffer.writeln(row.map(_csvEscape).join(','));
     }
 
-    final filename =
-        'payments_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final filename = 'payments_${DateTime.now().millisecondsSinceEpoch}.csv';
     final file = File('${Directory.systemTemp.path}/$filename');
     await file.writeAsString(buffer.toString());
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported CSV: ${file.path}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Exported CSV: ${file.path}')));
   }
 
   @override
@@ -432,7 +380,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final allItems = _items ?? const <AdminTransactionItem>[];
     final filteredPayments = allItems.where((t) {
       final status = t.statusLabel.toLowerCase();
-      final matchesStatus = _statusFilter == 'All' ||
+      final matchesStatus =
+          _statusFilter == 'All' ||
           (_statusFilter == 'Success' && status.contains('success')) ||
           (_statusFilter == 'Pending' &&
               (status.contains('pending') || status.contains('processing'))) ||
@@ -469,9 +418,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return s.contains('fail') || s.contains('decline');
     }).toList();
 
-    final revenue =
-        success.fold<double>(0, (sum, t) => sum + _parseAmount(t));
-    final successRate = total == 0 ? 0 : ((success.length / total) * 100).round();
+    final revenue = success.fold<double>(0, (sum, t) => sum + _parseAmount(t));
+    final successRate = total == 0
+        ? 0
+        : ((success.length / total) * 100).round();
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -512,13 +462,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 style: AppUtils.headlineSmallBase.copyWith(
                                   fontSize:
                                       AdaptiveUtils.getSubtitleFontSize(width) +
-                                          2,
+                                      2,
                                   fontWeight: FontWeight.w800,
                                   color: cs.onSurface,
                                 ),
                               ),
                               InkWell(
-                                onTap: () => context.push(AppRoutePaths.adminPaymentsAdd),
+                                onTap: () => context.push(
+                                  AppRoutePaths.adminPaymentsAdd,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -551,8 +503,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () async {
-                              final chosen =
-                                  await showModalBottomSheet<String>(
+                              final chosen = await showModalBottomSheet<String>(
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: cs.surface,
@@ -570,8 +521,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ];
                                   return SafeArea(
                                     child: Padding(
-                                      padding:
-                                          const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        16,
+                                        16,
+                                        8,
+                                      ),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -579,8 +534,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                             width: 42,
                                             height: 4,
                                             decoration: BoxDecoration(
-                                              color: cs.onSurface
-                                                  .withOpacity(0.2),
+                                              color: cs.onSurface.withOpacity(
+                                                0.2,
+                                              ),
                                               borderRadius:
                                                   BorderRadius.circular(2),
                                             ),
@@ -595,9 +551,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                           ),
                                           const SizedBox(height: 12),
                                           SizedBox(
-                                            height: MediaQuery.of(ctx)
-                                                    .size
-                                                    .height *
+                                            height:
+                                                MediaQuery.of(ctx).size.height *
                                                 0.7,
                                             child: ListView.separated(
                                               itemCount: items.length,
@@ -608,8 +563,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                 return ListTile(
                                                   contentPadding:
                                                       const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                  ),
+                                                        horizontal: 6,
+                                                      ),
                                                   title: Text(
                                                     item,
                                                     style: AppFonts.roboto(
@@ -709,8 +664,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                           SizedBox(
-                            height: AdaptiveUtils.getLeftSectionSpacing(width) +
-                                8,
+                            height:
+                                AdaptiveUtils.getLeftSectionSpacing(width) + 8,
                           ),
                           if (_loading)
                             const AppShimmer(
@@ -723,7 +678,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               builder: (context, constraints) {
                                 final spacing =
                                     AdaptiveUtils.getLeftSectionSpacing(width) +
-                                        6;
+                                    6;
                                 final maxWidth = constraints.maxWidth;
                                 final columns = 2;
                                 final totalSpacing = spacing * (columns - 1);
@@ -732,7 +687,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 final titleFontSize =
                                     AdaptiveUtils.getTitleFontSize(width) + 1;
                                 final valueFontSize =
-                                    AdaptiveUtils.getSubtitleFontSize(width) + 4;
+                                    AdaptiveUtils.getSubtitleFontSize(width) +
+                                    4;
                                 return Wrap(
                                   spacing: spacing,
                                   runSpacing: spacing,
@@ -866,8 +822,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   : (success.length / total).clamp(0, 1),
                               minHeight: 8,
                               backgroundColor: cs.onSurface.withOpacity(0.08),
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(cs.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                cs.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -937,8 +894,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal:
                                       AdaptiveUtils.getHorizontalPadding(width),
-                                  vertical:
-                                      AdaptiveUtils.getHorizontalPadding(width),
+                                  vertical: AdaptiveUtils.getHorizontalPadding(
+                                    width,
+                                  ),
                                 ),
                               ),
                             ),
@@ -950,8 +908,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(12),
                                   onTap: () async {
-                                    final chosen =
-                                        await showModalBottomSheet<String>(
+                                    final chosen = await showModalBottomSheet<String>(
                                       context: context,
                                       isScrollControlled: true,
                                       backgroundColor: cs.surface,
@@ -985,7 +942,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                     color: cs.onSurface
                                                         .withOpacity(0.2),
                                                     borderRadius:
-                                                        BorderRadius.circular(2),
+                                                        BorderRadius.circular(
+                                                          2,
+                                                        ),
                                                   ),
                                                 ),
                                                 const SizedBox(height: 12),
@@ -998,39 +957,41 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                 ),
                                                 const SizedBox(height: 12),
                                                 SizedBox(
-                                                  height: MediaQuery.of(ctx)
-                                                          .size
-                                                          .height *
+                                                  height:
+                                                      MediaQuery.of(
+                                                        ctx,
+                                                      ).size.height *
                                                       0.7,
                                                   child: ListView.separated(
                                                     itemCount: items.length,
                                                     separatorBuilder: (_, __) =>
                                                         const SizedBox(
-                                                      height: 8,
-                                                    ),
+                                                          height: 8,
+                                                        ),
                                                     itemBuilder: (_, index) {
                                                       final item = items[index];
                                                       return ListTile(
                                                         contentPadding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 6,
-                                                        ),
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 6,
+                                                            ),
                                                         title: Text(
                                                           item,
                                                           style:
                                                               AppFonts.roboto(
-                                                            fontSize: 14 * scale,
-                                                            height: 20 / 14,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
+                                                                fontSize:
+                                                                    14 * scale,
+                                                                height: 20 / 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
                                                         ),
                                                         onTap: () =>
                                                             Navigator.pop(
-                                                          ctx,
-                                                          item,
-                                                        ),
+                                                              ctx,
+                                                              item,
+                                                            ),
                                                       );
                                                     },
                                                   ),
@@ -1058,7 +1019,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.tune,
@@ -1097,7 +1059,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.refresh,
@@ -1136,7 +1099,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.upload,
@@ -1183,7 +1147,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ...filteredPayments.map((t) {
                               final name = _paymentName(t);
                               final dateText = _formatDateTime(t.createdAt);
-                              final amount = _formatAmount(t.amount, t.currency);
+                              final amount = _formatAmount(
+                                t.amount,
+                                t.currency,
+                              );
                               final (statusText, statusIcon, statusColor) =
                                   _statusMeta(t.statusLabel, cs);
                               final mode = _titleCase(
@@ -1192,14 +1159,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               final type = _titleCase(
                                 t.raw['paymentType']?.toString() ?? '—',
                               );
-                              final reference = t.raw['reference']?.toString() ??
-                                  t.reference;
+                              final reference =
+                                  t.raw['reference']?.toString() ?? t.reference;
                               final vehicleMap = t.raw['vehicle'];
                               final vehicleName = vehicleMap is Map
                                   ? (vehicleMap['name']?.toString() ?? '—')
                                   : '—';
                               final vehiclePlate = vehicleMap is Map
-                                  ? (vehicleMap['plateNumber']?.toString() ?? '')
+                                  ? (vehicleMap['plateNumber']?.toString() ??
+                                        '')
                                   : '';
                               final planMap = t.raw['plan'];
                               final planName = planMap is Map
@@ -1228,7 +1196,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         crossAxisAlignment:
@@ -1240,14 +1209,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                             decoration: BoxDecoration(
                                               borderRadius:
                                                   BorderRadius.circular(12),
-                                              color: Theme.of(context)
-                                                          .brightness ==
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
                                                       Brightness.dark
                                                   ? cs.surfaceContainerHighest
                                                   : Colors.grey.shade50,
                                               border: Border.all(
-                                                color:
-                                                    cs.outline.withOpacity(0.3),
+                                                color: cs.outline.withOpacity(
+                                                  0.3,
+                                                ),
                                               ),
                                             ),
                                             alignment: Alignment.center,
@@ -1307,20 +1279,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                               Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                  horizontal: 10,
-                                                  vertical: 4,
-                                                ),
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                              .brightness ==
+                                                  color:
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
                                                           Brightness.dark
                                                       ? cs.surfaceContainerHighest
                                                       : Colors.grey.shade50,
                                                   borderRadius:
-                                                      BorderRadius.circular(999),
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
                                                 ),
                                                 child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
                                                     Icon(
                                                       statusIcon,
@@ -1536,11 +1513,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                         width: double.infinity,
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
-                                            color:
-                                                cs.onSurface.withOpacity(0.12),
+                                            color: cs.onSurface.withOpacity(
+                                              0.12,
+                                            ),
                                           ),
                                         ),
                                         child: Column(
@@ -1553,8 +1532,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                                 fontSize: 11 * scale,
                                                 height: 14 / 11,
                                                 fontWeight: FontWeight.w500,
-                                                color: cs.onSurface
-                                                    .withOpacity(0.6),
+                                                color: cs.onSurface.withOpacity(
+                                                  0.6,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 6),
@@ -1678,10 +1658,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Text(
@@ -1709,7 +1686,4 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
   }
-
 }
-
-

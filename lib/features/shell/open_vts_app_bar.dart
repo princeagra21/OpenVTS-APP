@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
@@ -82,7 +82,7 @@ class _OpenVtsAppBarState extends State<OpenVtsAppBar>
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
       pathPrefix: widget.notificationPathPrefix!,

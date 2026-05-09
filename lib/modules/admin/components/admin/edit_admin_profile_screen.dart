@@ -1,5 +1,4 @@
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 // components/admin/edit_admin_profile_screen.dart
@@ -236,8 +235,53 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   Future<void> _deleteImage() async {
     if (_imageUrl == null || _imageUrl!.isEmpty) return;
-    setState(() => _imageUrl = null);
-    _snackOnce('Profile picture removed (UI only for now)');
+
+    _ensureRepo();
+    _imageToken?.cancel('Delete profile picture');
+    _imageToken = CancelToken();
+
+    setState(() => _uploadingImage = true);
+
+    final payload = <String, dynamic>{
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'mobilePrefix': _mobilePrefix(),
+      'mobileNumber': _phoneController.text.trim(),
+      'addressLine': _addressController.text.trim(),
+      'countryCode': _countryCode(),
+      'stateCode': _stateCode(),
+      'cityName': _cityName(),
+      'pincode': _pincodeController.text.trim(),
+      'profileUrl': '',
+      'profileImage': '',
+      'imageUrl': '',
+      'avatarUrl': '',
+    };
+
+    try {
+      final res = await _profileRepo!.updateMyProfile(
+        payload,
+        cancelToken: _imageToken,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (_) {
+          setState(() {
+            _imageUrl = null;
+            _uploadingImage = false;
+          });
+          _snackOnce('Profile picture removed');
+        },
+        failure: (_) {
+          setState(() => _uploadingImage = false);
+          _snackOnce("Couldn't remove profile picture");
+        },
+      );
+    } catch (_) {
+      if (mounted) setState(() => _uploadingImage = false);
+      _snackOnce("Couldn't remove profile picture");
+    }
   }
 
   @override
@@ -260,7 +304,7 @@ class _EditAdminProfileScreenState extends State<EditAdminProfileScreen> {
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.shared();
+    _api = AppContainer.instance.apiClient;
     _commonRepo = CommonRepository(api: _api!);
     _profileRepo = AdminProfileRepository(api: _api!);
     _adminRepo = AdminRepository(api: _api!);

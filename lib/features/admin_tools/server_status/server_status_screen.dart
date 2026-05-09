@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/features/admin_tools/server_status/server_status_controller.dart';
 import 'package:open_vts/features/admin_tools/server_status/server_status_repository.dart';
@@ -19,7 +19,7 @@ class _ServerStatusScreenState extends State<ServerStatusScreen> {
   @override
   void initState() {
     super.initState();
-    final api = ApiClientProvider.shared();
+    final api = AppContainer.instance.apiClient;
     final repo = ServerStatusRepository(api: api);
     _controller = ServerStatusController(repository: repo)..loadStatus();
   }

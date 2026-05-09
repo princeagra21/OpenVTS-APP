@@ -8,7 +8,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddVehicleScreen extends StatefulWidget {
@@ -64,13 +64,13 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   }
 
   CommonRepository _commonOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
     return _commonRepo!;
   }
 
   UserVehiclesRepository _vehiclesOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _vehiclesRepo ??= UserVehiclesRepository(api: _api!);
     return _vehiclesRepo!;
   }

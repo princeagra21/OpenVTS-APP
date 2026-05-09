@@ -1,14 +1,12 @@
 import 'dart:convert';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -29,7 +27,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
   final CancelToken _token = CancelToken();
   final TextEditingController _searchController = TextEditingController();
 
-  ApiClient? _api;
+  AdminUsersRepository? _repo;
   bool _loading = false;
   bool _errorShown = false;
   List<_ActivityLog> _items = const <_ActivityLog>[];
@@ -55,11 +53,10 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-
-      final res = await _api!.get(
-        AdminApiPaths.userActivityLogs(widget.userId),
-        queryParameters: const {'limit': 20},
+      _repo ??= AppContainer.instance.adminUsersRepository;
+      final res = await _repo!.getUserActivityLogs(
+        widget.userId,
+        limit: 20,
         cancelToken: _token,
       );
 
@@ -68,7 +65,7 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
         success: (data) {
           setState(() {
             _loading = false;
-            _items = _extractItems(data);
+            _items = data.map(_ActivityLog.fromMap).toList();
             _errorShown = false;
           });
         },
@@ -97,26 +94,6 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
     }
   }
 
-  List<_ActivityLog> _extractItems(Object? data) {
-    final map = _coerceMap(data);
-    final dataMap = _coerceMap(map['data']);
-    final inner = _coerceMap(dataMap['data']);
-    final rawList = inner['items'];
-    if (rawList is List) {
-      return rawList
-          .whereType<Map>()
-          .map((e) => _ActivityLog.fromMap(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-    return const <_ActivityLog>[];
-  }
-
-  Map<String, dynamic> _coerceMap(Object? data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data.cast());
-    return <String, dynamic>{};
-  }
-
   DateTime _startOfDay(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
   DateTime _endOfDay(DateTime dt) =>
@@ -133,7 +110,8 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
 
     return _items.where((log) {
       if (log.createdAt != null && rangeStart != null && rangeEnd != null) {
-        if (log.createdAt!.isBefore(rangeStart) || log.createdAt!.isAfter(rangeEnd)) {
+        if (log.createdAt!.isBefore(rangeStart) ||
+            log.createdAt!.isAfter(rangeEnd)) {
           return false;
         }
       }
@@ -259,7 +237,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+        border: Border.all(
+          color: colorScheme.onSurface.withValues(alpha: 0.12),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +292,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+            border: Border.all(
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,18 +334,28 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                   ),
                   filled: true,
                   fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+                    borderSide: BorderSide(
+                      color: colorScheme.onSurface.withValues(alpha: 0.12),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+                    borderSide: BorderSide(
+                      color: colorScheme.onSurface.withValues(alpha: 0.12),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
                 style: AppFonts.roboto(
@@ -383,23 +375,45 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                       },
                       itemBuilder: (context) => const [
                         PopupMenuItem(value: 'All', child: Text('All')),
-                        PopupMenuItem(value: 'Security', child: Text('Security')),
-                        PopupMenuItem(value: 'Settings', child: Text('Settings')),
+                        PopupMenuItem(
+                          value: 'Security',
+                          child: Text('Security'),
+                        ),
+                        PopupMenuItem(
+                          value: 'Settings',
+                          child: Text('Settings'),
+                        ),
                         PopupMenuItem(value: 'Billing', child: Text('Billing')),
-                        PopupMenuItem(value: 'Vehicles', child: Text('Vehicles')),
+                        PopupMenuItem(
+                          value: 'Vehicles',
+                          child: Text('Vehicles'),
+                        ),
                         PopupMenuItem(value: 'Drivers', child: Text('Drivers')),
                       ],
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withValues(
+                              alpha: 0.12,
+                            ),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.tune, size: 16, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+                            Icon(
+                              Icons.tune,
+                              size: 16,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               _selectedFilter,
@@ -429,22 +443,29 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                               if (end != null) end,
                             ];
                             return Dialog(
-                              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                              insetPadding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 24,
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: StatefulBuilder(
                                   builder: (context, setDialogState) {
                                     return CalendarDatePicker2(
                                       config: CalendarDatePicker2Config(
-                                        calendarType: CalendarDatePicker2Type.range,
+                                        calendarType:
+                                            CalendarDatePicker2Type.range,
                                         currentDate: now,
-                                        selectedDayHighlightColor: colorScheme.primary,
+                                        selectedDayHighlightColor:
+                                            colorScheme.primary,
                                         firstDate: DateTime(2020, 1, 1),
                                         lastDate: DateTime(2035, 12, 31),
                                       ),
                                       value: selection,
                                       onValueChanged: (values) {
-                                        setDialogState(() => selection = values);
+                                        setDialogState(
+                                          () => selection = values,
+                                        );
                                         if (values.length >= 2) {
                                           Navigator.of(ctx).pop(
                                             DateTimeRange(
@@ -466,15 +487,28 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                       },
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+                          border: Border.all(
+                            color: colorScheme.onSurface.withValues(
+                              alpha: 0.12,
+                            ),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.date_range, size: 16, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+                            Icon(
+                              Icons.date_range,
+                              size: 16,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
@@ -500,7 +534,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: items.isEmpty
                     ? Text(
@@ -517,7 +553,8 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => _ActivityLogDetailsScreen(log: log),
+                                  builder: (_) =>
+                                      _ActivityLogDetailsScreen(log: log),
                                 ),
                               );
                             },
@@ -529,34 +566,46 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                               decoration: BoxDecoration(
                                 color: colorScheme.surface,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                                border: Border.all(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         width: 36,
                                         height: 36,
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).brightness == Brightness.light
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.light
                                               ? Colors.grey.shade50
-                                              : colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(999),
+                                              : colorScheme
+                                                    .surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         alignment: Alignment.center,
                                         child: Icon(
                                           _iconForAction(log.action),
                                           size: 18,
-                                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                          color: colorScheme.onSurface
+                                              .withValues(alpha: 0.7),
                                         ),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               _friendlyAction(log.action),
@@ -568,24 +617,39 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
-                                              log.action.isNotEmpty ? log.action : '—',
+                                              log.action.isNotEmpty
+                                                  ? log.action
+                                                  : '—',
                                               style: AppFonts.roboto(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
-                                                color: colorScheme.onSurface.withValues(alpha: 0.65),
+                                                color: colorScheme.onSurface
+                                                    .withValues(alpha: 0.65),
                                               ),
                                             ),
                                             const SizedBox(height: 6),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).brightness == Brightness.light
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.light
                                                     ? Colors.grey.shade50
-                                                    : colorScheme.surfaceContainerHighest,
-                                                borderRadius: BorderRadius.circular(999),
+                                                    : colorScheme
+                                                          .surfaceContainerHighest,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
                                               ),
                                               child: Text(
-                                                log.entity.isNotEmpty ? log.entity : '—',
+                                                log.entity.isNotEmpty
+                                                    ? log.entity
+                                                    : '—',
                                                 style: AppFonts.roboto(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
@@ -604,7 +668,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                       Expanded(
                                         child: _infoCell(
                                           label: 'IP',
-                                          value: log.ip.isNotEmpty ? log.ip : '—',
+                                          value: log.ip.isNotEmpty
+                                              ? log.ip
+                                              : '—',
                                           colorScheme: colorScheme,
                                           labelSize: labelSize,
                                         ),
@@ -613,7 +679,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                       Expanded(
                                         child: _infoCell(
                                           label: 'Browser',
-                                          value: log.browser.isNotEmpty ? log.browser : '—',
+                                          value: log.browser.isNotEmpty
+                                              ? log.browser
+                                              : '—',
                                           colorScheme: colorScheme,
                                           labelSize: labelSize,
                                         ),
@@ -626,7 +694,9 @@ class _AdminUserActivityTabState extends State<AdminUserActivityTab> {
                                       Expanded(
                                         child: _infoCell(
                                           label: 'OS',
-                                          value: log.platform.isNotEmpty ? log.platform : '—',
+                                          value: log.platform.isNotEmpty
+                                              ? log.platform
+                                              : '—',
                                           colorScheme: colorScheme,
                                           labelSize: labelSize,
                                         ),
@@ -849,14 +919,21 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
         children: [
           Positioned.fill(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(hp, AppUtils.appBarHeightCustom + 20, hp, 24),
+              padding: EdgeInsets.fromLTRB(
+                hp,
+                AppUtils.appBarHeightCustom + 20,
+                hp,
+                24,
+              ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                  border: Border.all(
+                    color: colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,7 +945,8 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? colorScheme.surfaceContainerHighest
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
@@ -887,7 +965,9 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                               Text(
                                 'Activity Log Details',
                                 style: AppFonts.roboto(
-                                  fontSize: AdaptiveUtils.getSubtitleFontSize(width) + 1,
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(width) +
+                                      1,
                                   fontWeight: FontWeight.w800,
                                   color: colorScheme.onSurface,
                                 ),
@@ -896,9 +976,12 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                               Text(
                                 _friendlyAction(log.action),
                                 style: AppFonts.roboto(
-                                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 1,
+                                  fontSize:
+                                      AdaptiveUtils.getTitleFontSize(width) + 1,
                                   fontWeight: FontWeight.w600,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.75),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.75,
+                                  ),
                                 ),
                               ),
                             ],
@@ -909,36 +992,63 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: _infoCard(context, label: 'Entity', value: _safe(log.entity))),
+                        Expanded(
+                          child: _infoCard(
+                            context,
+                            label: 'Entity',
+                            value: _safe(log.entity),
+                          ),
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: _infoCard(context, label: 'Platform', value: _safe(log.platform))),
+                        Expanded(
+                          child: _infoCard(
+                            context,
+                            label: 'Platform',
+                            value: _safe(log.platform),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     _infoCard(
                       context,
                       label: 'Action',
-                      value: '${_friendlyAction(log.action)}\n${_safe(log.action)}',
+                      value:
+                          '${_friendlyAction(log.action)}\n${_safe(log.action)}',
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Expanded(child: _infoCard(context, label: 'IP Address', value: _safe(log.ip))),
+                        Expanded(
+                          child: _infoCard(
+                            context,
+                            label: 'IP Address',
+                            value: _safe(log.ip),
+                          ),
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: _infoCard(context, label: 'Browser', value: _safe(log.browser))),
+                        Expanded(
+                          child: _infoCard(
+                            context,
+                            label: 'Browser',
+                            value: _safe(log.browser),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     _infoCard(
                       context,
                       label: 'Time',
-                      value: '${_prettyDate(log.createdAt)}\n${_timeAgo(log.createdAt)}',
+                      value:
+                          '${_prettyDate(log.createdAt)}\n${_timeAgo(log.createdAt)}',
                     ),
                     const SizedBox(height: 10),
                     _infoCard(
                       context,
                       label: 'Performed by',
-                      value: '${_safe(log.userName)} @${_safe(log.userUsername)} · ${_safe(log.userLoginType)}',
+                      value:
+                          '${_safe(log.userName)} @${_safe(log.userUsername)} · ${_safe(log.userLoginType)}',
                     ),
                     const SizedBox(height: 10),
                     Container(
@@ -947,7 +1057,9 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.1)),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.1),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -957,7 +1069,9 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                             style: AppFonts.roboto(
                               fontSize: AdaptiveUtils.getTitleFontSize(width),
                               fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -968,13 +1082,19 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                              border: Border.all(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.08,
+                                ),
+                              ),
                             ),
                             child: SingleChildScrollView(
                               child: SelectableText(
                                 _metadataJson(),
                                 style: AppFonts.roboto(
-                                  fontSize: AdaptiveUtils.getTitleFontSize(width) + 0.5,
+                                  fontSize:
+                                      AdaptiveUtils.getTitleFontSize(width) +
+                                      0.5,
                                   height: 1.5,
                                   fontWeight: FontWeight.w500,
                                   color: colorScheme.onSurface,
@@ -1005,5 +1125,3 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
     );
   }
 }
-
-

@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/user_fleet_status_summary.dart';
 import 'package:open_vts/core/models/user_recent_alert_item.dart';
 import 'package:open_vts/core/models/user_top_asset_item.dart';
@@ -14,7 +13,7 @@ import 'package:open_vts/modules/user/widgets/home/card/vehicle_status_box.dart'
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -56,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   UserHomeRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= UserHomeRepository(api: _api!);
     return _repo!;
   }

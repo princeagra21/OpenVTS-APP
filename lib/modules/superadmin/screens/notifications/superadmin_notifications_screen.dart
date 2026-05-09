@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_notification_item.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';

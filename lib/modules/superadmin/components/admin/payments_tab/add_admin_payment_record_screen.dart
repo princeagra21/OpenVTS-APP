@@ -1,12 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddAdminPaymentRecordScreen extends StatefulWidget {
@@ -54,7 +52,7 @@ class _AddAdminPaymentRecordScreenState
 
   void _ensureRepo() {
     if (_api != null) return;
-    _api = ApiClientProvider.shared();
+    _api = AppContainer.instance.apiClient;
     _repo = SuperadminRepository(api: _api!);
   }
 

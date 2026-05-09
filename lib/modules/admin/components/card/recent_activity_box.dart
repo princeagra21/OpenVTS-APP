@@ -121,11 +121,7 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     );
   }
 
-  Widget _buildVehicleRow(
-    BuildContext context,
-    AdminVehiclePreviewItem item, {
-    bool placeholder = false,
-  }) {
+  Widget _buildVehicleRow(BuildContext context, AdminVehiclePreviewItem item) {
     final colorScheme = Theme.of(context).colorScheme;
     final double screenWidth = MediaQuery.of(context).size.width;
 
@@ -136,9 +132,9 @@ class _RecentActivityBoxState extends State<RecentActivityBox> {
     final double itemPadding = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
     final statusColors = getStatusColors(context);
 
-    final status = placeholder ? '—' : item.statusLabel;
-    final label = placeholder ? '—' : item.plateNumber;
-    final time = placeholder ? '—' : item.lastSeenLabel;
+    final status = item.statusLabel;
+    final label = item.plateNumber;
+    final time = item.lastSeenLabel;
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: itemPadding),

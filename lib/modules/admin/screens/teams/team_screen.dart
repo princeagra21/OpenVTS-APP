@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_team_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -44,7 +43,7 @@ class _TeamScreenState extends State<TeamScreen> {
   AdminTeamsRepository? _repo;
 
   AdminTeamsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= AdminTeamsRepository(api: _apiClient!);
     return _repo!;
   }

@@ -10,7 +10,7 @@ import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -64,13 +64,13 @@ class _SubUserDetailsScreenState extends State<SubUserDetailsScreen> {
   }
 
   UserSubUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= UserSubUsersRepository(api: _apiClient!);
     return _repo!;
   }
 
   UserVehiclesRepository _vehiclesRepo() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     return UserVehiclesRepository(api: _apiClient!);
   }
 

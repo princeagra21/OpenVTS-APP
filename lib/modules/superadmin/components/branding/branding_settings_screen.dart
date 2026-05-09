@@ -1,18 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/white_label_branding.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/white_label_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/modules/superadmin/components/small_box/small_box.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class BrandingSettingsScreen extends StatefulWidget {
@@ -76,7 +74,7 @@ class _BrandingSettingsScreenState extends State<BrandingSettingsScreen> {
   }
 
   WhiteLabelRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= WhiteLabelRepository(api: _api!);
     return _repo!;
   }

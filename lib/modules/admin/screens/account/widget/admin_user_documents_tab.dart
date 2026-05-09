@@ -1,4 +1,4 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // components/admin/documents_tab/documents_tab.dart
 import 'package:dio/dio.dart';
@@ -106,7 +106,7 @@ class _AdminUserDocumentsTabState extends State<AdminUserDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminUsersRepository(api: _api!);
 
       final res = await _repo!.getUserDocuments(

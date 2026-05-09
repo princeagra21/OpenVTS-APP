@@ -151,7 +151,7 @@ Future<String?> _routeRedirect(
     return RouteGuard.isPublicRoute(path) ? null : AppRoutePaths.login;
   }
 
-  final trimmedToken = token!.trim();
+  final trimmedToken = token.trim();
 
   if (_isTokenExpired(trimmedToken)) {
     await storage.clear();

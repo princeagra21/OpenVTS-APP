@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -99,7 +98,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   void _ensureRepos() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _api!);
     _usersRepo ??= AdminUsersRepository(api: _api!);
     _driversRepo ??= UserDriversRepository(api: _api!);

@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
 import 'package:open_vts/core/models/admin_linked_vehicle.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -10,7 +9,7 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class RenewVehicleScreen extends StatefulWidget {
@@ -49,7 +48,7 @@ class _RenewVehicleScreenState extends State<RenewVehicleScreen> {
   bool _submitting = false;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     return _apiClient!;
   }
 

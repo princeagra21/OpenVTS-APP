@@ -2,7 +2,6 @@ import 'package:open_vts/modules/superadmin/components/card/adoption_widget.dart
 import 'package:open_vts/modules/superadmin/components/card/fleet_card.dart';
 import 'package:open_vts/modules/superadmin/components/card/vehicle_status_box.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/superadmin_recent_vehicle.dart';
 import 'package:open_vts/core/models/superadmin_recent_transaction.dart';
 import 'package:open_vts/core/models/superadmin_recent_user.dart';
@@ -11,14 +10,12 @@ import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
-import 'package:open_vts/modules/superadmin/components/bottom_bar/custom_bottom_bar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -158,7 +155,7 @@ class _RecentVehiclesSectionState extends State<_RecentVehiclesSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentVehicles(cancelToken: _cancelToken);
       if (!mounted) return;
@@ -521,7 +518,7 @@ class _RecentTransactionsSectionState extends State<_RecentTransactionsSection> 
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentTransactions(
         limit: 5,
@@ -906,7 +903,7 @@ class _RecentUsersSectionState extends State<_RecentUsersSection> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
       final res = await _repo!.getRecentUsers(cancelToken: _cancelToken);
       if (!mounted) return;

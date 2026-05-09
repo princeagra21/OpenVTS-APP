@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_driver_list_item.dart';
 import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/models/user_driver_details.dart';
@@ -13,7 +12,7 @@ import 'package:open_vts/modules/user/components/appbars/user_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -63,13 +62,13 @@ class _DriverDetailsScreenState extends State<DriverDetailsScreen> {
   }
 
   UserDriversRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= UserDriversRepository(api: _apiClient!);
     return _repo!;
   }
 
   CommonRepository _commonOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _commonRepo ??= CommonRepository(api: _apiClient!);
     return _commonRepo!;
   }

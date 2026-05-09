@@ -496,11 +496,17 @@ class AdminUsersRepository {
 
   Future<Result<List<AdminTicketListItem>>> getUserTickets(
     String userId, {
+    int? limit,
+    int? rk,
     CancelToken? cancelToken,
   }) async {
+    final query = <String, dynamic>{'userId': userId};
+    if (limit != null) query['limit'] = limit;
+    if (rk != null) query['rk'] = rk;
+
     final res = await api.get(
       AdminApiPaths.tickets,
-      queryParameters: <String, dynamic>{'userId': userId},
+      queryParameters: query,
       cancelToken: cancelToken,
     );
 
@@ -523,6 +529,58 @@ class AdminUsersRepository {
               .toList(),
         );
       },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<List<Map<String, dynamic>>>> getUserActivityLogs(
+    String userId, {
+    int? limit,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{};
+    if (limit != null) query['limit'] = limit;
+
+    final res = await api.get(
+      AdminApiPaths.userActivityLogs(userId),
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['items', 'logs', 'activities'],
+        );
+        return Result.ok(
+          list
+              .whereType<Map>()
+              .map(
+                (item) => item is Map<String, dynamic>
+                    ? item
+                    : Map<String, dynamic>.from(item.cast()),
+              )
+              .toList(),
+        );
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> updateUserPassword(
+    String userId,
+    String newPassword, {
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.post(
+      AdminApiPaths.updateUserPassword(userId),
+      data: <String, dynamic>{'newPassword': newPassword},
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (_) => Result.ok(null),
       failure: (err) => Result.fail(err),
     );
   }

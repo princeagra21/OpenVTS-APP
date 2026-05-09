@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_vts/core/models/vehicle_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
@@ -56,7 +56,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
   }
 
   VehicleDetailsRepository _buildFeatureRepository() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _baseRepository ??= UserVehiclesRepository(api: _apiClient!);
     return VehicleDetailsRepository(delegate: _baseRepository!);
   }

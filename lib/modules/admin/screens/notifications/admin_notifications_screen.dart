@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_notification_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -11,7 +10,7 @@ import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart
 import 'package:open_vts/modules/admin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminNotificationsScreen extends StatefulWidget {
@@ -101,7 +100,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminNotificationsRepository(api: _api!);
 
       final res = await _repo!.getNotifications(cancelToken: token);
@@ -225,7 +224,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       _repo ??= AdminNotificationsRepository(
         api:
             _api ??
-            ApiClientProvider.shared(),
+            AppContainer.instance.apiClient,
       );
 
       final res = await _repo!.markRead(item.id, cancelToken: token);
@@ -277,7 +276,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       _repo ??= AdminNotificationsRepository(
         api:
             _api ??
-            ApiClientProvider.shared(),
+            AppContainer.instance.apiClient,
       );
 
       final res = await _repo!.markAllRead(cancelToken: token);

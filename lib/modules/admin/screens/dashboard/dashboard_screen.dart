@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_dashboard_summary.dart';
 import 'package:open_vts/core/models/admin_vehicle_preview_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -7,14 +6,13 @@ import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_dashboard_repository.dart';
 import 'package:open_vts/core/repositories/admin_vehicle_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/modules/admin/components/card/adoption_widget.dart';
 import 'package:open_vts/modules/admin/components/card/fleet_card.dart';
 import 'package:open_vts/modules/admin/components/card/vehicle_status_box.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -75,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminDashboardRepository(api: _api!);
 
       final res = await _repo!.getAdminDashboardSummary(cancelToken: token);
@@ -145,7 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loadingVehiclesPreview = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _vehicleRepo ??= AdminVehicleRepository(api: _api!);
 
       final listRes = await _vehicleRepo!.getVehiclePreviewList(

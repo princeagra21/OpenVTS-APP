@@ -39,7 +39,7 @@ class TicketPrioritySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: DropdownButtonFormField<String>(
-        value: selectedPriority,
+        initialValue: selectedPriority,
         decoration: const InputDecoration(labelText: 'Priority'),
         items: _priorityOptions
             .map(

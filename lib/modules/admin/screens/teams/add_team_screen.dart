@@ -1,4 +1,3 @@
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:dio/dio.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -6,7 +5,7 @@ import 'package:open_vts/core/repositories/common_repository.dart';
 import 'package:open_vts/core/repositories/admin_teams_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AddTeamScreen extends StatefulWidget {
@@ -54,7 +53,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
   }
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     return _apiClient!;
   }
 

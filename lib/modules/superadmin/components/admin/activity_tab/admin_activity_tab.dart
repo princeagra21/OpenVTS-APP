@@ -1,15 +1,11 @@
 import 'dart:convert';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -28,7 +24,6 @@ class AdminActivityTab extends StatefulWidget {
 
 class _AdminActivityTabState extends State<AdminActivityTab> {
   final CancelToken _token = CancelToken();
-  ApiClient? _api;
   bool _loading = false;
   bool _errorShown = false;
   List<_ActivityLog> _items = const <_ActivityLog>[];
@@ -55,19 +50,14 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-
-      final res = await _api!.get(
-        SuperadminApiPaths.adminActivityLogs(widget.adminId),
-        queryParameters: const {'limit': 20},
-        cancelToken: _token,
-      );
+      final res = await AppContainer.instance.superadminRepository
+          .getAdminActivityLogs(widget.adminId, limit: 20, cancelToken: _token);
 
       if (!mounted) return;
 
       res.when(
         success: (data) {
-          final items = _extractItems(data);
+          final items = data.map(_ActivityLog.fromMap).toList();
           setState(() {
             _loading = false;
             _items = items;
@@ -98,20 +88,6 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
     }
   }
 
-  List<_ActivityLog> _extractItems(Object? data) {
-    final map = _coerceMap(data);
-    final dataMap = _coerceMap(map['data']);
-    final inner = _coerceMap(dataMap['data']);
-    final rawList = inner['items'];
-    if (rawList is List) {
-      return rawList
-          .whereType<Map>()
-          .map((e) => _ActivityLog.fromMap(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-    return const <_ActivityLog>[];
-  }
-
   List<_ActivityLog> _filteredItems() {
     final q = _query.trim().toLowerCase();
     final DateTime? rangeStart = _dateRange == null
@@ -122,7 +98,8 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
         : _endOfDay(_dateRange!.end);
     return _items.where((log) {
       if (log.createdAt != null && rangeStart != null && rangeEnd != null) {
-        if (log.createdAt!.isBefore(rangeStart) || log.createdAt!.isAfter(rangeEnd)) {
+        if (log.createdAt!.isBefore(rangeStart) ||
+            log.createdAt!.isAfter(rangeEnd)) {
           return false;
         }
       }
@@ -408,10 +385,19 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                       },
                       itemBuilder: (context) => const [
                         PopupMenuItem(value: 'All', child: Text('All')),
-                        PopupMenuItem(value: 'Security', child: Text('Security')),
-                        PopupMenuItem(value: 'Settings', child: Text('Settings')),
+                        PopupMenuItem(
+                          value: 'Security',
+                          child: Text('Security'),
+                        ),
+                        PopupMenuItem(
+                          value: 'Settings',
+                          child: Text('Settings'),
+                        ),
                         PopupMenuItem(value: 'Billing', child: Text('Billing')),
-                        PopupMenuItem(value: 'Vehicles', child: Text('Vehicles')),
+                        PopupMenuItem(
+                          value: 'Vehicles',
+                          child: Text('Vehicles'),
+                        ),
                         PopupMenuItem(value: 'Drivers', child: Text('Drivers')),
                       ],
                       child: Container(
@@ -626,7 +612,8 @@ class _AdminActivityTabState extends State<AdminActivityTab> {
                                               Theme.of(context).brightness ==
                                                   Brightness.light
                                               ? Colors.grey.shade50
-                                              : colorScheme.surfaceContainerHighest,
+                                              : colorScheme
+                                                    .surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(
                                             999,
                                           ),
@@ -1016,8 +1003,7 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
                                 _friendlyAction(log.action),
                                 style: AppFonts.roboto(
                                   fontSize:
-                                      AdaptiveUtils.getTitleFontSize(width) +
-                                      1,
+                                      AdaptiveUtils.getTitleFontSize(width) + 1,
                                   fontWeight: FontWeight.w600,
                                   color: colorScheme.onSurface.withOpacity(
                                     0.75,
@@ -1161,4 +1147,3 @@ class _ActivityLogDetailsScreen extends StatelessWidget {
     );
   }
 }
-

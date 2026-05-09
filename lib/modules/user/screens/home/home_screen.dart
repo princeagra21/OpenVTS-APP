@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
@@ -12,7 +11,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
@@ -41,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
 
   RoleNotificationsRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= RoleNotificationsRepository(
       api: _apiClient!,
       pathPrefix: AppRoutePaths.userNotifications,
@@ -50,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   UserProfileRepository _profileRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _profileRepo ??= UserProfileRepository(api: _apiClient!);
     return _profileRepo!;
   }

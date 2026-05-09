@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:country_picker/country_picker.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
 import 'package:open_vts/core/models/admin_user_details.dart';
 import 'package:open_vts/core/network/api_client.dart';
@@ -12,7 +11,7 @@ import 'package:open_vts/modules/admin/screens/account/widget/edit_company_scree
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminUserProfileTab extends StatefulWidget {
@@ -1222,7 +1221,7 @@ class _AdminUserProfileTabState extends State<AdminUserProfileTab> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= AdminUsersRepository(api: _api!);
     return _repo!;
   }

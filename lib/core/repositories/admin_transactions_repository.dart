@@ -61,6 +61,55 @@ class AdminTransactionsRepository {
     );
   }
 
+  Future<Result<List<AdminTransactionItem>>> getPayments({
+    String? search,
+    String? status,
+    int? page,
+    int? limit,
+    String? from,
+    String? to,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{};
+    if (search != null && search.trim().isNotEmpty) {
+      query['search'] = search.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      query['status'] = status.trim();
+    }
+    if (page != null) query['page'] = page;
+    if (limit != null) query['limit'] = limit;
+    if (from != null && from.trim().isNotEmpty) query['from'] = from.trim();
+    if (to != null && to.trim().isNotEmpty) query['to'] = to.trim();
+
+    final res = await api.get(
+      AdminApiPaths.payments,
+      queryParameters: query.isEmpty ? null : query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final list = _extractList(
+          data,
+          listKeys: const ['payments', 'transactions', 'items', 'data'],
+        );
+        final out = list
+            .whereType<Map>()
+            .map(
+              (item) => AdminTransactionItem.fromRaw(
+                item is Map<String, dynamic>
+                    ? item
+                    : Map<String, dynamic>.from(item.cast()),
+              ),
+            )
+            .toList();
+        return Result.ok(out);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
   Future<Result<AdminTransactionsSummary>> getTransactionsSummary({
     CancelToken? cancelToken,
   }) async {

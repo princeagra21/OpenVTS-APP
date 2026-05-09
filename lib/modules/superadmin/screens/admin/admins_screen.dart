@@ -1,12 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:open_vts/app/app_container.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
-import 'package:open_vts/modules/superadmin/components/small_box/small_box.dart';
 import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_appbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +12,6 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
@@ -173,7 +170,7 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.getAdmins(
@@ -296,7 +293,7 @@ class _AdminScreenState extends State<AdminScreen> {
       _statusSubmittingAdminIds.add(adminId);
     });
 
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= SuperadminRepository(api: _api!);
 
     _statusTokensByAdminId[adminId]?.cancel('New toggle');
@@ -356,7 +353,7 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() {});
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= SuperadminRepository(api: _api!);
 
       final res = await _repo!.loginAsAdmin(adminId);

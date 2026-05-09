@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/features/admin_tools/server_status/server_status_models.dart';
 import 'package:open_vts/features/admin_tools/server_status/server_status_repository.dart';
 

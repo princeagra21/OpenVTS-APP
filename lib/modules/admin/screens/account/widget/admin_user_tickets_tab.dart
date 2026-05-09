@@ -1,18 +1,15 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_ticket_list_item.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/repositories/admin_support_repository.dart';
+import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/modules/admin/screens/support/new_ticket_screen.dart';
 import 'package:open_vts/modules/admin/screens/support/support_screen.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 
 class AdminUserTicketsTab extends StatefulWidget {
   final String userId;
@@ -36,12 +33,10 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
   String _selectedTab = 'All';
 
   CancelToken? _loadToken;
-  ApiClient? _apiClient;
-  AdminSupportRepository? _repo;
+  AdminUsersRepository? _repo;
 
-  AdminSupportRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
-    _repo ??= AdminSupportRepository(api: _apiClient!);
+  AdminUsersRepository _repoOrCreate() {
+    _repo ??= AppContainer.instance.adminUsersRepository;
     return _repo!;
   }
 
@@ -53,8 +48,9 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
   void _showLoadErrorOnce(String message) {
     if (_loadErrorShown || !mounted) return;
     _loadErrorShown = true;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadTickets() async {
@@ -65,33 +61,17 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
     if (!mounted) return;
     setState(() => _loading = true);
 
-    final result = await _repoOrCreate().api.get(
-      AdminApiPaths.tickets,
-      queryParameters: <String, dynamic>{
-        'userId': widget.userId,
-        'rk': DateTime.now().millisecondsSinceEpoch,
-        'limit': 100,
-      },
+    final result = await _repoOrCreate().getUserTickets(
+      widget.userId,
+      rk: DateTime.now().millisecondsSinceEpoch,
+      limit: 100,
       cancelToken: token,
     );
 
     if (!mounted) return;
 
     result.when(
-      success: (data) {
-        final list = _extractList(data);
-        final items = <AdminTicketListItem>[];
-        if (list != null) {
-          for (final item in list) {
-            if (item is Map<String, dynamic>) {
-              items.add(AdminTicketListItem(item));
-            } else if (item is Map) {
-              items.add(
-                AdminTicketListItem(Map<String, dynamic>.from(item.cast())),
-              );
-            }
-          }
-        }
+      success: (items) {
         setState(() {
           _tickets = items;
           _loading = false;
@@ -104,27 +84,12 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
           _loading = false;
         });
         if (_isCancelled(err)) return;
-        final message =
-            err is ApiException ? err.message : "Couldn't load tickets.";
+        final message = err is ApiException
+            ? err.message
+            : "Couldn't load tickets.";
         _showLoadErrorOnce(message);
       },
     );
-  }
-
-  List? _extractList(Object? data) {
-    if (data is List) return data;
-    if (data is! Map) return null;
-    final keys = const ['data', 'items', 'result', 'tickets'];
-    for (final key in keys) {
-      if (data[key] is List) return data[key] as List;
-    }
-    final d = data['data'];
-    if (d is Map) {
-      for (final key in keys) {
-        if (d[key] is List) return d[key] as List;
-      }
-    }
-    return null;
   }
 
   @override
@@ -156,13 +121,15 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
     final showListSkeleton = _loading && tickets.isEmpty;
     final query = _searchController.text.trim().toLowerCase();
     final filteredTickets = tickets.where((t) {
-      final matchesSearch = query.isEmpty ||
+      final matchesSearch =
+          query.isEmpty ||
           t.subject.toLowerCase().contains(query) ||
           t.ticketNumber.toLowerCase().contains(query) ||
           t.category.toLowerCase().contains(query) ||
           t.priority.toLowerCase().contains(query) ||
           t.statusLabel.toLowerCase().contains(query);
-      final matchesTab = _selectedTab == 'All' ||
+      final matchesTab =
+          _selectedTab == 'All' ||
           AdminTicketListItem.normalizeStatus(t.statusLabel) ==
               AdminTicketListItem.normalizeStatus(_selectedTab);
       return matchesSearch && matchesTab;
@@ -177,9 +144,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: colorScheme.onSurface.withOpacity(0.08),
-            ),
+            border: Border.all(color: colorScheme.onSurface.withOpacity(0.08)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,11 +166,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
                       ),
                       const SizedBox(height: 4),
                       if (showListSkeleton)
-                        const AppShimmer(
-                          width: 96,
-                          height: 14,
-                          radius: 8,
-                        )
+                        const AppShimmer(width: 96, height: 14, radius: 8)
                       else
                         Text(
                           '${tickets.length} tickets',
@@ -343,10 +304,7 @@ class _AdminUserTicketsTabState extends State<AdminUserTicketsTab> {
               ),
               const SizedBox(height: 16),
               if (showListSkeleton)
-                ...List<Widget>.generate(
-                  4,
-                  (_) => const _TicketCardShimmer(),
-                )
+                ...List<Widget>.generate(4, (_) => const _TicketCardShimmer())
               else if (filteredTickets.isEmpty)
                 Container(
                   width: double.infinity,
@@ -576,9 +534,11 @@ class _TicketCardLocal extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    _safe(ticket.ticketNumber.isNotEmpty
-                        ? ticket.ticketNumber
-                        : ticket.id),
+                    _safe(
+                      ticket.ticketNumber.isNotEmpty
+                          ? ticket.ticketNumber
+                          : ticket.id,
+                    ),
                     style: AppFonts.roboto(
                       fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
                       color: colorScheme.onSurface.withOpacity(0.54),
@@ -588,8 +548,10 @@ class _TicketCardLocal extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(999),
@@ -597,9 +559,11 @@ class _TicketCardLocal extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(_statusIcon(status),
-                          size: AdaptiveUtils.getIconSize(width) - 4,
-                          color: statusColor),
+                      Icon(
+                        _statusIcon(status),
+                        size: AdaptiveUtils.getIconSize(width) - 4,
+                        color: statusColor,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         status,
@@ -654,8 +618,10 @@ class _TicketCardLocal extends StatelessWidget {
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -669,9 +635,11 @@ class _TicketCardLocal extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(Icons.chevron_right,
-                          size: AdaptiveUtils.getIconSize(width),
-                          color: colorScheme.primary),
+                      Icon(
+                        Icons.chevron_right,
+                        size: AdaptiveUtils.getIconSize(width),
+                        color: colorScheme.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -683,4 +651,3 @@ class _TicketCardLocal extends StatelessWidget {
     );
   }
 }
-

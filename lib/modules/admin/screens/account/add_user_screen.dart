@@ -1,8 +1,7 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 // screens/account/add_user_screen.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
@@ -63,7 +62,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   CancelToken? _prefixesToken;
 
   ApiClient _apiOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     return _apiClient!;
   }
 

@@ -1,12 +1,8 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
-import 'package:open_vts/core/network/api_paths.dart';
 // components/admin/credit_history/add_deduct_credit_screen.dart
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 
@@ -30,7 +26,6 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
   String? _selectedAction; // 'add' or 'deduct'
   final TextEditingController _amountController = TextEditingController();
   bool _submitting = false;
-  ApiClient? _api;
   CancelToken? _token;
 
   @override
@@ -55,7 +50,9 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
       hintText: hint,
       hintStyle: AppFonts.roboto(
         color: colorScheme.onSurface.withOpacity(0.5),
-        fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       prefixIconConstraints: const BoxConstraints(minWidth: 48),
@@ -114,7 +111,11 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, size: 28, color: colorScheme.onSurface.withOpacity(0.8)),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
@@ -140,10 +141,21 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                       TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        style: AppFonts.roboto(fontSize: labelSize, color: colorScheme.onSurface),
-                        decoration: _minimalDecoration(context, hint: "Credit Amount").copyWith(
-                          prefixIcon: Icon(Icons.monetization_on_outlined, color: colorScheme.primary, size: 22),
+                        style: AppFonts.roboto(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
                         ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Credit Amount",
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.monetization_on_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
                       ),
                       const SizedBox(height: 32),
 
@@ -154,7 +166,9 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                             child: GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
@@ -179,7 +193,9 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
                                 _submitCredits();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(16),
@@ -214,9 +230,9 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
     if (_submitting) return;
     final action = _selectedAction;
     if (action == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select an action.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select an action.')));
       return;
     }
     final amount = int.tryParse(_amountController.text.trim());
@@ -233,16 +249,14 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
     _token = token;
 
     try {
-      _api ??= ApiClientProvider.shared();
       final creditsValue = action == 'deduct' ? -amount : amount;
-      final res = await _api!.post(
-        SuperadminApiPaths.assignCredits(widget.adminId),
-        data: {
-          'credits': creditsValue.toString(),
-          'activity': action == 'add' ? 'ASSIGN' : 'DEDUCT',
-        },
-        cancelToken: token,
-      );
+      final res = await AppContainer.instance.superadminRepository
+          .assignCredits(
+            widget.adminId,
+            credits: creditsValue,
+            activity: action == 'add' ? 'ASSIGN' : 'DEDUCT',
+            cancelToken: token,
+          );
       if (!mounted) return;
       res.when(
         success: (_) {
@@ -260,19 +274,19 @@ class _AddDeductCreditScreenState extends State<AddDeductCreditScreen> {
         failure: (err) {
           final msg = err is ApiException
               ? (err.message.isNotEmpty
-                  ? err.message
-                  : "Couldn't update credits.")
+                    ? err.message
+                    : "Couldn't update credits.")
               : "Couldn't update credits.";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
         },
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't update credits.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update credits.")));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

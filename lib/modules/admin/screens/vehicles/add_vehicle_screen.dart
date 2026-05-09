@@ -11,7 +11,7 @@ import 'package:open_vts/design_system/components/open_vts_search_field.dart';
 import 'package:open_vts/design_system/components/open_vts_text_field.dart';
 import 'package:open_vts/design_system/theme/open_vts_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   const AddVehicleScreen({super.key});
@@ -47,7 +47,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final api = ApiClientProvider.shared();
+    final api = AppContainer.instance.apiClient;
     final repo = AdminVehiclesRepository(api: api);
 
     final usersRes = await AdminUsersRepository(api: api).getUsers(limit: 100);
@@ -85,7 +85,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final api = ApiClientProvider.shared();
+    final api = AppContainer.instance.apiClient;
     final repo = AdminVehiclesRepository(api: api);
 
     final result = await repo.createVehicle(

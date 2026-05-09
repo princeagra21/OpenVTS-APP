@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/repositories/api_config_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/features/admin_tools/api_config/api_config_controller.dart';
@@ -19,7 +19,7 @@ class _ApiConfigScreenState extends State<ApiConfigScreen> {
   @override
   void initState() {
     super.initState();
-    final api = ApiClientProvider.shared();
+    final api = AppContainer.instance.apiClient;
     final repo = ApiConfigRepository(api: api);
     _controller = ApiConfigController(repository: repo)..loadConfig();
   }

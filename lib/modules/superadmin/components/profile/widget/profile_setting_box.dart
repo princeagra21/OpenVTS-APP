@@ -5,7 +5,6 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/design_system/components/open_vts_components.dart';
-import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class ProfileSettingBox extends StatelessWidget {
   final String adminId;

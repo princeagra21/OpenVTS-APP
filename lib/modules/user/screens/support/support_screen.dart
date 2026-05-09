@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:open_vts/core/models/admin_ticket_list_item.dart';
 import 'package:open_vts/features/support/support_inbox_screen.dart';
 import 'package:open_vts/features/support/support_role_config.dart';
-import 'package:open_vts/features/support/ticket_details_screen.dart';
+import 'package:open_vts/features/support/ticket_details/ticket_details_screen.dart';
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});

@@ -1,8 +1,7 @@
 import 'dart:io';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_vehicle_list_item.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
@@ -41,7 +40,7 @@ class _AdminUserVehiclesTabState extends State<AdminUserVehiclesTab> {
   bool _assigning = false;
 
   AdminUsersRepository _repoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _apiClient ??= AppContainer.instance.apiClient;
     _repo ??= AdminUsersRepository(api: _apiClient!);
     return _repo!;
   }

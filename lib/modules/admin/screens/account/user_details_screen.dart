@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_driver_list_item.dart';
 import 'package:open_vts/core/models/admin_user_details.dart';
 import 'package:open_vts/core/models/admin_vehicle_list_item.dart';
@@ -21,7 +20,7 @@ import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
 
 class UserDetailsScreen extends StatefulWidget {
@@ -107,7 +106,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   AdminUsersRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
 
     _repo ??= AdminUsersRepository(api: _api!);
 

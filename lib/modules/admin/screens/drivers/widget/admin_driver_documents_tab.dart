@@ -10,7 +10,7 @@ import 'package:open_vts/modules/admin/screens/account/widget/documents/file_car
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 class AdminDriverDocumentsTab extends StatefulWidget {
@@ -106,7 +106,7 @@ class _AdminDriverDocumentsTabState extends State<AdminDriverDocumentsTab> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
+      _api ??= AppContainer.instance.apiClient;
       _repo ??= AdminDriversRepository(api: _api!);
 
       final res = await _repo!.getDriverDocuments(

@@ -1,13 +1,11 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 // UPDATED: screens/all_activities_screen.dart (renamed from all_transactions_screen.dart)
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:dio/dio.dart';
-import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
-import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/models/admin_list_item.dart';
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
@@ -351,7 +349,7 @@ class _AllActivitiesScreenState extends State<AllActivitiesScreen> {
   }
 
   void _ensureRepo() {
-    _api ??= ApiClientProvider.shared();
+    _api ??= AppContainer.instance.apiClient;
     _repo ??= SuperadminRepository(api: _api!);
   }
 
