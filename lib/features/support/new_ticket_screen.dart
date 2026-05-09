@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/admin_list_item.dart';
 import 'package:open_vts/core/models/admin_user_list_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
@@ -52,10 +51,6 @@ class _SupportNewTicketScreenState extends State<SupportNewTicketScreen> {
 
   late final SupportRoleConfig _config;
   late final SupportRepositoryAdapter _repository;
-
-  ApiClient? _api;
-  AdminUsersRepository? _usersRepository;
-  SuperadminRepository? _superadminRepository;
 
   bool _submitting = false;
   bool _loadingAssignees = false;
@@ -163,10 +158,7 @@ class _SupportNewTicketScreenState extends State<SupportNewTicketScreen> {
     setState(() => _loadingAssignees = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-      _usersRepository ??= AdminUsersRepository(api: _api!);
-
-      final result = await _usersRepository!.getUsers(
+      final result = await AppContainer.instance.adminUsersRepository.getUsers(
         page: 1,
         limit: 200,
         cancelToken: _loadToken,
@@ -206,10 +198,7 @@ class _SupportNewTicketScreenState extends State<SupportNewTicketScreen> {
     setState(() => _loadingAssignees = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-      _superadminRepository ??= SuperadminRepository(api: _api!);
-
-      final result = await _superadminRepository!.getAdmins(
+      final result = await AppContainer.instance.superadminRepository.getAdmins(
         page: 1,
         limit: 200,
         cancelToken: _loadToken,

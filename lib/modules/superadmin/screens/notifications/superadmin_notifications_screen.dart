@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_notification_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
@@ -11,7 +11,6 @@ import 'package:open_vts/modules/superadmin/components/appbars/superadmin_home_a
 import 'package:open_vts/modules/superadmin/layout/app_layout.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 
@@ -38,7 +37,6 @@ class _SuperadminNotificationsScreenState
   bool _pushActionLoading = false;
   PushDeviceState? _pushState;
 
-  ApiClient? _api;
   RoleNotificationsRepository? _repo;
   CancelToken? _loadToken;
   CancelToken? _markToken;
@@ -100,9 +98,8 @@ class _SuperadminNotificationsScreenState
   }
 
   RoleNotificationsRepository _repoOrCreate() {
-    _api ??= ApiClientProvider.shared();
     _repo ??= RoleNotificationsRepository(
-      api: _api!,
+      api: AppContainer.instance.superadminRepository.api,
       pathPrefix: AppRoutePaths.superadminNotifications,
     );
     return _repo!;

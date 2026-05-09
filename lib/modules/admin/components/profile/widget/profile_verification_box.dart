@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/repositories/admin_profile_repository.dart';
@@ -9,7 +9,6 @@ import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 
 enum _VerificationChannel { email, phone }
@@ -31,7 +30,6 @@ class ProfileVerificationBox extends StatefulWidget {
 }
 
 class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
-  ApiClient? _api;
   AdminProfileRepository? _repo;
 
   bool _sendingEmail = false;
@@ -69,8 +67,7 @@ class _ProfileVerificationBoxState extends State<ProfileVerificationBox> {
     }
 
     try {
-      _api ??= ApiClientProvider.shared();
-      _repo ??= AdminProfileRepository(api: _api!);
+      _repo ??= AppContainer.instance.adminProfileRepository;
 
       final Result<void> result = channel == _VerificationChannel.email
           ? await _repo!.sendEmailOtp(cancelToken: token)

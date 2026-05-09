@@ -7,6 +7,7 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
 import 'package:open_vts/core/widgets/app_shimmer.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
 import 'package:open_vts/modules/admin/components/admin/navigate.dart';
 import 'package:open_vts/modules/admin/components/appbars/admin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -146,8 +147,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       (err.statusCode == 401 || err.statusCode == 403))
                   ? 'Not authorized to load vehicle details.'
                   : "Couldn't load vehicle details.";
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          OpenVtsFeedback.error(context, message);
         },
       );
     } catch (_) {
@@ -159,9 +159,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
       if (_errorShown) return;
       _errorShown = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load vehicle details.")),
-      );
+      OpenVtsFeedback.error(context, "Couldn't load vehicle details.");
     }
   }
 
@@ -197,8 +195,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       (err.statusCode == 401 || err.statusCode == 403))
                   ? 'Not authorized to load linked users.'
                   : "Couldn't load linked users.";
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          OpenVtsFeedback.error(context, message);
         },
       );
     } catch (_) {
@@ -207,9 +204,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         _linkedUsers = const <AdminUserListItem>[];
         _loadingUsers = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load linked users.")),
-      );
+      OpenVtsFeedback.error(context, "Couldn't load linked users.");
     }
   }
 
@@ -261,8 +256,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       (err.statusCode == 401 || err.statusCode == 403))
                   ? 'Not authorized to load vehicle logs.'
                   : "Couldn't load vehicle logs.";
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          OpenVtsFeedback.error(context, message);
         },
       );
     } catch (_) {
@@ -271,9 +265,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         _logs = const <_VehicleLog>[];
         _loadingLogs = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't load vehicle logs.")),
-      );
+      OpenVtsFeedback.error(context, "Couldn't load vehicle logs.");
     }
   }
 
@@ -359,9 +351,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         distance == null ||
         odometer == null ||
         engineHours == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid numeric values.')),
-      );
+      OpenVtsFeedback.warning(context, 'Please enter valid numeric values.');
       return;
     }
 
@@ -393,8 +383,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
             _savingConfig = false;
             _saveConfigSnapshot();
           });
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Saved')));
+          OpenVtsFeedback.success(context, 'Saved');
         },
         failure: (err) {
           setState(() => _savingConfig = false);
@@ -403,16 +392,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       (err.statusCode == 401 || err.statusCode == 403))
                   ? 'Not authorized to save config.'
                   : "Couldn't save config.";
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          OpenVtsFeedback.error(context, message);
         },
       );
     } catch (_) {
       if (!mounted) return;
       setState(() => _savingConfig = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't save config.")),
-      );
+      OpenVtsFeedback.error(context, "Couldn't save config.");
     }
   }
 

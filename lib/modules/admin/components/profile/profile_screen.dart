@@ -1,9 +1,8 @@
-import 'package:open_vts/core/network/api_client_provider.dart';
 // components/profile/profile_screen.dart
 import 'package:dio/dio.dart';
+import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/models/admin_profile.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/repositories/admin_profile_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
@@ -39,7 +38,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = false;
   bool _errorShown = false;
   CancelToken? _loadToken;
-  ApiClient? _api;
   AdminProfileRepository? _repo;
 
   @override
@@ -63,8 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loading = true);
 
     try {
-      _api ??= ApiClientProvider.shared();
-      _repo ??= AdminProfileRepository(api: _api!);
+      _repo ??= AppContainer.instance.adminProfileRepository;
 
       final res = await _repo!.getMyProfile(cancelToken: token);
       if (!mounted) return;

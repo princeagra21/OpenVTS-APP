@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/session/session_service.dart';
+import 'package:open_vts/core/repositories/admin_profile_repository.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/auth_repository.dart';
 import 'package:open_vts/core/repositories/push_token_repository.dart';
+import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/repositories/user_notification_preferences_repository.dart';
 import 'package:open_vts/core/repositories/user_profile_repository.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
@@ -22,6 +24,8 @@ class AppContainer {
     required this.pushNotificationsService,
     required this.userNotificationPreferencesRepository,
     required this.adminUsersRepository,
+    required this.adminProfileRepository,
+    required this.superadminRepository,
     required this.userProfileRepository,
   });
 
@@ -57,6 +61,8 @@ class AppContainer {
       userNotificationPreferencesRepository:
           UserNotificationPreferencesRepository(api: apiClient),
       adminUsersRepository: AdminUsersRepository(api: apiClient),
+      adminProfileRepository: AdminProfileRepository(api: apiClient),
+      superadminRepository: SuperadminRepository(api: apiClient),
       userProfileRepository: UserProfileRepository(api: apiClient),
     );
 
@@ -88,5 +94,7 @@ class AppContainer {
   final UserNotificationPreferencesRepository
   userNotificationPreferencesRepository;
   final AdminUsersRepository adminUsersRepository;
+  final AdminProfileRepository adminProfileRepository;
+  final SuperadminRepository superadminRepository;
   final UserProfileRepository userProfileRepository;
 }

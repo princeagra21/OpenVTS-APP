@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/models/admin_ticket_list_item.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
@@ -440,19 +438,11 @@ class _SupportTicketDetailsScreenState
       return;
     }
 
-    Uri? uri = Uri.tryParse(raw);
+    final resolvedUrl = _repository.resolveAttachmentUrl(raw);
+    final uri = Uri.tryParse(resolvedUrl);
     if (uri == null) {
       _showError('Invalid attachment URL.');
       return;
-    }
-
-    if (!uri.hasScheme) {
-      final base = ApiClientProvider.shared().dio.options.baseUrl;
-      final baseUri = Uri.tryParse(base);
-      if (baseUri != null) {
-        final normalized = raw.startsWith('/') ? raw.substring(1) : raw;
-        uri = baseUri.resolve(normalized);
-      }
     }
 
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);

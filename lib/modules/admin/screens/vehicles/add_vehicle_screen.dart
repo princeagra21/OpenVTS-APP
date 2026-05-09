@@ -7,6 +7,10 @@ import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/admin_users_repository.dart';
 import 'package:open_vts/core/repositories/admin_vehicles_repository.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/design_system/components/open_vts_feedback.dart';
+import 'package:open_vts/design_system/components/open_vts_search_field.dart';
+import 'package:open_vts/design_system/components/open_vts_text_field.dart';
+import 'package:open_vts/design_system/theme/open_vts_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
@@ -77,9 +81,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         _imeiController.text.isEmpty ||
         selectedVehicleType == null ||
         selectedPlan == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
-      );
+      OpenVtsFeedback.warning(context, "Please fill all required fields");
       return;
     }
 
@@ -106,9 +108,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         Navigator.pop(context, true);
       },
       failure: (err) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to add vehicle: ${err.toString()}")),
-        );
+        OpenVtsFeedback.error(context, "Failed to add vehicle: ${err.toString()}");
       },
     );
   }
@@ -153,11 +153,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: AppFonts.inter(
-                                fontSize: fs,
-                                fontWeight: FontWeight.w700,
-                                color: cs.onSurface,
-                              ),
+                              style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium.copyWith(fontWeight: FontWeight.w700)),
                             ),
                           ),
                           InkWell(
@@ -180,27 +176,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      TextField(
+                      OpenVtsSearchField(
                         controller: searchController,
                         onChanged: (value) =>
                             setSheetState(() => query = value),
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          filled: true,
-                          fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: cs.onSurface.withOpacity(0.5),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 12),
                       Expanded(
@@ -215,11 +194,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                                 labelFor(item),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppFonts.inter(
-                                  fontSize: fs - 1,
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.onSurface,
-                                ),
+                                style: OpenVtsTypography.primary(OpenVtsTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                               ),
                               onTap: () => Navigator.pop(ctx, item),
                             );
@@ -282,7 +257,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: AdaptiveUtils.getTitleFontSize(w))),
+        Text(label, style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
         _SelectionField(
             value: value.isEmpty ? hint : value,
@@ -316,12 +291,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 children: [
                   Text(
                     "Add Vehicle",
-                    style: AppFonts.roboto(
-                      fontSize: titleSize,
-                      height: 20 / 16,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface,
-                    ),
+                    style: OpenVtsTypography.primary(OpenVtsTypography.headingMedium.copyWith(fontWeight: FontWeight.w700)),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
@@ -345,12 +315,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               const SizedBox(height: 8),
               Text(
                 "Register a new vehicle",
-                style: AppFonts.roboto(
-                  fontSize: helperSize,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w500,
-                  color: cs.onSurface.withOpacity(0.7),
-                ),
+                style: OpenVtsTypography.secondary(OpenVtsTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
               ),
               const SizedBox(height: 24),
 
@@ -372,29 +337,53 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           _pickUser,
                         ),
                         const SizedBox(height: 16),
-                        StylishTextField(
-                          label: "Vehicle Name *",
-                          hint: "e.g. Red Truck",
-                          controller: _nameController,
-                          prefixIcon: Icons.directions_car_rounded,
-                          validator: (v) => v?.isEmpty == true ? "Required" : null,
-                          width: w,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Vehicle Name *",
+                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                            ),
+                            const SizedBox(height: 8),
+                            OpenVtsTextField(
+                              hintText: "e.g. Red Truck",
+                              controller: _nameController,
+                              prefixIcon: Icon(Icons.directions_car_rounded),
+                              validator: (v) => v?.isEmpty == true ? "Required" : null,
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
-                        StylishTextField(
-                          label: "Plate No.",
-                          hint: "e.g. KA-01-AB-1234",
-                          controller: _plateController,
-                          prefixIcon: Icons.badge_outlined,
-                          width: w,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Plate No.",
+                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                            ),
+                            const SizedBox(height: 8),
+                            OpenVtsTextField(
+                              hintText: "e.g. KA-01-AB-1234",
+                              controller: _plateController,
+                              prefixIcon: Icon(Icons.badge_outlined),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
-                        StylishTextField(
-                          label: "VIN",
-                          hint: "Vehicle Identification Number",
-                          controller: _vinController,
-                          prefixIcon: Icons.info_outline,
-                          width: w,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "VIN",
+                              style: OpenVtsTypography.primary(OpenVtsTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                            ),
+                            const SizedBox(height: 8),
+                            OpenVtsTextField(
+                              hintText: "Vehicle Identification Number",
+                              controller: _vinController,
+                              prefixIcon: Icon(Icons.info_outline),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         _buildSelectionField(
@@ -449,12 +438,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: AppFonts.roboto(
-                        fontSize: AdaptiveUtils.getTitleFontSize(w),
-                        height: 20 / 14,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
+                      style: OpenVtsTypography.primary(OpenVtsTypography.labelLarge.copyWith(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ),
@@ -485,12 +469,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                           )
                         : Text(
                             "Add Vehicle",
-                            style: AppFonts.roboto(
-                              fontSize: AdaptiveUtils.getTitleFontSize(w),
-                              height: 20 / 14,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onPrimary,
-                            ),
+                            style: OpenVtsTypography.primary(OpenVtsTypography.labelLarge.copyWith(fontWeight: FontWeight.w600, color: cs.onPrimary)),
                           ),
                   ),
                 ),
@@ -603,10 +582,7 @@ class _SelectionField extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.inter(
-                  fontSize: AdaptiveUtils.getTitleFontSize(MediaQuery.of(context).size.width),
-                  color: cs.onSurface,
-                ),
+                style: OpenVtsTypography.primary(OpenVtsTypography.bodyMedium),
               ),
             ),
             Icon(Icons.arrow_drop_down, color: cs.primary),

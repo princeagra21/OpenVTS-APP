@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:open_vts/app/app_container.dart';
 import 'package:open_vts/core/models/superadmin_profile.dart';
-import 'package:open_vts/core/network/api_client.dart';
 import 'package:open_vts/core/repositories/role_notifications_repository.dart';
 import 'package:open_vts/core/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/services/push_notifications_service.dart';
@@ -14,7 +13,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:open_vts/core/network/api_client_provider.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/app/router/app_route_paths.dart';
 import 'package:open_vts/design_system/theme/open_vts_theme.dart';
@@ -33,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loadingProfile = false;
   String _accessToken = '';
   CancelToken? _profileToken;
-  ApiClient? _apiClient;
   SuperadminRepository? _repo;
   RoleNotificationsRepository? _notificationsRepo;
   int _unreadCount = 0;
@@ -59,19 +56,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   RoleNotificationsRepository _notificationsRepoOrCreate() {
-    _apiClient ??= ApiClientProvider.shared();
+    _repo ??= AppContainer.instance.superadminRepository;
     _notificationsRepo ??= RoleNotificationsRepository(
-      api: _apiClient!,
+      api: _repo!.api,
       pathPrefix: AppRoutePaths.superadminNotifications,
     );
     return _notificationsRepo!;
   }
 
   void _ensureRepo() {
-    if (_apiClient != null) return;
-    _apiClient = ApiClientProvider.shared();
-    _repo = SuperadminRepository(api: _apiClient!);
-    _baseUrl = _apiClient!.dio.options.baseUrl.trim();
+    _repo ??= AppContainer.instance.superadminRepository;
+    _baseUrl = _repo!.api.dio.options.baseUrl.trim();
   }
 
   Future<void> _loadAccessToken() async {

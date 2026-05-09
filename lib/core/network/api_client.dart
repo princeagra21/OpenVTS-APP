@@ -3,6 +3,7 @@ import 'package:open_vts/core/auth/session_expired_bus.dart';
 import 'package:open_vts/core/config/app_config.dart';
 import 'package:open_vts/core/network/api_exception.dart';
 import 'package:open_vts/core/network/interceptors/auth_interceptor.dart';
+import 'package:open_vts/core/network/interceptors/refresh_token_interceptor.dart';
 import 'package:open_vts/core/network/result.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,7 @@ class ApiClient {
     );
 
     dio.interceptors.add(AuthInterceptor(tokenStorage: tokenStorage));
+    dio.interceptors.add(RefreshTokenInterceptor(tokenStorage: tokenStorage, dio: dio));
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(requestBody: true, responseBody: false),
@@ -76,7 +78,6 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
-      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -111,7 +112,6 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
-      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -146,7 +146,6 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
-      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -181,7 +180,6 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
-      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
@@ -216,20 +214,10 @@ class ApiClient {
       if (CancelToken.isCancel(e)) {
         return Result.fail(const ApiException(message: 'Request cancelled'));
       }
-      await _handleUnauthorizedIfNeeded(e);
       return Result.fail(ApiException.fromDioException(e));
     } catch (e) {
       return Result.fail(ApiException(message: 'Unexpected error', details: e));
     }
-  }
-
-  Future<void> _handleUnauthorizedIfNeeded(DioException e) async {
-    final status = e.response?.statusCode;
-    if (status == 401) {
-      await _tokenStorage.clear();
-      SessionExpiredBus.emit();
-    }
-    // 403 is treated as permission denied, return ApiException normally
   }
 
   bool _isAbsoluteUrl(String path) {

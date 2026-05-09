@@ -1874,4 +1874,20 @@ class SuperadminRepository {
 
     return merged;
   }
+
+  Future<Result<void>> requestEmailOtp({CancelToken? cancelToken}) async {
+    final res = await api.post(SuperadminApiPaths.profileVerifyEmailRequest, cancelToken: cancelToken);
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<void>> requestWhatsappOtp({CancelToken? cancelToken}) async {
+    final res = await api.post(SuperadminApiPaths.profileVerifyWhatsappRequest, cancelToken: cancelToken);
+    return res.when(
+      success: (_) => Result.ok(null),
+      failure: (err) => Result.fail(err),
+    );
+  }
 }

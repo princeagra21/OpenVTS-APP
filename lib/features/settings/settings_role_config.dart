@@ -56,11 +56,29 @@ class SettingsRoleConfigs {
     icon: Icons.tune,
   );
 
+  static const _security = SettingsSectionModel(
+    id: SettingsSectionId.security,
+    label: 'Security',
+    icon: Icons.security,
+  );
+
+  static const _account = SettingsSectionModel(
+    id: SettingsSectionId.account,
+    label: 'Account',
+    icon: Icons.account_circle,
+  );
+
+  static const _theme = SettingsSectionModel(
+    id: SettingsSectionId.theme,
+    label: 'Theme',
+    icon: Icons.palette,
+  );
+
   static const admin = SettingsRoleConfig(
     role: SettingsRole.admin,
     title: 'Settings',
     subtitle: 'Manage admin configuration',
-    availableSections: [_profile, _localization, _settings],
+    availableSections: [_profile, _localization, _settings, _security, _account, _theme],
     permissions: SettingsRolePermissions(
       hasSettingsSection: true,
       supportsInlineOtpVerify: true,
@@ -70,6 +88,9 @@ class SettingsRoleConfigs {
       SettingsSectionId.profile: '/admin/settings/profile',
       SettingsSectionId.localization: '/admin/settings/localization',
       SettingsSectionId.settings: '/admin/settings/application',
+      SettingsSectionId.security: '/admin/settings/security',
+      SettingsSectionId.account: '/admin/settings/account',
+      SettingsSectionId.theme: '/admin/settings/theme',
     },
   );
 
@@ -77,7 +98,7 @@ class SettingsRoleConfigs {
     role: SettingsRole.user,
     title: 'Settings',
     subtitle: 'Manage admin configuration',
-    availableSections: [_profile, _localization],
+    availableSections: [_profile, _localization, _account, _theme],
     permissions: SettingsRolePermissions(
       hasSettingsSection: false,
       supportsInlineOtpVerify: true,
@@ -86,6 +107,8 @@ class SettingsRoleConfigs {
     routeMapping: {
       SettingsSectionId.profile: '/user/settings/profile',
       SettingsSectionId.localization: '/user/settings/localization',
+      SettingsSectionId.account: '/user/settings/account',
+      SettingsSectionId.theme: '/user/settings/theme',
     },
   );
 
@@ -93,7 +116,7 @@ class SettingsRoleConfigs {
     role: SettingsRole.superadmin,
     title: 'Settings',
     subtitle: 'Manage platform configuration',
-    availableSections: [_profile, _localization, _settings],
+    availableSections: [_profile, _localization, _settings, _security, _account, _theme],
     permissions: SettingsRolePermissions(
       hasSettingsSection: true,
       supportsInlineOtpVerify: false,
@@ -103,6 +126,9 @@ class SettingsRoleConfigs {
       SettingsSectionId.profile: '/superadmin/settings/profile',
       SettingsSectionId.localization: '/superadmin/settings/localization',
       SettingsSectionId.settings: '/superadmin/settings/application',
+      SettingsSectionId.security: '/superadmin/settings/security',
+      SettingsSectionId.account: '/superadmin/settings/account',
+      SettingsSectionId.theme: '/superadmin/settings/theme',
     },
   );
 }
