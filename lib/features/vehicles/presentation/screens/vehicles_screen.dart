@@ -25,8 +25,23 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _syncRoleAndLoad();
+  }
+
+  @override
+  void didUpdateWidget(covariant VehiclesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.config.role != widget.config.role ||
+        oldWidget.config.listEndpoint != widget.config.listEndpoint) {
+      _syncRoleAndLoad();
+    }
+  }
+
+  void _syncRoleAndLoad() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(selectedVehicleRoleProvider.notifier).state = widget.config.role;
+      ref.read(vehicleListControllerProvider(widget.config).notifier).loadVehicles();
     });
   }
 

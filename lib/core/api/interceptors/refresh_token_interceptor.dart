@@ -16,6 +16,7 @@ class RefreshTokenInterceptor extends Interceptor {
   RefreshTokenInterceptor({required this.tokenStorage, required this.dio});
 
   Future<String>? _refreshFuture;
+  bool _refreshEndpointUnavailable = false;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
@@ -25,7 +26,7 @@ class RefreshTokenInterceptor extends Interceptor {
     }
 
     final options = err.requestOptions;
-    if (_shouldSkipRefresh(options)) {
+    if (_refreshEndpointUnavailable || _shouldSkipRefresh(options)) {
       handler.next(err);
       return;
     }
@@ -87,17 +88,25 @@ class RefreshTokenInterceptor extends Interceptor {
       throw const _RefreshTokenUnavailable();
     }
 
-    final response = await dio.post<dynamic>(
-      AuthApiPaths.refreshToken,
-      data: {'refresh_token': refreshToken},
-      options: Options(
-        headers: const <String, dynamic>{
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        extra: const <String, dynamic>{skipAuthRefreshKey: true},
-      ),
-    );
+    late final Response<dynamic> response;
+    try {
+      response = await dio.post<dynamic>(
+        AuthApiPaths.refreshToken,
+        data: {'refresh_token': refreshToken},
+        options: Options(
+          headers: const <String, dynamic>{
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          extra: const <String, dynamic>{skipAuthRefreshKey: true},
+        ),
+      );
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) {
+        _refreshEndpointUnavailable = true;
+      }
+      rethrow;
+    }
 
     final newAccessToken = AuthTokenParser.extractAccessToken(response.data);
     if (newAccessToken == null || newAccessToken.trim().isEmpty) {

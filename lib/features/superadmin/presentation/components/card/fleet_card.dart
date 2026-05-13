@@ -68,7 +68,10 @@ class _FleetOverviewBoxState extends ConsumerState<FleetOverviewBox> {
   @override
   void initState() {
     super.initState();
-    _loadCounts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadCounts();
+    });
   }
 
   @override

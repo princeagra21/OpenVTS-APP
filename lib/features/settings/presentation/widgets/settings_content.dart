@@ -53,9 +53,16 @@ class _RoleAwareSettingsContentState extends ConsumerState<RoleAwareSettingsCont
     );
 
     _sectionRouter = const SettingsSectionRouter();
-    if (widget.role == SettingsRole.superadmin) {
-      _loadPushState();
-    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref
+          .read(settingsContentControllerProvider(_controllerParams).notifier)
+          .loadProfile();
+      if (widget.role == SettingsRole.superadmin) {
+        _loadPushState();
+      }
+    });
   }
 
 

@@ -80,7 +80,10 @@ class _AdoptionGrowthBoxState extends ConsumerState<AdoptionGrowthBox> {
   @override
   void initState() {
     super.initState();
-    _loadGraph();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadGraph();
+    });
   }
 
   @override

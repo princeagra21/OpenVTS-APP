@@ -23,7 +23,10 @@ class _VehicleStatusBoxState extends ConsumerState<VehicleStatusBox> {
   @override
   void initState() {
     super.initState();
-    _loadVehicleStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadVehicleStatus();
+    });
   }
 
   @override

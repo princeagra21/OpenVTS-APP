@@ -42,7 +42,7 @@ class SettingsControllerParams {
 
 final settingsControllerProvider = StateNotifierProvider.autoDispose
     .family<SettingsController, SettingsControllerState, SettingsControllerParams>((ref, params) {
-  return SettingsController(config: params.config, profileLoader: params.profileLoader)..loadProfile();
+  return SettingsController(config: params.config, profileLoader: params.profileLoader);
 });
 
 class SettingsController extends StateNotifier<SettingsControllerState> {

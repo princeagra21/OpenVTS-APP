@@ -18,6 +18,29 @@ class _VehicleApiService implements VehicleApiService {
   }
 
   @override
+  Future<ApiResponse<VehicleListResponse>> getVehiclesFromEndpoint(
+    String endpoint, {
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? status,
+  }) async {
+    final normalizedEndpoint = endpoint.trim().isEmpty
+        ? '/admin/vehicles'
+        : (endpoint.trim().startsWith('/') ? endpoint.trim() : '/${endpoint.trim()}');
+    final response = await _dio.get<Object?>(normalizedEndpoint, queryParameters: {
+      'page': page,
+      'limit': limit,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+      if (status != null && status.trim().isNotEmpty) 'status': status.trim(),
+    });
+    return ApiResponse<VehicleListResponse>.fromJson(
+      ApiResponseNormalizer.dynamicMapOf(response.data),
+      (json) => VehicleListResponse.fromJson(ApiResponseNormalizer.dynamicMapOf(json)),
+    );
+  }
+
+  @override
   Future<ApiResponse<VehicleResponse>> getVehicleById(int id) async {
     final response = await _dio.get<Object?>('/admin/vehicles/$id');
     return ApiResponse<VehicleResponse>.fromJson(ApiResponseNormalizer.dynamicMapOf(response.data), (json) => VehicleResponse.fromJson(ApiResponseNormalizer.dynamicMapOf(json)));

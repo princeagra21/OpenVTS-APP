@@ -27,6 +27,34 @@ class VehicleRoleConfig {
   final String? telemetryEndpoint;
   final String? commandEndpoint;
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is VehicleRoleConfig &&
+            other.role == role &&
+            other.title == title &&
+            other.subtitle == subtitle &&
+            other.permissions == permissions &&
+            _listEquals(other.availableTabs, availableTabs) &&
+            other.listEndpoint == listEndpoint &&
+            other.detailsEndpoint == detailsEndpoint &&
+            other.telemetryEndpoint == telemetryEndpoint &&
+            other.commandEndpoint == commandEndpoint;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        role,
+        title,
+        subtitle,
+        permissions,
+        Object.hashAll(availableTabs),
+        listEndpoint,
+        detailsEndpoint,
+        telemetryEndpoint,
+        commandEndpoint,
+      );
+
   static VehicleRoleConfig get superadmin => const VehicleRoleConfig(
     role: VehicleRole.superadmin,
     title: 'Vehicle Management',
@@ -116,4 +144,14 @@ class VehicleDetailsRequest {
 
   final String vehicleId;
   final bool includeTelemetry;
+}
+
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i += 1) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }

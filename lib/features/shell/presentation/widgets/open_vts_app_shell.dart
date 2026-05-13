@@ -179,7 +179,7 @@ class _OpenVtsAppShellState extends State<OpenVtsAppShell> {
         ? _iconForTitle(appBarPrimaryTitle)
         : null;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: isDark
           ? OpenVtsColors.panelDark
           : OpenVtsColors.panelLight,
@@ -446,6 +446,24 @@ class _OpenVtsAppShellState extends State<OpenVtsAppShell> {
       bottomNavigationBar: widget.showBottomBar
           ? OpenVtsBottomNav(role: widget.role, forceVisible: true)
           : null,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.hasBoundedHeight) {
+          return scaffold;
+        }
+
+        // Defensive guard for legacy screens that accidentally place a full
+        // AppLayout/Scaffold inside a SingleChildScrollView/Column. Scaffold
+        // needs a finite height; without this, Flutter web throws an
+        // infinite-size render error and the page becomes unusable.
+        return SizedBox(
+          width: double.infinity,
+          height: MediaQuery.sizeOf(context).height,
+          child: scaffold,
+        );
+      },
     );
   }
 }

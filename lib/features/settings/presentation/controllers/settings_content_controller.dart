@@ -20,7 +20,7 @@ final settingsContentControllerProvider = StateNotifierProvider.autoDispose
   return SettingsContentController(
     config: params.config,
     profileLoader: params.profileLoader,
-  )..loadProfile();
+  );
 });
 
 class SettingsContentController extends StateNotifier<SettingsViewState> {

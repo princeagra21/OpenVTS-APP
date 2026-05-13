@@ -16,13 +16,16 @@ class VehicleRepositoryImpl implements VehicleRepository {
     VehicleApiService? api,
     VehicleLocalSource? localSource,
     legacy_repo.VehicleRepository? legacyRepository,
+    String listEndpoint = '/admin/vehicles',
   })  : _api = api,
         _localSource = localSource,
-        _legacyRepository = legacyRepository;
+        _legacyRepository = legacyRepository,
+        _listEndpoint = listEndpoint;
 
   final VehicleApiService? _api;
   final VehicleLocalSource? _localSource;
   final legacy_repo.VehicleRepository? _legacyRepository;
+  final String _listEndpoint;
 
   @override
   Future<Result<PaginatedResponse<Vehicle>, AppError>> getVehicles({
@@ -34,7 +37,13 @@ class VehicleRepositoryImpl implements VehicleRepository {
     final api = _api;
     if (api != null) {
       try {
-        final response = await api.getVehicles(page: page, limit: limit, search: search, status: status);
+        final response = await api.getVehiclesFromEndpoint(
+          _listEndpoint,
+          page: page,
+          limit: limit,
+          search: search,
+          status: status,
+        );
         final payload = response.payload;
         if (!response.action || payload == null) {
           return Result.failure(ServerError(response.message.isEmpty ? 'Unable to load vehicles.' : response.message));

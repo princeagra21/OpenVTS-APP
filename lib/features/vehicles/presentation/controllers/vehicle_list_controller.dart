@@ -14,8 +14,8 @@ final vehicleListControllerProvider = StateNotifierProvider.autoDispose
     .family<VehicleListController, VehicleListState, VehicleRoleConfig>((ref, config) {
   return VehicleListController(
     config: config,
-    getVehiclesUseCase: ref.watch(getVehiclesUseCaseProvider),
-  )..loadVehicles();
+    getVehiclesUseCase: ref.watch(getVehiclesUseCaseForConfigProvider(config)),
+  );
 });
 
 class VehicleListController extends StateNotifier<VehicleListState> {
@@ -29,8 +29,11 @@ class VehicleListController extends StateNotifier<VehicleListState> {
   final GetVehiclesUseCase _getVehiclesUseCase;
   Timer? _searchDebounce;
   int _requestVersion = 0;
+  bool _loadInFlight = false;
 
   Future<void> loadVehicles() async {
+    if (_loadInFlight && state.searchQuery.trim().isEmpty) return;
+    _loadInFlight = true;
     final version = ++_requestVersion;
     state = state.copyWith(
       isLoading: state.vehicles.isEmpty,
@@ -43,6 +46,7 @@ class VehicleListController extends StateNotifier<VehicleListState> {
       search: state.searchQuery.trim().isEmpty ? null : state.searchQuery.trim(),
       status: state.statusFilter,
     );
+    _loadInFlight = false;
     if (!mounted || version != _requestVersion) return;
 
     result.when(

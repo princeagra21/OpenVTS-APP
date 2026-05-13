@@ -35,6 +35,14 @@ class SuperadminCoreGatewayRepositoryImpl implements SuperadminCoreGatewayReposi
   final AppPreferencesRepository _preferences;
   final ReferenceDataRepository _referenceDataRepository;
 
+  static const Duration _dashboardCacheTtl = Duration(seconds: 5);
+  Future<domain.Result<SuperadminTotalCounts, AppError>>? _totalCountsInFlight;
+  domain.Result<SuperadminTotalCounts, AppError>? _totalCountsCache;
+  DateTime? _totalCountsCachedAt;
+  Future<domain.Result<SuperadminAdoptionGraph, AppError>>? _adoptionGraphInFlight;
+  domain.Result<SuperadminAdoptionGraph, AppError>? _adoptionGraphCache;
+  DateTime? _adoptionGraphCachedAt;
+
   @override
   Future<domain.Result<SuperadminProfile, AppError>> getSuperadminProfile() {
     return _convert(_legacy.getSuperadminProfile());
@@ -46,10 +54,44 @@ class SuperadminCoreGatewayRepositoryImpl implements SuperadminCoreGatewayReposi
   }
 
   @override
-  Future<domain.Result<SuperadminTotalCounts, AppError>> getTotalCounts() => _convert(_legacy.getTotalCounts());
+  Future<domain.Result<SuperadminTotalCounts, AppError>> getTotalCounts() {
+    final cached = _totalCountsCache;
+    final cachedAt = _totalCountsCachedAt;
+    if (cached != null && cachedAt != null && DateTime.now().difference(cachedAt) < _dashboardCacheTtl) {
+      return Future.value(cached);
+    }
+
+    final existing = _totalCountsInFlight;
+    if (existing != null) return existing;
+
+    final future = _convert(_legacy.getTotalCounts()).then((result) {
+      _totalCountsCache = result;
+      _totalCountsCachedAt = DateTime.now();
+      return result;
+    }).whenComplete(() => _totalCountsInFlight = null);
+    _totalCountsInFlight = future;
+    return future;
+  }
 
   @override
-  Future<domain.Result<SuperadminAdoptionGraph, AppError>> getAdoptionGraph() => _convert(_legacy.getAdoptionGraph());
+  Future<domain.Result<SuperadminAdoptionGraph, AppError>> getAdoptionGraph() {
+    final cached = _adoptionGraphCache;
+    final cachedAt = _adoptionGraphCachedAt;
+    if (cached != null && cachedAt != null && DateTime.now().difference(cachedAt) < _dashboardCacheTtl) {
+      return Future.value(cached);
+    }
+
+    final existing = _adoptionGraphInFlight;
+    if (existing != null) return existing;
+
+    final future = _convert(_legacy.getAdoptionGraph()).then((result) {
+      _adoptionGraphCache = result;
+      _adoptionGraphCachedAt = DateTime.now();
+      return result;
+    }).whenComplete(() => _adoptionGraphInFlight = null);
+    _adoptionGraphInFlight = future;
+    return future;
+  }
 
   @override
   Future<domain.Result<List<SuperadminRecentVehicle>, AppError>> getRecentVehicles() => _convert(_legacy.getRecentVehicles());

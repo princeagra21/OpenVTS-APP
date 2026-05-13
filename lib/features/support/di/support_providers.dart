@@ -8,5 +8,5 @@ final supportControllerProvider = StateNotifierProvider.autoDispose
   return SupportController(
     config: config,
     repository: SupportRepositoryFactory.forRole(config.role),
-  )..loadTickets();
+  );
 });

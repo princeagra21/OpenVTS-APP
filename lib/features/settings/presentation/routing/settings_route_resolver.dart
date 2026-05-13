@@ -4,14 +4,14 @@ import 'package:open_vts/shared/models/admin_profile.dart';
 import 'package:open_vts/core/router/route_names.dart';
 import 'package:open_vts/features/settings/domain/config/settings_role_config.dart';
 import 'package:open_vts/features/settings/domain/entities/settings_section_model.dart';
+import 'package:open_vts/features/localization/domain/config/localization_role_config.dart';
+import 'package:open_vts/features/localization/presentation/screens/localization_screen.dart';
 import 'package:open_vts/features/admin/presentation/components/admin/application_setting/application_setting.dart';
 import 'package:open_vts/features/admin/presentation/components/admin/edit_admin_profile_screen.dart'
     as admin_profile;
-import 'package:open_vts/features/admin/presentation/components/admin/localization/localization.dart';
 import 'package:open_vts/features/admin/presentation/components/admin/update_password_screen.dart'
     as admin_password;
 import 'package:open_vts/features/admin/presentation/components/appbars/admin_home_appbar.dart';
-import 'package:open_vts/features/superadmin/presentation/components/admin/localization/localization.dart';
 import 'package:open_vts/features/superadmin/presentation/components/admin/profile_tab/edit_admin_profile_screen.dart'
     as superadmin_profile;
 import 'package:open_vts/features/superadmin/presentation/components/admin/profile_tab/update_password_screen.dart'
@@ -19,7 +19,6 @@ import 'package:open_vts/features/superadmin/presentation/components/admin/profi
 import 'package:open_vts/features/superadmin/presentation/components/admin/setting_tab/superadmin_settings_tab.dart';
 import 'package:open_vts/features/superadmin/presentation/components/appbars/superadmin_home_appbar.dart';
 import 'package:open_vts/features/user/presentation/components/appbars/user_home_appbar.dart';
-import 'package:open_vts/features/user/presentation/screens/localization/localization.dart';
 import 'package:open_vts/features/user/presentation/screens/profile/widget/edit_admin_profile_screen.dart'
     as user_profile;
 import 'package:open_vts/features/user/presentation/screens/profile/widget/update_password_screen.dart'
@@ -67,11 +66,11 @@ class SettingsRouteResolver {
   static Widget buildLocalizationSection(SettingsRole role) {
     switch (role) {
       case SettingsRole.admin:
-        return const AdminLocalizationScreen();
+        return const LocalizationScreen(config: LocalizationRoleConfigs.admin);
       case SettingsRole.user:
-        return const UserLocalizationScreen();
+        return const LocalizationScreen(config: LocalizationRoleConfigs.user);
       case SettingsRole.superadmin:
-        return const SuperadminLocalizationScreen();
+        return const LocalizationScreen(config: LocalizationRoleConfigs.superadmin);
     }
   }
 

@@ -67,16 +67,27 @@ class SuperadminDashboardController
       : super(const SuperadminDashboardState());
 
   final GetSuperadminDashboardGatewayUseCase _dashboardUseCase;
+  bool _initialLoadInFlight = false;
+  bool _hasLoadedInitial = false;
 
-  Future<void> loadInitial() async {
-    await Future.wait<void>([
-      loadRecentVehicles(),
-      loadRecentTransactions(),
-      loadRecentUsers(),
-    ]);
+  Future<void> loadInitial({bool force = false}) async {
+    if (_initialLoadInFlight) return;
+    if (_hasLoadedInitial && !force) return;
+
+    _initialLoadInFlight = true;
+    try {
+      await Future.wait<void>([
+        loadRecentVehicles(),
+        loadRecentTransactions(),
+        loadRecentUsers(),
+      ]);
+      _hasLoadedInitial = true;
+    } finally {
+      _initialLoadInFlight = false;
+    }
   }
 
-  Future<void> refreshAll() => loadInitial();
+  Future<void> refreshAll() => loadInitial(force: true);
 
   Future<void> loadRecentVehicles() async {
     state = state.copyWith(isLoadingVehicles: true, vehiclesError: null);

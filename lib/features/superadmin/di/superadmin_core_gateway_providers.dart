@@ -47,9 +47,7 @@ final superadminGatewaySessionServiceProvider = sessionServiceProvider;
 
 
 final superadminDashboardControllerProvider = StateNotifierProvider.autoDispose<SuperadminDashboardController, SuperadminDashboardState>((ref) {
-  final controller = SuperadminDashboardController(
+  return SuperadminDashboardController(
     ref.watch(getSuperadminDashboardGatewayUseCaseProvider),
   );
-  controller.loadInitial();
-  return controller;
 });

@@ -25,6 +25,15 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(superadminDashboardControllerProvider.notifier).loadInitial();
+    });
+  }
+
   Future<void> _refreshDashboard() {
     return ref.read(superadminDashboardControllerProvider.notifier).refreshAll();
   }
