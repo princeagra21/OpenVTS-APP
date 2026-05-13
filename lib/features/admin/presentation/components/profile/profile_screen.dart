@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/features/admin/di/admin_account_providers.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});

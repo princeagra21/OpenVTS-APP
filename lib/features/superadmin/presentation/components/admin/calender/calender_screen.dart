@@ -1,21 +1,20 @@
-import 'package:open_vts/core/theme/app_fonts.dart';
-// 🔥 FULLY UPDATED WITH APPTHEME COLOR SCHEME
-// EventCalendarScreen (Drop-in Replacement)
-
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
+import 'package:open_vts/core/router/route_names.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
+import 'package:open_vts/core/providers/legacy_repository_adapter_providers.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+
 import 'package:open_vts/core/utils/app_cancellation.dart';
 import 'package:open_vts/features/admin/domain/entities/calendar_event_item.dart';
 import 'package:open_vts/core/error/legacy_error_presenter.dart';
-import 'package:open_vts/shared/widgets/app_shimmer.dart';
-import 'package:open_vts/core/router/route_names.dart';
-import 'package:open_vts/features/superadmin/presentation/components/appbars/superadmin_home_appbar.dart';
-import 'package:open_vts/core/utils/adaptive_utils.dart';
-import 'package:open_vts/core/utils/app_utils.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
-import 'package:flutter/foundation.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
@@ -1068,12 +1067,12 @@ class _EventCalendarScreenState extends ConsumerState<EventCalendarScreen> {
             ),
           ),
           Positioned(
-            left: hp,
-            right: hp,
             top: 0,
-            child: SuperAdminHomeAppBar(
+            left: 0,
+            right: 0,
+            child: TopBar(
               title: 'Calendar',
-              leadingIcon: Symbols.date_range,
+              onClose: () => Navigator.of(context).pop(),
             ),
           ),
         ],

@@ -19,6 +19,7 @@ import 'package:open_vts/features/admin/presentation/components/appbars/admin_ho
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});

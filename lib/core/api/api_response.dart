@@ -25,11 +25,15 @@ class ApiResponse<T> {
     return ApiResponse<T>(
       status: json['status']?.toString() ?? '',
       data: rawData is Map<String, dynamic>
-          ? ApiData<T>.fromJson(rawData, fromJsonT)
+          ? ApiData<T>.fromJson(
+              rawData,
+              fromJsonT,
+              defaultAction: json['status']?.toString().toLowerCase() == 'success',
+            )
           : ApiData<T>(
-              action: false,
-              message: 'Invalid API response',
-              data: null,
+              action: json['status']?.toString().toLowerCase() == 'success',
+              message: '',
+              data: rawData != null ? fromJsonT(rawData) : null,
             ),
       timestamp: json['timestamp']?.toString(),
     );
@@ -49,17 +53,22 @@ class ApiData<T> {
 
   factory ApiData.fromJson(
     Map<String, dynamic> json,
-    T Function(Object? json) fromJsonT,
-  ) {
+    T Function(Object? json) fromJsonT, {
+    bool defaultAction = false,
+  }) {
     final rawAction = json['action'] ?? json['success'] ?? json['ok'];
     return ApiData<T>(
-      action: rawAction is bool
-          ? rawAction
-          : rawAction?.toString().toLowerCase() == 'true',
+      action: rawAction == null
+          ? defaultAction
+          : rawAction is bool
+              ? rawAction
+              : rawAction.toString().toLowerCase() == 'true',
       message: json['message']?.toString() ?? '',
       data: json.containsKey('data') && json['data'] != null
           ? fromJsonT(json['data'])
-          : null,
+          : json.keys.any((key) => key != 'action' && key != 'success' && key != 'ok' && key != 'message')
+              ? fromJsonT(json)
+              : null,
     );
   }
 }

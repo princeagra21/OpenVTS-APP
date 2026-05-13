@@ -1,11 +1,10 @@
-import 'package:open_vts/features/superadmin/presentation/components/card/adoption_widget.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
 import 'package:open_vts/features/superadmin/presentation/components/card/fleet_card.dart';
 import 'package:open_vts/features/superadmin/presentation/components/card/vehicle_status_box.dart';
+import 'package:open_vts/features/superadmin/presentation/components/card/adoption_widget.dart';
 import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_vehicle.dart';
 import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_transaction.dart';
-import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_user.dart';
 import 'package:open_vts/shared/widgets/app_shimmer.dart';
-import 'package:open_vts/features/superadmin/presentation/components/appbars/superadmin_home_appbar.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +15,8 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/theme/open_vts_theme.dart';
 import 'package:open_vts/core/router/route_names.dart';
+import 'package:open_vts/features/superadmin/presentation/layout/app_layout.dart';
+import 'package:open_vts/core/theme/app_theme.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -35,13 +36,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _refreshDashboard() {
-    return ref.read(superadminDashboardControllerProvider.notifier).refreshAll();
+    return ref
+        .read(superadminDashboardControllerProvider.notifier)
+        .refreshAll();
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final topPadding = MediaQuery.of(context).padding.top;
     final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
         ? 8.0
         : AdaptiveUtils.isSmallScreen(screenWidth)
@@ -57,17 +59,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                topPadding,
-                horizontalPadding,
-                0,
-              ),
-              child: SuperAdminHomeAppBar(
-                title: 'Dashboard',
-                leadingIcon: Symbols.grid_view,
-              ),
+            TopBar(
+              title: 'Dashboard',
+              leadingIcon: Symbols.dashboard,
+              fallbackRoute: AppRoutePaths.superadminHome,
+              onClose: () => context.go(AppRoutePaths.superadminHome),
             ),
             Expanded(
               child: RefreshIndicator(
@@ -130,11 +126,12 @@ class _RecentVehiclesSection extends ConsumerStatefulWidget {
   const _RecentVehiclesSection();
 
   @override
-  ConsumerState<_RecentVehiclesSection> createState() => _RecentVehiclesSectionState();
+  ConsumerState<_RecentVehiclesSection> createState() =>
+      _RecentVehiclesSectionState();
 }
 
-class _RecentVehiclesSectionState extends ConsumerState<_RecentVehiclesSection> {
-
+class _RecentVehiclesSectionState
+    extends ConsumerState<_RecentVehiclesSection> {
   String _safeString(Object? value, {String fallback = '—'}) {
     if (value == null) return fallback;
     final s = value.toString().trim();
@@ -338,10 +335,10 @@ class _RecentVehiclesSectionState extends ConsumerState<_RecentVehiclesSection> 
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).brightness ==
-                                  Brightness.light
-                              ? Colors.grey.shade50
-                              : cs.surfaceContainerHighest,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.grey.shade50
+                                  : cs.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -391,11 +388,10 @@ class _RecentVehiclesSectionState extends ConsumerState<_RecentVehiclesSection> 
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Colors.grey.shade50
-                                      : cs.surfaceContainerHighest,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey.shade50
+                                  : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -439,8 +435,8 @@ class _RecentTransactionsSection extends ConsumerStatefulWidget {
       _RecentTransactionsSectionState();
 }
 
-class _RecentTransactionsSectionState extends ConsumerState<_RecentTransactionsSection> {
-
+class _RecentTransactionsSectionState
+    extends ConsumerState<_RecentTransactionsSection> {
   String _safeString(Object? value, {String fallback = '—'}) {
     if (value == null) return fallback;
     final s = value.toString().trim();
@@ -655,17 +651,18 @@ class _RecentTransactionsSectionState extends ConsumerState<_RecentTransactionsS
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).brightness ==
-                                  Brightness.light
-                              ? Colors.grey.shade50
-                              : cs.surfaceContainerHighest,
+                          color: cs.primary,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
-                        child: Icon(
-                          Icons.person_outline,
-                          size: 18,
-                          color: cs.onSurface.withOpacity(0.8),
+                        child: Text(
+                          name.isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
+                          style: AppFonts.roboto(
+                            fontSize: mainRowFs,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -717,11 +714,10 @@ class _RecentTransactionsSectionState extends ConsumerState<_RecentTransactionsS
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Colors.grey.shade50
-                                      : cs.surfaceContainerHighest,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey.shade50
+                                  : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Row(
@@ -762,11 +758,11 @@ class _RecentUsersSection extends ConsumerStatefulWidget {
   const _RecentUsersSection();
 
   @override
-  ConsumerState<_RecentUsersSection> createState() => _RecentUsersSectionState();
+  ConsumerState<_RecentUsersSection> createState() =>
+      _RecentUsersSectionState();
 }
 
 class _RecentUsersSectionState extends ConsumerState<_RecentUsersSection> {
-
   String _safeString(Object? value, {String fallback = '—'}) {
     if (value == null) return fallback;
     final s = value.toString().trim();
@@ -975,5 +971,3 @@ class _RecentUsersSectionState extends ConsumerState<_RecentUsersSection> {
     );
   }
 }
-
-

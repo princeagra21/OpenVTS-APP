@@ -18,7 +18,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> getMap(
+  Future<ApiResponse<dynamic>> getPayload(
     String path, {
     Map<String, Object?>? query,
   }) async {
@@ -28,7 +28,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -39,11 +39,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -53,7 +53,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> postMap(
+  Future<ApiResponse<dynamic>> postPayload(
     String path, {
     TypedApiRequestBody? body,
     Map<String, Object?>? query,
@@ -65,7 +65,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body?.toJson() ?? <String, dynamic>{});
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -76,11 +76,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -90,7 +90,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> patchMap(
+  Future<ApiResponse<dynamic>> patchPayload(
     String path, {
     TypedApiRequestBody? body,
     Map<String, Object?>? query,
@@ -102,7 +102,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body?.toJson() ?? <String, dynamic>{});
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -113,11 +113,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -127,7 +127,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> putMap(
+  Future<ApiResponse<dynamic>> putPayload(
     String path, {
     TypedApiRequestBody? body,
     Map<String, Object?>? query,
@@ -139,7 +139,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body?.toJson() ?? <String, dynamic>{});
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -150,11 +150,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -164,7 +164,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> postForm(
+  Future<ApiResponse<dynamic>> postForm(
     String path,
     FormData body, {
     Map<String, Object?>? query,
@@ -175,7 +175,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     final _data = body;
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -186,11 +186,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -200,7 +200,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> patchForm(
+  Future<ApiResponse<dynamic>> patchForm(
     String path,
     FormData body, {
     Map<String, Object?>? query,
@@ -211,7 +211,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     final _data = body;
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'PATCH', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -222,11 +222,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -236,7 +236,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
   }
 
   @override
-  Future<ApiResponse<Map<String, dynamic>>> deleteMap(
+  Future<ApiResponse<dynamic>> deletePayload(
     String path, {
     TypedApiRequestBody? body,
     Map<String, Object?>? query,
@@ -248,7 +248,7 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body?.toJson() ?? <String, dynamic>{});
-    final _options = _setStreamType<ApiResponse<Map<String, dynamic>>>(
+    final _options = _setStreamType<ApiResponse<dynamic>>(
       Options(method: 'DELETE', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -259,11 +259,11 @@ class _SuperadminTypedApiService implements SuperadminTypedApiService {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late ApiResponse<Map<String, dynamic>> _value;
+    late ApiResponse<dynamic> _value;
     try {
-      _value = ApiResponse<Map<String, dynamic>>.fromJson(
+      _value = ApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => Map<String, dynamic>.from(json as Map<String, dynamic>),
+        (json) => json,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

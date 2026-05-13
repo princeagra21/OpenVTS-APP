@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/shared/models/admin_profile.dart';
 import 'package:open_vts/features/settings/di/settings_access_providers.dart';
@@ -187,17 +188,12 @@ class _RoleAwareSettingsContentState extends ConsumerState<RoleAwareSettingsCont
                 ),
               ),
               Positioned(
-                left: padding,
-                right: padding,
                 top: 0,
-                child: Container(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? OpenVtsColors.panelDark
-                      : OpenVtsColors.panelLight,
-                  child: _sectionRouter.buildRoleAppBar(
-                    context: context,
-                    role: widget.role,
-                  ),
+                left: 0,
+                right: 0,
+                child: TopBar(
+                  title: 'Settings',
+                  onClose: () => Navigator.of(context).pop(),
                 ),
               ),
             ],

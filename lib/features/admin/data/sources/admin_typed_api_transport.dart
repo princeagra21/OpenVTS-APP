@@ -18,27 +18,27 @@ abstract class AdminTypedApiService {
   factory AdminTypedApiService(Dio dio, {String? baseUrl}) = _AdminTypedApiService;
 
   @GET('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> getMap(
+  Future<ApiResponse<dynamic>> getMap(
     @Path('path') String path, {
     @Queries() Map<String, Object?>? query,
   });
 
   @POST('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> postMap(
+  Future<ApiResponse<dynamic>> postMap(
     @Path('path') String path, {
     @Body() TypedApiRequestBody? body,
     @Queries() Map<String, Object?>? query,
   });
 
   @PATCH('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> patchMap(
+  Future<ApiResponse<dynamic>> patchMap(
     @Path('path') String path, {
     @Body() TypedApiRequestBody? body,
     @Queries() Map<String, Object?>? query,
   });
 
   @PUT('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> putMap(
+  Future<ApiResponse<dynamic>> putMap(
     @Path('path') String path, {
     @Body() TypedApiRequestBody? body,
     @Queries() Map<String, Object?>? query,
@@ -46,21 +46,21 @@ abstract class AdminTypedApiService {
 
 
   @POST('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> postForm(
+  Future<ApiResponse<dynamic>> postForm(
     @Path('path') String path,
     @Body() FormData body, {
     @Queries() Map<String, Object?>? query,
   });
 
   @PATCH('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> patchForm(
+  Future<ApiResponse<dynamic>> patchForm(
     @Path('path') String path,
     @Body() FormData body, {
     @Queries() Map<String, Object?>? query,
   });
 
   @DELETE('{path}')
-  Future<ApiResponse<Map<String, dynamic>>> deleteMap(
+  Future<ApiResponse<dynamic>> deleteMap(
     @Path('path') String path, {
     @Body() TypedApiRequestBody? body,
     @Queries() Map<String, Object?>? query,
@@ -133,13 +133,13 @@ class AdminTypedApiTransport {
     return _send(() => _api.deleteMap(path, body: _requestBody(data), query: _objectQuery(queryParameters)));
   }
 
-  Future<legacy.Result<dynamic>> _send(Future<ApiResponse<Map<String, dynamic>>> Function() request) async {
+  Future<legacy.Result<dynamic>> _send(Future<ApiResponse<dynamic>> Function() request) async {
     try {
       final response = await request();
       if (!response.action) {
         return legacy.Result.fail(ServerError(response.message.trim().isEmpty ? 'Request failed' : response.message.trim()));
       }
-      return legacy.Result.ok(response.payload ?? const <String, dynamic>{});
+      return legacy.Result.ok(response.payload);
     } on DioException catch (error) {
       return legacy.Result.fail(AppErrorMapper.fromDio(error));
     } catch (error) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/features/admin/domain/entities/admin_ticket_list_item.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
@@ -14,9 +15,6 @@ import 'package:open_vts/features/support/presentation/ticket_details/ticket_det
 import 'package:open_vts/features/support/presentation/widgets/ticket_empty_state.dart';
 import 'package:open_vts/features/support/presentation/widgets/ticket_filters.dart';
 import 'package:open_vts/features/support/presentation/widgets/ticket_list.dart';
-import 'package:open_vts/features/admin/presentation/components/appbars/admin_home_appbar.dart';
-import 'package:open_vts/features/superadmin/presentation/components/appbars/superadmin_home_appbar.dart';
-import 'package:open_vts/features/user/presentation/components/appbars/user_home_appbar.dart';
 
 class SupportInboxScreen extends ConsumerStatefulWidget {
   const SupportInboxScreen({super.key, required this.role});
@@ -149,25 +147,7 @@ class _SupportInboxScreenState extends ConsumerState<SupportInboxScreen> {
     }
   }
 
-  Widget _buildRoleAppBar() {
-    switch (_config.role) {
-      case SupportRole.admin:
-        return const AdminHomeAppBar(
-          title: 'Support',
-          leadingIcon: Icons.support_agent_outlined,
-        );
-      case SupportRole.user:
-        return const UserHomeAppBar(
-          title: 'Support',
-          leadingIcon: Icons.support_agent_outlined,
-        );
-      case SupportRole.superadmin:
-        return const SuperAdminHomeAppBar(
-          title: 'Support',
-          leadingIcon: Icons.support_agent_outlined,
-        );
-    }
-  }
+
 
   String _scopeLabel(SupportListScope scope) {
     if (scope == SupportListScope.mine) return 'My Tickets';
@@ -348,7 +328,15 @@ class _SupportInboxScreenState extends ConsumerState<SupportInboxScreen> {
               ),
             ),
           ),
-          Positioned(left: hp, right: hp, top: 0, child: _buildRoleAppBar()),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: TopBar(
+              title: 'Support',
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
         ],
       ),
     );

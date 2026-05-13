@@ -1,3 +1,10 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/features/superadmin/presentation/components/transactions/payments_screen.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_components.dart';
+
 part of 'payments_screen.dart';
 
 extension _PaymentsScreenExport on _PaymentsScreenState {

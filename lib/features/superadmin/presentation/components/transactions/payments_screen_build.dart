@@ -1,3 +1,12 @@
+import 'package:open_vts/features/superadmin/presentation/layout/super_admin_app_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/features/superadmin/presentation/components/transactions/payments_screen.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_components.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
+
 part of 'payments_screen.dart';
 
 extension _PaymentsScreenBuild on _PaymentsScreenState {
@@ -1054,6 +1063,15 @@ extension _PaymentsScreenBuild on _PaymentsScreenState {
                 title: 'Payments',
                 leadingIcon: Icons.credit_card,
               ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: TopBar(
+              title: 'Payments',
+              onClose: () => Navigator.of(context).pop(),
             ),
           ),
         ],

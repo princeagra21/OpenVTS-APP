@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
 
 import '../models/map_vehicle_status_filter.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class VehicleMapMarker extends StatelessWidget {
   final String vehicleName;

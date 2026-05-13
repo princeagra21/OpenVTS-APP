@@ -10,10 +10,12 @@ import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/features/shell/presentation/widgets/open_vts_page_title_bar.dart';
 
 enum OpenVtsAppBarVariant { standard, home }
 
-class OpenVtsAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class OpenVtsAppBar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   OpenVtsAppBar({
     super.key,
     required this.title,
@@ -32,9 +34,8 @@ class OpenVtsAppBar extends ConsumerStatefulWidget implements PreferredSizeWidge
     this.onClose,
     this.showLeading = true,
     this.borderRadius = 16,
-  }) : subtitle = subtitle.length > 18
-           ? '${subtitle.substring(0, 15)}...'
-           : subtitle;
+  }) : subtitle =
+            subtitle.length > 18 ? '${subtitle.substring(0, 15)}...' : subtitle;
 
   final String title;
   final String subtitle;
@@ -118,8 +119,7 @@ class _OpenVtsAppBarState extends ConsumerState<OpenVtsAppBar>
   @override
   void didUpdateWidget(covariant OpenVtsAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldHasBell =
-        oldWidget.variant == OpenVtsAppBarVariant.standard &&
+    final oldHasBell = oldWidget.variant == OpenVtsAppBarVariant.standard &&
         oldWidget.enableBellBadge &&
         (oldWidget.icons?.any((icon) => icon == CupertinoIcons.bell) ??
             false) &&
@@ -157,88 +157,11 @@ class _OpenVtsAppBarState extends ConsumerState<OpenVtsAppBar>
   }
 
   Widget _buildHomeStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final scale = (screenWidth / 420).clamp(0.9, 1.0);
-    final iconContainerSize = 32 * scale;
-    final iconSize = 15 * scale;
-
-    final textStyle = AppUtils.headlineSmallBase.copyWith(
-      fontSize: 16 * scale,
-      height: 20 / 16,
-      fontWeight: FontWeight.w700,
-      color: cs.onSurface,
-    );
-
-    return SafeArea(
-      bottom: false,
-      child: SizedBox(
-        height: AppUtils.appBarHeightCustom + 5,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            color: cs.surface,
-            border: Border.all(
-              color: cs.onSurface.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Container(
-                height: iconContainerSize,
-                width: iconContainerSize,
-                decoration: BoxDecoration(
-                  color: cs.onSurface,
-                  borderRadius: BorderRadius.circular(12 * scale),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  widget.leadingIcon ?? Icons.apps_outlined,
-                  color: cs.surface,
-                  size: iconSize,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textStyle,
-                ),
-              ),
-              IconButton(
-                onPressed:
-                    widget.onClose ??
-                    () {
-                      final router = GoRouter.of(context);
-                      if (router.canPop()) {
-                        context.pop();
-                      }
-                    },
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: iconContainerSize,
-                  minHeight: iconContainerSize,
-                ),
-                icon: Container(
-                  height: iconContainerSize,
-                  width: iconContainerSize,
-                  decoration: BoxDecoration(
-                    color: cs.onSurface,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(Icons.close, color: cs.surface, size: iconSize),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return OpenVtsPageTitleBar(
+      title: widget.title,
+      leadingIcon: widget.leadingIcon ?? Icons.apps_outlined,
+      onClose: widget.onClose,
+      borderRadius: widget.borderRadius,
     );
   }
 
@@ -356,13 +279,13 @@ class _OpenVtsAppBarState extends ConsumerState<OpenVtsAppBar>
                                     const SizedBox(height: 2),
                                     Text(
                                       widget.subtitle,
-                                      style: AppUtils.headlineSmallBase
-                                          .copyWith(
-                                            fontSize: subtitleFontSize,
-                                            fontWeight: FontWeight.w900,
-                                            color: cs.onSurface,
-                                            letterSpacing: -0.5,
-                                          ),
+                                      style:
+                                          AppUtils.headlineSmallBase.copyWith(
+                                        fontSize: subtitleFontSize,
+                                        fontWeight: FontWeight.w900,
+                                        color: cs.onSurface,
+                                        letterSpacing: -0.5,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.visible,
                                     ),
@@ -387,8 +310,7 @@ class _OpenVtsAppBarState extends ConsumerState<OpenVtsAppBar>
                               return Padding(
                                 padding: EdgeInsets.only(left: iconPaddingLeft),
                                 child: GestureDetector(
-                                  onTap:
-                                      widget.onIconTaps != null &&
+                                  onTap: widget.onIconTaps != null &&
                                           index < widget.onIconTaps!.length
                                       ? widget.onIconTaps![index]
                                       : null,

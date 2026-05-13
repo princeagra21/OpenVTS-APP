@@ -9,6 +9,7 @@ import 'package:open_vts/features/superadmin/di/superadmin_core_gateway_provider
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class CustomBox extends StatelessWidget {
   final Widget child;

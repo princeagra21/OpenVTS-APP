@@ -9,6 +9,7 @@ import 'package:open_vts/features/superadmin/di/superadmin_core_gateway_provider
 import 'package:fl_chart/fl_chart.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class SmallTab extends StatelessWidget {
   final String label;

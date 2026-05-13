@@ -1,0 +1,3 @@
+class AdminNavigationService {
+  const AdminNavigationService();
+}

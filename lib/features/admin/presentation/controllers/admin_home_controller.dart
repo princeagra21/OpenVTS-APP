@@ -1,0 +1,3 @@
+class AdminHomeController {
+  const AdminHomeController();
+}

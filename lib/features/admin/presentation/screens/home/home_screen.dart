@@ -1,22 +1,31 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:open_vts/core/utils/app_cancellation.dart';
-import 'package:open_vts/shared/models/admin_profile.dart';
-import 'package:open_vts/core/error/legacy_error_presenter.dart';
-import 'package:open_vts/core/utils/app_logo.dart';
+
 import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:open_vts/features/shell/presentation/providers/app_bar_notification_provider.dart';
-import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/utils/app_cancellation.dart';
+import 'package:open_vts/core/config/app_config.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:open_vts/features/admin/di/admin_providers.dart';
+import 'package:open_vts/core/providers/core_providers.dart';
+import 'package:open_vts/core/providers/repository_providers.dart';
+import 'package:open_vts/core/providers/legacy_repository_adapter_providers.dart';
+import 'package:open_vts/features/shell/presentation/providers/app_bar_notification_provider.dart';
+import 'package:open_vts/features/admin/presentation/layout/app_layout.dart';
+import 'package:open_vts/shared/models/admin_profile.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_components.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
+import 'package:open_vts/core/error/legacy_error_presenter.dart';
+import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/router/route_names.dart';
 import 'package:open_vts/core/theme/open_vts_theme.dart';
 
-import 'package:open_vts/core/utils/adaptive_utils.dart';
-import 'package:open_vts/core/utils/app_utils.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -448,154 +457,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: isDark
           ? OpenVtsColors.panelDark
           : OpenVtsColors.panelLight,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: cs.surface,
-        toolbarHeight: AppUtils.appBarHeightCustom + 12,
-        titleSpacing: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        ),
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: AppUtils.spacingExtraSmall),
-                    Text(
-                      'Fleet OS',
-                      style: AppFonts.roboto(
-                        fontSize: subtitleFontSize,
-                        fontWeight: FontWeight.w900,
-                        color: cs.onSurface,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  _HeaderIconButton(
-                    icon: CupertinoIcons.bell,
-                    size: buttonSize,
-                    iconSize: iconSize,
-                    colorScheme: cs,
-                    badgeText: _badgeText(unreadCount),
-                    showBadge: unreadCount > 0,
-                    badgeFontSize: bellNotificationFontSize,
-                    onTap: () async {
-                      await context.push(AppRoutePaths.adminNotifications);
-                      if (!mounted) return;
-                      _reloadUnreadCount();
-                    },
-                  ),
-                  SizedBox(width: AppUtils.spacingSmall),
-                  Builder(
-                    builder: (avatarContext) => InkWell(
-                      borderRadius: BorderRadius.circular(buttonSize / 2),
-                      onTap: () {
-                        final profile = _profile;
-                        final name = profile?.fullName.trim() ?? '';
-                        final username = profile?.username.trim() ?? '';
-                        final displayName = name.isNotEmpty ? name : username;
-                        _showProfileMenu(
-                          anchorContext: avatarContext,
-                          displayName: displayName,
-                          roleLabel: roleLabel,
-                          imageUrl: profileImageUrl,
-                          initials: _initials(name, username),
-                        );
-                      },
-                      child: _ProfileAvatar(
-                        radius: AdaptiveUtils.getRightAvatarRadius(screenWidth),
-                        fontSize: AdaptiveUtils.getRightAvatarFontSize(
-                          screenWidth,
-                        ),
-                        colorScheme: cs,
-                        imageUrl: profileImageUrl,
-                        initials: _initials(
-                          _profile?.fullName ?? '',
-                          _profile?.username ?? '',
-                        ),
-                        loading: _loadingProfile,
-                        authToken: _accessToken,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      appBar: TopBar(
+        title: 'Administrators',
+        onClose: () => Navigator.of(context).pop(),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    hp,
-                    AppUtils.spacingMedium,
-                    hp * 0.5,
-                    AppUtils.spacingLarge,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(height: AppUtils.spacingSmall),
-                        Center(
-                          child: Image.asset(
-                            logoAsset,
-                            width: (screenWidth * 0.45).clamp(140, 200),
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        SizedBox(height: AppUtils.spacingLarge),
-                        Wrap(
-                          alignment: WrapAlignment.start,
-                          spacing: gridGap,
-                          runSpacing: gridGap,
-                          children: shortcuts.map((item) {
-                            return SizedBox(
-                              width: tileSize,
-                              child: _HomeShortcutTile(
-                                item: item,
-                                tileSize: tileSize,
-                                labelFontSize: labelFontSize,
-                                colorScheme: cs,
-                                onTap: () => context.go(item.route),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const Spacer(),
-                        Text(
-                          footerText,
-                          textAlign: TextAlign.center,
-                          style: AppUtils.bodySmallBase.copyWith(
-                            color: cs.onSurface.withOpacity(0.55),
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: _HomeHeader(
+              logoAsset: logoAsset,
+              hp: hp,
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(hp, 24, hp, 48),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: gridGap,
+                crossAxisSpacing: gridGap,
+                childAspectRatio: tileSize / (tileSize + 32),
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = shortcuts[index];
+                  return _HomeShortcutTile(
+                    item: item,
+                    onTap: () => context.push(item.route),
+                    tileSize: tileSize,
+                    labelFontSize: labelFontSize,
+                    colorScheme: cs,
+                  );
+                },
+                childCount: shortcuts.length,
+              ),
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Text(
+                  footerText,
+                  style: AppFonts.roboto(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurface.withOpacity(0.4),
                   ),
                 ),
               ),
-            );
-          },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  final String logoAsset;
+  final double hp;
+
+  const _HomeHeader({
+    required this.logoAsset,
+    required this.hp,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(hp, 28, hp, 8),
+      child: Center(
+        child: Image.asset(
+          logoAsset,
+          width: (screenWidth * 0.45).clamp(140.0, 200.0),
+          fit: BoxFit.contain,
         ),
       ),
     );

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/core/utils/adaptive_utils.dart';
 import 'package:open_vts/features/admin_tools/di/admin_tools_providers.dart';
 import 'package:open_vts/features/admin_tools/presentation/server_status/server_status_controller.dart';
 import 'package:open_vts/features/admin_tools/presentation/server_status/widgets/server_health_summary.dart';
-import 'package:open_vts/features/superadmin/presentation/layout/app_layout.dart';
 
 class ServerStatusScreen extends ConsumerStatefulWidget {
   const ServerStatusScreen({super.key});
@@ -30,14 +30,12 @@ class _ServerStatusScreenState extends ConsumerState<ServerStatusScreen> {
     final state = ref.watch(serverStatusControllerProvider);
     final controller = ref.read(serverStatusControllerProvider.notifier);
 
-    return AppLayout(
-      title: "Open VTS",
-      subtitle: "Server Status",
-      actionIcons: const [],
-      leftAvatarText: 'FS',
-      showLeftAvatar: false,
-      horizontalPadding: 3,
-      child: SingleChildScrollView(
+    return Scaffold(
+      appBar: TopBar(
+        title: 'Server Status',
+        onClose: () => Navigator.of(context).pop(),
+      ),
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(hp),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

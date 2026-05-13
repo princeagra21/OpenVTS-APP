@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:open_vts/shared/widgets/top_bar.dart';
 import 'package:open_vts/features/vehicles/domain/config/vehicle_role_config.dart';
 import 'package:open_vts/features/vehicles/domain/entities/vehicle_list_state.dart';
 import 'package:open_vts/features/vehicles/domain/entities/vehicle_models.dart';
@@ -72,22 +73,26 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.config.title),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: VehicleFilterBar(
+      appBar: TopBar(
+        title: widget.config.title,
+        onClose: () => Navigator.of(context).pop(),
+      ),
+      body: Column(
+        children: [
+          VehicleFilterBar(
             searchController: _searchController,
             selectedTab: state.selectedTab,
             config: widget.config,
             onSearchChanged: controller.setSearchQuery,
             onTabSelected: controller.setSelectedTab,
           ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: _buildBody(state, controller),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: controller.refresh,
+              child: _buildBody(state, controller),
+            ),
+          ),
+        ],
       ),
     );
   }

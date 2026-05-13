@@ -18,7 +18,7 @@ class AppLayout extends StatelessWidget {
     this.horizontalPadding = 20.0,
     this.showAppBar = true,
     this.customTopBar,
-    this.customTopBarPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.customTopBarPadding = EdgeInsets.zero,
     this.customTopBarHeight,
   });
 

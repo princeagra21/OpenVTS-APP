@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class EventCalendarScreen extends ConsumerStatefulWidget {
   const EventCalendarScreen({super.key});

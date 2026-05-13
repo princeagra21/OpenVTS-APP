@@ -1,0 +1,3 @@
+class EventCalendarController {
+  const EventCalendarController();
+}

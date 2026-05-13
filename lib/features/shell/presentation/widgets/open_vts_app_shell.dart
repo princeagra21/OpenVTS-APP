@@ -10,6 +10,7 @@ import 'package:open_vts/features/shell/presentation/widgets/open_vts_app_bar.da
 import 'package:open_vts/features/shell/presentation/widgets/open_vts_bottom_nav.dart';
 import 'package:open_vts/features/shell/presentation/config/role_nav_config.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class OpenVtsAppShell extends StatefulWidget {
   const OpenVtsAppShell({
@@ -30,7 +31,7 @@ class OpenVtsAppShell extends StatefulWidget {
     this.showBottomBar = true,
     this.disableAppBarLeading = true,
     this.customTopBar,
-    this.customTopBarPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.customTopBarPadding = EdgeInsets.zero,
     this.customTopBarHeight,
   });
 
@@ -180,9 +181,8 @@ class _OpenVtsAppShellState extends State<OpenVtsAppShell> {
         : null;
 
     final scaffold = Scaffold(
-      backgroundColor: isDark
-          ? OpenVtsColors.panelDark
-          : OpenVtsColors.panelLight,
+      backgroundColor:
+          isDark ? OpenVtsColors.panelDark : OpenVtsColors.panelLight,
       extendBody: true,
       extendBodyBehindAppBar: true,
       body: Stack(
@@ -201,8 +201,7 @@ class _OpenVtsAppShellState extends State<OpenVtsAppShell> {
                 padding: EdgeInsets.only(
                   left: widget.horizontalPadding,
                   right: widget.horizontalPadding,
-                  top:
-                      topPadding +
+                  top: topPadding +
                       (widget.showAppBar
                           ? AppUtils.appBarHeightCustom + 32
                           : (hasCustomTopBar ? (topBarHeight + 24) : 16)),
@@ -311,8 +310,7 @@ class _OpenVtsAppShellState extends State<OpenVtsAppShell> {
                             ) {
                               final index = entry.key;
                               final icon = entry.value;
-                              final tapHandler =
-                                  (actionTaps != null &&
+                              final tapHandler = (actionTaps != null &&
                                       index < actionTaps.length)
                                   ? actionTaps[index]
                                   : null;

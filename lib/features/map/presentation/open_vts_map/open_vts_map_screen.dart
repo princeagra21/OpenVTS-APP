@@ -19,6 +19,7 @@ import 'widgets/status_vehicle_bottom_sheet.dart';
 import 'widgets/vehicle_details_bottom_sheet.dart';
 import 'widgets/vehicle_map_marker.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 part 'open_vts_map_vehicle_helpers.dart';
 part 'open_vts_map_animation.dart';

@@ -14,6 +14,7 @@ import 'package:open_vts/features/superadmin/di/superadmin_core_gateway_provider
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
+import 'package:open_vts/core/debug/app_logger.dart';
 
 class AllActivitiesScreen extends ConsumerStatefulWidget {
   final String activityType;
