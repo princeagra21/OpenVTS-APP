@@ -1,0 +1,268 @@
+import 'package:open_vts/features/admin/presentation/controllers/admin_account_error_presenter.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/features/admin/di/admin_account_providers.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class UpdateUserPasswordScreen extends ConsumerStatefulWidget {
+  final String userId;
+
+  const UpdateUserPasswordScreen({super.key, required this.userId});
+
+  @override
+  ConsumerState<UpdateUserPasswordScreen> createState() =>
+      _UpdateUserPasswordScreenState();
+}
+
+class _UpdateUserPasswordScreenState extends ConsumerState<UpdateUserPasswordScreen> {
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+  bool _saving = false;
+  bool _submitErrorShown = false;
+  DateTime? _lastSubmitAt;
+  late final _repo = ref.read(adminAccountCommandControllerProvider);
+
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitPassword() async {
+    if (_saving) return;
+    final now = DateTime.now();
+    if (_lastSubmitAt != null &&
+        now.difference(_lastSubmitAt!).inMilliseconds < 800) {
+      return;
+    }
+    _lastSubmitAt = now;
+
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (newPassword.trim().isEmpty || confirmPassword.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill both password fields.')),
+      );
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
+      return;
+    }
+
+    if (!mounted) return;
+    updateLocalUiState(this, () {
+      _saving = true;
+      _submitErrorShown = false;
+    });
+
+    try {
+      final res = await _repo.updateUserPassword(
+        widget.userId,
+        newPassword,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (_) {
+          if (!mounted) return;
+          updateLocalUiState(this, () => _saving = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Password updated')));
+          Navigator.pop(context, true);
+        },
+        failure: (error) {
+          if (!mounted) return;
+          updateLocalUiState(this, () => _saving = false);
+          if (_submitErrorShown) return;
+          _submitErrorShown = true;
+
+          String msg = 'Could not update password.';
+          if (adminAccountIsKnownFailure(error)) {
+            if (adminAccountStatusCode(error) == 401 || adminAccountStatusCode(error) == 403) {
+              msg = 'Not authorized to update password.';
+            } else if (adminAccountErrorMessage(error).trim().isNotEmpty) {
+              msg = adminAccountErrorMessage(error);
+            }
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () => _saving = false);
+      if (_submitErrorShown) return;
+      _submitErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update password.')),
+      );
+    }
+  }
+
+  InputDecoration _minimalInputDecoration(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      hintText: '',
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      prefixIcon: const SizedBox(width: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.withOpacity(0.6)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
+    final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Update Password',
+                    style: AppFonts.inter(
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Set a new password for this user',
+                style: AppFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'New Password',
+                style: AppFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _newPasswordController,
+                obscureText: _obscureNew,
+                decoration: _minimalInputDecoration(context).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureNew
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () => updateLocalUiState(this, () => _obscureNew = !_obscureNew),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Confirm Password',
+                style: AppFonts.inter(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirm,
+                decoration: _minimalInputDecoration(context).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () =>
+                        updateLocalUiState(this, () => _obscureConfirm = !_obscureConfirm),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              if (_saving)
+                const AppShimmer(width: double.infinity, height: 48, radius: 16)
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _submitPassword,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Update Password',
+                      style: AppFonts.inter(
+                        fontSize: labelSize - 1,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

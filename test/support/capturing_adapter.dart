@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
+import 'package:open_vts/core/utils/request_control.dart';
 
 /// A tiny HttpClientAdapter that captures the last [RequestOptions] passed into Dio.
 ///

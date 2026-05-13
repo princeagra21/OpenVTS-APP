@@ -1,0 +1,472 @@
+import 'package:open_vts/core/utils/app_cancellation.dart';
+import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_transaction.dart';
+import 'package:open_vts/core/error/legacy_error_presenter.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/features/superadmin/presentation/components/admin/payments_tab/add_admin_payment_record_screen.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class AdminPaymentsTab extends ConsumerStatefulWidget {
+  final String adminId;
+  final String? adminName;
+
+  const AdminPaymentsTab({super.key, required this.adminId, this.adminName});
+
+  @override
+  ConsumerState<AdminPaymentsTab> createState() => _AdminPaymentsTabState();
+}
+
+class _AdminPaymentsTabState extends ConsumerState<AdminPaymentsTab> {
+  bool _loading = false;
+  bool _errorShown = false;
+  AppCancellationHandle? _token;
+
+  int _successCount = 0;
+  int _pendingCount = 0;
+  int _failedCount = 0;
+  List<SuperadminRecentTransaction> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  @override
+  void dispose() {
+    _token?.cancel('AdminPaymentsTab disposed');
+    super.dispose();
+  }
+
+  Future<void> _loadTransactions() async {
+    _token?.cancel('Reload admin payments');
+    final token = AppCancellationHandle();
+    _token = token;
+
+    if (!mounted) return;
+    updateLocalUiState(this, () => _loading = true);
+
+    try {
+      final res = await ref.read(superadminRepositoryProvider)
+          .getRecentTransactions(
+            adminId: widget.adminId,
+            page: 1,
+            limit: 50,
+            cancelToken: token,
+          );
+      if (!mounted) return;
+
+      res.when(
+        success: (items) {
+          int success = 0;
+          int pending = 0;
+          int failed = 0;
+          for (final t in items) {
+            final s = t.status.toLowerCase();
+            if (s.contains('success')) {
+              success++;
+            } else if (s.contains('pending') || s.contains('processing')) {
+              pending++;
+            } else if (s.contains('fail') || s.contains('decline')) {
+              failed++;
+            }
+          }
+          updateLocalUiState(this, () {
+            _loading = false;
+            _successCount = success;
+            _pendingCount = pending;
+            _failedCount = failed;
+            _items = items;
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          updateLocalUiState(this, () => _loading = false);
+          if (_errorShown) return;
+          _errorShown = true;
+          final msg = LegacyErrorPresenter.isApiFailure(err)
+              ? (LegacyErrorPresenter.message(err).isNotEmpty
+                    ? LegacyErrorPresenter.message(err)
+                    : "Couldn't load payments.")
+              : "Couldn't load payments.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () => _loading = false);
+      if (_errorShown) return;
+      _errorShown = true;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't load payments.")));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const AppShimmer(width: double.infinity, height: 320, radius: 12);
+    }
+    final cs = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleSize = AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double scale = AdaptiveUtils.getTitleFontSize(screenWidth) / 14;
+    final double headerSize = 18 * scale;
+
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 12.0;
+              final cardWidth = (constraints.maxWidth - (gap * 2)) / 3;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Successful',
+                    value: _loading ? '—' : _successCount.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Pending',
+                    value: _loading ? '—' : _pendingCount.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                  _metricCard(
+                    context,
+                    width: cardWidth,
+                    label: 'Failed',
+                    value: _loading ? '—' : _failedCount.toString(),
+                    labelSize: labelSize,
+                    valueSize: titleSize,
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recent Transactions',
+                        style: AppFonts.roboto(
+                          fontSize: headerSize,
+                          height: 24 / 18,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final updated = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddAdminPaymentRecordScreen(
+                              adminId: widget.adminId,
+                              adminName: widget.adminName,
+                            ),
+                          ),
+                        );
+                        if (updated == true) {
+                          await _loadTransactions();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(
+                        'Record',
+                        style: AppFonts.roboto(
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_loading)
+                  Text(
+                    'Loading...',
+                    style: AppFonts.roboto(
+                      fontSize: labelSize,
+                      color: cs.onSurface.withOpacity(0.6),
+                    ),
+                  )
+                else if (_items.isEmpty)
+                  Text(
+                    'No transactions found.',
+                    style: AppFonts.roboto(
+                      fontSize: labelSize,
+                      color: cs.onSurface.withOpacity(0.6),
+                    ),
+                  )
+                else
+                  Column(
+                    children: _items
+                        .map(
+                          (t) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              children: [
+                                _transactionRow(context, t),
+                                const SizedBox(height: 10),
+                                Divider(
+                                  height: 1,
+                                  color: cs.onSurface.withOpacity(0.08),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCard(
+    BuildContext context, {
+    required double width,
+    required String label,
+    required String value,
+    required double labelSize,
+    required double valueSize,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppFonts.roboto(
+                    fontSize: labelSize - 1,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                _iconFor(label),
+                size: 16,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppFonts.roboto(
+              fontSize: valueSize + 4,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconFor(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('success')) return Icons.check_circle_outline;
+    if (l.contains('pending')) return Icons.schedule_outlined;
+    if (l.contains('fail')) return Icons.cancel_outlined;
+    return Icons.help_outline;
+  }
+
+  Widget _transactionRow(BuildContext context, SuperadminRecentTransaction t) {
+    final cs = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double labelSize = AdaptiveUtils.getSubtitleFontSize(screenWidth) - 2;
+    final double valueSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final name = t.fromUserName.isNotEmpty ? t.fromUserName : t.actorName;
+    final date = _formatDateTimeWithSeconds(
+      t.raw['createdAt']?.toString() ?? t.time,
+    );
+    final modeRaw = t.raw['paymentMode']?.toString() ?? '';
+    final mode = _titleCase(modeRaw.replaceAll('_', ' '));
+    final reference = t.raw['reference']?.toString() ?? '—';
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            date,
+            style: AppFonts.roboto(
+              fontSize: labelSize,
+              fontWeight: FontWeight.w500,
+              color: cs.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${t.currency} ${t.amount}',
+                      style: AppFonts.roboto(
+                        fontSize: valueSize + 2,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? cs.surfaceContainerHighest
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: cs.onSurface.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Text(
+                        t.status,
+                        style: AppFonts.roboto(
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      mode.isEmpty ? '—' : mode,
+                      style: AppFonts.roboto(
+                        fontSize: valueSize + 1,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      reference,
+                      style: AppFonts.roboto(
+                        fontSize: labelSize,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      name,
+                      style: AppFonts.roboto(
+                        fontSize: labelSize,
+                        color: cs.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTimeWithSeconds(String raw) {
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    final local = dt.toLocal();
+    final m = local.month.toString();
+    final d = local.day.toString();
+    final y = local.year.toString();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final second = local.second.toString().padLeft(2, '0');
+    final amPm = local.hour >= 12 ? 'PM' : 'AM';
+    return '$m/$d/$y, $hour:$minute:$second $amPm';
+  }
+
+  String _titleCase(String input) {
+    return input
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .map((p) => p[0].toUpperCase() + p.substring(1).toLowerCase())
+        .join(' ');
+  }
+}

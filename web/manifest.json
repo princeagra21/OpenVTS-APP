@@ -1,0 +1,12 @@
+{
+  "name": "Open VTS",
+  "short_name": "Open VTS",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#141118",
+  "theme_color": "#141118",
+  "description": "Open VTS Flutter application.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": []
+}

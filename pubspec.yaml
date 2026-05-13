@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
 
 dependencies:
   flutter:
@@ -33,10 +34,37 @@ dependencies:
   flutter_map_marker_popup: ^8.1.0
   shimmer: ^3.0.0
   firebase_core: ^4.5.0
+  firebase_crashlytics: ^5.0.0
   firebase_messaging: ^16.1.2
   pdf: ^3.11.0
   intl: ^0.20.2
+  sentry_flutter: ^8.14.2
 
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  # Pinned below 4.9.x because retrofit 4.9.x adds Parser.DartMappable,
+  # while retrofit_generator 9.x cannot compile against that enum.
+  # Do not use caret here until the codebase migrates Riverpod/generators together.
+  retrofit: 4.8.0
+  pretty_dio_logger: ^1.4.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  socket_io_client: ^3.1.2
+  hive_flutter: ^1.1.0
+  flutter_local_notifications: ^19.0.0
+  dart_jsonwebtoken: ^2.14.2
+  timeago: ^3.7.0
+  permission_handler: ^12.0.0+1
+  package_info_plus: ^8.3.0
+  device_info_plus: ^11.3.3
+  connectivity_plus: ^6.1.4
+  share_plus: ^10.1.4
+  image_picker: ^1.1.2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  drift: ^2.22.1
+  sqlite3_flutter_libs: ^0.5.42
+  equatable: ^2.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -46,26 +74,22 @@ dev_dependencies:
   build_runner: ^2.4.13
   mockito: ^5.4.4
 
+  riverpod_generator: ^2.6.5
+  # Pin below 3.2.0 because riverpod_generator 2.6.x still depends on source_gen ^2.0.0.
+  # Freezed 3.2.x moved to source_gen >=3.0.0, which breaks pub solving with Riverpod 2.x.
+  freezed: 3.1.0
+  json_serializable: ^6.9.5
+  # Keep 9.x. Upgrading to 10.x pulls newer generator stack/source_gen and should be done only with a full generator migration.
+  retrofit_generator: 9.7.0
+  drift_dev: ^2.22.1
+  mocktail: ^1.0.4
+  network_image_mock: ^2.1.1
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
 
-  # Fonts
-  fonts:
-    - family: Satoshi
-      fonts:
-        - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Light.otf
-          weight: 300
-        - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Regular.otf
-          weight: 400
-        - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Medium.otf
-          weight: 500
-        - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Bold.otf
-          weight: 700
-        - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Black.otf
-          weight: 900
 
 # Launcher icons - MUST be top-level, not under flutter:
 flutter_icons:

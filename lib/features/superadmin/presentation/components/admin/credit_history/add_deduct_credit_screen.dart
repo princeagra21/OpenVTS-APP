@@ -1,0 +1,296 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+// components/admin/credit_history/add_deduct_credit_screen.dart
+import 'package:open_vts/core/utils/app_cancellation.dart';
+import 'package:open_vts/core/error/legacy_error_presenter.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class AddDeductCreditScreen extends ConsumerStatefulWidget {
+  final String adminId;
+  final String? initialAction; // 'add' or 'deduct'
+  final bool lockAction;
+
+  const AddDeductCreditScreen({
+    super.key,
+    required this.adminId,
+    this.initialAction,
+    this.lockAction = false,
+  });
+
+  @override
+  ConsumerState<AddDeductCreditScreen> createState() => _AddDeductCreditScreenState();
+}
+
+class _AddDeductCreditScreenState extends ConsumerState<AddDeductCreditScreen> {
+  String? _selectedAction; // 'add' or 'deduct'
+  final TextEditingController _amountController = TextEditingController();
+  bool _submitting = false;
+  AppCancellationHandle? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAction = widget.initialAction ?? 'add';
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _token?.cancel('AddDeductCreditScreen disposed');
+    super.dispose();
+  }
+
+  // Reusable minimal InputDecoration — similar to EditAdminProfileScreen
+  InputDecoration _minimalDecoration(BuildContext context, {String? hint}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.transparent,
+      hintText: hint,
+      hintStyle: AppFonts.roboto(
+        color: colorScheme.onSurface.withOpacity(0.5),
+        fontSize: AdaptiveUtils.getTitleFontSize(
+          MediaQuery.of(context).size.width,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      prefixIconConstraints: const BoxConstraints(minWidth: 48),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+      ),
+    );
+  }
+
+  String get _confirmButtonText {
+    if (_selectedAction == 'add') {
+      return 'Add Credits';
+    } else if (_selectedAction == 'deduct') {
+      return 'Deduct Credits';
+    } else {
+      return 'Confirm';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w) + 6;
+    final double titleSize = AdaptiveUtils.getSubtitleFontSize(w);
+    final double labelSize = AdaptiveUtils.getTitleFontSize(w);
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Add/Deduct Credits",
+                    style: AppFonts.roboto(
+                      fontSize: titleSize + 2,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface.withOpacity(0.9),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(
+                      Icons.close,
+                      size: 28,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(
+                "Manage credits",
+                style: AppFonts.roboto(
+                  fontSize: labelSize - 2,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.87),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Credit Amount
+                      TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        style: AppFonts.roboto(
+                          fontSize: labelSize,
+                          color: colorScheme.onSurface,
+                        ),
+                        decoration:
+                            _minimalDecoration(
+                              context,
+                              hint: "Credit Amount",
+                            ).copyWith(
+                              prefixIcon: Icon(
+                                Icons.monetization_on_outlined,
+                                color: colorScheme.primary,
+                                size: 22,
+                              ),
+                            ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Cancel",
+                                    style: AppFonts.roboto(
+                                      fontSize: labelSize,
+                                      color: colorScheme.onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                _submitCredits();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _confirmButtonText,
+                                    style: AppFonts.roboto(
+                                      fontSize: labelSize,
+                                      color: colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitCredits() async {
+    if (_submitting) return;
+    final action = _selectedAction;
+    if (action == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Select an action.')));
+      return;
+    }
+    final amount = int.tryParse(_amountController.text.trim());
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid credit amount.')),
+      );
+      return;
+    }
+
+    updateLocalUiState(this, () => _submitting = true);
+    _token?.cancel('New submit');
+    final token = AppCancellationHandle();
+    _token = token;
+
+    try {
+      final creditsValue = action == 'deduct' ? -amount : amount;
+      final res = await ref.read(superadminRepositoryProvider)
+          .assignCredits(
+            widget.adminId,
+            credits: creditsValue,
+            activity: action == 'add' ? 'ASSIGN' : 'DEDUCT',
+            cancelToken: token,
+          );
+      if (!mounted) return;
+      res.when(
+        success: (_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                action == 'add'
+                    ? 'Credits assigned successfully.'
+                    : 'Credits deducted successfully.',
+              ),
+            ),
+          );
+          Navigator.pop(context, true);
+        },
+        failure: (err) {
+          final msg = LegacyErrorPresenter.isApiFailure(err)
+              ? (LegacyErrorPresenter.message(err).isNotEmpty
+                    ? LegacyErrorPresenter.message(err)
+                    : "Couldn't update credits.")
+              : "Couldn't update credits.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't update credits.")));
+    } finally {
+      if (mounted) updateLocalUiState(this, () => _submitting = false);
+    }
+  }
+}

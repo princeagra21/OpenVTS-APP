@@ -1,0 +1,123 @@
+import 'dart:typed_data';
+import 'package:open_vts/core/api/api_paths.dart';
+
+import 'package:open_vts/core/utils/request_control.dart';
+import 'package:open_vts/features/settings/domain/entities/white_label_branding.dart';
+import 'package:open_vts/core/api/api_result.dart';
+import 'package:open_vts/core/api/legacy_api_transport.dart';
+
+class WhiteLabelRepository {
+  final LegacyApiTransport api;
+
+  const WhiteLabelRepository({required this.api});
+
+  // Postman-confirmed endpoints:
+  // - GET /superadmin/whitelabel
+  // - PATCH /superadmin/whitelabel (form-data keys: customDomain, primaryColor,
+  //   logoLightUrl, logoDarkUrl, faviconUrl)
+  // - POST /superadmin/upload/2 (form-data keys: type, file)
+
+  Future<Result<WhiteLabelBranding>> getWhiteLabelBranding({
+    CancelToken? cancelToken,
+  }) async {
+    final res = await api.get(
+      SuperadminApiPaths.whiteLabel,
+      cancelToken: cancelToken,
+    );
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        return Result.ok(WhiteLabelBranding(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<WhiteLabelBranding>> updateWhiteLabelBranding({
+    required String customDomain,
+    String? primaryColor,
+    String? faviconUrl,
+    String? logoLightUrl,
+    String? logoDarkUrl,
+    CancelToken? cancelToken,
+  }) async {
+    final fields = <String, dynamic>{
+      'customDomain': customDomain,
+      if (primaryColor != null && primaryColor.trim().isNotEmpty)
+        'primaryColor': primaryColor,
+      if (logoLightUrl != null && logoLightUrl.trim().isNotEmpty)
+        'logoLightUrl': logoLightUrl,
+      if (logoDarkUrl != null && logoDarkUrl.trim().isNotEmpty)
+        'logoDarkUrl': logoDarkUrl,
+      if (faviconUrl != null && faviconUrl.trim().isNotEmpty)
+        'faviconUrl': faviconUrl,
+    };
+
+    final res = await api.patch(
+      SuperadminApiPaths.whiteLabel,
+      data: FormData.fromMap(fields),
+      cancelToken: cancelToken,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+    return res.when(
+      success: (data) => Result.ok(WhiteLabelBranding(_extractMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Future<Result<String>> uploadBrandAsset({
+    required String type,
+    required Uint8List bytes,
+    required String filename,
+    CancelToken? cancelToken,
+  }) async {
+    final form = FormData.fromMap({
+      'type': type,
+      'file': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+
+    final res = await api.post(
+      SuperadminApiPaths.uploadById('2'),
+      data: form,
+      cancelToken: cancelToken,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _extractMap(data);
+        final url = _s(
+          map['url'] ??
+              map['fileUrl'] ??
+              map['path'] ??
+              map['location'] ??
+              map['data'],
+        );
+        return Result.ok(url);
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Map<String, dynamic> _extractMap(Object? data) {
+    if (data is! Map) return const <String, dynamic>{};
+
+    final level0 = data is Map<String, dynamic>
+        ? data
+        : Map<String, dynamic>.from(data.cast());
+
+    final level1Raw = level0['data'];
+    if (level1Raw is Map) {
+      final level1 = Map<String, dynamic>.from(level1Raw.cast());
+      final level2Raw = level1['data'];
+      if (level2Raw is Map) {
+        return Map<String, dynamic>.from(level2Raw.cast());
+      }
+      return level1;
+    }
+
+    return level0;
+  }
+
+  String _s(Object? v) => v == null ? '' : v.toString();
+}

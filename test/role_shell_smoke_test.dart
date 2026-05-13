@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:open_vts/features/shell/open_vts_app_shell.dart';
-import 'package:open_vts/features/shell/role_nav_config.dart';
+import 'package:open_vts/features/shell/presentation/widgets/open_vts_app_shell.dart';
+import 'package:open_vts/features/shell/presentation/config/role_nav_config.dart';
 
 void main() {
   group('Role Shell Smoke Tests', () {

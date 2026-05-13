@@ -1,0 +1,297 @@
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/features/superadmin/presentation/components/admin/profile_tab/edit_admin_profile_screen.dart';
+import 'package:open_vts/features/superadmin/presentation/components/admin/profile_tab/update_password_screen.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_components.dart';
+
+class ProfileSettingBox extends StatelessWidget {
+  final String adminId;
+  final String displayName;
+  final String username;
+  final String email;
+  final String roleLabel;
+  final String initials;
+  final bool? isActive;
+  final bool? isVerified;
+  final bool loading;
+  final VoidCallback? onProfileUpdated;
+
+  const ProfileSettingBox({
+    super.key,
+    this.adminId = '',
+    this.displayName = '-',
+    this.username = '-',
+    this.email = '-',
+    this.roleLabel = '-',
+    this.initials = '--',
+    this.isActive,
+    this.isVerified,
+    this.loading = false,
+    this.onProfileUpdated,
+  });
+
+  String _orDash(String value) {
+    final text = value.trim();
+    return text.isEmpty ? '-' : text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double avatarRadius = AdaptiveUtils.getAvatarSize(screenWidth) / 2;
+    final double avatarFontSize = AdaptiveUtils.getFsAvatarFontSize(
+      screenWidth,
+    );
+    final double nameFontSize =
+        AdaptiveUtils.getSubtitleFontSize(screenWidth) - 4;
+    final double usernameFontSize = AdaptiveUtils.getTitleFontSize(screenWidth);
+    final double badgeFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) - 4;
+    final double buttonFontSize =
+        AdaptiveUtils.getTitleFontSize(screenWidth) + 1;
+    final double spacing = AdaptiveUtils.getLeftSectionSpacing(screenWidth);
+    final double largeSpacing = padding;
+
+    void openEditProfile() {
+      final id = adminId.trim();
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin ID is unavailable.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => EditAdminProfileScreen(adminId: id)),
+      ).then((updated) {
+        if (updated == true) {
+          onProfileUpdated?.call();
+        }
+      });
+    }
+
+    void openUpdatePassword() {
+      final id = adminId.trim();
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin ID is unavailable.')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => UpdatePasswordScreen(adminId: id)),
+      );
+    }
+
+    return OpenVtsCard(
+      padding: EdgeInsets.all(padding + 8),
+      borderRadius: BorderRadius.circular(25),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: colorScheme.primary,
+                child: loading
+                    ? AppShimmer(
+                        width: avatarRadius,
+                        height: avatarRadius * 0.65,
+                        radius: 10,
+                      )
+                    : Text(
+                        _orDash(initials),
+                        style: AppFonts.roboto(
+                          color: colorScheme.onPrimary,
+                          fontSize: avatarFontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+              SizedBox(width: largeSpacing),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: loading
+                              ? const AppShimmer(
+                                  width: double.infinity,
+                                  height: 18,
+                                  radius: 8,
+                                )
+                              : Text(
+                                  _orDash(displayName),
+                                  style: AppFonts.roboto(
+                                    fontSize: nameFontSize,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                        ),
+                        SizedBox(width: spacing),
+                        loading
+                            ? const AppShimmer(
+                                width: 70,
+                                height: 24,
+                                radius: 12,
+                              )
+                            : Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: spacing + 4,
+                                  vertical: spacing - 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  _orDash(roleLabel),
+                                  style: AppFonts.roboto(
+                                    color: colorScheme.onPrimary,
+                                    fontSize: badgeFontSize,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                      ],
+                    ),
+                    SizedBox(height: spacing / 2),
+                    loading
+                        ? const AppShimmer(width: 180, height: 16, radius: 8)
+                        : Text(
+                            _orDash(username),
+                            style: AppFonts.roboto(
+                              fontSize: usernameFontSize,
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: largeSpacing + 4),
+
+          if (loading)
+            const Row(
+              children: [
+                AppShimmer(width: 84, height: 24, radius: 12),
+                SizedBox(width: 8),
+                AppShimmer(width: 118, height: 24, radius: 12),
+              ],
+            )
+          else
+            Wrap(
+              spacing: spacing + 4,
+              runSpacing: 8,
+              children: [
+                OpenVtsStatusChip(
+                  label: isActive == null
+                      ? 'Status: -'
+                      : (isActive! ? 'Active' : 'Inactive'),
+                  tone: isActive == true
+                      ? OpenVtsStatusTone.success
+                      : OpenVtsStatusTone.neutral,
+                  compact: true,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: spacing + 4,
+                    vertical: spacing - 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _orDash(email) == '-' ? 'Email: -' : _orDash(email),
+                    style: AppFonts.roboto(
+                      fontSize: badgeFontSize,
+                      color: colorScheme.onSurface.withOpacity(0.85),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (isVerified != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spacing + 4,
+                      vertical: spacing - 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withOpacity(
+                        0.7,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isVerified! ? 'Email Verified' : 'Email Unverified',
+                      style: AppFonts.roboto(
+                        fontSize: badgeFontSize,
+                        color: colorScheme.onSurface.withOpacity(0.85),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+          SizedBox(height: largeSpacing + 8),
+          Row(
+            children: [
+              Expanded(
+                child: OpenVtsButton(
+                  label: 'Edit Profile',
+                  variant: OpenVtsButtonVariant.secondary,
+                  size: OpenVtsButtonSize.small,
+                  loading: loading,
+                  onPressed: loading ? null : openEditProfile,
+                ),
+              ),
+              SizedBox(width: spacing + 4),
+              Expanded(
+                child: OpenVtsButton(
+                  label: 'Update Password',
+                  size: OpenVtsButtonSize.small,
+                  loading: loading,
+                  onPressed: loading ? null : openUpdatePassword,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          OpenVtsButton(
+            label: 'Change Profile Picture',
+            variant: OpenVtsButtonVariant.ghost,
+            size: OpenVtsButtonSize.small,
+            loading: loading,
+            onPressed: loading
+                ? null
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Change Profile image API not available yet',
+                        ),
+                      ),
+                    );
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,875 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+// screens/settings/smtp_config_settings_screen.dart
+import 'package:open_vts/core/utils/app_cancellation.dart';
+import 'package:open_vts/core/error/legacy_error_presenter.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/features/superadmin/presentation/layout/app_layout.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class SmtpConfigSettingsScreen extends StatelessWidget {
+  const SmtpConfigSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width) - 2;
+
+    return AppLayout(
+      title: "Open VTS",
+      subtitle: "SMTP Configuration",
+      actionIcons: const [],
+      leftAvatarText: 'FS',
+      showLeftAvatar: false,
+      horizontalPadding: 3,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(hp),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [const SmtpConfigHeader(), const SizedBox(height: 24)],
+        ),
+      ),
+    );
+  }
+}
+
+class SmtpConfigHeader extends ConsumerStatefulWidget {
+  const SmtpConfigHeader({super.key});
+
+  @override
+  ConsumerState<SmtpConfigHeader> createState() => _SmtpConfigHeaderState();
+}
+
+class _SmtpConfigHeaderState extends ConsumerState<SmtpConfigHeader> {
+  // Postman-confirmed endpoints:
+  // - GET /superadmin/smtpsettings
+  // - PATCH /superadmin/smtpsettings
+  // - POST /superadmin/testsmtp
+  // Also present in collection (not used here): GET/PATCH /superadmin/smtpconfig/1.
+  bool smtpEnabled = false;
+  bool tlsEnabled = false;
+
+  final TextEditingController _hostController = TextEditingController();
+  final TextEditingController _portController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _fromEmailController = TextEditingController();
+  final TextEditingController _fromNameController = TextEditingController();
+  final TextEditingController _replyToController = TextEditingController();
+
+  bool _loading = false;
+  bool _saving = false;
+  bool _testing = false;
+  bool _loadErrorShown = false;
+  bool _saveErrorShown = false;
+  bool _testErrorShown = false;
+  DateTime? _lastSaveAt;
+
+  AppCancellationHandle? _loadToken;
+  AppCancellationHandle? _saveToken;
+  AppCancellationHandle? _testToken;
+  late final _repo = ref.read(superadminRepositoryAdapterProvider);
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSmtp();
+  }
+
+  @override
+  void dispose() {
+    _loadToken?.cancel('SMTP screen disposed');
+    _saveToken?.cancel('SMTP screen disposed');
+    _testToken?.cancel('SMTP screen disposed');
+    _hostController.dispose();
+    _portController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _fromEmailController.dispose();
+    _fromNameController.dispose();
+    _replyToController.dispose();
+    super.dispose();
+  }
+
+  Object? _pickRaw(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      if (map.containsKey(key) && map[key] != null) return map[key];
+    }
+    return null;
+  }
+
+  String _pickString(Map<String, dynamic> map, List<String> keys) {
+    final value = _pickRaw(map, keys);
+    return value == null ? '' : value.toString().trim();
+  }
+
+  bool? _pickBool(Map<String, dynamic> map, List<String> keys) {
+    final value = _pickRaw(map, keys);
+    if (value == null) return null;
+    if (value is bool) return value;
+    final s = value.toString().trim().toLowerCase();
+    if (s == 'true' || s == '1' || s == 'yes') return true;
+    if (s == 'false' || s == '0' || s == 'no') return false;
+    return null;
+  }
+
+  Future<void> _loadSmtp() async {
+    _loadToken?.cancel('Reload smtp settings');
+    final token = AppCancellationHandle();
+    _loadToken = token;
+
+    if (!mounted) return;
+    updateLocalUiState(this, () => _loading = true);
+
+    try {
+      final res = await _repo.getSmtpConfig(cancelToken: token);
+      if (!mounted) return;
+
+      res.when(
+        success: (map) {
+          updateLocalUiState(this, () {
+            _loading = false;
+            _loadErrorShown = false;
+
+            smtpEnabled =
+                _pickBool(map, ['isActive', 'enabled', 'active']) ?? false;
+
+            final type = _pickString(map, ['type', 'encryption']);
+            final t = type.toLowerCase();
+            tlsEnabled = t.contains('ssl') || t.contains('tls');
+
+            _hostController.text = _pickString(map, ['host', 'smtpHost']);
+
+            _portController.text = _pickString(map, ['port', 'smtpPort']);
+
+            _usernameController.text = _pickString(map, ['username', 'user']);
+
+            _passwordController.text = _pickString(map, [
+              'password',
+              'appPassword',
+            ]);
+
+            _fromEmailController.text = _pickString(map, [
+              'email',
+              'fromEmail',
+              'senderEmail',
+            ]);
+
+            _fromNameController.text = _pickString(map, [
+              'senderName',
+              'fromName',
+            ]);
+
+            _replyToController.text = _pickString(map, [
+              'replyTo',
+              'replyToEmail',
+            ]);
+          });
+        },
+        failure: (err) {
+          updateLocalUiState(this, () => _loading = false);
+          if (_loadErrorShown) return;
+          _loadErrorShown = true;
+          final msg =
+              (LegacyErrorPresenter.isApiFailure(err) &&
+                  (LegacyErrorPresenter.statusCode(err) == 401 || LegacyErrorPresenter.statusCode(err) == 403))
+              ? 'Not authorized to load SMTP settings.'
+              : "Couldn't load SMTP settings.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () => _loading = false);
+      if (_loadErrorShown) return;
+      _loadErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't load SMTP settings.")),
+      );
+    }
+  }
+
+  Future<bool> _saveSmtp({bool showSuccess = true}) async {
+    if (_saving) return false;
+
+    final now = DateTime.now();
+    final last = _lastSaveAt;
+    if (last != null && now.difference(last).inMilliseconds < 800) {
+      return false;
+    }
+    _lastSaveAt = now;
+
+    _saveToken?.cancel('Retry smtp save');
+    final token = AppCancellationHandle();
+    _saveToken = token;
+
+    if (!mounted) return false;
+    updateLocalUiState(this, () => _saving = true);
+
+    final payload = <String, dynamic>{
+      'type': tlsEnabled ? 'SSL' : 'NONE',
+      'host': _hostController.text.trim(),
+      'senderName': _fromNameController.text.trim(),
+      'port': _portController.text.trim(),
+      'email': _fromEmailController.text.trim(),
+      'replyTo': _replyToController.text.trim(),
+      'username': _usernameController.text.trim(),
+      'password': _passwordController.text,
+      'isActive': smtpEnabled.toString(),
+    };
+
+    try {
+      final res = await _repo.updateSmtpConfig(
+        payload,
+        cancelToken: token,
+      );
+      if (!mounted) return false;
+
+      return res.when(
+        success: (_) {
+          updateLocalUiState(this, () {
+            _saving = false;
+            _saveErrorShown = false;
+          });
+          if (showSuccess) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Saved')));
+          }
+          return true;
+        },
+        failure: (err) {
+          updateLocalUiState(this, () => _saving = false);
+          if (!_saveErrorShown) {
+            _saveErrorShown = true;
+            final msg =
+                (LegacyErrorPresenter.isApiFailure(err) &&
+                    (LegacyErrorPresenter.statusCode(err) == 401 || LegacyErrorPresenter.statusCode(err) == 403))
+                ? 'Not authorized to save SMTP settings.'
+                : "Couldn't save SMTP settings.";
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(msg)));
+          }
+          return false;
+        },
+      );
+    } catch (_) {
+      if (!mounted) return false;
+      updateLocalUiState(this, () => _saving = false);
+      if (!_saveErrorShown) {
+        _saveErrorShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save SMTP settings.")),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> _toggleAndPersist({
+    required bool currentValue,
+    required bool nextValue,
+    required ValueChanged<bool> setLocalValue,
+  }) async {
+    if (_saving) return;
+    updateLocalUiState(this, () => setLocalValue(nextValue));
+    final ok = await _saveSmtp(showSuccess: false);
+    if (!ok && mounted) {
+      updateLocalUiState(this, () => setLocalValue(currentValue));
+    }
+  }
+
+  Future<void> _sendTestEmail() async {
+    if (_testing || _saving) return;
+
+    _testToken?.cancel('Retry smtp test');
+    final token = AppCancellationHandle();
+    _testToken = token;
+
+    if (!mounted) return;
+    updateLocalUiState(this, () => _testing = true);
+
+    final email = _fromEmailController.text.trim().isNotEmpty
+        ? _fromEmailController.text.trim()
+        : _usernameController.text.trim();
+
+    try {
+      final res = await _repo.sendTestSmtp(
+        email: email,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      res.when(
+        success: (_) {
+          updateLocalUiState(this, () {
+            _testing = false;
+            _testErrorShown = false;
+          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Test email sent')));
+        },
+        failure: (err) {
+          updateLocalUiState(this, () => _testing = false);
+          if (_testErrorShown) return;
+          _testErrorShown = true;
+          final msg =
+              (LegacyErrorPresenter.isApiFailure(err) &&
+                  (LegacyErrorPresenter.statusCode(err) == 401 || LegacyErrorPresenter.statusCode(err) == 403))
+              ? 'Not authorized to send test email.'
+              : "Couldn't send test email.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(msg)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () => _testing = false);
+      if (_testErrorShown) return;
+      _testErrorShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't send test email.")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+    final double hp = AdaptiveUtils.getHorizontalPadding(width);
+
+    if (_loading) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(hp),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                AppShimmer(width: 170, height: 40, radius: 10),
+                SizedBox(width: 12),
+                AppShimmer(width: 170, height: 40, radius: 10),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const AppShimmer(width: 190, height: 20, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: 280, height: 24, radius: 8),
+            const SizedBox(height: 24),
+            _buildLoadingShimmer(width),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(hp),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // TOP BUTTONS (Save & Test)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _saving
+                      ? null
+                      : () => _saveSmtp(showSuccess: true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: hp + 2,
+                      vertical: hp - 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: SizedBox(
+                    width: AdaptiveUtils.getIconSize(width),
+                    height: AdaptiveUtils.getIconSize(width),
+                    child: _saving
+                        ? AppShimmer(
+                            width: AdaptiveUtils.getIconSize(width),
+                            height: AdaptiveUtils.getIconSize(width),
+                            radius: AdaptiveUtils.getIconSize(width) / 2,
+                          )
+                        : Icon(
+                            Icons.save_outlined,
+                            color: colorScheme.onPrimary,
+                            size: AdaptiveUtils.getIconSize(width),
+                          ),
+                  ),
+                  label: Text(
+                    "Save Configuration",
+                    style: AppFonts.roboto(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _testing ? null : _sendTestEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: hp + 2,
+                      vertical: hp - 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: SizedBox(
+                    width: AdaptiveUtils.getIconSize(width),
+                    height: AdaptiveUtils.getIconSize(width),
+                    child: _testing
+                        ? AppShimmer(
+                            width: AdaptiveUtils.getIconSize(width),
+                            height: AdaptiveUtils.getIconSize(width),
+                            radius: AdaptiveUtils.getIconSize(width) / 2,
+                          )
+                        : Icon(
+                            Icons.email_outlined,
+                            color: colorScheme.onPrimary,
+                            size: AdaptiveUtils.getIconSize(width),
+                          ),
+                  ),
+                  label: Text(
+                    "Send Test Email",
+                    style: AppFonts.roboto(
+                      fontSize: AdaptiveUtils.getTitleFontSize(width) - 2,
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // TITLE
+          Text(
+            "SMTP Configuration",
+            style: AppFonts.roboto(
+              fontSize: AdaptiveUtils.getTitleFontSize(width),
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.87),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Configure your email server settings",
+            style: AppFonts.roboto(
+              fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface.withOpacity(0.9),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Enable SMTP Service
+          _buildSection(
+            context: context,
+            icon: Icons.email_rounded,
+            title: "Enable SMTP Service",
+            subtitle: "SMTP service is active and will send emails",
+            trailing: Transform.scale(
+              scale: 0.7,
+              child: Switch(
+                value: smtpEnabled,
+                activeThumbColor: colorScheme.onPrimary,
+                activeTrackColor: colorScheme.primary,
+                inactiveThumbColor: colorScheme.onPrimary,
+                inactiveTrackColor: colorScheme.primary.withOpacity(0.3),
+                onChanged: _saving
+                    ? null
+                    : (v) => _toggleAndPersist(
+                        currentValue: smtpEnabled,
+                        nextValue: v,
+                        setLocalValue: (value) => smtpEnabled = value,
+                      ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Configure Your SMTP Server
+          _buildSection(
+            context: context,
+            icon: Icons.settings_rounded,
+            title: "Configure Your SMTP Server",
+            subtitle:
+                "Enter your custom SMTP server details below to send system emails and notifications.",
+          ),
+
+          const SizedBox(height: 24),
+
+          // SMTP Server Configuration Fields
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInputField(
+                  context,
+                  label: "SMTP HOST",
+                  hint: "e.g., smtp.gmail.com",
+                  controller: _hostController,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  context,
+                  label: "SMTP PORT",
+                  hint: "Common: 587, 465, 25",
+                  controller: _portController,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Common: 587, 465, 25",
+                  style: AppFonts.roboto(
+                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // TLS/SSL Switch
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Use TLS/SSL Encryption",
+                        style: AppFonts.roboto(
+                          fontSize:
+                              AdaptiveUtils.getSubtitleFontSize(width) - 3,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.onSurface.withOpacity(0.87),
+                        ),
+                      ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: tlsEnabled,
+                          activeThumbColor: colorScheme.onPrimary,
+                          activeTrackColor: colorScheme.primary,
+                          inactiveThumbColor: colorScheme.onPrimary,
+                          inactiveTrackColor: colorScheme.primary.withOpacity(
+                            0.3,
+                          ),
+                          onChanged: _saving
+                              ? null
+                              : (v) => _toggleAndPersist(
+                                  currentValue: tlsEnabled,
+                                  nextValue: v,
+                                  setLocalValue: (value) => tlsEnabled = value,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                _buildInputField(
+                  context,
+                  label: "USERNAME / EMAIL",
+                  hint:
+                      "SMTP authentication username (usually your email address)",
+                  controller: _usernameController,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  context,
+                  label: "PASSWORD / APP PASSWORD",
+                  hint: "For Gmail/Google Workspace, use an App Password",
+                  obscureText: true,
+                  controller: _passwordController,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "For Gmail/Google Workspace, use an App Password",
+                  style: AppFonts.roboto(
+                    fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                    color: colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Sender Information
+          _buildSection(
+            context: context,
+            icon: Icons.person_rounded,
+            title: "Sender Information",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInputField(
+                  context,
+                  label: "FROM EMAIL ADDRESS",
+                  hint:
+                      "This email address will appear as the sender for all system emails",
+                  controller: _fromEmailController,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  context,
+                  label: "FROM NAME",
+                  hint:
+                      "Display name that will appear alongside the email address",
+                  controller: _fromNameController,
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  context,
+                  label: "REPLY-TO EMAIL (Optional)",
+                  hint:
+                      "Email address where replies should be sent (if different from sender)",
+                  controller: _replyToController,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingShimmer(double width) {
+    return Column(
+      children: [
+        _buildShimmerCard(width: width, titleWidth: 230, fields: 1),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 260, fields: 2),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 300, fields: 6),
+        const SizedBox(height: 24),
+        _buildShimmerCard(width: width, titleWidth: 190, fields: 3),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard({
+    required double width,
+    required double titleWidth,
+    required int fields,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double labelWidth = (width * 0.24).clamp(90, 180).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppShimmer(width: titleWidth, height: 24, radius: 8),
+              const AppShimmer(width: 46, height: 26, radius: 14),
+            ],
+          ),
+          const SizedBox(height: 16),
+          for (int i = 0; i < fields; i++) ...[
+            AppShimmer(width: labelWidth, height: 12, radius: 8),
+            const SizedBox(height: 8),
+            const AppShimmer(width: double.infinity, height: 44, radius: 12),
+            if (i != fields - 1) const SizedBox(height: 14),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    Widget? child,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: AdaptiveUtils.getTitleFontSize(width) + 5,
+                color: colorScheme.primary.withOpacity(0.87),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppFonts.roboto(
+                    fontSize: AdaptiveUtils.getTitleFontSize(width) + 2,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface.withOpacity(0.87),
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: AppFonts.roboto(
+                fontSize: AdaptiveUtils.getSubtitleFontSize(width) - 5,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ],
+          if (child != null) ...[const SizedBox(height: 16), child],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField(
+    BuildContext context, {
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool obscureText = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.roboto(
+            fontSize: AdaptiveUtils.getTitleFontSize(width),
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface.withOpacity(0.87),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          obscureText: obscureText,
+          controller: controller,
+          style: AppFonts.roboto(
+            color: colorScheme.onSurface,
+            fontSize: AdaptiveUtils.getTitleFontSize(width),
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppFonts.roboto(
+              color: colorScheme.onSurface.withOpacity(0.6),
+              fontSize: AdaptiveUtils.getTitleFontSize(width),
+            ),
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

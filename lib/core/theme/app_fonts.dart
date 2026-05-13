@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:open_vts/design_system/theme/open_vts_theme.dart';
+import 'package:open_vts/core/theme/open_vts_theme.dart';
 
 class AppFonts {
   const AppFonts._();

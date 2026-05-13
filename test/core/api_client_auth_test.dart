@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:dio/dio.dart';
+import 'package:open_vts/core/utils/request_control.dart';
 import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_exception.dart';
+import 'package:open_vts/core/api/api_client.dart';
+import 'package:open_vts/core/api/api_exception.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 class MockTokenStorage implements TokenStorageBase {

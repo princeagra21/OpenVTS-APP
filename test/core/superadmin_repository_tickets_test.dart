@@ -1,6 +1,6 @@
 import 'package:open_vts/core/config/app_config.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/repositories/superadmin_repository.dart';
+import 'package:open_vts/core/api/api_client.dart';
+import 'package:open_vts/features/superadmin/data/repositories/superadmin_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 

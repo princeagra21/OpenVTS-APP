@@ -1,0 +1,105 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+// components/admin/navigate_box.dart
+import 'package:open_vts/features/superadmin/presentation/components/small_box/small_box.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+
+class NavigateBox extends StatelessWidget {
+  final String selectedTab;
+  final List<String> tabs;
+  final ValueChanged<String> onTabSelected;
+
+  const NavigateBox({
+    super.key,
+    required this.selectedTab,
+    required this.tabs,
+    required this.onTabSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final double scale = (screenWidth / 420).clamp(0.9, 1.0);
+    final double fsSection = 18 * scale;
+    final double fsSubtitle = 12 * scale;
+    final double fsTab = 13 * scale;
+    final double fsTabIcon = 14 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Header
+          Text(
+            "Admin mobile screens",
+            style: AppFonts.roboto(
+              fontSize: fsSection,
+              height: 24 / 18,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Switch between the uploaded screens below.",
+            style: AppFonts.roboto(
+              fontSize: fsSubtitle,
+              height: 16 / 12,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// CUSTOM HORIZONTAL TAB SCROLL (NO SCROLLBAR)
+          SizedBox(
+            height: 48,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+                child: Row(
+                children: tabs.map((tab) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: SmallTab(
+                      label: tab,
+                      selected: selectedTab == tab,
+                      icon: _iconFor(tab),
+                      fontSize: fsTab,
+                      iconSize: fsTabIcon,
+                      onTap: () => onTabSelected(tab),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData? _iconFor(String tab) {
+    final t = tab.toLowerCase();
+    if (t == 'profile') return Icons.person_outline;
+    if (t == 'localization') return Icons.language;
+    if (t == 'settings') return Icons.tune;
+    return null;
+  }
+}

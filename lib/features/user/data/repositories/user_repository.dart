@@ -1,0 +1,31 @@
+import 'package:open_vts/core/utils/request_control.dart';
+import 'package:open_vts/features/admin/domain/entities/profile.dart';
+import 'package:open_vts/core/api/api_result.dart';
+import 'package:open_vts/core/api/api_paths.dart';
+import 'package:open_vts/core/api/legacy_api_transport.dart';
+
+class UserRepository {
+  final LegacyApiTransport api;
+
+  UserRepository({required this.api});
+
+  /// Protected call example (requires token): choose a lightweight endpoint from your API.
+  ///
+  /// This is intentionally flexible since backend response shapes vary.
+  Future<Result<Profile>> getProfile({CancelToken? cancelToken}) async {
+    // If your backend doesn't have `/user/profile`, adjust this to a known endpoint
+    // from the Postman collection.
+    final res = await api.get(UserApiPaths.profile, cancelToken: cancelToken);
+
+    return res.when(
+      success: (data) => Result.ok(Profile(_coerceMap(data))),
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Map<String, dynamic> _coerceMap(Object? data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data.cast());
+    return const <String, dynamic>{};
+  }
+}

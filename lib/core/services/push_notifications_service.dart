@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dio/dio.dart';
+import 'package:open_vts/core/utils/request_control.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:open_vts/core/network/api_client.dart';
-import 'package:open_vts/core/network/api_exception.dart';
-import 'package:open_vts/core/network/result.dart';
-import 'package:open_vts/core/repositories/push_token_repository.dart';
+import 'package:open_vts/core/api/legacy_api_transport.dart';
+import 'package:open_vts/core/api/api_exception.dart';
+import 'package:open_vts/core/api/api_result.dart';
+import 'package:open_vts/features/auth/data/repositories/push_token_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,7 +68,7 @@ class PushNotificationsService {
   }
 
   void configure({
-    required ApiClient api,
+    required LegacyApiTransport api,
     required TokenStorageBase tokenStorage,
     PushTokenRepository? pushTokenRepository,
   }) {

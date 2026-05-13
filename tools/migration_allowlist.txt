@@ -1,0 +1,350 @@
+# Migration allowlist for architecture_guard.py
+# Structured entries only. Do not add a file unless the guarded violation still exists.
+# Removed stale entries must be backed by current grep/guard proof, not by assumption.
+# Current active entries: 49
+# Removed stale entries in previous passes: 84
+# Superadmin core gateway cleanup removed entries: 18
+
+path: lib/features/admin/presentation/components/admin/application_setting/application_setting.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: admin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/admin/presentation/screens/dashboard/dashboard_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: admin/dashboard
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/admin/presentation/screens/home/home_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: admin/home
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/admin/presentation/screens/more/more_screen.dart
+category: presentation legacy facade imports; presentation raw maps
+reason: presentation legacy facade imports; presentation raw maps
+owner_feature: admin/more
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/admin/presentation/screens/plans/edit_plan_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: admin/plans
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/admin/presentation/screens/sims/add_sim_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: admin/sims
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/admin/presentation/screens/sims/sim_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: admin/sims
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/documents/presentation/controllers/document_form_controller.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation raw maps
+owner_feature: documents/document_form_controller.dart
+target_fix_prompt: controller effect/cancellation cleanup
+risk: high
+remove_when: UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/settings/presentation/controllers/settings_action_handler.dart
+category: dynamic repository
+reason: Transitional settings action handler still receives role-specific legacy repository objects dynamically.
+owner_feature: settings/settings_action_handler.dart
+target_fix_prompt: move settings actions into role-specific typed controller/use-case providers
+risk: high
+remove_when: settings action handler no longer stores dynamic repository dependencies in presentation
+
+path: lib/features/settings/presentation/controllers/settings_content_controller.dart
+category: AppCancellationHandle usage
+reason: AppCancellationHandle usage
+owner_feature: settings/settings_content_controller.dart
+target_fix_prompt: controller effect/cancellation cleanup
+risk: high
+remove_when: controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/settings/presentation/controllers/settings_profile_loader.dart
+category: AppCancellationHandle usage; presentation raw maps
+reason: AppCancellationHandle usage; presentation raw maps
+owner_feature: settings/settings_profile_loader.dart
+target_fix_prompt: controller effect/cancellation cleanup
+risk: high
+remove_when: controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/settings/presentation/widgets/settings_content.dart
+category: presentation legacy facade imports; presentation repository-provider usage
+reason: presentation legacy facade imports; presentation repository-provider usage
+owner_feature: settings/settings_content.dart
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only
+
+path: lib/features/superadmin/presentation/components/admin/activity_tab/admin_activity_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps; presentation repository-provider usage
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/application_setting/application_setting.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/calender/calender_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/credit_history/add_deduct_credit_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/credit_history/admin_credit_history_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/credit_history/credit_history_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/documents_tab/documents_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/documents_tab/widget/file_card.dart
+category: presentation legacy facade imports; presentation raw maps; presentation repository-provider usage
+reason: presentation legacy facade imports; presentation raw maps; presentation repository-provider usage
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/payments_tab/add_admin_payment_record_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/payments_tab/admin_payments_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/policy_edit/policy_edit.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/profile_tab/widget/delete_account_box.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/smpt_configuration_setting/smpt_configuration_setting.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/admin/ssl/ssl.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/admin/vehicles_tab/vehicles_tab.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation raw maps
+owner_feature: superadmin/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics; raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/superadmin/presentation/components/branding/branding_settings_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/branding
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/profile/profile_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/profile
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/transactions/payments_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: superadmin/transactions
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/transactions/record_manual_payment_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/transactions
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/superadmin/presentation/components/vehicle/widget/add_new_vehicle.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: superadmin/vehicle
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/support/presentation/controllers/support_controller.dart
+category: dynamic repository usage
+reason: dynamic repository usage
+owner_feature: support/support_controller.dart
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: the current guarded violation no longer exists
+
+path: lib/features/support/presentation/ticket_details/ticket_details_controller.dart
+category: presentation raw maps
+reason: Ticket details still merges raw support ticket maps inside presentation state.
+owner_feature: support/ticket_details_controller.dart
+target_fix_prompt: move ticket detail response mapping to data/domain view models
+risk: high
+remove_when: raw maps are replaced with typed DTO/domain/state models
+
+path: lib/features/support/presentation/ticket_details/ticket_details_state.dart
+category: AppCancellationHandle usage
+reason: AppCancellationHandle usage
+owner_feature: support/ticket_details_state.dart
+target_fix_prompt: controller effect/cancellation cleanup
+risk: high
+remove_when: controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/admin/screens/add_share_track.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: user/admin
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/drivers/edit_driver_profile_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: user/drivers
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/notification/vehicle_toggle_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: user/notification
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/profile/profile_screen.dart
+category: AppCancellationHandle usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: user/profile
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/profile/widget/edit_admin_profile_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports; presentation repository-provider usage
+owner_feature: user/profile
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/profile/widget/profile_verification_box.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: user/profile
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/profile/widget/update_password_screen.dart
+category: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+reason: AppCancellationHandle usage; LegacyErrorPresenter usage; presentation legacy facade imports
+owner_feature: user/profile
+target_fix_prompt: presentation repository cleanup
+risk: high
+remove_when: presentation uses Riverpod controller/use cases only; UI effects are emitted by controller state instead of LegacyErrorPresenter; controller lifecycle uses Riverpod cancellation/dispose semantics
+
+path: lib/features/user/presentation/screens/vehicles/vehicle_details/controller.dart
+category: presentation raw maps
+reason: Vehicle document/config helpers still expose raw map-shaped presentation data.
+owner_feature: user/vehicles
+target_fix_prompt: move document/config maps to typed view models
+risk: high
+remove_when: raw maps are replaced with typed DTO/domain/state models

@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart';
+class FSAvatar extends StatelessWidget { const FSAvatar({this.imageUrl, this.label, super.key}); final String? imageUrl; final String? label; @override Widget build(BuildContext context) => CircleAvatar(backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl!), child: imageUrl == null ? Text(((label ?? '?').isEmpty ? '?' : (label ?? '?').substring(0, 1).toUpperCase())) : null); }

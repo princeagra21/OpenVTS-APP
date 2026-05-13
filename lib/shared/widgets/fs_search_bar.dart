@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart';
+class FSSearchBar extends StatelessWidget { const FSSearchBar({this.controller, this.hintText = 'Search', this.onChanged, super.key}); final TextEditingController? controller; final String hintText; final ValueChanged<String>? onChanged; @override Widget build(BuildContext context) => SearchBar(controller: controller, hintText: hintText, onChanged: onChanged); }

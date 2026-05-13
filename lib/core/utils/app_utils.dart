@@ -3,22 +3,9 @@
 // It includes dimensions for cards, paddings, borders, buttons, app bars, and more.
 // Updated to support light and dark modes with a minimal black, white, and transparent color palette.
 // Added app-specific constants to match the provided code (e.g., paddings of 20, sizes of 45/40, etc.).
-// Updated fonts: Using centralized AppFonts for body text, and 'Satoshi' (custom font) for headings.
-// For 'Satoshi', download from Fontshare[](https://www.fontshare.com/fonts/satoshi), add font files to assets/fonts/,
-// and declare in pubspec.yaml under fonts:
-//   - family: Satoshi
-//     fonts:
-//       - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Light.otf
-//         weight: 300
-//       - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Regular.otf
-//         weight: 400
-//       - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Medium.otf
-//         weight: 500
-//       - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Bold.otf
-//         weight: 700
-//       - asset: assets/fonts/Satoshi/Fonts/OTF/Satoshi-Black.otf
-//         weight: 900
-// (Add other weights or italics as needed).
+// Typography uses the platform sans-serif fallback in this clean source artifact.
+// Add licensed font files locally and register them in pubspec.yaml if a custom
+// brand font is required for production builds.
 
 export 'package:open_vts/core/debug/app_logger.dart';
 
@@ -38,12 +25,12 @@ class AppUtils {
   static Color subtleWhite(double opacity) => white.withOpacity(opacity);
 
   // Font Families
-  static const String headingFont = 'Satoshi';
+  static const String? headingFont = null;
   // Body font is handled via AppFonts.inter()
 
   // Text Styles (premium typography: clean, sans-serif, with hierarchy)
   // Base styles without color; colors applied in themes
-  // Headings use 'Satoshi', body uses 'Inter' from Google Fonts
+  // Headings and body text use the platform sans-serif fallback by default
   static TextStyle headlineLargeBase = const TextStyle(
     fontSize: 32.0,
     fontWeight: FontWeight.bold,
@@ -90,7 +77,7 @@ class AppUtils {
   static TextStyle labelBoldBase = const TextStyle(
     fontSize: 16.0,
     fontWeight: FontWeight.bold,
-    fontFamily: headingFont, // Using Satoshi for bold labels like 'FS'
+    fontFamily: headingFont,
   );
 
   // Paddings (symmetric for consistency, premium spacing: generous but not wasteful)

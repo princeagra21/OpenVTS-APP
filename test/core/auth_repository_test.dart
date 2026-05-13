@@ -1,4 +1,4 @@
-import 'package:open_vts/core/repositories/auth_repository.dart';
+import 'package:open_vts/features/auth/data/repositories/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

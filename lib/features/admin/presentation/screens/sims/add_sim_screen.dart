@@ -1,0 +1,556 @@
+import 'package:open_vts/core/utils/app_cancellation.dart';
+import 'package:open_vts/features/vehicles/domain/entities/sim_provider_option.dart';
+import 'package:open_vts/core/error/legacy_error_presenter.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/shared/presentation/providers/legacy_repository_facade_providers.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class AddSimScreen extends ConsumerStatefulWidget {
+  const AddSimScreen({super.key});
+
+  @override
+  ConsumerState<AddSimScreen> createState() => _AddSimScreenState();
+}
+
+class _AddSimScreenState extends ConsumerState<AddSimScreen> {
+  // Endpoint truth table (API reference documentation + Postman):
+  // - GET /simproviders
+  // - POST /admin/simcards
+  //   Confirmed keys: simNumber, providerId, iccid
+  //   Optional key used by UI when available: imei
+
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _providerController = TextEditingController();
+  final TextEditingController _iccidController = TextEditingController();
+  final TextEditingController _imeiController = TextEditingController();
+
+  String? _selectedProviderLabel;
+  List<SimProviderOption> _providers = const <SimProviderOption>[];
+
+  bool _loadingProviders = false;
+  bool _submitting = false;
+  bool _loadErrorShown = false;
+
+  AppCancellationHandle? _loadToken;
+  AppCancellationHandle? _submitToken;
+  late final _repo = ref.read(adminSimCardsRepositoryAdapterProvider);
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProviders();
+  }
+
+  @override
+  void dispose() {
+    _loadToken?.cancel('AddSimScreen disposed');
+    _submitToken?.cancel('AddSimScreen disposed');
+    _phoneController.dispose();
+    _providerController.dispose();
+    _iccidController.dispose();
+    _imeiController.dispose();
+    super.dispose();
+  }
+
+  bool _isCancelled(Object err) {
+    return LegacyErrorPresenter.isApiFailure(err) &&
+        LegacyErrorPresenter.message(err).toLowerCase() == 'request cancelled';
+  }
+
+  void _showLoadErrorOnce(String message) {
+    if (_loadErrorShown || !mounted) return;
+    _loadErrorShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadProviders() async {
+    _loadToken?.cancel('Reload sim providers');
+    final token = AppCancellationHandle();
+    _loadToken = token;
+
+    if (!mounted) return;
+    updateLocalUiState(this, () => _loadingProviders = true);
+
+    try {
+      final result = await _repo.getSimProviders(cancelToken: token);
+      if (!mounted) return;
+
+      result.when(
+        success: (items) {
+          if (!mounted) return;
+          updateLocalUiState(this, () {
+            _providers = items;
+            _loadingProviders = false;
+            _loadErrorShown = false;
+          });
+        },
+        failure: (err) {
+          if (!mounted) return;
+          updateLocalUiState(this, () {
+            _providers = const <SimProviderOption>[];
+            _loadingProviders = false;
+          });
+
+          if (_isCancelled(err)) return;
+          _showLoadErrorOnce("Couldn't load SIM providers.");
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () {
+        _providers = const <SimProviderOption>[];
+        _loadingProviders = false;
+      });
+      _showLoadErrorOnce("Couldn't load SIM providers.");
+    }
+  }
+
+  List<String> get _providerLabels {
+    final labels = _providers
+        .map((e) => e.name.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .toList();
+    labels.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return labels;
+  }
+
+  String _providerIdFromLabel(String label) {
+    final match = _providers.where((e) => e.name.trim() == label).toList();
+    if (match.isEmpty) return '';
+    return match.first.id.trim();
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    final simNumber = _phoneController.text.trim();
+    final iccid = _iccidController.text.trim();
+    final imei = _imeiController.text.trim();
+
+    final labels = _providerLabels;
+    final providerLabel = labels.isNotEmpty
+        ? (_selectedProviderLabel ?? '').trim()
+        : _providerController.text.trim();
+
+    if (providerLabel.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Provider is required.')));
+      return;
+    }
+
+    final providerId = labels.isNotEmpty
+        ? _providerIdFromLabel(providerLabel)
+        : '';
+
+    final payload = <String, dynamic>{'simNumber': simNumber, 'iccid': iccid};
+
+    if (providerId.isNotEmpty) {
+      final asInt = int.tryParse(providerId);
+      payload['providerId'] = asInt ?? providerId;
+    } else {
+      payload['provider'] = providerLabel;
+    }
+
+    if (imei.isNotEmpty) {
+      payload['imei'] = imei;
+    }
+
+    _submitToken?.cancel('Replace add sim request');
+    final token = AppCancellationHandle();
+    _submitToken = token;
+
+    if (!mounted) return;
+    updateLocalUiState(this, () => _submitting = true);
+
+    try {
+      final result = await _repo.addSimCard(
+        payload,
+        cancelToken: token,
+      );
+      if (!mounted) return;
+
+      result.when(
+        success: (_) {
+          if (!mounted) return;
+          updateLocalUiState(this, () => _submitting = false);
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('SIM card added.')));
+          Navigator.pop(context, true);
+        },
+        failure: (err) {
+          if (!mounted) return;
+          updateLocalUiState(this, () => _submitting = false);
+
+          if (_isCancelled(err)) return;
+
+          final message =
+              (LegacyErrorPresenter.isApiFailure(err) &&
+                  (LegacyErrorPresenter.statusCode(err) == 401 || LegacyErrorPresenter.statusCode(err) == 403))
+              ? 'Not authorized to add SIM card.'
+              : "Couldn't add SIM card.";
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      updateLocalUiState(this, () => _submitting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't add SIM card.")));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w);
+
+    final providerLabels = _providerLabels;
+
+    if (_selectedProviderLabel != null &&
+        !providerLabels.contains(_selectedProviderLabel)) {
+      _selectedProviderLabel = null;
+    }
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding * 1.3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Add New SIM Card',
+                    style: AppFonts.inter(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(w),
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        StylishTextField(
+                          label: 'Phone Number',
+                          hint: 'Enter phone number',
+                          controller: _phoneController,
+                          prefixIcon: Icons.phone_rounded,
+                          validator: (v) {
+                            final value = (v ?? '').trim();
+                            if (value.isEmpty) return 'Required';
+                            return null;
+                          },
+                          width: w,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        if (_loadingProviders)
+                          _dropdownShimmer(label: 'Select provider', width: w)
+                        else if (providerLabels.isNotEmpty)
+                          StylishDropdown(
+                            label: 'Select provider',
+                            hint: 'Select provider',
+                            value: _selectedProviderLabel,
+                            items: providerLabels,
+                            onChanged: (v) =>
+                                updateLocalUiState(this, () => _selectedProviderLabel = v),
+                            width: w,
+                          )
+                        else
+                          StylishTextField(
+                            label: 'Provider',
+                            hint: 'Enter provider name',
+                            controller: _providerController,
+                            prefixIcon: Icons.apartment_rounded,
+                            validator: (v) {
+                              final value = (v ?? '').trim();
+                              if (value.isEmpty) return 'Required';
+                              return null;
+                            },
+                            width: w,
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: 'ICCID',
+                          hint: 'Enter ICCID',
+                          controller: _iccidController,
+                          prefixIcon: Icons.sim_card_rounded,
+                          validator: (v) {
+                            final value = (v ?? '').trim();
+                            if (value.isEmpty) return 'Required';
+                            return null;
+                          },
+                          width: w,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        StylishTextField(
+                          label: 'Device IMEI (optional)',
+                          hint: 'Enter associated device IMEI',
+                          controller: _imeiController,
+                          prefixIcon: Icons.device_hub_rounded,
+                          width: w,
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _submitting
+                                    ? null
+                                    : () => Navigator.pop(context),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(36),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    side: BorderSide(
+                                      color: cs.primary.withOpacity(0.2),
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Cancel',
+                                  style: AppFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: (_submitting || _loadingProviders)
+                                    ? null
+                                    : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(36),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: _submitting
+                                    ? const SizedBox(
+                                        height: 16,
+                                        child: Center(
+                                          child: AppShimmer(
+                                            width: 100,
+                                            height: 14,
+                                            radius: 7,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        'Add SIM Card',
+                                        style: AppFonts.inter(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdownShimmer({required String label, required double width}) {
+    final fs = AdaptiveUtils.getTitleFontSize(width);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+        ),
+        const SizedBox(height: 8),
+        const AppShimmer(width: double.infinity, height: 55, radius: 16),
+      ],
+    );
+  }
+}
+
+class StylishTextField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final IconData prefixIcon;
+  final String? Function(String?)? validator;
+  final double width;
+
+  const StylishTextField({
+    super.key,
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.prefixIcon,
+    this.validator,
+    required this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fs = AdaptiveUtils.getTitleFontSize(width);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 55,
+          child: TextFormField(
+            controller: controller,
+            validator: validator,
+            decoration: InputDecoration(
+              fillColor: cs.surface,
+              filled: true,
+              hintText: hint,
+              hintStyle: AppFonts.inter(
+                color: cs.onSurface.withOpacity(0.6),
+                fontSize: fs,
+              ),
+              prefixIcon: Icon(prefixIcon, color: cs.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.primary, width: 2),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class StylishDropdown extends StatelessWidget {
+  final String label;
+  final String hint;
+  final String? value;
+  final List<String> items;
+  final ValueChanged<String?>? onChanged;
+  final double width;
+
+  const StylishDropdown({
+    super.key,
+    required this.label,
+    required this.hint,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    required this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fs = AdaptiveUtils.getTitleFontSize(width);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 55,
+          child: DropdownButtonFormField<String>(
+            iconEnabledColor: cs.primary,
+            iconDisabledColor: cs.primary,
+            focusColor: cs.surface,
+            initialValue: value,
+            hint: Text(
+              hint,
+              style: AppFonts.inter(
+                color: cs.onSurface.withOpacity(0.6),
+                fontSize: fs,
+              ),
+            ),
+            decoration: InputDecoration(
+              fillColor: cs.surface,
+              filled: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.primary, width: 2),
+              ),
+            ),
+            items: items
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+}
+

@@ -1,0 +1,970 @@
+import 'package:open_vts/features/superadmin/presentation/components/card/adoption_widget.dart';
+import 'package:open_vts/features/superadmin/presentation/components/card/fleet_card.dart';
+import 'package:open_vts/features/superadmin/presentation/components/card/vehicle_status_box.dart';
+import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_vehicle.dart';
+import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_transaction.dart';
+import 'package:open_vts/features/superadmin/domain/entities/superadmin_recent_user.dart';
+import 'package:open_vts/shared/widgets/app_shimmer.dart';
+import 'package:open_vts/features/superadmin/presentation/components/appbars/superadmin_home_appbar.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart';
+import 'package:open_vts/core/utils/app_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/features/superadmin/di/superadmin_core_gateway_providers.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:go_router/go_router.dart';
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/theme/open_vts_theme.dart';
+import 'package:open_vts/core/router/route_names.dart';
+
+class DashboardScreen extends ConsumerStatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  Future<void> _refreshDashboard() {
+    return ref.read(superadminDashboardControllerProvider.notifier).refreshAll();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final horizontalPadding = AdaptiveUtils.isVerySmallScreen(screenWidth)
+        ? 8.0
+        : AdaptiveUtils.isSmallScreen(screenWidth)
+            ? 10.0
+            : 12.0;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? OpenVtsColors.panelDark
+          : OpenVtsColors.panelLight,
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                topPadding,
+                horizontalPadding,
+                0,
+              ),
+              child: SuperAdminHomeAppBar(
+                title: 'Dashboard',
+                leadingIcon: Symbols.grid_view,
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                color: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                onRefresh: _refreshDashboard,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    28,
+                    horizontalPadding,
+                    MediaQuery.of(context).padding.bottom + 96,
+                  ),
+                  children: [
+                    KeyedSubtree(
+                      key: const ValueKey('fleet'),
+                      child: const FleetOverviewBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: const ValueKey('adoption'),
+                      child: const AdoptionGrowthBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: const ValueKey('vehicle_status'),
+                      child: const VehicleStatusBox(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: const ValueKey('recent_vehicles'),
+                      child: const _RecentVehiclesSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: const ValueKey('recent_transactions'),
+                      child: const _RecentTransactionsSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    KeyedSubtree(
+                      key: const ValueKey('recent_users'),
+                      child: const _RecentUsersSection(),
+                    ),
+                    const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      // bottomNavigationBar: const CustomBottomBar(),
+    );
+  }
+}
+
+class _RecentVehiclesSection extends ConsumerStatefulWidget {
+  const _RecentVehiclesSection();
+
+  @override
+  ConsumerState<_RecentVehiclesSection> createState() => _RecentVehiclesSectionState();
+}
+
+class _RecentVehiclesSectionState extends ConsumerState<_RecentVehiclesSection> {
+
+  String _safeString(Object? value, {String fallback = '—'}) {
+    if (value == null) return fallback;
+    final s = value.toString().trim();
+    return s.isEmpty ? fallback : s;
+  }
+
+  String _vehicleTypeLabel(SuperadminRecentVehicle v) {
+    final fromGetter = v.vehicleTypeName;
+    if (fromGetter.trim().isNotEmpty) return fromGetter;
+    final raw = v.raw;
+    final vt = raw['vehicleType'];
+    if (vt is Map) {
+      final name = vt['name'] ?? vt['title'] ?? vt['type'] ?? vt['slug'];
+      final s = _safeString(name, fallback: '');
+      if (s.isNotEmpty) return s;
+    }
+    return '—';
+  }
+
+  String _relativeTime(Object? value) {
+    final raw = _safeString(value, fallback: '');
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return '';
+    final now = DateTime.now().toUtc();
+    final diff = now.difference(parsed.toUtc());
+    if (diff.inHours < 24) {
+      final h = diff.inHours < 1 ? 1 : diff.inHours;
+      return '${h}h';
+    }
+    if (diff.inDays < 30) {
+      final d = diff.inDays < 1 ? 1 : diff.inDays;
+      return '${d}d';
+    }
+    final months = (diff.inDays / 30).floor();
+    if (months < 12) return '${months < 1 ? 1 : months}mo';
+    final years = (diff.inDays / 365).floor();
+    return '${years < 1 ? 1 : years}y';
+  }
+
+  String _formatDateOnly(Object? value) {
+    final raw = _safeString(value, fallback: '');
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final date = parsed.toLocal();
+    final m = months[date.month - 1];
+    return '${date.day} $m ${date.year}';
+  }
+
+  String _timeLabel(String raw) {
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return _formatDateOnly(raw);
+    final diff = DateTime.now().toUtc().difference(parsed.toUtc());
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays <= 7) return '${diff.inDays}d ago';
+    return _formatDateOnly(raw);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboardState = ref.watch(superadminDashboardControllerProvider);
+    final _loading = dashboardState.isLoadingVehicles;
+    final _vehicles = dashboardState.recentVehicles;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    final pad = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double sectionTitleFs = 18 * scale;
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(pad),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey[100]
+                      : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.directions_car_outlined,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Recent Vehicles',
+                style: AppUtils.headlineSmallBase.copyWith(
+                  fontSize: sectionTitleFs,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () => context.push(AppRoutePaths.superadminVehicles),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View all',
+                      style: AppFonts.roboto(
+                        fontSize: mainRowFs,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.primary.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      size: mainRowFs + 2,
+                      color: cs.primary.withOpacity(0.8),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loading)
+            Column(
+              children: const [
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+                SizedBox(height: 10),
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+              ],
+            )
+          else if (_vehicles.isEmpty)
+            Text(
+              'No recent vehicles',
+              style: AppFonts.roboto(
+                fontSize: secondaryFs,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            )
+          else
+            Column(
+              children: _vehicles.take(5).map((v) {
+                final name = v.name.isNotEmpty ? v.name : '—';
+                final type = _vehicleTypeLabel(v);
+                final status = v.status.isNotEmpty ? v.status : 'Active';
+                final timeText = _timeLabel(v.time);
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness ==
+                                  Brightness.light
+                              ? Colors.grey.shade50
+                              : cs.surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.directions_car_outlined,
+                          size: 18,
+                          color: cs.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 2,
+                              style: AppFonts.roboto(
+                                fontSize: mainRowFs,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              type,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.roboto(
+                                fontSize: secondaryFs,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey.shade50
+                                      : cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              status,
+                              style: AppFonts.roboto(
+                                fontSize: metaFs,
+                                height: 14 / 11,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            timeText,
+                            style: AppFonts.roboto(
+                              fontSize: metaFs,
+                              height: 14 / 11,
+                              fontWeight: FontWeight.w500,
+                              color: cs.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentTransactionsSection extends ConsumerStatefulWidget {
+  const _RecentTransactionsSection();
+
+  @override
+  ConsumerState<_RecentTransactionsSection> createState() =>
+      _RecentTransactionsSectionState();
+}
+
+class _RecentTransactionsSectionState extends ConsumerState<_RecentTransactionsSection> {
+
+  String _safeString(Object? value, {String fallback = '—'}) {
+    if (value == null) return fallback;
+    final s = value.toString().trim();
+    return s.isEmpty ? fallback : s;
+  }
+
+  String _relativeTime(Object? value) {
+    final raw = _safeString(value, fallback: '');
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return '';
+    final now = DateTime.now().toUtc();
+    final diff = now.difference(parsed.toUtc());
+    if (diff.inHours < 24) {
+      final h = diff.inHours < 1 ? 1 : diff.inHours;
+      return '${h}h';
+    }
+    if (diff.inDays < 30) {
+      final d = diff.inDays < 1 ? 1 : diff.inDays;
+      return '${d}d';
+    }
+    final months = (diff.inDays / 30).floor();
+    if (months < 12) return '${months < 1 ? 1 : months}mo';
+    final years = (diff.inDays / 365).floor();
+    return '${years < 1 ? 1 : years}y';
+  }
+
+  String _formatDateOnly(Object? value) {
+    final raw = _safeString(value, fallback: '');
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final date = parsed.toLocal();
+    final m = months[date.month - 1];
+    return '${date.day} $m ${date.year}';
+  }
+
+  String _timeLabel(String raw) {
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return _formatDateOnly(raw);
+    final diff = DateTime.now().toUtc().difference(parsed.toUtc());
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays <= 7) return '${diff.inDays}d ago';
+    return _formatDateOnly(raw);
+  }
+
+  String _amountText(SuperadminRecentTransaction t) {
+    final amount = _safeString(t.amount, fallback: '—');
+    final currency = _safeString(t.currency, fallback: '');
+    if (currency.isEmpty || currency == '—') return amount;
+    return '$amount $currency';
+  }
+
+  (String text, IconData icon, Color color) _statusMeta(
+    String raw,
+    ColorScheme cs,
+  ) {
+    final status = raw.toUpperCase();
+    if (status.contains('SUCCESS')) {
+      return ('Success', Icons.check_circle, cs.primary);
+    }
+    if (status.contains('FAIL')) {
+      return ('Failed', Icons.cancel, cs.error);
+    }
+    return ('Pending', Icons.schedule, cs.onSurface.withOpacity(0.6));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboardState = ref.watch(superadminDashboardControllerProvider);
+    final _loading = dashboardState.isLoadingTransactions;
+    final _transactions = dashboardState.recentTransactions;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    final pad = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double sectionTitleFs = 18 * scale;
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(pad),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey[100]
+                      : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.credit_card,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Transactions',
+                style: AppUtils.headlineSmallBase.copyWith(
+                  fontSize: sectionTitleFs,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () => context.push(AppRoutePaths.superadminPayments),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View all',
+                      style: AppFonts.roboto(
+                        fontSize: mainRowFs,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.primary.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      size: mainRowFs + 2,
+                      color: cs.primary.withOpacity(0.8),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loading)
+            Column(
+              children: const [
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+                SizedBox(height: 10),
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+              ],
+            )
+          else if (_transactions.isEmpty)
+            Text(
+              'No recent transactions',
+              style: AppFonts.roboto(
+                fontSize: secondaryFs,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            )
+          else
+            Column(
+              children: _transactions.map<Widget>((t) {
+                final name = t.fromUserName.isNotEmpty
+                    ? t.fromUserName
+                    : (t.actorName.isNotEmpty ? t.actorName : '—');
+                final date = _timeLabel(t.time);
+                final amount = _amountText(t);
+                final (statusText, statusIcon, statusColor) =
+                    _statusMeta(t.status, cs);
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness ==
+                                  Brightness.light
+                              ? Colors.grey.shade50
+                              : cs.surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 18,
+                          color: cs.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 2,
+                              style: AppFonts.roboto(
+                                fontSize: mainRowFs,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              date,
+                              maxLines: 2,
+                              style: AppFonts.roboto(
+                                fontSize: secondaryFs,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            amount,
+                            style: AppFonts.roboto(
+                              fontSize: mainRowFs,
+                              height: 20 / 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.grey.shade50
+                                      : cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  statusIcon,
+                                  size: 14,
+                                  color: statusColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  statusText,
+                                  style: AppFonts.roboto(
+                                    fontSize: metaFs,
+                                    height: 14 / 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentUsersSection extends ConsumerStatefulWidget {
+  const _RecentUsersSection();
+
+  @override
+  ConsumerState<_RecentUsersSection> createState() => _RecentUsersSectionState();
+}
+
+class _RecentUsersSectionState extends ConsumerState<_RecentUsersSection> {
+
+  String _safeString(Object? value, {String fallback = '—'}) {
+    if (value == null) return fallback;
+    final s = value.toString().trim();
+    return s.isEmpty ? fallback : s;
+  }
+
+  String _formatDateOnly(Object? value) {
+    final raw = _safeString(value, fallback: '');
+    if (raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final date = parsed.toLocal();
+    final m = months[date.month - 1];
+    return '${date.day} $m ${date.year}';
+  }
+
+  String _timeLabel(String raw) {
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return _formatDateOnly(raw);
+    final diff = DateTime.now().toUtc().difference(parsed.toUtc());
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays <= 7) return '${diff.inDays}d ago';
+    return _formatDateOnly(raw);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboardState = ref.watch(superadminDashboardControllerProvider);
+    final _loading = dashboardState.isLoadingUsers;
+    final _users = dashboardState.recentUsers;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cs = Theme.of(context).colorScheme;
+    final pad = AdaptiveUtils.getHorizontalPadding(screenWidth);
+    final bool small = screenWidth < 420;
+    final double scale = small ? 0.9 : 1.0;
+    final double sectionTitleFs = 18 * scale;
+    final double mainRowFs = 14 * scale;
+    final double secondaryFs = 12 * scale;
+    final double metaFs = 11 * scale;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(pad),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cs.onSurface.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey[100]
+                      : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.group,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Recent Users',
+                style: AppUtils.headlineSmallBase.copyWith(
+                  fontSize: sectionTitleFs,
+                  height: 24 / 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loading)
+            Column(
+              children: const [
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+                SizedBox(height: 10),
+                AppShimmer(width: double.infinity, height: 64, radius: 12),
+              ],
+            )
+          else if (_users.isEmpty)
+            Text(
+              'No recent users',
+              style: AppFonts.roboto(
+                fontSize: secondaryFs,
+                height: 16 / 12,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface.withOpacity(0.6),
+              ),
+            )
+          else
+            Column(
+              children: _users.take(5).map<Widget>((u) {
+                final name = u.name.isNotEmpty ? u.name : '—';
+                final email = u.email.isNotEmpty ? u.email : '—';
+                final date = _timeLabel(u.time);
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cs.onSurface.withOpacity(0.12)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: cs.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          name.isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
+                          style: AppFonts.roboto(
+                            fontSize: mainRowFs,
+                            height: 20 / 14,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 2,
+                              style: AppFonts.roboto(
+                                fontSize: mainRowFs,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.roboto(
+                                fontSize: secondaryFs,
+                                height: 16 / 12,
+                                fontWeight: FontWeight.w500,
+                                color: cs.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        date,
+                        style: AppFonts.roboto(
+                          fontSize: metaFs,
+                          height: 14 / 11,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+

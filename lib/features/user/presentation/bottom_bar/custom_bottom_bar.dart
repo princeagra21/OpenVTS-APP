@@ -1,0 +1,12 @@
+﻿import 'package:flutter/material.dart';
+import 'package:open_vts/features/shell/presentation/widgets/open_vts_bottom_nav.dart';
+import 'package:open_vts/features/shell/presentation/config/role_nav_config.dart';
+
+class CustomBottomBar extends StatelessWidget {
+  const CustomBottomBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const OpenVtsBottomNav(role: OpenVtsRole.user, forceVisible: true);
+  }
+}

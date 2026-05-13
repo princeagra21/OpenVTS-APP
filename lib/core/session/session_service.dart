@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:open_vts/core/repositories/auth_repository.dart';
+import 'package:open_vts/features/auth/data/repositories/auth_repository.dart';
 import 'package:open_vts/core/storage/token_storage.dart';
 
 class SessionService {

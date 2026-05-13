@@ -1,0 +1,432 @@
+import 'package:open_vts/core/theme/app_fonts.dart';
+import 'package:open_vts/core/utils/adaptive_utils.dart' show AdaptiveUtils;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/features/admin/di/admin_operations_providers.dart';
+import 'package:open_vts/core/state/update_local_ui_state.dart';
+
+class AddPlanScreen extends ConsumerStatefulWidget {
+  const AddPlanScreen({super.key});
+
+  @override
+  ConsumerState<AddPlanScreen> createState() => _AddPlanScreenState();
+}
+
+class _AddPlanScreenState extends ConsumerState<AddPlanScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _currencyController = TextEditingController();
+
+  bool _submitting = false;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController.addListener(() => updateLocalUiState(this, () {}));
+    _durationController.addListener(() => updateLocalUiState(this, () {}));
+    _currencyController.text = 'INR';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _durationController.dispose();
+    _currencyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final name = _nameController.text.trim();
+    final currency = _currencyController.text.trim();
+    final price = num.tryParse(_priceController.text.trim());
+    final durationDays = int.tryParse(_durationController.text.trim());
+
+    if (price == null || durationDays == null || currency.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid price, duration, currency.')),
+      );
+      return;
+    }
+
+    updateLocalUiState(this, () => _submitting = true);
+
+    final ok = await ref.read(adminPricingPlansControllerProvider.notifier).create(
+          name: name,
+          durationDays: durationDays,
+          price: price,
+          currency: currency,
+        );
+
+    if (!mounted) return;
+    final nextState = ref.read(adminPricingPlansControllerProvider);
+    updateLocalUiState(this, () => _submitting = false);
+
+    if (ok) {
+      Navigator.pop(context, true);
+      return;
+    }
+
+    final message = nextState.actionError?.message.trim().isNotEmpty == true
+        ? nextState.actionError!.message
+        : 'Failed to create plan.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final double w = MediaQuery.of(context).size.width;
+    final double padding = AdaptiveUtils.getHorizontalPadding(w);
+    final double bottomBarScrollPad = AdaptiveUtils.getBottomBarHeight(w) + 32;
+
+    final currency = _currencyController.text.trim();
+    final priceText = _priceController.text.trim().isEmpty
+        ? '0'
+        : _priceController.text.trim();
+    final durationText = _durationController.text.trim().isEmpty
+        ? '0'
+        : _durationController.text.trim();
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(padding * 1.3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Add New Plan',
+                    style: AppFonts.roboto(
+                      fontSize: AdaptiveUtils.getSubtitleFontSize(w),
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _submitting ? null : () => Navigator.pop(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Fill plan details and click save.',
+                style: AppFonts.roboto(
+                  fontSize: AdaptiveUtils.getTitleFontSize(w) - 2,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: bottomBarScrollPad),
+                    child: Column(
+                      children: [
+                        StylishTextField(
+                          label: 'Plan Name',
+                          hint: 'e.g. Annual Basic',
+                          controller: _nameController,
+                          prefixIcon: Icons.label_rounded,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
+                          width: w,
+                        ),
+                        const SizedBox(height: 16),
+                        StylishTextField(
+                          label: 'Currency',
+                          hint: 'e.g. INR',
+                          controller: _currencyController,
+                          prefixIcon: Icons.currency_exchange,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
+                          width: w,
+                        ),
+                        const SizedBox(height: 16),
+                        StylishTextField(
+                          label: 'Price',
+                          hint: 'e.g. 1499',
+                          controller: _priceController,
+                          prefixIcon: Icons.attach_money,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
+                          width: w,
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 16),
+                        StylishTextField(
+                          label: 'Duration (days)',
+                          hint: 'e.g. 365',
+                          controller: _durationController,
+                          prefixIcon: Icons.calendar_today_rounded,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
+                          width: w,
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          padding: const EdgeInsets.all(25),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Preview',
+                                style: AppFonts.roboto(
+                                  fontSize: AdaptiveUtils.getTitleFontSize(w),
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Quick check before saving.',
+                                style: AppFonts.roboto(
+                                  fontSize:
+                                      AdaptiveUtils.getSubtitleFontSize(w) - 2,
+                                  color: cs.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: cs.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _previewRow(
+                                      'Price',
+                                      '${currency.isNotEmpty ? '$currency ' : ''}$priceText',
+                                      cs,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _previewRow(
+                                      'Duration',
+                                      '$durationText days',
+                                      cs,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: cs.onSurface.withOpacity(0.2)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: AppFonts.roboto(
+                        fontSize: AdaptiveUtils.getTitleFontSize(w),
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _submitting
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                cs.onPrimary,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            'Save',
+                            style: AppFonts.roboto(
+                              fontSize: AdaptiveUtils.getTitleFontSize(w),
+                              fontWeight: FontWeight.w600,
+                              color: cs.onPrimary,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _previewRow(String label, String value, ColorScheme cs) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppFonts.roboto(
+            fontSize: 12,
+            color: cs.onSurface.withOpacity(0.8),
+          ),
+        ),
+        Text(
+          value,
+          style: AppFonts.roboto(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class StylishTextField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final IconData prefixIcon;
+  final String? Function(String?)? validator;
+  final double width;
+  final TextInputType? keyboardType;
+  final int maxLines;
+
+  const StylishTextField({
+    super.key,
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.prefixIcon,
+    this.validator,
+    required this.width,
+    this.keyboardType,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fs = AdaptiveUtils.getTitleFontSize(width);
+    final fieldHeight = maxLines <= 1 ? 55.0 : (55.0 + (maxLines - 1) * 22.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppFonts.inter(fontWeight: FontWeight.w600, fontSize: fs),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: fieldHeight,
+          child: TextFormField(
+            controller: controller,
+            validator: validator,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              fillColor: cs.surface,
+              filled: true,
+              hintText: hint,
+              hintStyle: AppFonts.inter(
+                color: cs.onSurface.withOpacity(0.6),
+                fontSize: fs,
+              ),
+              prefixIcon: Icon(prefixIcon, color: cs.primary),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: cs.primary, width: 2),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:open_vts/design_system/components/open_vts_button.dart';
-import 'package:open_vts/design_system/components/open_vts_text_field.dart';
-import 'package:open_vts/design_system/components/open_vts_card.dart';
-import 'package:open_vts/design_system/components/open_vts_feedback.dart';
-import 'package:open_vts/design_system/components/open_vts_dialog.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_button.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_text_field.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_card.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_feedback.dart';
+import 'package:open_vts/shared/widgets/open_vts/open_vts_dialog.dart';
 
 void main() {
   group('Design System Smoke Tests', () {

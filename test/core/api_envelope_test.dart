@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:open_vts/core/network/api_envelope.dart';
+import 'package:open_vts/core/api/api_envelope.dart';
 
 void main() {
   group('ApiEnvelope', () {

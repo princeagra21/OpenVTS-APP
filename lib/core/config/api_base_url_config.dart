@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import 'package:open_vts/core/utils/request_control.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

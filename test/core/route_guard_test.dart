@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:open_vts/app/router/app_route_paths.dart';
-import 'package:open_vts/core/auth/route_guard.dart';
+import 'package:open_vts/core/router/route_names.dart';
+import 'package:open_vts/core/router/guards/route_guard.dart';
 
 void main() {
   group('RouteGuard', () {
@@ -37,9 +37,12 @@ void main() {
         expect(RouteGuard.normalizeRole('USER'), 'user');
       });
 
-      test('normalizes driver variants', () {
+      test('normalizes driver, subuser, and team variants', () {
         expect(RouteGuard.normalizeRole('driver'), 'driver');
         expect(RouteGuard.normalizeRole('Driver'), 'driver');
+        expect(RouteGuard.normalizeRole('subuser'), 'subuser');
+        expect(RouteGuard.normalizeRole('SUB_USER'), 'subuser');
+        expect(RouteGuard.normalizeRole('team'), 'team');
       });
 
       test('returns empty for unknown roles', () {
@@ -60,8 +63,10 @@ void main() {
         expect(RouteGuard.defaultRouteForRole('Admin'), AppRoutePaths.adminHome);
       });
 
-      test('returns user home for user/driver', () {
+      test('returns user home for user, subuser, team, and driver', () {
         expect(RouteGuard.defaultRouteForRole('user'), AppRoutePaths.userHome);
+        expect(RouteGuard.defaultRouteForRole('subuser'), AppRoutePaths.userHome);
+        expect(RouteGuard.defaultRouteForRole('team'), AppRoutePaths.userHome);
         expect(RouteGuard.defaultRouteForRole('driver'), AppRoutePaths.userHome);
         expect(RouteGuard.defaultRouteForRole('User'), AppRoutePaths.userHome);
       });
@@ -108,9 +113,12 @@ void main() {
         expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.userHome, 'user'), isTrue);
       });
 
-      test('driver has same permissions as user', () {
-        expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.userHome, 'driver'), isTrue);
-        expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.adminHome, 'driver'), isFalse);
+      test('subuser, team, and driver use the user shell boundary', () {
+        for (final role in ['subuser', 'team', 'driver']) {
+          expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.userHome, role), isTrue);
+          expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.adminHome, role), isFalse);
+          expect(RouteGuard.isRouteAllowedForRole(AppRoutePaths.superadminHome, role), isFalse);
+        }
       });
 
       test('unknown roles cannot access protected routes', () {

@@ -1,0 +1,42 @@
+import 'package:open_vts/core/utils/request_control.dart';
+import 'package:open_vts/features/admin/domain/entities/admin_dashboard_summary.dart';
+import 'package:open_vts/core/api/api_result.dart';
+import 'package:open_vts/core/api/api_paths.dart';
+import 'package:open_vts/core/api/legacy_api_transport.dart';
+
+class AdminDashboardRepository {
+  final LegacyApiTransport api;
+
+  const AdminDashboardRepository({required this.api});
+
+  Future<Result<AdminDashboardSummary>> getAdminDashboardSummary({
+    int rk = 0,
+    String? currency,
+    CancelToken? cancelToken,
+  }) async {
+    final query = <String, dynamic>{'rk': rk};
+    if (currency != null && currency.trim().isNotEmpty) {
+      query['currency'] = currency.trim();
+    }
+
+    final res = await api.get(
+      AdminApiPaths.dashboardSummary,
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
+
+    return res.when(
+      success: (data) {
+        final map = _asMap(data);
+        return Result.ok(AdminDashboardSummary(map));
+      },
+      failure: (err) => Result.fail(err),
+    );
+  }
+
+  Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value.cast());
+    return const <String, dynamic>{};
+  }
+}
