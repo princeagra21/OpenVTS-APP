@@ -24,7 +24,7 @@ Generated from static source review of `openVTS-main/backend/src` on 2026-05-09.
 ## Summary
 
 - Controllers found: **16**
-- HTTP endpoints found: **487**
+- HTTP endpoints found: **488**
 - DTO/interface payload classes indexed: **266**
 - Socket gateway/source files indexed: **5**
 
@@ -35,7 +35,7 @@ Generated from static source review of `openVTS-main/backend/src` on 2026-05-09.
 | `AdminController` | 158 | `src/admin/admin.controller.ts` |
 | `AgentController` | 3 | `src/agent/controllers/agent.controller.ts` |
 | `AppController` | 19 | `src/app.controller.ts` |
-| `AuthController` | 13 | `src/auth/controllers/auth.controller.ts` |
+| `AuthController` | 14 | `src/auth/controllers/auth.controller.ts` |
 | `BugReportController` | 1 | `src/bug-report/bug-report.controller.ts` |
 | `GeocodingController` | 3 | `src/geocoding/geocoding.controller.ts` |
 | `HandledataController` | 1 | `src/handledata/handledata.controller.ts` |
@@ -56,7 +56,7 @@ Generated from static source review of `openVTS-main/backend/src` on 2026-05-09.
 | `ADMIN` | 158 |
 | `SUPERADMIN` | 152 |
 | `ADMIN,USER` | 111 |
-| `PUBLIC/UNSPECIFIED` | 53 |
+| `PUBLIC/UNSPECIFIED` | 54 |
 | `USER` | 7 |
 | `SUPERADMIN,ADMIN,USER,SUBUSER` | 3 |
 | `SUPERADMIN,ADMIN,USER,SUBUSER,TEAM,DRIVER` | 3 |
@@ -235,6 +235,7 @@ Generated from static source review of `openVTS-main/backend/src` on 2026-05-09.
 | 168 | `GET` | `/auth/google/client-id` | `AuthController.getGoogleClientId` | Public |
 | 169 | `POST` | `/auth/google/login` | `AuthController.googleLogin` | Public |
 | 170 | `POST` | `/auth/login` | `AuthController.login` | Public |
+| 488 | `POST` | `/auth/refresh-token` | `AuthController.refreshToken` | Public |
 | 171 | `POST` | `/auth/push-test` | `AuthController.testPush` | JWT |
 | 172 | `DELETE` | `/auth/push-token` | `AuthController.removePushToken` | JWT |
 | 173 | `POST` | `/auth/push-token` | `AuthController.registerPushToken` | JWT |
@@ -4988,6 +4989,28 @@ Socket gateways accept the same JWT used by HTTP APIs. Token can be supplied thr
 **Request/response objects / upload notes**
 - `@Req() req: FastifyRequest`
 - When the controller uses `FastifyRequest`, payload may be parsed manually; for upload/document endpoints this usually means `multipart/form-data`.
+
+**Standard successful HTTP response envelope**
+```json
+{ "status": "success", "data": "<controller return value>", "timestamp": "<ISO date>" }
+```
+
+### 488. `POST /auth/refresh-token`
+
+- **Controller:** `AuthController.refreshToken()`
+- **Source:** `src/auth/controllers/auth.controller.ts`
+- **Auth:** Public
+- **Controller return type:** `Promise<AuthResponseDto>`
+- **Return expression/source:** `this.authService.refreshToken(dto.refresh_token)`
+
+**Body / payload**
+- `(body)`: `RefreshTokenDto` — raw: `@Body() dto: RefreshTokenDto`
+
+`RefreshTokenDto` from `src/auth/dto/refresh-token.dto.ts`
+
+| Field | Type | Required | Validation / decorators |
+|---|---|---:|---|
+| `refresh_token` | `string` | Yes | @IsString(), @IsNotEmpty({ message: 'refresh_token must not be empty' }), @Transform(({ value }) => String(value).trim()) |
 
 **Standard successful HTTP response envelope**
 ```json

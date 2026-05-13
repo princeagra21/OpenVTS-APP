@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:open_vts/core/error/app_error.dart';
 import 'package:open_vts/core/error/error_mapper.dart';
 import 'package:open_vts/core/utils/request_control.dart';
@@ -14,15 +15,18 @@ import 'package:open_vts/shared/models/paginated_response.dart';
 class VehicleRepositoryImpl implements VehicleRepository {
   const VehicleRepositoryImpl({
     VehicleApiService? api,
+    Dio? dio,
     VehicleLocalSource? localSource,
     legacy_repo.VehicleRepository? legacyRepository,
     String listEndpoint = '/admin/vehicles',
   })  : _api = api,
+        _dio = dio,
         _localSource = localSource,
         _legacyRepository = legacyRepository,
         _listEndpoint = listEndpoint;
 
   final VehicleApiService? _api;
+  final Dio? _dio;
   final VehicleLocalSource? _localSource;
   final legacy_repo.VehicleRepository? _legacyRepository;
   final String _listEndpoint;
@@ -37,8 +41,7 @@ class VehicleRepositoryImpl implements VehicleRepository {
     final api = _api;
     if (api != null) {
       try {
-        final response = await api.getVehiclesFromEndpoint(
-          _listEndpoint,
+        final response = await api.getVehicles(
           page: page,
           limit: limit,
           search: search,

@@ -42,7 +42,7 @@ class AuthApiPaths {
   static String withSuffix(String suffix) => ApiPaths.path('$prefix/$suffix');
 
   static const String login = '/auth/login';
-  static const String refreshToken = '/auth/refresh';
+  static const String refreshToken = '/auth/refresh-token';
   static const String forgotPassword = '/auth/forgot-password';
   static const String pushToken = '/auth/push-token';
   static const String pushTokensMe = '/auth/push-tokens/me';

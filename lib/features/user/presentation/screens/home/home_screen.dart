@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:open_vts/core/providers/core_providers.dart';
 import 'package:open_vts/shared/models/admin_profile.dart';
 import 'package:open_vts/core/utils/app_logo.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,8 +30,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _badgeRefreshTimer;
   AdminProfile? _profile;
   bool _loadingProfile = false;
+  String _accessToken = '';
+  String _baseUrl = '';
 
   String _badgeText(int unreadCount) => unreadCount > 9 ? '9+' : '$unreadCount';
+
+  void _refreshBaseUrl() {
+    _baseUrl = ref.read(apiClientProvider).dio.options.baseUrl.trim();
+  }
+
+  Future<void> _loadAccessToken() async {
+    final token = await ref.read(userSessionServiceProvider).readAccessToken();
+    if (!mounted) return;
+    updateLocalUiState(this, () => _accessToken = token?.trim() ?? '');
+  }
 
   void _reloadUnreadCount() {
     ref
@@ -50,6 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     updateLocalUiState(this, () => _loadingProfile = true);
 
     try {
+      _refreshBaseUrl();
       final res = await ref.read(userProfileAccessProvider).getMyProfile();
       if (!mounted) return;
 
@@ -90,6 +105,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return parts.take(2).map((e) => e[0]).join().toUpperCase();
   }
 
+  String _buildAbsoluteUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '';
+    final parsed = Uri.tryParse(trimmed);
+    if (parsed != null && parsed.hasScheme && parsed.hasAuthority) {
+      return parsed.toString();
+    }
+    final base = _baseUrl.trim();
+    if (base.isEmpty) return trimmed;
+    final normalizedBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final normalizedPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+    return '$normalizedBase$normalizedPath';
+  }
+
+  String _extractProfileImageUrl(AdminProfile? profile) {
+    if (profile == null) return '';
+    final sources = <Map<String, dynamic>>[profile.raw, profile.data];
+    final level1 = profile.raw['data'];
+    if (level1 is Map) {
+      final level1Map = Map<String, dynamic>.from(level1.cast());
+      sources.add(level1Map);
+      final level2 = level1Map['data'];
+      if (level2 is Map) {
+        sources.add(Map<String, dynamic>.from(level2.cast()));
+      }
+    }
+
+    const keys = [
+      'profileUrl',
+      'profileurl',
+      'profile_url',
+      'avatarUrl',
+      'avatar_url',
+      'avatar',
+      'photoUrl',
+      'photo_url',
+      'imageUrl',
+      'image_url',
+      'profileImage',
+      'profile_image',
+    ];
+
+    for (final map in sources) {
+      for (final key in keys) {
+        final value = map[key];
+        if (value == null) continue;
+        final text = value.toString().trim();
+        if (text.isEmpty) continue;
+        return _buildAbsoluteUrl(text);
+      }
+    }
+
+    return '';
+  }
+
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -114,6 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required BuildContext anchorContext,
     required String displayName,
     required String roleLabel,
+    required String imageUrl,
     required String initials,
   }) async {
     final box = anchorContext.findRenderObject() as RenderBox?;
@@ -148,7 +219,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   radius: 22,
                   fontSize: 14,
                   colorScheme: Theme.of(context).colorScheme,
+                  imageUrl: imageUrl,
                   initials: initials,
+                  loading: _loadingProfile,
+                  authToken: _accessToken,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -228,6 +302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _loadAccessToken();
       _startBadgeRefresh();
       _loadProfile();
     });
@@ -269,6 +344,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       data: (count) => count,
       orElse: () => 0,
     );
+    final profileImageUrl = _extractProfileImageUrl(_profile);
+    final roleLabel = (_profile?.roleName.trim().isNotEmpty ?? false)
+        ? _profile!.roleName.trim()
+        : 'User';
 
     final List<_HomeShortcut> shortcuts = [
       _HomeShortcut(
@@ -384,13 +463,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final name = profile?.fullName.trim() ?? '';
                         final username = profile?.username.trim() ?? '';
                         final displayName = name.isNotEmpty ? name : username;
-                        final roleLabel = username.isNotEmpty
-                            ? username
-                            : 'User';
                         _showProfileMenu(
                           anchorContext: avatarContext,
                           displayName: displayName,
                           roleLabel: roleLabel,
+                          imageUrl: profileImageUrl,
                           initials: _initials(name, username),
                         );
                       },
@@ -400,10 +477,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           screenWidth,
                         ),
                         colorScheme: cs,
+                        imageUrl: profileImageUrl,
                         initials: _initials(
                           _profile?.fullName ?? '',
                           _profile?.username ?? '',
                         ),
+                        loading: _loadingProfile,
+                        authToken: _accessToken,
                       ),
                     ),
                   ),
@@ -640,9 +720,76 @@ class _ProfileAvatar extends StatelessWidget {
   final double radius;
   final double fontSize;
   final ColorScheme colorScheme;
+  final String imageUrl;
   final String initials;
+  final bool loading;
+  final String authToken;
 
   const _ProfileAvatar({
+    required this.radius,
+    required this.fontSize,
+    required this.colorScheme,
+    required this.imageUrl,
+    required this.initials,
+    required this.loading,
+    required this.authToken,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl.isNotEmpty) {
+      final double size = radius * 2;
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? colorScheme.surface
+              : colorScheme.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            httpHeaders: authToken.isNotEmpty
+                ? {'Authorization': 'Bearer $authToken'}
+                : null,
+            placeholder: (_, __) => _InitialsAvatar(
+              radius: radius,
+              fontSize: fontSize,
+              colorScheme: colorScheme,
+              initials: loading ? '--' : initials,
+            ),
+            errorWidget: (_, __, ___) => _InitialsAvatar(
+              radius: radius,
+              fontSize: fontSize,
+              colorScheme: colorScheme,
+              initials: loading ? '--' : initials,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _InitialsAvatar(
+      radius: radius,
+      fontSize: fontSize,
+      colorScheme: colorScheme,
+      initials: loading ? '--' : initials,
+    );
+  }
+}
+
+class _InitialsAvatar extends StatelessWidget {
+  final double radius;
+  final double fontSize;
+  final ColorScheme colorScheme;
+  final String initials;
+
+  const _InitialsAvatar({
     required this.radius,
     required this.fontSize,
     required this.colorScheme,

@@ -104,7 +104,7 @@ class SuperadminRepository {
     );
 
     return res.when(
-      success: (data) => Result.ok(SuperadminProfile(_coerceMap(data))),
+      success: (data) => Result.ok(SuperadminProfile(data)),
       failure: (err) => Result.fail(err),
     );
   }

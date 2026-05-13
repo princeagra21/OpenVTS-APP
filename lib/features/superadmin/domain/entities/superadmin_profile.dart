@@ -1,21 +1,20 @@
 class SuperadminProfile {
   SuperadminProfile(Object? source)
-      : this.typed(
-          action: _bool(_level1(source)['action']),
-          id: _stringFrom(_data(source), const ['id', 'uid', 'userId', 'user_id', 'adminId', 'admin_id']),
-          fullName: _stringFrom(_data(source), const ['name', 'fullName', 'full_name']),
-          username: _stringFrom(_data(source), const ['username', 'handle']),
-          email: _stringFrom(_data(source), const ['email', 'mail']),
-          mobilePrefix: _stringFrom(_data(source), const ['mobilePrefix', 'prefix']),
-          mobileNumber: _stringFrom(_data(source), const ['mobileNumber', 'mobile', 'phone', 'phoneNumber']),
-          roleName: _stringFrom(_data(source), const ['role', 'roleName', 'userType', 'type']),
-          createdAt: _stringFrom(_data(source), const ['createdAt', 'created_at', 'created']),
-          lastLogin: _stringFrom(_data(source), const ['lastLogin', 'last_login', 'lastLoginAt', 'recentLogin', 'Lastlogin', 'updatedAt', 'updated_at']),
-          isActive: _bool(_firstValue(_data(source), const ['isActive', 'active', 'is_active', 'status', 'state'])) ?? _bool(_level1(source)['action']),
-          isVerified: _bool(_firstValue(_data(source), const ['isVerified', 'emailVerified', 'isEmailVerified', 'verified', 'isemailvarified'])),
-          companyInfo: SuperadminCompanyInfo.fromObject(_companySource(source)),
-          addressInfo: SuperadminAddressInfo.fromObject(_addressSource(source)),
-        );
+      : _rawSource = source,
+        action = _bool(_level1(source)['action']),
+        id = _stringFrom(_data(source), const ['id', 'uid', 'userId', 'user_id', 'adminId', 'admin_id']),
+        fullName = _stringFrom(_data(source), const ['name', 'fullName', 'full_name']),
+        username = _stringFrom(_data(source), const ['username', 'handle']),
+        email = _stringFrom(_data(source), const ['email', 'mail']),
+        mobilePrefix = _stringFrom(_data(source), const ['mobilePrefix', 'prefix']),
+        mobileNumber = _stringFrom(_data(source), const ['mobileNumber', 'mobile', 'phone', 'phoneNumber']),
+        roleName = _stringFrom(_data(source), const ['role', 'roleName', 'userType', 'type']),
+        createdAt = _stringFrom(_data(source), const ['createdAt', 'created_at', 'created']),
+        lastLogin = _stringFrom(_data(source), const ['lastLogin', 'last_login', 'lastLoginAt', 'recentLogin', 'Lastlogin', 'updatedAt', 'updated_at']),
+        isActive = _bool(_firstValue(_data(source), const ['isActive', 'active', 'is_active', 'status', 'state'])) ?? _bool(_level1(source)['action']),
+        isVerified = _bool(_firstValue(_data(source), const ['isVerified', 'emailVerified', 'isEmailVerified', 'verified', 'isemailvarified'])),
+        companyInfo = SuperadminCompanyInfo.fromObject(_companySource(source)),
+        addressInfo = SuperadminAddressInfo.fromObject(_addressSource(source));
 
   const SuperadminProfile.typed({
     required this.action,
@@ -32,7 +31,10 @@ class SuperadminProfile {
     required this.isVerified,
     required this.companyInfo,
     required this.addressInfo,
-  });
+    Object? rawSource,
+  }) : _rawSource = rawSource;
+
+  final Object? _rawSource;
 
   final bool? action;
   final String id;
@@ -50,7 +52,13 @@ class SuperadminProfile {
   final SuperadminAddressInfo addressInfo;
 
 
-  Map<String, Object?> get raw => data;
+  Map<String, Object?> get raw => _toDynamicMap(_rawSource);
+
+  static Map<String, Object?> _toDynamicMap(Object? value) {
+    if (value is Map<String, Object?>) return value;
+    if (value is Map) return <String, Object?>{for (final entry in value.entries) entry.key.toString(): entry.value};
+    return const <String, Object?>{};
+  }
 
   Map<String, Object?> get data => <String, Object?>{
         'id': id,

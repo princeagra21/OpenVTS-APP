@@ -84,68 +84,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       updateLocalUiState(this, () => _currentPage = index);
                     },
                     itemBuilder: (context, index) {
-                      return SingleChildScrollView(
+                      return Padding(
                         padding: EdgeInsets.fromLTRB(
                           horizontalPadding,
                           OpenVtsSpacing.xxl,
                           horizontalPadding,
                           128,
                         ),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: math.max(0, maxHeight - 128),
-                          ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: cardMaxWidth),
-                              child: Container(
-                                padding: EdgeInsets.all(cardPadding),
-                                decoration: BoxDecoration(
-                                  color: OpenVtsColors.white.withOpacity(0.06),
-                                  borderRadius: BorderRadius.circular(
-                                    OpenVtsRadius.xl + OpenVtsSpacing.sm,
-                                  ),
-                                  border: Border.all(
-                                    color: OpenVtsColors.white.withOpacity(0.08),
-                                  ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                            child: Container(
+                              padding: EdgeInsets.all(cardPadding),
+                              decoration: BoxDecoration(
+                                color: OpenVtsColors.white.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(
+                                  OpenVtsRadius.xl + OpenVtsSpacing.sm,
                                 ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: imageSize,
-                                      height: imageSize,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(24),
-                                        child: Image.asset(
-                                          _onboardingData[index]['image']!,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      _onboardingData[index]['title']!,
-                                      textAlign: TextAlign.center,
-                                      style: OpenVtsTypography.headingLarge.copyWith(
-                                        fontSize: titleSize,
-                                        fontWeight: FontWeight.w800,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      _onboardingData[index]['subtitle']!,
-                                      textAlign: TextAlign.center,
-                                      style: OpenVtsTypography.bodyLarge.copyWith(
-                                        fontSize: labelSize,
-                                        height: 1.4,
-                                        color: colorScheme.onSurface.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
+                                border: Border.all(
+                                  color: OpenVtsColors.white.withOpacity(0.08),
                                 ),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: imageSize,
+                                    height: imageSize,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: Image.asset(
+                                        _onboardingData[index]['image']!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    _onboardingData[index]['title']!,
+                                    textAlign: TextAlign.center,
+                                    style: OpenVtsTypography.headingLarge.copyWith(
+                                      fontSize: titleSize,
+                                      fontWeight: FontWeight.w800,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _onboardingData[index]['subtitle']!,
+                                    textAlign: TextAlign.center,
+                                    style: OpenVtsTypography.bodyLarge.copyWith(
+                                      fontSize: labelSize,
+                                      height: 1.4,
+                                      color: colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

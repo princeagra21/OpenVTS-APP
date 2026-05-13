@@ -1,6 +1,18 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
+// ignore_for_file: type=lint
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
+
 part of 'login_state.dart';
 
+// **************************************************************************
+// FreezedGenerator
+// **************************************************************************
+
+// dart format off
+T _$identity<T>(T value) => value;
+
+/// @nodoc
 mixin _$LoginState {
   bool get isForgot;
   bool get isForgotSubmitting;
@@ -9,69 +21,469 @@ mixin _$LoginState {
   String? get forgotPasswordMessage;
   String? get errorMessage;
   String? get successTargetPath;
-  LoginState copyWith({
-    bool? isForgot,
-    bool? isForgotSubmitting,
-    bool? isLoggingIn,
-    bool? obscurePassword,
-    String? forgotPasswordMessage,
-    String? errorMessage,
-    String? successTargetPath,
-  });
-}
 
-class _LoginState implements LoginState {
-  const _LoginState({
-    this.isForgot = false,
-    this.isForgotSubmitting = false,
-    this.isLoggingIn = false,
-    this.obscurePassword = true,
-    this.forgotPasswordMessage,
-    this.errorMessage,
-    this.successTargetPath,
-  });
-
-  @override final bool isForgot;
-  @override final bool isForgotSubmitting;
-  @override final bool isLoggingIn;
-  @override final bool obscurePassword;
-  @override final String? forgotPasswordMessage;
-  @override final String? errorMessage;
-  @override final String? successTargetPath;
+  /// Create a copy of LoginState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $LoginStateCopyWith<LoginState> get copyWith =>
+      _$LoginStateCopyWithImpl<LoginState>(this as LoginState, _$identity);
 
   @override
-  LoginState copyWith({
-    bool? isForgot,
-    bool? isForgotSubmitting,
-    bool? isLoggingIn,
-    bool? obscurePassword,
-    Object? forgotPasswordMessage = _sentinel,
-    Object? errorMessage = _sentinel,
-    Object? successTargetPath = _sentinel,
-  }) {
-    return _LoginState(
-      isForgot: isForgot ?? this.isForgot,
-      isForgotSubmitting: isForgotSubmitting ?? this.isForgotSubmitting,
-      isLoggingIn: isLoggingIn ?? this.isLoggingIn,
-      obscurePassword: obscurePassword ?? this.obscurePassword,
-      forgotPasswordMessage: identical(forgotPasswordMessage, _sentinel) ? this.forgotPasswordMessage : forgotPasswordMessage as String?,
-      errorMessage: identical(errorMessage, _sentinel) ? this.errorMessage : errorMessage as String?,
-      successTargetPath: identical(successTargetPath, _sentinel) ? this.successTargetPath : successTargetPath as String?,
-    );
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is LoginState &&
+            (identical(other.isForgot, isForgot) ||
+                other.isForgot == isForgot) &&
+            (identical(other.isForgotSubmitting, isForgotSubmitting) ||
+                other.isForgotSubmitting == isForgotSubmitting) &&
+            (identical(other.isLoggingIn, isLoggingIn) ||
+                other.isLoggingIn == isLoggingIn) &&
+            (identical(other.obscurePassword, obscurePassword) ||
+                other.obscurePassword == obscurePassword) &&
+            (identical(other.forgotPasswordMessage, forgotPasswordMessage) ||
+                other.forgotPasswordMessage == forgotPasswordMessage) &&
+            (identical(other.errorMessage, errorMessage) ||
+                other.errorMessage == errorMessage) &&
+            (identical(other.successTargetPath, successTargetPath) ||
+                other.successTargetPath == successTargetPath));
   }
 
   @override
-  bool operator ==(Object other) => other is _LoginState &&
-      other.isForgot == isForgot &&
-      other.isForgotSubmitting == isForgotSubmitting &&
-      other.isLoggingIn == isLoggingIn &&
-      other.obscurePassword == obscurePassword &&
-      other.forgotPasswordMessage == forgotPasswordMessage &&
-      other.errorMessage == errorMessage &&
-      other.successTargetPath == successTargetPath;
+  int get hashCode => Object.hash(
+      runtimeType,
+      isForgot,
+      isForgotSubmitting,
+      isLoggingIn,
+      obscurePassword,
+      forgotPasswordMessage,
+      errorMessage,
+      successTargetPath);
 
   @override
-  int get hashCode => Object.hash(isForgot, isForgotSubmitting, isLoggingIn, obscurePassword, forgotPasswordMessage, errorMessage, successTargetPath);
+  String toString() {
+    return 'LoginState(isForgot: $isForgot, isForgotSubmitting: $isForgotSubmitting, isLoggingIn: $isLoggingIn, obscurePassword: $obscurePassword, forgotPasswordMessage: $forgotPasswordMessage, errorMessage: $errorMessage, successTargetPath: $successTargetPath)';
+  }
 }
 
-const Object _sentinel = Object();
+/// @nodoc
+abstract mixin class $LoginStateCopyWith<$Res> {
+  factory $LoginStateCopyWith(
+          LoginState value, $Res Function(LoginState) _then) =
+      _$LoginStateCopyWithImpl;
+  @useResult
+  $Res call(
+      {bool isForgot,
+      bool isForgotSubmitting,
+      bool isLoggingIn,
+      bool obscurePassword,
+      String? forgotPasswordMessage,
+      String? errorMessage,
+      String? successTargetPath});
+}
+
+/// @nodoc
+class _$LoginStateCopyWithImpl<$Res> implements $LoginStateCopyWith<$Res> {
+  _$LoginStateCopyWithImpl(this._self, this._then);
+
+  final LoginState _self;
+  final $Res Function(LoginState) _then;
+
+  /// Create a copy of LoginState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? isForgot = null,
+    Object? isForgotSubmitting = null,
+    Object? isLoggingIn = null,
+    Object? obscurePassword = null,
+    Object? forgotPasswordMessage = freezed,
+    Object? errorMessage = freezed,
+    Object? successTargetPath = freezed,
+  }) {
+    return _then(_self.copyWith(
+      isForgot: null == isForgot
+          ? _self.isForgot
+          : isForgot // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isForgotSubmitting: null == isForgotSubmitting
+          ? _self.isForgotSubmitting
+          : isForgotSubmitting // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLoggingIn: null == isLoggingIn
+          ? _self.isLoggingIn
+          : isLoggingIn // ignore: cast_nullable_to_non_nullable
+              as bool,
+      obscurePassword: null == obscurePassword
+          ? _self.obscurePassword
+          : obscurePassword // ignore: cast_nullable_to_non_nullable
+              as bool,
+      forgotPasswordMessage: freezed == forgotPasswordMessage
+          ? _self.forgotPasswordMessage
+          : forgotPasswordMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
+      errorMessage: freezed == errorMessage
+          ? _self.errorMessage
+          : errorMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
+      successTargetPath: freezed == successTargetPath
+          ? _self.successTargetPath
+          : successTargetPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// Adds pattern-matching-related methods to [LoginState].
+extension LoginStatePatterns on LoginState {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_LoginState value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_LoginState value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_LoginState value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+            bool isForgot,
+            bool isForgotSubmitting,
+            bool isLoggingIn,
+            bool obscurePassword,
+            String? forgotPasswordMessage,
+            String? errorMessage,
+            String? successTargetPath)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState() when $default != null:
+        return $default(
+            _that.isForgot,
+            _that.isForgotSubmitting,
+            _that.isLoggingIn,
+            _that.obscurePassword,
+            _that.forgotPasswordMessage,
+            _that.errorMessage,
+            _that.successTargetPath);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+            bool isForgot,
+            bool isForgotSubmitting,
+            bool isLoggingIn,
+            bool obscurePassword,
+            String? forgotPasswordMessage,
+            String? errorMessage,
+            String? successTargetPath)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState():
+        return $default(
+            _that.isForgot,
+            _that.isForgotSubmitting,
+            _that.isLoggingIn,
+            _that.obscurePassword,
+            _that.forgotPasswordMessage,
+            _that.errorMessage,
+            _that.successTargetPath);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+            bool isForgot,
+            bool isForgotSubmitting,
+            bool isLoggingIn,
+            bool obscurePassword,
+            String? forgotPasswordMessage,
+            String? errorMessage,
+            String? successTargetPath)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginState() when $default != null:
+        return $default(
+            _that.isForgot,
+            _that.isForgotSubmitting,
+            _that.isLoggingIn,
+            _that.obscurePassword,
+            _that.forgotPasswordMessage,
+            _that.errorMessage,
+            _that.successTargetPath);
+      case _:
+        return null;
+    }
+  }
+}
+
+/// @nodoc
+
+class _LoginState implements LoginState {
+  const _LoginState(
+      {this.isForgot = false,
+      this.isForgotSubmitting = false,
+      this.isLoggingIn = false,
+      this.obscurePassword = true,
+      this.forgotPasswordMessage,
+      this.errorMessage,
+      this.successTargetPath});
+
+  @override
+  @JsonKey()
+  final bool isForgot;
+  @override
+  @JsonKey()
+  final bool isForgotSubmitting;
+  @override
+  @JsonKey()
+  final bool isLoggingIn;
+  @override
+  @JsonKey()
+  final bool obscurePassword;
+  @override
+  final String? forgotPasswordMessage;
+  @override
+  final String? errorMessage;
+  @override
+  final String? successTargetPath;
+
+  /// Create a copy of LoginState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$LoginStateCopyWith<_LoginState> get copyWith =>
+      __$LoginStateCopyWithImpl<_LoginState>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _LoginState &&
+            (identical(other.isForgot, isForgot) ||
+                other.isForgot == isForgot) &&
+            (identical(other.isForgotSubmitting, isForgotSubmitting) ||
+                other.isForgotSubmitting == isForgotSubmitting) &&
+            (identical(other.isLoggingIn, isLoggingIn) ||
+                other.isLoggingIn == isLoggingIn) &&
+            (identical(other.obscurePassword, obscurePassword) ||
+                other.obscurePassword == obscurePassword) &&
+            (identical(other.forgotPasswordMessage, forgotPasswordMessage) ||
+                other.forgotPasswordMessage == forgotPasswordMessage) &&
+            (identical(other.errorMessage, errorMessage) ||
+                other.errorMessage == errorMessage) &&
+            (identical(other.successTargetPath, successTargetPath) ||
+                other.successTargetPath == successTargetPath));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      isForgot,
+      isForgotSubmitting,
+      isLoggingIn,
+      obscurePassword,
+      forgotPasswordMessage,
+      errorMessage,
+      successTargetPath);
+
+  @override
+  String toString() {
+    return 'LoginState(isForgot: $isForgot, isForgotSubmitting: $isForgotSubmitting, isLoggingIn: $isLoggingIn, obscurePassword: $obscurePassword, forgotPasswordMessage: $forgotPasswordMessage, errorMessage: $errorMessage, successTargetPath: $successTargetPath)';
+  }
+}
+
+/// @nodoc
+abstract mixin class _$LoginStateCopyWith<$Res>
+    implements $LoginStateCopyWith<$Res> {
+  factory _$LoginStateCopyWith(
+          _LoginState value, $Res Function(_LoginState) _then) =
+      __$LoginStateCopyWithImpl;
+  @override
+  @useResult
+  $Res call(
+      {bool isForgot,
+      bool isForgotSubmitting,
+      bool isLoggingIn,
+      bool obscurePassword,
+      String? forgotPasswordMessage,
+      String? errorMessage,
+      String? successTargetPath});
+}
+
+/// @nodoc
+class __$LoginStateCopyWithImpl<$Res> implements _$LoginStateCopyWith<$Res> {
+  __$LoginStateCopyWithImpl(this._self, this._then);
+
+  final _LoginState _self;
+  final $Res Function(_LoginState) _then;
+
+  /// Create a copy of LoginState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? isForgot = null,
+    Object? isForgotSubmitting = null,
+    Object? isLoggingIn = null,
+    Object? obscurePassword = null,
+    Object? forgotPasswordMessage = freezed,
+    Object? errorMessage = freezed,
+    Object? successTargetPath = freezed,
+  }) {
+    return _then(_LoginState(
+      isForgot: null == isForgot
+          ? _self.isForgot
+          : isForgot // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isForgotSubmitting: null == isForgotSubmitting
+          ? _self.isForgotSubmitting
+          : isForgotSubmitting // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLoggingIn: null == isLoggingIn
+          ? _self.isLoggingIn
+          : isLoggingIn // ignore: cast_nullable_to_non_nullable
+              as bool,
+      obscurePassword: null == obscurePassword
+          ? _self.obscurePassword
+          : obscurePassword // ignore: cast_nullable_to_non_nullable
+              as bool,
+      forgotPasswordMessage: freezed == forgotPasswordMessage
+          ? _self.forgotPasswordMessage
+          : forgotPasswordMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
+      errorMessage: freezed == errorMessage
+          ? _self.errorMessage
+          : errorMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
+      successTargetPath: freezed == successTargetPath
+          ? _self.successTargetPath
+          : successTargetPath // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+// dart format on

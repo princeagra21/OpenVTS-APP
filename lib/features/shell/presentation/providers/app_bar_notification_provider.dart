@@ -1,5 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_vts/core/router/route_names.dart';
+import 'package:open_vts/features/auth/domain/entities/user_role.dart';
+import 'package:open_vts/features/auth/presentation/providers/auth_provider.dart';
 import 'package:open_vts/features/shell/di/shell_providers.dart';
+
+String notificationPathForRole(UserRole? role) => switch (role) {
+      UserRole.superadmin => AppRoutePaths.superadminNotifications,
+      UserRole.admin => AppRoutePaths.adminNotifications,
+      UserRole.user || UserRole.subuser || UserRole.team => AppRoutePaths.userNotifications,
+      UserRole.driver => AppRoutePaths.driverNotifications,
+      UserRole.unknown || null => '',
+    };
+
+final currentRoleNotificationPathProvider = Provider<String>((ref) {
+  return notificationPathForRole(ref.watch(currentRoleProvider));
+});
 
 final appBarUnreadCountProvider = FutureProvider.autoDispose
     .family<int, String>((ref, pathPrefix) async {

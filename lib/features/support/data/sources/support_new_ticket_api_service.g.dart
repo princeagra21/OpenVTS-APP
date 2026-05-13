@@ -1,80 +1,240 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'support_new_ticket_api_service.dart';
 
+// **************************************************************************
+// RetrofitGenerator
+// **************************************************************************
+
+// ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter
+
 class _SupportNewTicketApiService implements SupportNewTicketApiService {
-  _SupportNewTicketApiService(this._dio, {this.baseUrl});
+  _SupportNewTicketApiService(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
-  final String? baseUrl;
+
+  String? baseUrl;
+
+  final ParseErrorLogger? errorLogger;
 
   @override
   Future<ApiResponse<SupportAssigneeListResponseDto>> getAdminUsers({
     int limit = 200,
   }) async {
-    final response = await _dio.get<Object?>(
-      '/admin/users',
-      queryParameters: <String, dynamic>{'limit': limit},
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'limit': limit};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options =
+        _setStreamType<ApiResponse<SupportAssigneeListResponseDto>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/admin/users',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(
+            baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl),
+          ),
     );
-    return ApiResponse<SupportAssigneeListResponseDto>.fromJson(
-      ApiResponseNormalizer.dynamicMapOf(response.data),
-      SupportAssigneeListResponseDto.fromJson,
-    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<SupportAssigneeListResponseDto> _value;
+    try {
+      _value = ApiResponse<SupportAssigneeListResponseDto>.fromJson(
+        _result.data!,
+        (json) => SupportAssigneeListResponseDto.fromJson(
+          json as Map<String, dynamic>,
+        ),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
   Future<ApiResponse<SupportAssigneeListResponseDto>> getSuperadminAdmins({
     int limit = 200,
   }) async {
-    final response = await _dio.get<Object?>(
-      '/superadmin/adminlist',
-      queryParameters: <String, dynamic>{'limit': limit},
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'limit': limit};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options =
+        _setStreamType<ApiResponse<SupportAssigneeListResponseDto>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/superadmin/adminlist',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(
+            baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl),
+          ),
     );
-    return ApiResponse<SupportAssigneeListResponseDto>.fromJson(
-      ApiResponseNormalizer.dynamicMapOf(response.data),
-      SupportAssigneeListResponseDto.fromJson,
-    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<SupportAssigneeListResponseDto> _value;
+    try {
+      _value = ApiResponse<SupportAssigneeListResponseDto>.fromJson(
+        _result.data!,
+        (json) => SupportAssigneeListResponseDto.fromJson(
+          json as Map<String, dynamic>,
+        ),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
-  Future<ApiResponse<Object?>> createAdminUserTicket(
+  Future<ApiResponse<void>> createAdminUserTicket(
     CreateSupportTicketRequestDto body,
   ) async {
-    final response = await _dio.post<Object?>(
-      '/admin/tickets',
-      data: body.toJson(),
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<ApiResponse<void>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/admin/tickets',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    return _objectResponse(response.data);
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<void> _value;
+    try {
+      _value = ApiResponse<void>.fromJson(_result.data!, (json) => () {}());
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
-  Future<ApiResponse<Object?>> createAdminMyTicket(Object body) async {
-    final response = await _dio.post<Object?>('/admin/mytickets', data: body);
-    return _objectResponse(response.data);
+  Future<ApiResponse<void>> createAdminMyTicket(
+    Map<String, dynamic> body,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
+    final _options = _setStreamType<ApiResponse<void>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/admin/mytickets',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<void> _value;
+    try {
+      _value = ApiResponse<void>.fromJson(_result.data!, (json) => () {}());
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
-  Future<ApiResponse<Object?>> createUserTicket(
+  Future<ApiResponse<void>> createUserTicket(
     CreateSupportTicketRequestDto body,
   ) async {
-    final response = await _dio.post<Object?>(
-      '/user/tickets',
-      data: body.toJson(),
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<ApiResponse<void>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/user/tickets',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    return _objectResponse(response.data);
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<void> _value;
+    try {
+      _value = ApiResponse<void>.fromJson(_result.data!, (json) => () {}());
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
-  Future<ApiResponse<Object?>> createSuperadminTicket(
+  Future<ApiResponse<void>> createSuperadminTicket(
     CreateSupportTicketRequestDto body,
   ) async {
-    final response = await _dio.post<Object?>(
-      '/superadmin/support/tickets',
-      data: body.toJson(),
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<ApiResponse<void>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/superadmin/support/tickets',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    return _objectResponse(response.data);
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiResponse<void> _value;
+    try {
+      _value = ApiResponse<void>.fromJson(_result.data!, (json) => () {}());
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
-}
 
-ApiResponse<Object?> _objectResponse(Object? raw) {
-  return ApiResponse<Object?>.fromJson(ApiResponseNormalizer.dynamicMapOf(raw), (json) => json);
+  RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
+    if (T != dynamic &&
+        !(requestOptions.responseType == ResponseType.bytes ||
+            requestOptions.responseType == ResponseType.stream)) {
+      if (T == String) {
+        requestOptions.responseType = ResponseType.plain;
+      } else {
+        requestOptions.responseType = ResponseType.json;
+      }
+    }
+    return requestOptions;
+  }
+
+  String _combineBaseUrls(String dioBaseUrl, String? baseUrl) {
+    if (baseUrl == null || baseUrl.trim().isEmpty) {
+      return dioBaseUrl;
+    }
+
+    final url = Uri.parse(baseUrl);
+
+    if (url.isAbsolute) {
+      return url.toString();
+    }
+
+    return Uri.parse(dioBaseUrl).resolveUri(url).toString();
+  }
 }

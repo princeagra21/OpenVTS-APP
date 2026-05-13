@@ -42,6 +42,9 @@ class RefreshTokenInterceptor extends Interceptor {
       final response = await _retryWithNewToken(options, newToken);
       handler.resolve(response);
       return;
+    } on _RefreshEndpointUnavailable {
+      handler.next(err);
+      return;
     } on DioException catch (retryErr) {
       if (_wasRetriedAfterRefresh(retryErr.requestOptions)) {
         handler.next(retryErr);
@@ -92,7 +95,10 @@ class RefreshTokenInterceptor extends Interceptor {
     try {
       response = await dio.post<dynamic>(
         AuthApiPaths.refreshToken,
-        data: {'refresh_token': refreshToken},
+        data: {
+          'refreshToken': refreshToken,
+          'refresh_token': refreshToken,
+        },
         options: Options(
           headers: const <String, dynamic>{
             'Accept': 'application/json',
@@ -104,6 +110,7 @@ class RefreshTokenInterceptor extends Interceptor {
     } on DioException catch (error) {
       if (error.response?.statusCode == 404) {
         _refreshEndpointUnavailable = true;
+        throw const _RefreshEndpointUnavailable();
       }
       rethrow;
     }
@@ -149,4 +156,8 @@ class RefreshTokenInterceptor extends Interceptor {
 
 class _RefreshTokenUnavailable implements Exception {
   const _RefreshTokenUnavailable();
+}
+
+class _RefreshEndpointUnavailable implements Exception {
+  const _RefreshEndpointUnavailable();
 }

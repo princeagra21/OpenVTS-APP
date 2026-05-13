@@ -9,21 +9,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_vts/features/superadmin/di/superadmin_core_gateway_providers.dart';
-import 'package:open_vts/features/shell/presentation/controllers/role_notifications_controller.dart';
+import 'package:open_vts/features/shell/presentation/providers/app_bar_notification_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:open_vts/core/theme/app_fonts.dart';
 import 'package:open_vts/core/router/route_names.dart';
 import 'package:open_vts/core/theme/open_vts_theme.dart';
 import 'package:open_vts/core/state/update_local_ui_state.dart';
-
-
-class _UnreadLoadResult {
-  const _UnreadLoadResult._(this.count);
-  final int count;
-  factory _UnreadLoadResult.success(int count) => _UnreadLoadResult._(count);
-  factory _UnreadLoadResult.failure() => const _UnreadLoadResult._(0);
-}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -37,11 +29,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   SuperadminProfile? _profile;
   bool _loadingProfile = false;
   String _accessToken = '';
-  int _unreadCount = 0;
   String _baseUrl = '';
-  bool _badgeLoadInFlight = false;
 
-  String get _badgeText => _unreadCount > 9 ? '9+' : '$_unreadCount';
+  String _badgeText(int unreadCount) => unreadCount > 9 ? '9+' : '$unreadCount';
 
   @override
   void initState() {
@@ -50,7 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
       _loadAccessToken();
       _loadProfile();
-      _loadUnreadCount();
+      _reloadUnreadCount();
       _startBadgeRefresh();
     });
   }
@@ -99,33 +89,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> _loadUnreadCount() async {
-    if (_badgeLoadInFlight) return;
-    _badgeLoadInFlight = true;
-
-    try {
-      final path = AppRoutePaths.superadminNotifications;
-      final controller = ref.read(roleNotificationsControllerProvider(path).notifier);
-      await controller.load();
-      final state = ref.read(roleNotificationsControllerProvider(path));
-      final result = state.errorMessage == null
-          ? _UnreadLoadResult.success(state.unreadCount)
-          : _UnreadLoadResult.failure();
-      if (!mounted) return;
-      updateLocalUiState(this, () => _unreadCount = result.count);
-    } catch (_) {
-      if (!mounted) return;
-      updateLocalUiState(this, () => _unreadCount = 0);
-    } finally {
-      _badgeLoadInFlight = false;
-    }
+  void _reloadUnreadCount() {
+    ref
+        .read(appBarNotificationBadgeControllerProvider(AppRoutePaths.superadminNotifications))
+        .reload();
   }
 
   void _startBadgeRefresh() {
     _badgeRefreshTimer?.cancel();
     _badgeRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (!mounted) return;
-      _loadUnreadCount();
+      _reloadUnreadCount();
     });
   }
 
@@ -394,6 +368,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final currentYear = DateTime.now().year;
     final footerText = '© $currentYear Open VTS All rights reserved.';
     final roleLabel = _display(profile?.roleName, fallback: 'Super Admin');
+    final unreadCount = ref.watch(
+      appBarUnreadCountProvider(AppRoutePaths.superadminNotifications),
+    ).maybeWhen(
+      data: (count) => count,
+      orElse: () => 0,
+    );
 
     final List<_HomeShortcut> shortcuts = [
       _HomeShortcut(
@@ -485,11 +465,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     size: buttonSize,
                     iconSize: iconSize,
                     colorScheme: cs,
-                    badgeText: _badgeText,
-                    showBadge: _unreadCount > 0,
+                    badgeText: _badgeText(unreadCount),
+                    showBadge: unreadCount > 0,
                     badgeFontSize: bellNotificationFontSize,
-                    onTap: () =>
-                        context.push(AppRoutePaths.superadminNotifications),
+                    onTap: () async {
+                      await context.push(AppRoutePaths.superadminNotifications);
+                      if (!mounted) return;
+                      _reloadUnreadCount();
+                    },
                   ),
                   SizedBox(width: AppUtils.spacingSmall),
                   Row(

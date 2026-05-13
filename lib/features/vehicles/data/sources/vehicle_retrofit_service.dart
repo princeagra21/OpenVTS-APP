@@ -25,13 +25,13 @@ abstract class VehicleApiService {
   /// but the shared VehiclesScreen can render superadmin/admin/user lists.
   /// Hardcoding `/admin/vehicles` here causes superadmin sessions to receive 401
   /// and then incorrectly trigger token refresh.
-  Future<ApiResponse<VehicleListResponse>> getVehiclesFromEndpoint(
-    String endpoint, {
-    int page = 1,
-    int limit = 20,
-    String? search,
-    String? status,
-  });
+  // Future<ApiResponse<VehicleListResponse>> getVehiclesFromEndpoint(
+  //   String endpoint, {
+  //   int page = 1,
+  //   int limit = 20,
+  //   String? search,
+  //   String? status,
+  // });
 
   @GET('/admin/vehicles/{id}')
   Future<ApiResponse<VehicleResponse>> getVehicleById(@Path('id') int id);
